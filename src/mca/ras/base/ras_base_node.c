@@ -384,7 +384,7 @@ int orte_ras_base_node_assign(ompi_list_t* nodes, orte_jobid_t jobid)
     
     for(i=0, item =  ompi_list_get_first(nodes);
         i < num_values && item != ompi_list_get_end(nodes);
-        i++, item =  ompi_list_get_next(nodes)) {
+        i++, item = ompi_list_get_next(item)) {
         int rc;
         node = (orte_ras_base_node_t*)item;
 
