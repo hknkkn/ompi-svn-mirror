@@ -30,7 +30,6 @@
 
 #include "include/constants.h"
 #include "runtime/runtime.h"
-#include "mca/pcm/base/base.h"
 #include "class/ompi_list.h"
 #include "util/show_help.h"
 #include "mca/ns/ns.h"
@@ -41,10 +40,10 @@
 struct app_opts {
     bool high_qos;
     bool debug;
-    mca_ns_base_cellid_t cellid;
-    mca_ns_base_jobid_t jobid;
-    mca_ns_base_vpid_t local_vpid_start;
-    mca_ns_base_vpid_t global_vpid_start;
+    orte_cellid_t cellid;
+    orte_jobid_t jobid;
+    orte_vpid_t local_vpid_start;
+    orte_vpid_t global_vpid_start;
     int num_job_procs;
     int num_fork_procs;
 };
@@ -122,7 +121,7 @@ main(int argc, char *argv[])
 {
     int ret;
     struct app_opts opts;
-    ompi_rte_node_schedule_t *sched;
+//    ompi_rte_node_schedule_t *sched;
     char *tmp_buf;
     int i, orig_errno;
     pid_t pid;
@@ -146,51 +145,51 @@ main(int argc, char *argv[])
     }
 
     /* receive schedule */
-    sched = OBJ_NEW(ompi_rte_node_schedule_t);
-    if (NULL == sched) {
-        ompi_show_help("help-bootproxy.txt", "system-failure", true,
-                       "OBJ_NEW", strerror(errno));
-        exit(1);
-    }
-
-    ret = mca_pcm_base_recv_schedule(stdin, 
-                                     &(opts.cellid), 
-                                     &(opts.jobid),
-                                     &(opts.global_vpid_start),
-                                     &(opts.num_job_procs),
-                                     sched,
-                                     &(opts.num_fork_procs));
-    if (ret != OMPI_SUCCESS) {
-        ompi_show_help("help-bootproxy.txt", "could-not-receive-schedule",
-                       true, ret);
-        exit(1);
-    }
-
-    /* fill our environment */
-    for (i = 0 ; sched->env[i] != NULL ; ++i) {
-        putenv(strdup(sched->env[i]));
-    }
-    /* constant pcmclient info */
-    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_cellid=%d", opts.cellid);
-    putenv(tmp_buf);
-    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_jobid=%d", opts.jobid);
-    putenv(tmp_buf);
-    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_num_procs=%d",
-             opts.num_job_procs);
-    putenv(tmp_buf);
-    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_vpid_start=%d", 
-             opts.global_vpid_start);
-    putenv(tmp_buf);
-
-    /* get in the right place */
-    if (sched->cwd != NULL) {
-        ret = chdir(sched->cwd);
-        if (ret != 0) {
-            ompi_show_help("help-bootproxy.txt", "could-not-chdir",
-                           true, sched->cwd, strerror(errno));
-            exit(1);
-        }
-    }
+//    sched = OBJ_NEW(ompi_rte_node_schedule_t);
+//    if (NULL == sched) {
+//        ompi_show_help("help-bootproxy.txt", "system-failure", true,
+//                       "OBJ_NEW", strerror(errno));
+//        exit(1);
+//    }
+//
+//    ret = mca_pcm_base_recv_schedule(stdin, 
+//                                     &(opts.cellid), 
+//                                     &(opts.jobid),
+//                                     &(opts.global_vpid_start),
+//                                     &(opts.num_job_procs),
+//                                     sched,
+//                                     &(opts.num_fork_procs));
+//    if (ret != OMPI_SUCCESS) {
+//        ompi_show_help("help-bootproxy.txt", "could-not-receive-schedule",
+//                       true, ret);
+//        exit(1);
+//    }
+//
+//    /* fill our environment */
+//    for (i = 0 ; sched->env[i] != NULL ; ++i) {
+//        putenv(strdup(sched->env[i]));
+//    }
+//    /* constant pcmclient info */
+//    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_cellid=%d", opts.cellid);
+//    putenv(tmp_buf);
+//    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_jobid=%d", opts.jobid);
+//    putenv(tmp_buf);
+//    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_num_procs=%d",
+//             opts.num_job_procs);
+//    putenv(tmp_buf);
+//    asprintf(&tmp_buf, "OMPI_MCA_pcmclient_env_vpid_start=%d", 
+//             opts.global_vpid_start);
+//    putenv(tmp_buf);
+//
+//    /* get in the right place */
+//    if (sched->cwd != NULL) {
+//        ret = chdir(sched->cwd);
+//        if (ret != 0) {
+//            ompi_show_help("help-bootproxy.txt", "could-not-chdir",
+//                           true, sched->cwd, strerror(errno));
+//            exit(1);
+//        }
+//    }
 
     /* do the pre-fork setup */
     started_pids = malloc(sizeof(pid_t) * opts.num_fork_procs);
@@ -237,8 +236,8 @@ main(int argc, char *argv[])
         if (pid < 0) {
             /* error :( */
             orig_errno = errno;
-            ompi_show_help("help-bootproxy.txt", "could-not-fork",
-                           true, sched->argv[0], strerror(errno));
+//            ompi_show_help("help-bootproxy.txt", "could-not-fork",
+//                           true, sched->argv[0], strerror(errno));
             break;
         } else if (pid == 0) {
             /* child */
@@ -254,19 +253,19 @@ main(int argc, char *argv[])
                     close(i);
             }
 
-            execvp(sched->argv[0], sched->argv);
+//            execvp(sched->argv[0], sched->argv);
             /* BWB - fix me - do real path search stuff */
             orig_errno = errno;
-            asprintf(&tmp_buf, "./%s", sched->argv[0]);
-            execvp(tmp_buf, sched->argv);
+//            asprintf(&tmp_buf, "./%s", sched->argv[0]);
+//            execvp(tmp_buf, sched->argv);
             if (ENOENT == errno || ELOOP == errno) {
                 /* if we could have found something, use our errno.
                    otherwisse, use the non-hack errno */
                 orig_errno = errno;
             } 
-            ompi_show_help("help-bootproxy.txt", "could-not-exec",
-                           true, sched->argv[0], sched->cwd, 
-                           strerror(orig_errno));
+//            ompi_show_help("help-bootproxy.txt", "could-not-exec",
+//                           true, sched->argv[0], sched->cwd, 
+//                           strerror(orig_errno));
             exit(errno);
         } else {
             /* parent */
@@ -282,7 +281,7 @@ main(int argc, char *argv[])
         }
     }
 
-    OBJ_RELEASE(sched);
+//    OBJ_RELEASE(sched);
 
     /* if we didn't launch everyone locally, cleanup */
     if (num_running_procs != opts.num_fork_procs) {

@@ -31,8 +31,8 @@
 
 #include "mca/base/base.h"
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 #include "tools/ompid/ompid.h"
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     ompi_list_item_t *item;
     ompi_registry_value_t *value;
     char *hostname, *contact_info;
-    ompi_process_name_t proc_name;
+    orte_process_name_t proc_name;
     int32_t proc_slots;
     int ret=0;
     ompi_cmd_line_t *cmd_line;
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     bool exit_cmd;
     char *usercmd, *str_response;
     ompi_buffer_t buffer;
-    ompi_process_name_t seed={0,0,0};
+    orte_process_name_t seed={0,0,0};
     int recv_tag;
 
     /*
@@ -190,7 +190,7 @@ static void ompi_console_sendcmd(ompi_daemon_cmd_flag_t usercmd)
     ompi_buffer_t cmd;
     ompi_daemon_cmd_flag_t command;
     int recv_tag;
-    ompi_process_name_t seed={0,0,0};
+    orte_process_name_t seed={0,0,0};
 
     ompi_buffer_init(&cmd, 0);
     command = usercmd;

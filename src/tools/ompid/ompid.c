@@ -45,8 +45,8 @@
 #include "util/universe_setup_file_io.h"
 
 #include "mca/base/base.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 #include "runtime/runtime.h"
 
@@ -57,7 +57,7 @@ static ompi_mutex_t ompi_daemon_mutex;
 static ompi_condition_t ompi_daemon_condition;
 static bool ompi_daemon_exit_condition = false;
 
-static void ompi_daemon_recv(int status, ompi_process_name_t* sender,
+static void ompi_daemon_recv(int status, orte_process_name_t* sender,
 			     ompi_buffer_t buffer, int tag,
 			     void* cbdata);
 
@@ -69,8 +69,9 @@ int main(int argc, char *argv[])
     bool allow_multi_user_threads   = false;
     bool have_hidden_threads  = false;
     char *enviro_val, *contact_file;
-    char *filenm, *segment;
+    char *filenm, *segment, *jobidstring;
     ompi_rte_process_status_t my_status;
+    orte_jobid_t my_jobid;
 
     /*
      * Intialize the Open MPI environment
@@ -194,17 +195,23 @@ int main(int argc, char *argv[])
      *
      *  Ensure we own the job status segment first
      */
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT,
-	     ompi_name_server.get_jobid_string(ompi_rte_get_self()));
-    ompi_registry.assign_ownership(segment, ompi_name_server.get_jobid(ompi_rte_get_self()));
+    if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid_string(jobidstring, ompi_rte_get_self()))) {
+       return ret;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
+    if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid(&my_jobid, ompi_rte_get_self()))) {
+       return ret;
+    }
+    ompi_registry.assign_ownership(segment, my_jobid);
     free(segment);
     
-    asprintf(&segment, "%s-%s", OMPI_RTE_OOB_SEGMENT,
-        ompi_name_server.get_jobid_string(ompi_rte_get_self()));
-    ompi_registry.assign_ownership(segment, ompi_name_server.get_jobid(ompi_rte_get_self()));
+    asprintf(&segment, "%s-%s", OMPI_RTE_OOB_SEGMENT, jobidstring);
+    ompi_registry.assign_ownership(segment, my_jobid);
     free(segment);
 
-    my_status.rank = ompi_name_server.get_vpid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != (ret = orte_name_services.get_vpid((orte_vpid_t*)(&my_status.rank), ompi_rte_get_self()))) {
+       return ret;
+    }
     my_status.nodename = strdup(ompi_system_info.nodename);
     my_status.status_key = OMPI_PROC_STARTING;
     my_status.exit_code = 0;
@@ -239,12 +246,10 @@ int main(int argc, char *argv[])
 
 	if (OMPI_SUCCESS != (ret = ompi_write_universe_setup_file(contact_file))) {
 	    if (ompi_daemon_debug) {
-		ompi_output(0, "[%d,%d,%d] ompid: couldn't write setup file", ompi_rte_get_self()->cellid,
-			    ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
+		ompi_output(0, "[%d,%d,%d] ompid: couldn't write setup file", ORTE_NAME_ARGS(*ompi_rte_get_self()));
 	    }
 	} else if (ompi_daemon_debug) {
-	    ompi_output(0, "[%d,%d,%d] ompid: wrote setup file", ompi_rte_get_self()->cellid,
-			ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
+	    ompi_output(0, "[%d,%d,%d] ompid: wrote setup file", ORTE_NAME_ARGS(*ompi_rte_get_self()));
 	}
     }
 
@@ -259,8 +264,7 @@ int main(int argc, char *argv[])
     ompi_rte_vm_register();
 
     if (ompi_daemon_debug) {
-	ompi_output(0, "[%d,%d,%d] ompid: issuing callback", ompi_rte_get_self()->cellid,
-		    ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
+	ompi_output(0, "[%d,%d,%d] ompid: issuing callback", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
      /* register the daemon main callback function */
@@ -275,8 +279,7 @@ int main(int argc, char *argv[])
      */
 
     if (ompi_daemon_debug) {
-	ompi_output(0, "[%d,%d,%d] ompid: setting up event monitor", ompi_rte_get_self()->cellid,
-		    ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
+	ompi_output(0, "[%d,%d,%d] ompid: setting up event monitor", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
      /* setup and enter the event monitor */
@@ -289,8 +292,7 @@ int main(int argc, char *argv[])
     OMPI_THREAD_UNLOCK(&ompi_daemon_mutex);
 
     if (ompi_daemon_debug) {
-	ompi_output(0, "[%d,%d,%d] ompid: mutex cleared - finalizing", ompi_rte_get_self()->cellid,
-		    ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
+	ompi_output(0, "[%d,%d,%d] ompid: mutex cleared - finalizing", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     /* if i'm the seed, remove the universe-setup file */
@@ -305,14 +307,13 @@ int main(int argc, char *argv[])
     ompi_finalize();
 
     if (ompi_daemon_debug) {
-	ompi_output(0, "[%d,%d,%d] ompid: done - exiting", ompi_rte_get_self()->cellid,
-		    ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
+	ompi_output(0, "[%d,%d,%d] ompid: done - exiting", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     exit(0);
 }
 
-static void ompi_daemon_recv(int status, ompi_process_name_t* sender,
+static void ompi_daemon_recv(int status, orte_process_name_t* sender,
 			     ompi_buffer_t buffer, int tag,
 			     void* cbdata)
 {
@@ -324,8 +325,7 @@ static void ompi_daemon_recv(int status, ompi_process_name_t* sender,
     OMPI_THREAD_LOCK(&ompi_daemon_mutex);
 
     if (ompi_daemon_debug) {
-	ompi_output(0, "[%d,%d,%d] ompid: received message", ompi_rte_get_self()->cellid,
-		    ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
+	ompi_output(0, "[%d,%d,%d] ompid: received message", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     if (OMPI_SUCCESS != ompi_buffer_init(&answer, 0)) {

@@ -50,9 +50,8 @@
 
 #include "mca/base/base.h"
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
-#include "mca/pcm/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 #include "tools/ompid/ompid.h"
 
