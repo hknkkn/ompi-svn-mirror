@@ -37,7 +37,7 @@
  */
 static void cmp_constructor(orte_rmaps_base_cmp_t *cmp);
 static void cmp_destructor(orte_rmaps_base_cmp_t *cmp);
-static int compare(ompi_list_item_t *a, ompi_list_item_t *b);
+static int compare(ompi_list_item_t **a, ompi_list_item_t **b);
 
 /*
  * Global variables
@@ -141,10 +141,10 @@ static void cmp_destructor(orte_rmaps_base_cmp_t *cmp)
 }
 
 
-static int compare(ompi_list_item_t *a, ompi_list_item_t *b)
+static int compare(ompi_list_item_t **a, ompi_list_item_t **b)
 {
-    orte_rmaps_base_cmp_t *aa = (orte_rmaps_base_cmp_t *) a;
-    orte_rmaps_base_cmp_t *bb = (orte_rmaps_base_cmp_t *) b;
+    orte_rmaps_base_cmp_t *aa = *((orte_rmaps_base_cmp_t **) a);
+    orte_rmaps_base_cmp_t *bb = *((orte_rmaps_base_cmp_t **) b);
 
     if (aa->priority > bb->priority) {
         return 1;
