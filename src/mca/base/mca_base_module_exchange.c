@@ -14,7 +14,7 @@
 
 #include "ompi_config.h"
 
-#include "include/orte_names.h"
+#include "include/orte_schema.h"
 
 #include <string.h>
 #include "class/ompi_hash_table.h"

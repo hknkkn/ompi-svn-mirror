@@ -20,7 +20,7 @@
 #include "communicator/communicator.h"
 #include "include/constants.h"
 
-#include "include/orte_names.h"
+#include "include/orte_schema.h"
 #include "mca/errmgr/errmgr.h"
 #include "mca/pml/pml.h"
 #include "mca/ns/ns.h"
