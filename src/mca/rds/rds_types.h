@@ -37,6 +37,13 @@
 #define ORTE_RDS_INT_SW             "orte-rds-arch-interconnect-sw"
 #define ORTE_RDS_INT_SW_VERS        "orte-rds-arch-interconnect-sw-version"
 #define ORTE_RDS_MAX_BW             "orte-rds-arch-interconnect-max-bw" /* floating pt number in Mbits/second */
+/* Some nodes in a system may be configured in a custom fashion. At this time, we
+ * aren't sure how to use this info. For now, this key will allow us to "flag" those
+ * nodes that are configured differently, although we won't save the custom config
+ * info until we figure out how to do so. The custom node key, therefore, will be
+ * associated with a string nodename to indicate the customized node
+ */
+#define ORTE_RDS_CUSTOM_NODE        "orte-rds-arch-custom-node"
 
 /* operating system used on nodes within the resource */
 #define ORTE_RDS_OS_TYPE            "orte-rds-os-type"
@@ -63,6 +70,10 @@
 /* allocator and launcher info */
 #define ORTE_RDS_ALLOCATOR      "orte-rds-allocator"
 #define ORTE_RDS_LAUNCHER       "orte-rds-launcher"
+
+/* operational limits */
+#define ORTE_RDS_MAX_PROCS_CPU  "orte-rds-max-procs-per-cpu"
+#define ORTE_RDS_MAX_PROCS_NODE "orte-rds-max-procs-per-node"
 
 
 /*
