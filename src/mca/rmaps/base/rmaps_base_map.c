@@ -413,7 +413,7 @@ int orte_rmaps_base_set_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
             keyvals[1]->value.proc = proc->proc_name;
 
             keyvals[2]->key = strdup(ORTE_NODE_NAME_KEY);
-            keyvals[2]->type = ORTE_INT32;
+            keyvals[2]->type = ORTE_STRING;
             keyvals[2]->value.strptr = strdup(proc->proc_node->node_name);
 
             keyvals[3]->key = strdup(ORTE_PROC_APP_CONTEXT_KEY);

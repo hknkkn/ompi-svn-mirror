@@ -126,6 +126,7 @@ static int orte_rmaps_rr_map_app(
         if(num_alloc == (size_t)app->num_procs)
             break;
         item = next;
+        ompi_list_append(&map->nodes, &rmaps_node->super);
     } 
     map->num_procs = num_alloc;
     return ORTE_SUCCESS;
