@@ -25,6 +25,7 @@
 #include "mca/pls/base/base.h"
 #include "mca/gpr/gpr.h"
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 
 /*
@@ -37,50 +38,54 @@ int orte_rmgr_base_put_app_context(
     size_t num_context)
 {
     char *jobid_string;
-    char *segment;
-    char *tokens[2];
-    orte_gpr_keyval_t** keyvals;
+    orte_gpr_value_t* value;
     size_t i;
     int rc;
 
-    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_string, jobid)))
+    value = OBJ_NEW(orte_gpr_value_t);
+    if (NULL == value) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_string, jobid))) {
+        OBJ_RELEASE(value);
         return rc;
+    }
 
-    /* create the job segment on the registry */
-    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid_string);
-    tokens[0] = "global";
-    tokens[1] = NULL;
+    /* put context info on the job segment of the registry */
+    asprintf(&(value->segment), "%s-%s", ORTE_JOB_SEGMENT, jobid_string);
+    
+    value->num_tokens = 1;
+    value->tokens[0] = strdup("global");
 
-    keyvals = (orte_gpr_keyval_t**)malloc(num_context * sizeof(orte_gpr_keyval_t*));
-    if(NULL == keyvals) 
+    value->cnt = num_context;
+    value->keyvals = (orte_gpr_keyval_t**)malloc(num_context * sizeof(orte_gpr_keyval_t*));
+    if(NULL == value->keyvals) {
+        OBJ_RELEASE(value);
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return OMPI_ERR_OUT_OF_RESOURCE;
-    memset(keyvals, 0, num_context * sizeof(orte_gpr_keyval_t*));
+    }
+    memset(value->keyvals, 0, num_context * sizeof(orte_gpr_keyval_t*));
 
     for(i=0; i<num_context; i++) {
-        orte_gpr_keyval_t* keyval = OBJ_NEW(orte_gpr_keyval_t);
-        if(NULL == keyval) {
+        value->keyvals[i] = OBJ_NEW(orte_gpr_keyval_t);
+        if (NULL == value->keyvals[i]) {
             rc = ORTE_ERR_OUT_OF_RESOURCE;
             goto cleanup;
         }
-        keyval->key = strdup(ORTE_APP_CONTEXT_KEY);
-        keyval->type = ORTE_APP_CONTEXT;
-        keyval->value.app_context = app_context[i];
+        (value->keyvals[i])->key = strdup(ORTE_APP_CONTEXT_KEY);
+        (value->keyvals[i])->type = ORTE_APP_CONTEXT;
+        (value->keyvals[i])->value.app_context = app_context[i];
     }
             
     rc = orte_gpr.put(
         ORTE_GPR_OVERWRITE,
-        segment,
-        tokens,
-        num_context,
-        keyvals);
+        1,
+        &value);
  
 cleanup:
-    for(i=0; i<num_context; i++) {
-        keyvals[i]->value.app_context = NULL;
-        OBJ_RELEASE(keyvals[i]);
-    }
-    free(keyvals);
-    free(segment);
+    OBJ_RELEASE(value);
     free(jobid_string);
     return rc;
 }
