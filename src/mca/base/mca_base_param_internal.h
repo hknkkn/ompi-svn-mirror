@@ -33,6 +33,7 @@
 #include "class/ompi_object.h"
 #include "class/ompi_list.h"
 #include "class/ompi_hash_table.h"
+#include "mca/base/mca_base_param.h"
 
 /**
  * \internal
@@ -46,22 +47,6 @@ typedef union {
     char *stringval;
 } mca_base_param_storage_t;
 
-
-/**
- * \internal
- *
- * The following types are really in this public .h file so that
- * ompi_info can see them.  No one else should use them!
- */
-typedef enum {
-    /** The parameter is of type integer. */
-    MCA_BASE_PARAM_TYPE_INT,
-    /** The parameter is of type string. */
-    MCA_BASE_PARAM_TYPE_STRING,
-    
-    /** Maximum parameter type. */
-    MCA_BASE_PARAM_TYPE_MAX
-} mca_base_param_type_t;
 
 /**
  * \internal
@@ -84,6 +69,10 @@ struct mca_base_param_t {
     /** Full parameter name, in case it is not
        <type>_<component>_<param> */
     char *mbp_full_name;
+    
+    /** Whether this is internal (not meant to be seen / modified by
+        users) or not */
+    bool mbp_internal;
 
     /** Keyval value for MPI attribute parameters */
     int mbp_keyval;
