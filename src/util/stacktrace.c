@@ -46,6 +46,7 @@
  *  @param info with information regarding the reason/send of the signal
  *  @param p 
  *
+ * FIXME: Should distinguish for systems, which don't have siginfo...
  */
 #ifndef WIN32
 static void ompi_show_stackframe (int signo, siginfo_t * info, void * p)
