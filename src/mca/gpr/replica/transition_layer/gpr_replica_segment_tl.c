@@ -25,25 +25,26 @@
 
 #include "gpr_replica_tl.h"
 
-orte_gpr_replica_segment_t *orte_gpr_replica_find_seg(bool create, char *segment)
+int orte_gpr_replica_find_seg(orte_gpr_replica_segment_t **seg,
+                              bool create, char *segment)
 {
-    orte_gpr_replica_dict_t *ptr;
-    orte_gpr_replica_segment_t *seg;
-    orte_gpr_replica_itag_t itag;
     size_t len;
-    int rc;
+    int rc, i;
 
+    /* initialize to nothing */
+    *seg = NULL;
+    
     len = strlen(segment);
     
     /* search the registry segments to find which one is being referenced */
-    seg = (orte_gpr_replica_segment_t*)orte_gpr_replica.segments->addr;
-    for (i=0; i < orte_gpr_replica.segments->size; i++) {
-        if (NULL != seg) {
-            if (0 == strncmp(segment, seg->name, len)) {
-                return seg;
+    *seg = (orte_gpr_replica_segment_t*)(orte_gpr_replica.segments->addr);
+    for (i=0; i < (orte_gpr_replica.segments)->size; i++) {
+        if (NULL != *seg) {
+            if (0 == strncmp(segment, (*seg)->name, len)) {
+                return ORTE_SUCCESS;
             }
         }
-        seg++;
+        (*seg)++;
     }
     
     if (!create) {
@@ -52,12 +53,12 @@ orte_gpr_replica_segment_t *orte_gpr_replica_find_seg(bool create, char *segment
     }
     
     /* add the segment to the registry */
-    seg = OBJ_NEW(orte_gpr_replica_segment_t);
-    seg->name = strdup(segment);
-    if (0 > (rc = orte_pointer_array_add(orte_gpr_replica.segments, (void*)seg))) {
-        OBJ_RELEASE(seg);
-        return NULL;
+    *seg = OBJ_NEW(orte_gpr_replica_segment_t);
+    (*seg)->name = strdup(segment);
+    if (0 > (rc = orte_pointer_array_add(orte_gpr_replica.segments, (void*)(*seg)))) {
+        OBJ_RELEASE(*seg);
+        return rc;
     }
-    seg->itag = rc;
-    return seg;
+    (*seg)->itag = rc;
+    return ORTE_SUCCESS;
 }

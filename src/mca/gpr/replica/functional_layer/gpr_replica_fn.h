@@ -161,6 +161,9 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
 				    orte_gpr_replica_itag_t num_itags_entry,
 				    orte_gpr_replica_itag_t *entry_itags);
 
+int orte_gpr_replica_purge_itag(orte_gpr_replica_segment_t *seg,
+                                orte_gpr_replica_itag_t itag);
+
 
 /*
  * Trigger Operations

@@ -34,7 +34,7 @@
 #include "gpr_replica_api.h"
 #include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
 
-int orte_gpr_replica_define_job_segment(orte_jobid_t jobid, int num_procs)
+int orte_gpr_replica_preallocate_segment(char *name, int num_slots)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

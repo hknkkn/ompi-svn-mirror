@@ -188,7 +188,7 @@ int orte_gpr_proxy_test_internals(int level, ompi_list_t **results);
 /*
  * Job-related functions
  */
-int orte_gpr_proxy_define_job_segment(orte_jobid_t job, int num_procs);
+int orte_gpr_proxy_preallocate_segment(char *name, int num_slots);
 
 int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
                                     orte_buffer_t **msg,

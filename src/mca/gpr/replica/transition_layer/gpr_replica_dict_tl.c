@@ -21,234 +21,200 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
-#include "gpr_replica.h"
-#include "gpr_replica_internals.h"
+#include "class/orte_pointer_array.h"
 
-mca_gpr_replica_dict_t
-*mca_gpr_replica_find_dict_entry(mca_gpr_replica_segment_t *seg, char *token)
+#include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
+
+#include "gpr_replica_tl.h"
+
+int
+orte_gpr_replica_create_itag(orte_gpr_replica_itag_t *itag,
+                             orte_gpr_replica_segment_t *seg, char *name)
 {
-    mca_gpr_replica_dict_t *ptr_key;
+    orte_gpr_replica_dict_t *ptr;
+    int i;
 
-
-    if (NULL == token) { /* just want segment token-key pair */
-	/* search the global-level dict to find entry */
-	for (ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_first(&mca_gpr_replica_head.segment_dict);
-	     ptr_key != (mca_gpr_replica_keytable_t*)ompi_list_get_end(&mca_gpr_replica_head.segment_dict);
-	     ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_next(ptr_key)) {
-	    if (seg->key == ptr_key->key) {
-		return(ptr_key);
-	    }
-	}
-	return NULL; /* couldn't find the entry */
-    }
-
-    /* want specified token-key pair in that segment's dictionary */
-    for (ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_first(&seg->keytable);
-	 ptr_key != (mca_gpr_replica_keytable_t*)ompi_list_get_end(&seg->keytable);
-	 ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_next(ptr_key)) {
-	if (0 == strcmp(token, ptr_key->token)) {
-	    return(ptr_key);
-	}
-    }
-    return(NULL); /* couldn't find the specified entry */
-}
-
-
-mca_gpr_replica_key_t mca_gpr_replica_get_key(mca_gpr_replica_segment_t *seg, char *token)
-{
-    mca_gpr_replica_keytable_t *ptr_key;
-
-    /* find the dictionary entry that matches token */
-    ptr_key = mca_gpr_replica_find_dict_entry(seg, token);
-    if (NULL != ptr_key) {
-	return(ptr_key->key);
-    }
-    return MCA_GPR_REPLICA_KEY_MAX; /* couldn't find dictionary entry */
-}
-
-
-char *mca_gpr_replica_get_token(mca_gpr_replica_segment_t *seg, mca_gpr_replica_key_t key)
-{
-    mca_gpr_replica_keytable_t *ptr_key;
-    char *answer;
-
-    if (NULL == seg) {
-	/* want to find a matching token for a segment name */
-	for (ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_first(&mca_gpr_replica_head.segment_dict);
-	     ptr_key != (mca_gpr_replica_keytable_t*)ompi_list_get_end(&mca_gpr_replica_head.segment_dict);
-	     ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_next(ptr_key)) {
-	    if (key == ptr_key->key) {
-		answer = strdup(ptr_key->token);
-		return answer;
-	    }
-	}
-	return NULL;  /* couldn't find the specified entry */
-    }
-
-    /* find the matching key */
-    for (ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_first(&seg->keytable);
-	 ptr_key != (mca_gpr_replica_keytable_t*)ompi_list_get_end(&seg->keytable);
-	 ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_next(ptr_key)) {
-	if (key == ptr_key->key) {
-	    answer = strdup(ptr_key->token);
-	    return answer;
-	}
-    }
-    return(NULL); /* couldn't find the specified entry */
-}
-
-mca_gpr_replica_key_t
-*mca_gpr_replica_get_key_list(mca_gpr_replica_segment_t *seg,
-			      char **tokens, int *num_tokens)
-{
-    char **tokptr;
-    mca_gpr_replica_key_t *keys, *key2;
-    int num_keys;
-
-    *num_tokens = 0;
-
-    /* check for wild-card case */
-    if (NULL == tokens) {
-	return NULL;
-    }
-
-    tokptr = tokens;
-    num_keys = 0;
-    while (NULL != *tokptr) {
-	num_keys++;
-	tokptr++;
-    }
-
-    keys = (mca_gpr_replica_key_t*)malloc(num_keys*sizeof(mca_gpr_replica_key_t));
-    key2 = keys;
-    *num_tokens = num_keys;
-
-    tokptr = tokens;
-
-    while (NULL != *tokptr) {  /* traverse array of tokens until NULL */
-	*key2 = mca_gpr_replica_get_key(seg, *tokptr);
-	if (MCA_GPR_REPLICA_KEY_MAX == *key2) {
-	    *key2 = mca_gpr_replica_define_key(seg, *tokptr);
-	}
-	tokptr++; key2++;
-    }
-    return keys;
-}
-
-mca_gpr_replica_key_t
-mca_gpr_replica_define_key(mca_gpr_replica_segment_t *seg, char *token)
-{
-    mca_gpr_replica_keytable_t *ptr_key, *new;
-
-    /* if token is NULL, error */
-    if (NULL == token) {
-	return MCA_GPR_REPLICA_KEY_MAX;
-    }
-
-    /* if seg is NULL, use token to define new segment name in global dictionary */
-    if (NULL == seg) {
-	for (ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_first(&mca_gpr_replica_head.segment_dict);
-	     ptr_key != (mca_gpr_replica_keytable_t*)ompi_list_get_end(&mca_gpr_replica_head.segment_dict);
-	     ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_next(ptr_key)) {
-	    if (0 == strcmp(token, ptr_key->token)) {
-		return ptr_key->key; /* already taken, report value */
-	    }
-	}
-	/* okay, token is unique - create dictionary entry */
-	new = OBJ_NEW(mca_gpr_replica_keytable_t);
-	new->token = strdup(token);
-	if (0 == ompi_list_get_size(&mca_gpr_replica_head.freekeys)) { /* no keys waiting for reuse */
-	    mca_gpr_replica_head.lastkey++;
-	    new->key = mca_gpr_replica_head.lastkey;
-	} else {
-	    ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_remove_first(&mca_gpr_replica_head.freekeys);
-	    new->key = ptr_key->key;
-	}
-	ompi_list_append(&mca_gpr_replica_head.segment_dict, &new->item);
-	return new->key;
+    /* default to illegal value */
+    *itag = ORTE_GPR_REPLICA_ITAG_MAX;
+    
+    /* if name or seg is NULL, error */
+    if (NULL == name || NULL == seg) {
+        return ORTE_ERR_BAD_PARAM;
     }
 
     /* check seg's dictionary to ensure uniqueness */
-    for (ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_first(&seg->keytable);
-	 ptr_key != (mca_gpr_replica_keytable_t*)ompi_list_get_end(&seg->keytable);
-	 ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_get_next(ptr_key)) {
-	if (0 == strcmp(token, ptr_key->token)) {
-	    return ptr_key->key; /* already taken, report value */
-	}
+    ptr = (orte_gpr_replica_dict_t*)(seg->dict)->addr;
+    for (i=0; i < (seg->dict)->size; i++) {
+        if (NULL != ptr) {
+            if (0 == strncmp(ptr->entry, name, strlen(ptr->entry))) { /* already present */
+                *itag = ptr->itag;
+                return ORTE_SUCCESS;
+            }
+        }
+        ptr++;
     }
 
-    /* okay, token is unique - create dictionary entry */
-    new = OBJ_NEW(mca_gpr_replica_keytable_t);
-    new->token = strdup(token);
-    if (0 == ompi_list_get_size(&seg->freekeys)) { /* no keys waiting for reuse */
-	seg->lastkey++;
-	new->key = seg->lastkey;
-    } else {
-	ptr_key = (mca_gpr_replica_keytable_t*)ompi_list_remove_first(&seg->freekeys);
-	new->key = ptr_key->key;
+    /* okay, name is unique - create dictionary entry */
+    ptr = (orte_gpr_replica_dict_t*)malloc(sizeof(orte_gpr_replica_dict_t));
+    ptr->entry = strdup(name);
+    if (0 < (i = orte_pointer_array_add(seg->dict, (void*)ptr))) {
+        *itag = ORTE_GPR_REPLICA_ITAG_MAX;
+        free(ptr);
+        return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    ompi_list_append(&seg->keytable, &new->item);
-    return new->key;
+    
+    *itag = (orte_gpr_replica_itag_t)i;
+    ptr->itag = *itag;
+    return ORTE_SUCCESS;
 }
 
 
-int mca_gpr_replica_delete_key(mca_gpr_replica_segment_t *seg, char *token)
+int orte_gpr_replica_delete_itag(orte_gpr_replica_segment_t *seg, char *name)
 {
-    mca_gpr_replica_core_t *reg;
-    mca_gpr_replica_keytable_t *ptr_seg, *ptr_key, *new;
-    mca_gpr_replica_key_t *key;
-    uint i;
+    orte_gpr_replica_itag_t itag;
+    int rc;
 
-    if (NULL == token) {
-	/* remove the dictionary entry from the global registry dictionary*/
-	ptr_seg = mca_gpr_replica_find_dict_entry(seg, NULL);
-	if (NULL == ptr_seg) { /* failed to find dictionary entry */
-	    return OMPI_ERROR;
-	}
-
-	/* add key to global registry's freekey list */
-	new = OBJ_NEW(mca_gpr_replica_keytable_t);
-	new->token = NULL;
-	new->key = ptr_seg->key;
-	ompi_list_append(&mca_gpr_replica_head.freekeys, &new->item);
-
-	/* remove the dictionary entry */
-	ompi_list_remove_item(&mca_gpr_replica_head.segment_dict, &ptr_seg->item);
-
-
-	return(OMPI_SUCCESS);
-
+    /* check for errors */
+    if (NULL == name || NULL == seg) {
+        return ORTE_ERR_BAD_PARAM;
     }
 
-    /* token not null, so need to find dictionary element to delete */
-    ptr_key = mca_gpr_replica_find_dict_entry(seg, token);
-    if (NULL != ptr_key) {
-	/* found key in dictionary */
-	/* need to search this segment's registry to find all instances of key & "delete" them */
-	for (reg = (mca_gpr_replica_core_t*)ompi_list_get_first(&seg->registry_entries);
-	     reg != (mca_gpr_replica_core_t*)ompi_list_get_end(&seg->registry_entries);
-	     reg = (mca_gpr_replica_core_t*)ompi_list_get_next(reg)) {
-
-	    /* check the key list */
-	    for (i=0, key=reg->keys; i < reg->num_keys; i++, key++) {
-		if (ptr_key->key == *key) {  /* found match */
-		    *key = MCA_GPR_REPLICA_KEY_MAX;
-		}
-	    }
-
-	    /* add key to this segment's freekey list */
-	    new = OBJ_NEW(mca_gpr_replica_keytable_t);
-	    new->token = NULL;
-	    new->key = ptr_key->key;
-	    ompi_list_append(&seg->freekeys, &new->item);
-
-	    /* now remove the dictionary entry from the segment's dictionary */
-	    ompi_list_remove_item(&seg->keytable, &ptr_key->item);
-	    return(OMPI_SUCCESS);
-	}
+    /* find dictionary element to delete */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&itag, seg, name))) {
+        return rc;
     }
-    return(OMPI_ERROR); /* if we get here, then we couldn't find token in dictionary */
+    
+    /* found name in dictionary */
+    /* need to search this segment's registry to find all instances
+     * that name & delete them
+     */
+     if (ORTE_SUCCESS != (rc = orte_gpr_replica_purge_itag(seg, itag))) {
+        return rc;
+     }
+     
+     /* remove itag from segment dictionary */
+     return orte_pointer_array_set_item(seg->dict, itag, NULL);
+}
+
+
+int
+orte_gpr_replica_dict_lookup(orte_gpr_replica_itag_t *itag,
+                             orte_gpr_replica_segment_t *seg, char *name)
+{
+    orte_gpr_replica_dict_t *ptr;
+    int i;
+    
+    /* initialize to illegal value */
+    *itag = ORTE_GPR_REPLICA_ITAG_MAX;
+    
+    /* protect against error */
+    if (NULL == seg) {
+        return ORTE_ERR_BAD_PARAM;
+    }
+    
+    if (NULL == name) { /* just want segment token-itag pair */
+        *itag = seg->itag;
+        return ORTE_SUCCESS;
+	}
+
+    /* want specified token-itag pair in that segment's dictionary */
+    ptr = (orte_gpr_replica_dict_t*)((seg->dict)->addr);
+    for (i=0; i < (seg->dict)->size; i++) {
+        if (NULL != ptr) {
+    	       if (0 == strncmp(ptr->entry, name, strlen(ptr->entry))) {
+                *itag = ptr->itag;
+                return ORTE_SUCCESS;
+            }
+        }
+        ptr++;
+	}
+
+    return ORTE_ERR_BAD_PARAM; /* couldn't find the specified entry */
+}
+
+
+int orte_gpr_replica_dict_reverse_lookup(char **name,
+        orte_gpr_replica_segment_t *seg, orte_gpr_replica_itag_t itag)
+{
+    orte_gpr_replica_dict_t *ptr;
+    orte_gpr_replica_segment_t *segptr;
+    int i;
+
+    /* initialize to nothing */
+    *name = NULL;
+    
+    if (NULL == seg) {
+	   /* want to find a matching token for a segment name */
+       segptr = (orte_gpr_replica_segment_t*)(orte_gpr_replica.segments->addr);
+	   for (i=0; i < orte_gpr_replica.segments->size; i++) {
+	       if (itag == segptr->itag) {
+		   *name = strdup(segptr->name);
+		   return ORTE_SUCCESS;
+	       }
+	   }
+	   return ORTE_ERR_BAD_PARAM;  /* couldn't find the specified entry */
+    }
+
+    /* seg is provides - find the matching itag */
+    ptr = (orte_gpr_replica_dict_t*)((seg->dict)->addr);
+    for (i=0; i < (seg->dict)->size; i++) {
+        if (itag == ptr->itag) {
+            *name = strdup(ptr->entry);
+            return ORTE_SUCCESS;
+        }
+        ptr++;
+    }
+
+    return ORTE_ERR_BAD_PARAM; /* couldn't find the specified entry */
+}
+
+int
+orte_gpr_replica_get_itag_list(orte_gpr_replica_itag_t **itaglist,
+                    orte_gpr_replica_segment_t *seg, char **names,
+                    int *num_names)
+{
+    char **namptr;
+    orte_gpr_replica_itag_t *itagptr;
+    int num_itags, rc;
+
+    *num_names = 0;
+    *itaglist = NULL;
+
+    /* check for errors */
+    if (NULL == seg) {
+        return ORTE_ERR_BAD_PARAM;
+    }
+    
+    /* check for wild-card case */
+    if (NULL == names) {
+	   return ORTE_SUCCESS;
+    }
+
+    /* count the number of names */
+    namptr = names;
+    num_itags = 0;
+    while (NULL != *namptr) {
+	   num_itags++;
+	   namptr++;
+    }
+
+    *itaglist = (orte_gpr_replica_itag_t*)malloc(num_itags*sizeof(orte_gpr_replica_itag_t));
+    if (NULL == *itaglist) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    itagptr = *itaglist;
+    *num_names = num_itags;
+
+    namptr = names;
+
+    while (NULL != *namptr) {  /* traverse array of names until NULL */
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(itagptr, seg, *namptr))) {
+            return rc;
+        }
+	    namptr++; itagptr++;
+    }
+    return ORTE_SUCCESS;
 }
 

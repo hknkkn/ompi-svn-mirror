@@ -143,7 +143,7 @@ int orte_gpr_replica_dump(int output_id);
 /*
  * Job-related functions
  */
-int orte_gpr_replica_define_job_segment(orte_jobid_t job, int num_procs);
+int orte_gpr_replica_preallocate_segment(char *name, int num_slots);
 
 void orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message);
 

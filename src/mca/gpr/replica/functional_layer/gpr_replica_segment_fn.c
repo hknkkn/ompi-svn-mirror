@@ -37,3 +37,19 @@ int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg)
     
     return ORTE_SUCCESS;
 }
+
+int orte_gpr_replica_purge_itag(orte_gpr_replica_segment_t *seg,
+                                orte_gpr_replica_itag_t itag)
+{
+     /*
+     * Begin by looping through the segment's containers and check
+     * their descriptions first - if removing this name leaves that
+     * list empty, then remove the container.
+     * If the container isn't to be removed, then loop through all
+     * the container's keyvalue pairs and check the "key" - if
+     * it matches, then remove that pair. If all pairs are removed,
+     * then remove the container
+     * */
+
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}

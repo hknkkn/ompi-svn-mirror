@@ -260,8 +260,8 @@ typedef int (*orte_gpr_base_module_cleanup_proc_fn_t)(bool purge, orte_process_n
  * command - thus allowing the registry to allocate the base storage for all
  * the processes in a single malloc.
  * 
- * @param job The orte_jobid_t jobid of the job.
- * @param num_procs The number of processes expected in this job. Usually, this
+ * @param name A character string indicating the name of the segment.
+ * @param num_slots The number of containers expected in this segment. This
  * is just the starting number requested by the user - the registry will
  * dynamically expand the segment as required.
  * 
@@ -269,10 +269,10 @@ typedef int (*orte_gpr_base_module_cleanup_proc_fn_t)(bool purge, orte_process_n
  * @retval ORTE_ERROR(s) An appropriate error code is returned.
  * 
  * @code
- * status_code = orte_gpr.define_job_segment(jobid, num_procs);
+ * status_code = orte_gpr.preallocate_segment("MY_SEGMENT", num_slots);
  * @endcode
  */
-typedef int (*orte_gpr_base_module_define_job_segment_fn_t)(orte_jobid_t job, int num_procs);
+typedef int (*orte_gpr_base_module_preallocate_segment_fn_t)(char *name, int num_slots);
 
 /*
  * Delete a segment from the registry (BLOCKING)
@@ -712,7 +712,7 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_delete_segment_nb_fn_t delete_segment_nb;
     orte_gpr_base_module_index_nb_fn_t index_nb;
     /* JOB-RELATED OPERATIONS */
-    orte_gpr_base_module_define_job_segment_fn_t define_job_segment;
+    orte_gpr_base_module_preallocate_segment_fn_t preallocate_segment;
     orte_gpr_base_module_get_startup_msg_fn_t get_startup_msg;
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_base_module_subscribe_fn_t subscribe;
