@@ -98,11 +98,11 @@ static int orte_rmgr_urm_create(
     }
 
     /* setup the launch stage gate counters */
-    if (ORTE_SUCCESS !=
+/*    if (ORTE_SUCCESS !=
         (rc = orte_rmgr_base_proc_stage_gate_init(*jobid))) {
         return rc;
     }
-    
+*/    
     return ORTE_SUCCESS;
 }
 
