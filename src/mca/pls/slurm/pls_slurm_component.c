@@ -93,7 +93,7 @@ orte_pls_base_component_1_0_0_t mca_pls_slurm_component = {
 static int pls_slurm_open(void)
 {
     param_priority = 
-        mca_base_param_register_int("pls", "slurm", "priority", NULL, 50);
+        mca_base_param_register_int("pls", "slurm", "priority", NULL, 75);
 
     return ORTE_SUCCESS;
 }
