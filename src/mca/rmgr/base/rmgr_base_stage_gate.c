@@ -120,7 +120,6 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
     sub.cbfunc = orte_rmgr_base_proc_stage_gate_mgr;
     sub.user_tag = NULL;
     
-    
     /* setup the trigger information - initialize the common elements */
     OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
     trig.addr_mode = ORTE_GPR_TOKENS_XAND;
@@ -217,6 +216,7 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
      * any process abnormally terminates - if so, then call the stage_gate_mgr_abort
      * so it can in turn order the job to be aborted
      */
+    sub.cbfunc = orte_rmgr_base_proc_stage_gate_mgr_abort;
     sub.keys[0] = strdup(ORTE_PROC_NUM_ABORTED);
     if (NULL == sub.keys[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
@@ -270,7 +270,6 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
 
     OBJ_DESTRUCT(&sub);
     OBJ_DESTRUCT(&trig);
-
     return ORTE_SUCCESS;
 }
 
@@ -284,9 +283,6 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
     int i, j, n, k, rc;
     orte_buffer_t msg;
     orte_jobid_t job;
-    
-
-    orte_gpr.dump_notify_data(data, 0);
     
     /* get the jobid from the segment name */
     if (ORTE_SUCCESS != (rc = orte_schema.extract_jobid_from_segment_name(&job, data->segment))) {
