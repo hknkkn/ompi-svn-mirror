@@ -29,16 +29,32 @@
  * Local functions
  */
 static int pls_fork_launch(orte_jobid_t jobid);
+static int pls_fork_terminate_job(orte_jobid_t jobid);
+static int pls_fork_terminate_proc(const orte_process_name_t *name);
 static int pls_fork_finalize(void);
 
 
 orte_pls_base_module_1_0_0_t orte_pls_fork_module = {
     pls_fork_launch,
+    pls_fork_terminate_job,
+    pls_fork_terminate_proc,
     pls_fork_finalize
 };
 
 
 static int pls_fork_launch(orte_jobid_t jobid)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_fork_terminate_job(orte_jobid_t jobid)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_fork_terminate_proc(const orte_process_name_t *name)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

@@ -28,23 +28,39 @@
 /*
  * Local functions
  */
-static int rsh_launch(orte_jobid_t jobid);
-static int rsh_finalize(void);
+static int pls_rsh_launch(orte_jobid_t jobid);
+static int pls_rsh_terminate_job(orte_jobid_t jobid);
+static int pls_rsh_terminate_proc(const orte_process_name_t *name);
+static int pls_rsh_finalize(void);
 
 
 orte_pls_base_module_1_0_0_t orte_pls_rsh_module = {
-    rsh_launch,
-    rsh_finalize
+    pls_rsh_launch,
+    pls_rsh_terminate_job,
+    pls_rsh_terminate_proc,
+    pls_rsh_finalize
 };
 
 
-static int rsh_launch(orte_jobid_t jobid)
+static int pls_rsh_launch(orte_jobid_t jobid)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-static int rsh_finalize(void)
+static int pls_rsh_terminate_job(orte_jobid_t jobid)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_rsh_terminate_proc(const orte_process_name_t *name)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_rsh_finalize(void)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

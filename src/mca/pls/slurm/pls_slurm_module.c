@@ -29,16 +29,32 @@
  * Local functions
  */
 static int pls_slurm_launch(orte_jobid_t jobid);
+static int pls_slurm_terminate_job(orte_jobid_t jobid);
+static int pls_slurm_terminate_proc(const orte_process_name_t *name);
 static int pls_slurm_finalize(void);
 
 
 orte_pls_base_module_1_0_0_t orte_pls_slurm_module = {
     pls_slurm_launch,
+    pls_slurm_terminate_job,
+    pls_slurm_terminate_proc,
     pls_slurm_finalize
 };
 
 
 static int pls_slurm_launch(orte_jobid_t jobid)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_slurm_terminate_job(orte_jobid_t jobid)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_slurm_terminate_proc(const orte_process_name_t *name)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

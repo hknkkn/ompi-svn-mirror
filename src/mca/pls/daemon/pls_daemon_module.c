@@ -29,16 +29,32 @@
  * Local functions
  */
 static int pls_daemon_launch(orte_jobid_t jobid);
+static int pls_daemon_terminate_job(orte_jobid_t jobid);
+static int pls_daemon_terminate_proc(const orte_process_name_t *name);
 static int pls_daemon_finalize(void);
 
 
 orte_pls_base_module_1_0_0_t orte_pls_daemon_module = {
     pls_daemon_launch,
+    pls_daemon_terminate_job,
+    pls_daemon_terminate_proc,
     pls_daemon_finalize
 };
 
 
 static int pls_daemon_launch(orte_jobid_t jobid)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_daemon_terminate_job(orte_jobid_t jobid)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_daemon_terminate_proc(const orte_process_name_t *name)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
