@@ -478,6 +478,8 @@ char *ompi_cmd_line_get_usage_msg(ompi_cmd_line_t *cmd)
     if (NULL != argv) {
         ret = ompi_argv_join(argv, '\n');
         ompi_argv_free(argv);
+    } else {
+        ret = strdup("");
     }
 
     /* Thread serialization */
