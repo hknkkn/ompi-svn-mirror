@@ -20,8 +20,8 @@ DIST_SUBDIRS = base $(MCA_orte_ras_ALL_SUBDIRS)
 # Source code files
 
 headers = \
-	orte_ras_types.h \
-	orte_ras.h
+	ras_types.h \
+	ras.h
 
 # Conditionally install the header files
 

@@ -122,7 +122,6 @@ libmpi_la_LIBADD = \
         mca/pml/base/libmca_pml_base.la $(MCA_pml_STATIC_LTLIBS) \
         mca/ptl/base/libmca_ptl_base.la $(MCA_ptl_STATIC_LTLIBS) \
         mca/rml/base/libmca_rml_base.la $(MCA_rml_STATIC_LTLIBS) \
-        mca/rdas/base/libmca_rdas_base.la $(MCA_rdas_STATIC_LTLIBS) \
         mca/soh/base/libmca_soh_base.la $(MCA_soh_STATIC_LTLIBS) \
         mca/topo/base/libmca_topo_base.la $(MCA_topo_STATIC_LTLIBS) \
         mpi/c/libmpi_c.la $(c_mpi_lib) $(c_pmpi_lib) \

@@ -114,8 +114,8 @@ void ompi_info::open_components()
   mca_coll_base_open();
   component_map["coll"] = &mca_coll_base_components_opened;
 
-  mca_gpr_base_open();
-  component_map["gpr"] = &mca_gpr_base_components_available;
+  orte_gpr_base_open();
+  component_map["gpr"] = &orte_gpr_base_components_available;
 
   mca_io_base_open();
   component_map["io"] = &mca_io_base_components_opened;
@@ -174,7 +174,7 @@ void ompi_info::close_components()
   if (opened_components) {
     mca_oob_base_close();
     orte_ns_base_close();
-    mca_gpr_base_close();
+    orte_gpr_base_close();
 #if 0
     // JMS waiting for ralph to finish
     mca_soh_base_close();

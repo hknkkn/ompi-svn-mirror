@@ -39,6 +39,7 @@
 
 #include "mca/mca.h"
 #include "mca/ns/ns_types.h"
+#include "mca/rml/rml_types.h"
 
 #include "dps/dps_types.h"
 #include "mca/gpr/gpr_types.h"

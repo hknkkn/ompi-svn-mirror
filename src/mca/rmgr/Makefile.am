@@ -20,8 +20,8 @@ DIST_SUBDIRS = base $(MCA_orte_rmgr_ALL_SUBDIRS)
 # Source code files
 
 headers = \
-	orte_rmgr_types.h \
-	orte_rmgr.h
+	rmgr_types.h \
+	rmgr.h
 
 # Conditionally install the header files
 

@@ -36,7 +36,9 @@
  */
 
 orte_rml_base_t orte_rml_base;
-
+orte_rml_module_t orte_rml;
+orte_process_name_t orte_rml_name_any;
+orte_process_name_t orte_rml_name_seed;
 
 /**
  * Function for finding and opening either all MCA components, or the one

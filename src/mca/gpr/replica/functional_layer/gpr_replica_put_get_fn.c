@@ -30,8 +30,7 @@
 int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 			   orte_gpr_replica_segment_t *seg,
                 orte_gpr_replica_itag_t *token_itags, int num_tokens,
-                orte_gpr_replica_itag_t *key_tags, int num_keys,
-                size_t cnt, orte_gpr_replica_itagval_t **itagvals,
+                size_t cnt, orte_gpr_keyval_t *keyvals,
 			   int8_t *action_taken)
 {
 #if 0
@@ -111,8 +110,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 int orte_gpr_replica_put_nb_fn(orte_gpr_addr_mode_t addr_mode,
                 orte_gpr_replica_segment_t *seg,
                 orte_gpr_replica_itag_t *token_itags, int num_tokens,
-                orte_gpr_replica_itag_t *key_tags, int num_keys,
-                size_t cnt, orte_gpr_replica_itagval_t **itagvals,
+                size_t cnt, orte_gpr_keyval_t *keyvals,
                 orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
