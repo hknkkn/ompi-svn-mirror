@@ -225,6 +225,8 @@ orte_gpr_replica_trig_op_add_target(orte_gpr_replica_triggers_t *trig,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
+    (trig->num_targets)++;
+    
     return ORTE_SUCCESS;
 }
 

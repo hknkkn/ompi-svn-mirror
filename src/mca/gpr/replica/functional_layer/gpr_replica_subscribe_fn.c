@@ -37,11 +37,11 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action,
                                   orte_gpr_value_t *trigval,
                                   orte_gpr_notify_id_t local_idtag)
 {
-    orte_gpr_replica_triggers_t *trig;
-    orte_gpr_replica_container_t **cptr, *cptr2;
-    orte_gpr_replica_itag_t itag, *tokentags;
-    orte_gpr_keyval_t *kptr;
-    orte_gpr_replica_itagval_t *iptr;
+    orte_gpr_replica_triggers_t *trig=NULL;
+    orte_gpr_replica_container_t **cptr=NULL, *cptr2=NULL;
+    orte_gpr_replica_itag_t itag, *tokentags=NULL;
+    orte_gpr_keyval_t *kptr=NULL;
+    orte_gpr_replica_itagval_t *iptr=NULL;
     orte_gpr_replica_addr_mode_t tok_mode, key_mode;
     int i, j, rc, num_tokens, num_found;
     bool found;

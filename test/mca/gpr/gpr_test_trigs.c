@@ -36,6 +36,9 @@
 #include "util/proc_info.h"
 #include "util/sys_info.h"
 
+#include "mca/errmgr/errmgr.h"
+#include "mca/errmgr/base/base.h"
+
 #include "mca/gpr/base/base.h"
 #include "mca/gpr/replica/api_layer/gpr_replica_api.h"
 #include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
@@ -52,11 +55,20 @@ static void test_cbfunc(orte_gpr_notify_message_t *notify_msg, void *user_tag);
 
 int main(int argc, char **argv)
 {
-    int rc, num_names, num_found;
-    int i, j, cnt;
-    orte_gpr_value_t value, trig;
+    int rc, num_names, num_found, num_counters=6;
+    int i, j, cnt, ret;
+    orte_gpr_value_t *values, value, trig;
     orte_gpr_notify_id_t sub;
-    
+    char* keys[] = {
+        /* changes to this ordering need to be reflected in code below */
+        ORTE_PROC_NUM_AT_STG1,
+        ORTE_PROC_NUM_AT_STG2,
+        ORTE_PROC_NUM_AT_STG3,
+        ORTE_PROC_NUM_FINALIZED,
+        ORTE_PROC_NUM_ABORTED,
+        ORTE_PROC_NUM_TERMINATED
+    };
+
     test_init("test_gpr_replica_trigs");
 
    /*  test_out = fopen( "test_gpr_replica_out", "w+" ); */
@@ -124,6 +136,13 @@ int main(int argc, char **argv)
         exit (1);
     }
     
+    if (ORTE_SUCCESS == orte_errmgr_base_open()) {
+        fprintf(test_out, "error mgr started\n");
+    } else {
+        fprintf(test_out, "error mgr could not start\n");
+        exit (1);
+    }
+    
     OBJ_CONSTRUCT(&value, orte_gpr_value_t);
     value.addr_mode = ORTE_GPR_TOKENS_OR;
     value.segment = strdup("test-segment");
@@ -131,9 +150,10 @@ int main(int argc, char **argv)
     value.tokens = NULL;
     value.cnt = 1;
     value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     value.keyvals[0]->key = strdup("dummy");
     value.keyvals[0]->type = ORTE_INT16;
-    value.keyvals[0]->value.int16 = 1;
+    value.keyvals[0]->value.i16 = 1;
     
     fprintf(stderr, "register subscription on segment\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_NOTIFY_ADD_ENTRY,
@@ -149,9 +169,75 @@ int main(int argc, char **argv)
     } else {
         fprintf(test_out, "gpr_test_trigs: subscribe on seg registered\n");
     }
+    OBJ_DESTRUCT(&value);
     
     orte_gpr_replica_dump(0);
 
+    /* setup some test counters */
+    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+    value.addr_mode = ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
+    value.segment = strdup("test-segment");
+    value.tokens = (char**)malloc(sizeof(char*));
+    if (NULL == value.tokens) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    value.tokens[0] = strdup(ORTE_JOB_GLOBALS); /* put counters in the segment's globals container */
+    value.num_tokens = 1;
+    value.cnt = num_counters;
+    value.keyvals = (orte_gpr_keyval_t**)malloc(num_counters * sizeof(orte_gpr_keyval_t*));
+    if (NULL == value.keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    for (i=0; i < num_counters; i++) {
+        value.keyvals[i] = OBJ_NEW(orte_gpr_keyval_t);
+        if (NULL == value.keyvals[i]) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            OBJ_DESTRUCT(&value);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        value.keyvals[i]->key = strdup(keys[i]);
+        value.keyvals[i]->type = ORTE_INT32;
+        value.keyvals[i]->value.i32 = 0;
+    }
+    values = &value;
+    
+    fprintf(test_out, "putting counters on registry\n");
+    
+    /* put the counters on the registry */
+    if (ORTE_SUCCESS != (rc = orte_gpr.put(1, &values))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&value);
+        return rc;
+    }
+    
+    orte_gpr_replica_dump(0);
+
+    fprintf(test_out, "incrementing all counters\n");
+    
+    /* increment the counters */
+    if (ORTE_SUCCESS != (rc = orte_gpr.increment_value(&value))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&value);
+        return rc;
+    }
+    
+    orte_gpr_replica_dump(0);
+    
+    fprintf(test_out, "decrementing all counters\n");
+    
+    /* decrement the counters */
+    if (ORTE_SUCCESS != (rc = orte_gpr.decrement_value(&value))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&value);
+        return rc;
+    }
+    
+    orte_gpr_replica_dump(0);
+    
 #if 0
     fprintf(stderr, "put\n");
     kptr = OBJ_NEW(orte_gpr_keyval_t);
@@ -237,7 +323,7 @@ void test_cbfunc(orte_gpr_notify_message_t *msg, void *tag)
 {
     fprintf(test_out, "TRIGGER FIRED AND RECEIVED\n");
     
-    fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", msg->segment, msg->cnt);
+    fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", (msg->values[0])->segment, msg->cnt);
     
     OBJ_RELEASE(msg);
 }

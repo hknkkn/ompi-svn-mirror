@@ -394,7 +394,7 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    trig.keyvals[0]->key = strdup(ORTE_PROC_NUM_PROCS);
+    trig.keyvals[0]->key = strdup(ORTE_JOB_SLOTS_KEY);
     trig.keyvals[0]->type = ORTE_NULL;
     trig.keyvals[1] = OBJ_NEW(orte_gpr_keyval_t);
     if (NULL == trig.keyvals[1]) {

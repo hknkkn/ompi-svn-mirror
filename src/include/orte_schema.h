@@ -73,7 +73,7 @@ extern char *orte_error_strings[];
 #define ORTE_NODE_SLOTS_MAX_KEY     "orte-node-slots-max"
 #define ORTE_NODE_ALLOC_KEY         "orte-node-alloc"
 #define ORTE_JOB_APP_CONTEXT_KEY    "orte-job-app-context"
-#define ORTE_JOB_SLOTS_KEY          "orte-job-slots"
+#define ORTE_JOB_SLOTS_KEY          "orte-job-slots"                /**< number of procs in job */
 #define ORTE_JOB_VPID_START_KEY     "orte-job-vpid-start"
 #define ORTE_JOB_VPID_RANGE_KEY     "orte-job-vpid-range"
 #define ORTE_JOB_IOF_KEY            "orte-job-iof"
@@ -83,13 +83,12 @@ extern char *orte_error_strings[];
 #define ORTE_PROC_STATE_KEY         "orte-proc-state"
 #define ORTE_PROC_APP_CONTEXT_KEY   "orte-proc-app-context"
 #define ORTE_PROC_EXIT_CODE_KEY     "orte-proc-exit-code"
-#define ORTE_PROC_NUM_PROCS         "orte-proc-num-procs"
 #define ORTE_PROC_NUM_ALIVE         "orte-proc-num-alive"
 #define ORTE_PROC_NUM_ABORTED       "orte-proc-num-aborted"
 #define ORTE_PROC_NUM_AT_STG1       "orte-proc-num-stg1"
 #define ORTE_PROC_NUM_AT_STG2       "orte-proc-num-stg2"
 #define ORTE_PROC_NUM_AT_STG3       "orte-proc-num-stg3"
-#define ORTE_PROC_NUM_AT_STG4       "orte-proc-num-stg4"
+#define ORTE_PROC_NUM_FINALIZED     "orte-proc-num-finalized"
 #define ORTE_PROC_NUM_TERMINATED    "orte-proc-num-terminated"
 
 /*

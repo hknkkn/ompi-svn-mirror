@@ -252,6 +252,7 @@ static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
 
+    trig->num_targets = 0;
     orte_pointer_array_init(&(trig->targets), orte_gpr_replica_globals.block_size,
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);

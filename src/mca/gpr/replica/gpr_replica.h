@@ -200,6 +200,7 @@ struct orte_gpr_replica_triggers_t {
      * can quickly detect whether or not this subscription should fire whenever
      * the container/value is affected
      */
+    int num_targets;
     orte_pointer_array_t *targets;
     /* for triggers, store a pointer to the counters being monitored. This could
      * be counters we are using ourselves, or could be counters being run by someone
