@@ -68,7 +68,6 @@ char **ompi_environ_merge(char **minor, char **major)
             name = strdup(minor[i]);
             value = name + (value - minor[i]);
             *value = '\0';
-            printf("Setting: %s -- %s\n", name, value + 1);
             ompi_setenv(name, value + 1, false, &ret);
             free(name);
         }
