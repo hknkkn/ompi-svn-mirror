@@ -110,7 +110,28 @@ typedef uint16_t orte_gpr_addr_mode_t;
 /*
  * typedefs
  */
- 
+typedef union {                             /* shared storage for the value */
+    char *strptr;
+    uint8_t ui8;
+    uint16_t ui16;
+    uint32_t ui32;
+#ifdef HAVE_I64
+    uint64_t ui64;
+#endif
+    int8_t i8;
+    int16_t i16;
+    int32_t i32;
+#ifdef HAVE_I64
+    int64_t i64;
+#endif
+    orte_byte_object_t byteobject;
+    orte_process_name_t proc;
+    orte_jobid_t jobid;
+    orte_node_state_t node_state;
+    orte_status_key_t proc_status;
+    orte_exit_code_t exit_code;
+} orte_gpr_value_union_t;
+
  /*
   * Key-value pairs for registry operations
   */
@@ -118,27 +139,7 @@ typedef struct {
     ompi_object_t super;                /* required for this to be an object */
     char *key;                          /* string key for this value */
     orte_data_type_t type;              /* the type of value stored */
-    union {                             /* shared storage for the value */
-        char *strptr;
-        uint8_t ui8;
-        uint16_t ui16;
-        uint32_t ui32;
-#ifdef HAVE_I64
-        uint64_t ui64;
-#endif
-        int8_t i8;
-        int16_t i16;
-        int32_t i32;
-#ifdef HAVE_I64
-        int64_t i64;
-#endif
-        orte_byte_object_t byteobject;
-        orte_process_name_t proc;
-        orte_jobid_t jobid;
-        orte_node_state_t node_state;
-        orte_status_key_t proc_status;
-        orte_exit_code_t exit_code;
-    } value;
+    orte_gpr_value_union_t value;
 } orte_gpr_keyval_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_keyval_t);

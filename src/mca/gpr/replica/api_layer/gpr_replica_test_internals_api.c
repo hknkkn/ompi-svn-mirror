@@ -42,8 +42,8 @@ int orte_gpr_replica_test_internals(int level, ompi_list_t **test_results)
 
     *test_results = OBJ_NEW(ompi_list_t);
 
-    if (orte_gpr_replica_compound_cmd_mode) {
-	   return orte_gpr_base_pack_test_internals(orte_gpr_replica_compound_cmd, level);
+    if (orte_gpr_replica_globals.compound_cmd_mode) {
+	   return orte_gpr_base_pack_test_internals(orte_gpr_replica_globals.compound_cmd, level);
     }
 
     ompi_output(0, "building test segments");

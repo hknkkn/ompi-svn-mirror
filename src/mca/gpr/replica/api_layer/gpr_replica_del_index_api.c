@@ -40,21 +40,21 @@ int orte_gpr_replica_delete_segment(char *segment)
 	   return ORTE_ERROR;
     }
 
-    if (orte_gpr_replica_compound_cmd_mode) {
-	    return orte_gpr_base_pack_delete_segment(orte_gpr_replica_compound_cmd, segment);
+    if (orte_gpr_replica_globals.compound_cmd_mode) {
+	    return orte_gpr_base_pack_delete_segment(orte_gpr_replica_globals.compound_cmd, segment);
     }
 
-    OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     /* locate the segment */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 	    return rc;
     }
 
     rc = orte_gpr_replica_release_segment(seg);
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
     return rc;
 }
 
@@ -80,26 +80,26 @@ int orte_gpr_replica_delete_entries(orte_gpr_addr_mode_t addr_mode,
 	   return ORTE_ERROR;
     }
 
-    if (orte_gpr_replica_compound_cmd_mode) {
-	   return orte_gpr_base_pack_delete_entries(orte_gpr_replica_compound_cmd,
+    if (orte_gpr_replica_globals.compound_cmd_mode) {
+	   return orte_gpr_base_pack_delete_entries(orte_gpr_replica_globals.compound_cmd,
 					       addr_mode, segment, tokens, keys);
     }
 
-    OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     /* locate the segment */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags, seg, tokens, &num_tokens))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&key_itags, seg, keys, &num_keys))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         return rc;
     }
 
@@ -112,7 +112,7 @@ int orte_gpr_replica_delete_entries(orte_gpr_addr_mode_t addr_mode,
         orte_gpr_replica_check_synchros(seg);
     }
     
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     if (NULL != token_itags) {
         free(token_itags);
@@ -144,26 +144,26 @@ int orte_gpr_replica_index(char *segment, size_t *cnt, char **index)
     orte_gpr_replica_segment_t *seg=NULL;
     int rc;
 
-    if (orte_gpr_replica_compound_cmd_mode) {
-	   rc = orte_gpr_base_pack_index(orte_gpr_replica_compound_cmd, segment);
+    if (orte_gpr_replica_globals.compound_cmd_mode) {
+	   rc = orte_gpr_base_pack_index(orte_gpr_replica_globals.compound_cmd, segment);
 	   return rc;
     }
 
-    OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     if (NULL == segment) {  /* want global level index */
 	   seg = NULL;
     } else {
         /* locate the segment */
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
-            OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
             return rc;
         }
     }
 
     rc = orte_gpr_replica_index_fn(seg, cnt, index);
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
     return rc;
 }
 

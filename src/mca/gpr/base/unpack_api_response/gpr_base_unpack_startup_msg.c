@@ -89,4 +89,5 @@ orte_gpr_base_unpack_get_startup_msg(orte_buffer_t *buffer,
         return rc;
     }
     
+    return ORTE_SUCCESS;
 }

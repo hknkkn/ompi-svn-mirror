@@ -36,16 +36,16 @@ int orte_gpr_replica_dump(int output_id)
     orte_buffer_t *buffer;
     int rc;
 
-    if (orte_gpr_replica_debug) {
+    if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr_replica_dump: entered for output on %d",
 		    ORTE_NAME_ARGS(*(orte_process_info.my_name)), output_id);
     }
 
-    OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
-    if (orte_gpr_replica_compound_cmd_mode) {
-	    rc = orte_gpr_base_pack_dump(orte_gpr_replica_compound_cmd);
-	    OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+    if (orte_gpr_replica_globals.compound_cmd_mode) {
+	    rc = orte_gpr_base_pack_dump(orte_gpr_replica_globals.compound_cmd);
+	    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 	   return rc;
     }
 
@@ -56,7 +56,7 @@ int orte_gpr_replica_dump(int output_id)
 
     rc = orte_gpr_replica_dump_fn(buffer);
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     if (ORTE_SUCCESS == rc) {
         orte_gpr_base_print_dump(buffer, output_id);

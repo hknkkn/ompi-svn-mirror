@@ -37,8 +37,25 @@
  * typedefs needed in replica component
  */
 
+#define ORTE_GPR_REPLICA_MAX_SIZE UINT32_MAX
+#define ORTE_GPR_REPLICA_BLOCK_SIZE 100
+
 typedef int32_t orte_gpr_replica_itag_t;
 #define ORTE_GPR_REPLICA_ITAG_MAX INT32_MAX
+
+typedef struct {
+    int debug;
+    uint32_t block_size;
+    uint32_t max_size;
+    ompi_mutex_t mutex;
+    bool compound_cmd_mode;
+    bool exec_compound_cmd_mode;
+    orte_buffer_t *compound_cmd;
+    ompi_mutex_t wait_for_compound_mutex;
+    ompi_condition_t compound_cmd_condition;
+    int compound_cmd_waiting;
+} orte_gpr_replica_globals_t;
+
 
 /** Dictionary of string-itag pairs.
  * This structure is used to create a linked list of string-itag pairs. All calls to
@@ -66,6 +83,8 @@ typedef struct orte_gpr_replica_dict_t orte_gpr_replica_dict_t;
 struct orte_gpr_replica_t {
     orte_pointer_array_t *segments;  /**< Managed array of pointers to segment objects */
     orte_pointer_array_t *triggers;  /**< Managed array of pointers to triggers */
+    ompi_list_t callbacks;          /**< List of callbacks to be processed */
+    ompi_list_t notify_offs;        /**< List of processes with triggers inactive */
 };
 typedef struct orte_gpr_replica_t orte_gpr_replica_t;
 
@@ -83,9 +102,10 @@ struct orte_gpr_replica_segment_t {
     ompi_object_t super;                /**< Make this an object */
     char *name;                         /**< Name of the segment */
     orte_gpr_replica_itag_t itag;       /**< itag of this segment */
-    orte_pointer_array_t *dict;          /**< Managed array of dict structs */
-    orte_pointer_array_t *containers;    /**< Highest itag value used */
-    orte_pointer_array_t *triggers;      /**< List of triggers on this segment */
+    orte_pointer_array_t *dict;         /**< Managed array of dict structs */
+    orte_pointer_array_t *containers;   /**< Managed array of pointers to containers on this segment */
+    orte_gpr_notify_id_t *triggers;     /**< Array of indices for triggers on this segment */
+    int num_trigs;                      /**< Number of triggers in array */
     bool triggers_active;               /**< Indicates if triggers are active or not */
 };
 typedef struct orte_gpr_replica_segment_t orte_gpr_replica_segment_t;
@@ -113,17 +133,31 @@ OBJ_CLASS_DECLARATION(orte_gpr_replica_segment_t);
  * "authorization" linked list of ID's and their access rights to this structure.
  */
 struct orte_gpr_replica_container_t {
-    ompi_object_t super;            /**< Make this an object */
-    orte_pointer_array_t *itags;     /**< Array of itags that define this container */
-    orte_pointer_array_t *triggers;  /**< Array of poiinters into notifier array */
-    orte_pointer_array_t *keyvals;   /**< Array of keyval pointers */
+    ompi_object_t super;              /**< Make this an object */
+    orte_gpr_replica_itag_t *itags;   /**< Array of itags that define this container */
+    int num_itags;                    /**< Number of itags in array */
+    orte_gpr_notify_id_t *triggers;   /**< Array of indices into notifier array */
+    int num_trigs;                    /**< Number of triggers in array */
+    orte_pointer_array_t *itagvals;   /**< Array of itagval pointers */
 };
 typedef struct orte_gpr_replica_container_t orte_gpr_replica_container_t;
 
 OBJ_CLASS_DECLARATION(orte_gpr_replica_container_t);
 
 
-struct orte_gpr_replica_notify_request_tracker_t {
+/* The itag-value pair for storing data entries in the registry
+ */
+typedef struct {
+    ompi_object_t super;                /* required for this to be an object */
+    orte_gpr_replica_itag_t itag;       /* itag for this value's key */
+    orte_data_type_t type;              /* the type of value stored */
+    orte_gpr_value_union_t value;
+} orte_gpr_replica_itagval_t;
+
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_itagval_t);
+
+
+struct orte_gpr_replica_notify_tracker_t {
     ompi_object_t super;                    /**< Make this an object */
     orte_process_name_t *requestor;         /**< Name of requesting process */
     orte_gpr_notify_cb_fn_t callback;       /**< Function to be called for notificaiton */
@@ -134,6 +168,7 @@ struct orte_gpr_replica_notify_request_tracker_t {
                                                   placed upon */
     orte_gpr_addr_mode_t addr_mode;         /**< Addressing mode */
     char **tokens;                          /**< Array of tokens defining which containers are affected */
+    uint32_t num_tokens;                    /**< Number of tokens in array */
     char *key;                              /**< Key defining which key-value pairs are affected */
     orte_gpr_cmd_flag_t cmd;                    /**< command that generated the notify msg */
     union {
@@ -145,9 +180,9 @@ struct orte_gpr_replica_notify_request_tracker_t {
     int8_t above_below;                     /**< Tracks transitions across level */
 
 };
-typedef struct orte_gpr_replica_notify_request_tracker_t orte_gpr_replica_notify_request_tracker_t;
+typedef struct orte_gpr_replica_notify_tracker_t orte_gpr_replica_notify_tracker_t;
 
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_request_tracker_t);
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_tracker_t);
 
 /* define flags for synchro evaluation */
 #define ORTE_GPR_REPLICA_TRIGGER_ABOVE_LEVEL   (int8_t) 1
@@ -162,7 +197,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_request_tracker_t);
 #define ORTE_GPR_REPLICA_SUBSCRIBER_ADDED  (int8_t) 4
 
 /*
- * Callback list "head"
+ * Callback list objects
  */
 struct orte_gpr_replica_callbacks_t {
     ompi_list_item_t item;
@@ -224,19 +259,8 @@ typedef struct orte_gpr_replica_write_invalidate_t orte_gpr_replica_write_invali
 /*
  * globals needed within component
  */
-extern orte_gpr_replica_t orte_gpr_replica;                     /**< Head of the entire registry */
-extern orte_pointer_array_t *orte_gpr_replica_notify_request_tracker; /**< List of requested notifications */
-extern ompi_list_t orte_gpr_replica_callbacks;                       /**< List of callbacks currently pending */
-extern ompi_list_t orte_gpr_replica_notify_off_list;                 /**< List of processes and subscriptions with notify turned off */
-extern int orte_gpr_replica_debug;                                   /**< Debug flag to control debugging output */
-extern ompi_mutex_t orte_gpr_replica_mutex;                          /**< Thread lock for registry functions */
-extern bool orte_gpr_replica_compound_cmd_mode;                      /**< Indicates if we are building compound cmd */
-extern bool orte_gpr_replica_exec_compound_cmd_mode;                 /**< Indicates if we are executing compound cmd */
-extern orte_buffer_t *orte_gpr_replica_compound_cmd;                  /**< Compound cmd buffer */
-extern ompi_mutex_t orte_gpr_replica_wait_for_compound_mutex;        /**< Lock to protect build compound cmd */
-extern ompi_condition_t orte_gpr_replica_compound_cmd_condition;     /**< Condition variable to control thread access to build compound cmd */
-extern int orte_gpr_replica_compound_cmd_waiting;                    /**< Count number of threads waiting to build compound cmd */
-extern bool orte_gpr_replica_silent_mode;                            /**< Indicates if local silent mode active */
+extern orte_gpr_replica_t orte_gpr_replica;
+extern orte_gpr_replica_globals_t orte_gpr_replica_globals;
 
 
 /*

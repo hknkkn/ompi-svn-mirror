@@ -179,7 +179,7 @@ int orte_gpr_replica_construct_trigger(orte_gpr_synchro_mode_t synchro_mode,
                     orte_jobid_t owning_jobid);
 
 bool orte_gpr_replica_process_triggers(orte_gpr_replica_segment_t *seg,
-				      orte_gpr_replica_notify_request_tracker_t *trig,
+				      orte_gpr_replica_notify_tracker_t *trig,
 				      orte_gpr_notify_message_t *message);
 
 orte_gpr_notify_id_t
@@ -213,12 +213,11 @@ int orte_gpr_replica_purge_subscriptions(orte_process_name_t *proc);
  */
 int
 orte_gpr_replica_process_command_buffer(orte_buffer_t *buffer,
-				       orte_process_name_t *sender,
-				       bool *compound_cmd_detected);
+				       orte_process_name_t *sender);
 
 orte_gpr_notify_message_t
 *orte_gpr_replica_construct_notify_message(orte_gpr_replica_segment_t *seg,
-                    orte_gpr_replica_notify_request_tracker_t *trig);
+                    orte_gpr_replica_notify_tracker_t *trig);
 
 
 void mca_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,

@@ -42,51 +42,52 @@ int orte_gpr_replica_begin_compound_cmd(void)
     
     command = ORTE_GPR_COMPOUND_CMD;
 
-    OMPI_THREAD_LOCK(&orte_gpr_replica_wait_for_compound_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);
 
-    while (orte_gpr_replica_compound_cmd_mode) {
-	    orte_gpr_replica_compound_cmd_waiting++;
-	    ompi_condition_wait(&orte_gpr_replica_compound_cmd_condition, &orte_gpr_replica_wait_for_compound_mutex);
-	    orte_gpr_replica_compound_cmd_waiting--;
+    while (orte_gpr_replica_globals.compound_cmd_mode) {
+	    orte_gpr_replica_globals.compound_cmd_waiting++;
+	    ompi_condition_wait(&orte_gpr_replica_globals.compound_cmd_condition,
+                                &orte_gpr_replica_globals.wait_for_compound_mutex);
+	    orte_gpr_replica_globals.compound_cmd_waiting--;
     }
 
-    orte_gpr_replica_compound_cmd_mode = true;
-    if (NULL != orte_gpr_replica_compound_cmd) {
-        OBJ_RELEASE(orte_gpr_replica_compound_cmd);
+    orte_gpr_replica_globals.compound_cmd_mode = true;
+    if (NULL != orte_gpr_replica_globals.compound_cmd) {
+        OBJ_RELEASE(orte_gpr_replica_globals.compound_cmd);
     }
     
-    orte_gpr_replica_compound_cmd = OBJ_NEW(orte_buffer_t);
-    if (NULL == orte_gpr_replica_compound_cmd) {
-        orte_gpr_replica_compound_cmd_mode = false;
+    orte_gpr_replica_globals.compound_cmd = OBJ_NEW(orte_buffer_t);
+    if (NULL == orte_gpr_replica_globals.compound_cmd) {
+        orte_gpr_replica_globals.compound_cmd_mode = false;
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(orte_gpr_replica_compound_cmd, &command,
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(orte_gpr_replica_globals.compound_cmd, &command,
                                             1, ORTE_GPR_CMD))) {
-        orte_gpr_replica_compound_cmd_mode = false;
-        OBJ_RELEASE(orte_gpr_replica_compound_cmd);
+        orte_gpr_replica_globals.compound_cmd_mode = false;
+        OBJ_RELEASE(orte_gpr_replica_globals.compound_cmd);
         return rc;
     }
     
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_wait_for_compound_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);
     return ORTE_SUCCESS;
 }
 
 
 int orte_gpr_replica_stop_compound_cmd(void)
 {
-    OMPI_THREAD_LOCK(&orte_gpr_replica_wait_for_compound_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);
 
-    orte_gpr_replica_compound_cmd_mode = false;
-    if (NULL != orte_gpr_replica_compound_cmd) {
-        OBJ_RELEASE(orte_gpr_replica_compound_cmd);
+    orte_gpr_replica_globals.compound_cmd_mode = false;
+    if (NULL != orte_gpr_replica_globals.compound_cmd) {
+        OBJ_RELEASE(orte_gpr_replica_globals.compound_cmd);
     }
 
-    if (orte_gpr_replica_compound_cmd_waiting) {
-	   ompi_condition_signal(&orte_gpr_replica_compound_cmd_condition);
+    if (orte_gpr_replica_globals.compound_cmd_waiting) {
+	   ompi_condition_signal(&orte_gpr_replica_globals.compound_cmd_condition);
     }
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_wait_for_compound_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);
     return ORTE_SUCCESS;
 }
 
@@ -94,28 +95,26 @@ int orte_gpr_replica_stop_compound_cmd(void)
 int orte_gpr_replica_exec_compound_cmd(void)
 {
     int rc;
-    bool compound_cmd_detected=false;
 
-    if (orte_gpr_replica_debug) {
+    if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] Executing compound command",
 		    ORTE_NAME_ARGS(*(orte_process_info.my_name)));
     }
 
-    OMPI_THREAD_LOCK(&orte_gpr_replica_wait_for_compound_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);
 
-    rc = orte_gpr_replica_process_command_buffer(orte_gpr_replica_compound_cmd,
-						     NULL, &compound_cmd_detected);
+    rc = orte_gpr_replica_process_command_buffer(orte_gpr_replica_globals.compound_cmd, NULL);
 
-    orte_gpr_replica_compound_cmd_mode = false;
-    if (NULL != orte_gpr_replica_compound_cmd) {  /* shouldn't be any way this could be true, but just to be safe... */
-        OBJ_RELEASE(orte_gpr_replica_compound_cmd);
+    orte_gpr_replica_globals.compound_cmd_mode = false;
+    if (NULL != orte_gpr_replica_globals.compound_cmd) {  /* shouldn't be any way this could be true, but just to be safe... */
+        OBJ_RELEASE(orte_gpr_replica_globals.compound_cmd);
     }
 
-    if (orte_gpr_replica_compound_cmd_waiting) {
-	   ompi_condition_signal(&orte_gpr_replica_compound_cmd_condition);
+    if (orte_gpr_replica_globals.compound_cmd_waiting) {
+	   ompi_condition_signal(&orte_gpr_replica_globals.compound_cmd_condition);
     }
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_wait_for_compound_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);
 
     if (ORTE_SUCCESS != rc) {
         return rc;

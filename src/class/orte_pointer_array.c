@@ -83,9 +83,17 @@ int orte_pointer_array_init(orte_pointer_array_t **array,
             OBJ_RELEASE(*array);
             return ORTE_ERR_OUT_OF_RESOURCE;
        }
+       (*array)->number_free = initial_allocation;
+       (*array)->size = initial_allocation;
+   } else {
+        (*array)->addr = (void *)malloc(block_size * sizeof(void*));
+        if (NULL == (*array)->addr) { /* out of memory */
+            OBJ_RELEASE(*array);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        (*array)->number_free = block_size;
+        (*array)->size = block_size;
    }
-   (*array)->number_free = block_size;
-   (*array)->size = block_size;
    
    return ORTE_SUCCESS;
 }

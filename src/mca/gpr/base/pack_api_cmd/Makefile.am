@@ -18,8 +18,7 @@ noinst_LTLIBRARIES = libmca_gpr_base_pack.la
 
 # Source code files
 
-headers = \
-        pack_api_cmd.h
+headers =
 
 libmca_gpr_base_pack_la_SOURCES = \
         $(headers) \

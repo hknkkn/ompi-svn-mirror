@@ -34,7 +34,7 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
 {
     int rc;
     
-    if (orte_gpr_replica_debug) {
+    if (orte_gpr_replica_globals.debug) {
       ompi_output(0, "[%d,%d,%d] entered get_startup_msg",
             ORTE_NAME_ARGS(*(orte_process_info.my_name)));
     }
@@ -54,11 +54,11 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     rc = orte_gpr_replica_get_startup_msg_fn(jobid, msg, cnt, procs);
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     return rc;
 }
@@ -76,14 +76,14 @@ orte_gpr_replica_decode_startup_msg(int status, orte_process_name_t *peer,
     size_t buf_size;
 
     while (0 < ompi_unpack_string(msg, &segment)) {
-  if (ompi_rte_debug_flag) {
+  if (ompi_rte_globals.debug_flag) {
      ompi_output(0, "[%d,%d,%d] decoding msg for segment %s",
            ORTE_NAME_ARGS(*ompi_rte_get_self()), segment);
     }
 
  ompi_unpack(msg, &num_objects, 1, OMPI_INT32);  /* unpack #data objects */
 
-    if (ompi_rte_debug_flag) {
+    if (ompi_rte_globals.debug_flag) {
      ompi_output(0, "\twith %d objects", num_objects);
   }
 
@@ -103,7 +103,7 @@ orte_gpr_replica_decode_startup_msg(int status, orte_process_name_t *peer,
       ompi_list_append(&notify_msg->data, &data_value->item);
         }
 
-     if (ompi_rte_debug_flag) {
+     if (ompi_rte_globals.debug_flag) {
      ompi_output(0, "[%d,%d,%d] delivering msg for segment %s with %d data objects",
                 ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, (int)num_objects);
       }
