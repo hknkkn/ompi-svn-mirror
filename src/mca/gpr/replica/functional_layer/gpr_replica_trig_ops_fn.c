@@ -320,7 +320,7 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
     orte_gpr_replica_counter_t **cntrs;
     bool replaced;
     int i, j, k, m, n, rc;
-     
+    
     trigs = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
     for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
         /* check the subscribed data array first */
@@ -335,9 +335,11 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                         if (NULL != targets[k] &&
                             cptr == targets[k]->cptr) {  /* got the right container */
                             if (ORTE_GPR_REPLICA_ENTRY_ADDED == action) {  /* case (b) */
-                                if (0 > (rc = orte_pointer_array_add(targets[k]->ivals, iptr))) {
-                                    ORTE_ERROR_LOG(rc);
-                                    return rc;
+                                for (m=0; m < num_iptrs; m++) {
+                                    if (0 > (rc = orte_pointer_array_add(targets[k]->ivals, iptr[m]))) {
+                                        ORTE_ERROR_LOG(rc);
+                                        return rc;
+                                    }
                                 }
                                 (targets[k]->num_ivals)++;
                             } else { /* for each provided iptr, see if it is present */
