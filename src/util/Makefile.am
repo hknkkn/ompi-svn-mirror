@@ -38,6 +38,7 @@ headers = \
     sys_info.h \
     printf.h \
     proc_info.h \
+    univ_info.h \
     os_path.h \
     os_create_dirpath.h \
     pow2.h \
@@ -64,6 +65,7 @@ libutil_la_SOURCES = \
     printf.c \
     proc_info.c \
     sys_info.c \
+    univ_info.c \
     os_path.c \
     os_create_dirpath.c \
     pow2.c \

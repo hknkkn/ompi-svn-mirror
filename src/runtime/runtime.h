@@ -73,26 +73,6 @@ extern "C" {
 
     OMPI_DECLSPEC extern int orte_debug_flag;
 
-    /* Define the info structure underlying the Open MPI universe system
-    * instanced in ompi_rte_init.c */
-
-    struct orte_universe_t {
-        char *path;
-        char *name;
-        char *host;
-        char *uid;
-        int  bootproxy;
-        bool persistence;
-        char *scope;
-        bool console;
-        char *seed_uri;             /**< OOB contact info for universe seed */
-        bool console_connected;     /**< Indicates if console is connected */
-        char *scriptfile;           /**< Name of file containing commands to be executed */
-    };
-    typedef struct orte_universe_t orte_universe_t;
-
-OMPI_DECLSPEC extern orte_universe_t orte_universe_info;
-
     /**
      * Abort the current application with a pretty-print error message
      *
@@ -113,7 +93,7 @@ OMPI_DECLSPEC    int orte_abort(int status, char *fmt, ...);
      * be called by every application using the RTE interface, including
      * MPI applications and mpirun.
      */
-OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv);
+OMPI_DECLSPEC    int orte_init(void);
 
     /**
      * Re-init the Open run time environment.

@@ -141,7 +141,6 @@ static int parse_appfile(char *filename);
 
 int main(int argc, char *argv[], char* env[])
 {
-    ompi_cmd_line_t cmd_line;
     orte_app_context_t **apps;
     int rc, i, num_apps;
 
@@ -170,13 +169,11 @@ int main(int argc, char *argv[], char* env[])
 
     /* Intialize our Open RTE environment */
 
-    ompi_cmd_line_create(&cmd_line, cmd_line_init);
-    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
+    if (ORTE_SUCCESS != (rc = orte_init())) {
         ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
                        "orte_init()", rc);
         return rc;
     }
-    OBJ_DESTRUCT(&cmd_line);
 
      /* Prep to start the application */
 

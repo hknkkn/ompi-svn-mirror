@@ -85,7 +85,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     char *error = NULL;
     
     /* Join the run-time environment */
-    if (ORTE_SUCCESS != (ret = orte_init(NULL, argc, argv))) {
+    if (ORTE_SUCCESS != (ret = orte_init())) {
 	   goto error;
     }
 

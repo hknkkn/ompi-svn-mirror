@@ -34,6 +34,7 @@
 #include "mca/gpr/base/base.h"
 #include "mca/rmgr/base/base.h"
 #include "mca/soh/base/base.h"
+#include "util/univ_info.h"
 #include "util/proc_info.h"
 #include "util/session_dir.h"
 #include "util/sys_info.h"
@@ -107,21 +108,8 @@
 
 /* globals used by RTE */
 int orte_debug_flag=0;
-orte_universe_t orte_universe_info = {
-    /* .path =                */    NULL,
-    /* .name =                */    NULL,
-    /* .host =                */    NULL,
-    /* .uid =                 */    NULL,
-    /* .bootproxy =           */    0,
-    /* .persistence =         */    false,
-    /* .scope =               */    NULL,
-    /* .console =             */    false,
-    /* .seed_uri =            */    NULL,
-    /* .console_connected =   */    false,
-    /* .scriptfile =          */    NULL,
-};
 
-int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
+int orte_init(void)
 {
     int ret;
     char *universe;
@@ -141,6 +129,11 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
                                                                                                                    
     /* For malloc debugging */
     ompi_malloc_init();
+
+    /* Ensure the universe_info structure is instantiated and initialized */
+    if (ORTE_SUCCESS != (ret = orte_univ_info())) {
+        return ret;
+    }
 
     /* Ensure the system_info structure is instantiated and initialized */
     if (ORTE_SUCCESS != (ret = orte_sys_info())) {
@@ -172,40 +165,6 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
     }
     
     /*****   ERROR LOGGING NOW AVAILABLE *****/
-    
-    /*
-     * Parse mca command line arguments
-     */
-    if (NULL != cmd_line) {
-        if (ORTE_SUCCESS != (ret = mca_base_cmd_line_setup(cmd_line))) {
-            ORTE_ERROR_LOG(ret);
-            return ret;
-        }
-                                                                                                                   
-        if (ORTE_SUCCESS != mca_base_cmd_line_process_args(cmd_line)) {
-            ORTE_ERROR_LOG(ret);
-            return ret;
-        }
-        
-        if (OMPI_SUCCESS != ompi_cmd_line_parse(cmd_line, true, argc, argv)) {
-            ORTE_ERROR_LOG(ret);
-            return ret;
-        }
-    }
-
-    /* Parse the process context */
-    if (ORTE_SUCCESS != (ret = orte_parse_proc_context(cmd_line, argc, argv))) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
-
-    /* If I'm a daemon or the seed, then process the daemon context */
-    if (orte_process_info.seed || orte_process_info.daemon) {
-        if (ORTE_SUCCESS != (ret = orte_parse_daemon_context(cmd_line, argc, argv))) {
-            ORTE_ERROR_LOG(ret);
-            return ret;
-        }
-    }
     
     /* check for debug flag */
     if (0 > (ret =  mca_base_param_register_int("orte", "debug", NULL, NULL, 0))) {

@@ -35,7 +35,7 @@
 orte_sys_info_t orte_system_info = {
                  /* .init =        */            false,
                  /* .sysname =     */            NULL,
-	         /* .nodename =    */            NULL,
+	             /* .nodename =    */            NULL,
                  /* .release =     */            NULL,
                  /* .version =     */            NULL,
                  /* .machine =     */            NULL,
