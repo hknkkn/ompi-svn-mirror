@@ -191,7 +191,7 @@ main(int argc, char *argv[], char* env[])
         return 1;
     }
 
-    rc = orte_rmgr.spawn(apps, 1, &jobid);
+    rc = orte_rmgr.spawn(apps, 1, &jobid, NULL);
 
     OBJ_DESTRUCT(&app);
     OBJ_DESTRUCT(&cmd_line);

@@ -62,6 +62,17 @@ static void orte_daemon_recv(int status, orte_process_name_t* sender,
 			     orte_buffer_t *buffer, orte_rml_tag_t tag,
 			     void* cbdata);
 
+/*
+ * define the orted context table for obtaining parameters
+ */
+orte_context_value_names_t orted_context_tbl[] = {
+    /* start with usual help and version stuff */
+    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&(orted_globals.help), (void*)false},
+    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&(orted_globals.version), (void*)false},
+    {{"daemon", "debug", NULL}, "debug", 0, ORTE_BOOL, (void*)&(orted_globals.debug), (void*)false},
+    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL} /* terminate the table */
+};
+
 
 int main(int argc, char *argv[])
 {
@@ -73,26 +84,13 @@ int main(int argc, char *argv[])
     /* setup to check common command line options that just report and die */
     cmd_line = OBJ_NEW(ompi_cmd_line_t);
 
-    ompi_cmd_line_make_opt(cmd_line, 'v', "version", 0,
-            "Show version of Open MPI and this program");
-
-    ompi_cmd_line_make_opt(cmd_line, 'h', "help", 0,
-            "Show help for this function");
-
-
-    /* parse the local commands */
-    if (OMPI_SUCCESS != ompi_cmd_line_parse(cmd_line, true, argc, argv)) {
-        char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(cmd_line);
-        ompi_show_help("help-orted.txt", "orted:usage", false,
-                       argv[0], args);
-        free(args);
-        return 1;
+    /* parse my context */
+    if (ORTE_SUCCESS != (ret = orte_parse_context(orted_context_tbl, cmd_line, argc, argv))) {
+        return ret;
     }
-
+    
     /* check for help and version requests */
-    if (ompi_cmd_line_is_taken(cmd_line, "help") || 
-        ompi_cmd_line_is_taken(cmd_line, "h")) {
+    if (orted_globals.help) {
         char *args = NULL;
         args = ompi_cmd_line_get_usage_msg(cmd_line);
         ompi_show_help("help-orted.txt", "orted:usage", false,
@@ -101,29 +99,17 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (ompi_cmd_line_is_taken(cmd_line, "version") ||
-        ompi_cmd_line_is_taken(cmd_line, "v")) {
-        /* BWB - show version message */
+    if (orted_globals.version) {
+        /* show version message */
         printf("...showing off my version!\n");
         exit(1);
     }
 
-   /* check for debug flag */
-    if (0 > (ret = mca_base_param_register_int("daemon","debug", NULL, NULL, false))) {
-        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-        return ORTE_ERR_BAD_PARAM;
-    }
-    if (ORTE_SUCCESS != (ret = mca_base_param_lookup_int(ret, (int*)&orted_globals.debug))) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
-
     /* set debug flag for now */
     orted_globals.debug = true;
-fprintf(stderr, "daemon debug %d\n", (int)orted_globals.debug);
     
     /* check to see if I'm a bootproxy */
-    if (orte_universe_info.bootproxy) { /* go fork/exec somebody and die */
+    if (orte_universe_info.bootproxy) { /* perform bootproxy-specific things */
         if (ORTE_SUCCESS != (ret = orte_daemon_bootproxy())) {
             ORTE_ERROR_LOG(ret);
         }
@@ -179,7 +165,7 @@ fprintf(stderr, "daemon debug %d\n", (int)orted_globals.debug);
 	    /* execute the compound command - no return data requested
 	    *  we'll get it all from the startup message
 	    */
-	    orte_gpr.exec_compound_cmd();
+/*	    orte_gpr.exec_compound_cmd(); */
 		
 	    /* wait to receive startup message and info distributed */
 	    if (ORTE_SUCCESS != (ret = orte_wait_startup_msg())) {

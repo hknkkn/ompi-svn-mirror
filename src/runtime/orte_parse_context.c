@@ -93,7 +93,7 @@ ompi_output(0, "parse_ctx: cmd line option %s is taken", context_tbl[i].cmd_line
                     break;
             }
 
-        } else { /* otherwise get MCA parameter, if present */
+        } else if (NULL != context_tbl[i].name.prime) { /* otherwise get MCA parameter, if present */
     
             switch (context_tbl[i].type) {
                 case ORTE_STRING:

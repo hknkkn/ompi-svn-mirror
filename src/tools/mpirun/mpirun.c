@@ -41,8 +41,7 @@
 #include "mca/base/base.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
-#include "mca/oob/oob.h"
-#include "mca/oob/base/base.h"
+#include "mca/rmgr/rmgr.h"
 
 #include "runtime/runtime.h"
 #include "runtime/orte_wait.h"
@@ -64,12 +63,11 @@ exit_callback(int fd, short event, void *arg)
 static void
 signal_callback(int fd, short event, void *arg)
 {
-#if 0
     int ret;
     struct timeval tv;
 
     if (new_jobid != ORTE_JOBID_MAX) {
-        ret = ompi_rte_terminate_job(new_jobid, 0);
+        ret = orte_rmgr.terminate_job(new_jobid);
         if (OMPI_SUCCESS != ret) {
             new_jobid = ORTE_JOBID_MAX;
         }
@@ -79,10 +77,29 @@ signal_callback(int fd, short event, void *arg)
     tv.tv_usec = 0;
     ompi_evtimer_set(&exit_handler, exit_callback, NULL);
     ompi_evtimer_add(&exit_handler, &tv);
-#endif
 }
 
+/*
+ * setup globals for catching mpirun command line options
+ */
+struct {
+    bool help;
+    bool version;
+    int num_procs;
+    char *hostfile;
+} mpirun_globals;
 
+/*
+ * define the mpirun context table for obtaining parameters
+ */
+orte_context_value_names_t mpirun_context_tbl[] = {
+    /* start with usual help and version stuff */
+    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&mpirun_globals.help, (void*)false},
+    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&mpirun_globals.version, (void*)false},
+    {{NULL, NULL, NULL}, "np", 1, ORTE_INT, (void*)&mpirun_globals.num_procs, (void*)0},
+    {{"hostfile", NULL, NULL}, "hostfile", 1, ORTE_STRING, (void*)&(mpirun_globals.hostfile), NULL},
+    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL} /* terminate the table */
+};
 
 int
 main(int argc, char *argv[])
@@ -104,46 +121,17 @@ main(int argc, char *argv[])
     ompi_registry_value_t *value;
         
 
-    /*
-     * Intialize our Open MPI environment
-     */
+
+    /* setup to check command line options */
     cmd_line = OBJ_NEW(ompi_cmd_line_t);
 
-    if (OMPI_SUCCESS != (ret = ompi_init(argc, argv))) {
-        ompi_show_help("help-mpirun.txt", "mpirun:init-failure", true,
-                       "ompi_init()", ret);
+    /* parse my context */
+    if (ORTE_SUCCESS != (ret = orte_parse_context(mpirun_context_tbl, cmd_line, argc, argv))) {
         return ret;
     }
-
-    /* setup to read common command line options that span all Open
-       MPI programs */
-    ompi_cmd_line_make_opt(cmd_line, 'v', "version", 0,
-			   "Show version of Open MPI and this program");
-
-    ompi_cmd_line_make_opt(cmd_line, 'h', "help", 0,
-			   "Show help for this function");
-
-
-    /* setup rte command line arguments */
-    ompi_rte_cmd_line_setup(cmd_line);
-
-    /*
-     * setup  mca command line arguments
-     */
-    if (OMPI_SUCCESS != (ret = mca_base_cmd_line_setup(cmd_line))) {
-        ompi_show_help("help-mpirun.txt", "mpirun:init-failure", true, 
-                       "mca_base_cmd_line_setup()", ret);
-	return ret;
-    }
-
-    if (OMPI_SUCCESS != mca_base_cmd_line_process_args(cmd_line)) {
-        ompi_show_help("help-mpirun.txt", "mpirun:init-failure", true, 
-                       "mca_base_cmd_line_process_args()", ret);
-	return ret;
-    }
-
-    /* parse the local commands */
-    if (OMPI_SUCCESS != ompi_cmd_line_parse(cmd_line, true, argc, argv)) {
+    
+    /* check for help and version requests */
+    if (mpirun_globals.help) {
         char *args = NULL;
         args = ompi_cmd_line_get_usage_msg(cmd_line);
         ompi_show_help("help-mpirun.txt", "mpirun:usage", false,
@@ -152,110 +140,48 @@ main(int argc, char *argv[])
         return 1;
     }
 
-    if (ompi_cmd_line_is_taken(cmd_line, "help") || 
-        ompi_cmd_line_is_taken(cmd_line, "h")) {
-        char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(cmd_line);
-        ompi_show_help("help-mpirun.txt", "mpirun:usage", false,
-                       argv[0], args);
-        free(args);
-        return 1;
-    }
-
-    if (ompi_cmd_line_is_taken(cmd_line, "version") ||
-	ompi_cmd_line_is_taken(cmd_line, "v")) {
-        /* BWB - show version message */
-	printf("...showing off my version!\n");
-	exit(1);
-    }
-
-    /*
-     * Setup mpirun-specific command line arguments
-     */
-    ompi_cmd_line_make_opt3(cmd_line, 'n', "np", "np", 1,
-                            "Number of processes to start");
-    ompi_cmd_line_make_opt3(cmd_line, '\0', "hostfile", "hostfile", 1,
-			    "Host description file");
-
-    if (OMPI_SUCCESS != ompi_cmd_line_parse(cmd_line, true, argc, argv) ||
-        ompi_cmd_line_is_taken(cmd_line, "help") || 
-        ompi_cmd_line_is_taken(cmd_line, "h")) {
-        char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(cmd_line);
-        ompi_show_help("help-mpirun.txt", "mpirun:usage", false,
-                       argv[0], args);
-        free(args);
+    if (mpirun_globals.version) {
+        /* show version message */
+        printf("...showing off my version!\n");
         exit(1);
     }
 
-    if (OMPI_SUCCESS != mca_base_cmd_line_process_args(cmd_line)) {
-        char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(cmd_line);
-        ompi_show_help("help-mpirun.txt", "mpirun:usage", false, 
-                       argv[0], args);
-        free(args);
-        return ret;
-    }
-
-    /* get our hostfile, if we have one */
-    if (ompi_cmd_line_is_taken(cmd_line, "hostfile")) {
-        /* BWB - XXX - fix me.  We really should be setting this via
-         * an API rather than setenv.  But we don't have such an API just
-         * yet. */
-        char *buf = NULL;
-        asprintf(&buf, "OMPI_MCA_hostfile=%s", 
-                 ompi_cmd_line_get_param(cmd_line, "hostfile", 0, 0));
-        /* yeah, it leaks.  Can't do nothin' about that */
-        putenv(buf);
-   }
-
-    /* get our numprocs */
-    if (ompi_cmd_line_is_taken(cmd_line, "np")) {
-        num_procs = atoi(ompi_cmd_line_get_param(cmd_line, "np", 0, 0));
-    }
-
     /*
-     * Start the Open MPI Run Time Environment
+     * Start the Open Run Time Environment
      */
-    if (OMPI_SUCCESS != (ret = mca_base_open())) {
-        ompi_show_help("help-mpirun.txt", "mpirun:init-failure", true, 
-                       "mca_base_open()", ret);
-        return ret;
-    }
-
-    multi_thread = true;
-    hidden_thread=false;
-    if (OMPI_SUCCESS != ompi_rte_init(cmd_line, &multi_thread, &hidden_thread)) {
+    if (ORTE_SUCCESS != (ret = orte_init(cmd_line, argc, argv))) {
         ompi_show_help("help-mpirun.txt", "mpirun:init-failure", true,
-                       "mca_rte_init()", ret);
-	return ret;
+                       "orte_init()", ret);
+	   return ret;
     }
 
     /* Finish setting up the RTE - contains commands
      * that need to be inside a compound command, if one is active
      */
-    if (OMPI_SUCCESS != (ret = ompi_rte_init_cleanup())) {
-        printf("failed in ompi_rte_init_cleanup");
-	return ret;
+    if (OMPI_SUCCESS != (ret = orte_init_complete())) {
+        fprintf(stderr, "failed in orte_init_complete");
+	    return ret;
     }
 
     /* if i'm the seed, get my contact info and write my setup file for others to find */
-    if (ompi_process_info.seed) {
-	if (NULL != ompi_universe_info.seed_contact_info) {
-	    free(ompi_universe_info.seed_contact_info);
-	    ompi_universe_info.seed_contact_info = NULL;
-	}
-	ompi_universe_info.seed_contact_info = mca_oob_get_contact_info();
-	contact_file = ompi_os_path(false, ompi_process_info.universe_session_dir,
-				    "universe-setup.txt", NULL);
+    if (orte_process_info.seed) {
+        if (NULL != orte_universe_info.seed_uri) {
+         free(orte_universe_info.seed_uri);
+         orte_universe_info.seed_uri = NULL;
+        }
+        orte_universe_info.seed_uri = orte_rml.get_uri();
+        contact_file = orte_os_path(false, orte_process_info.universe_session_dir,
+                 "universe-setup.txt", NULL);
 
-	if (OMPI_SUCCESS != (ret = ompi_write_universe_setup_file(contact_file))) {
-	    if (ompi_rte_debug_flag) {
-		ompi_output(0, "[%d,%d,%d] ompid: couldn't write setup file", ompi_rte_get_self()->cellid,
-			    ompi_rte_get_self()->jobid, ompi_rte_get_self()->vpid);
-	    }
-	}
+        if (ORTE_SUCCESS != (ret = orte_write_universe_setup_file(contact_file))) {
+            if (mpirun_globals.debug) {
+                ompi_output(0, "mpirun: couldn't write setup file");
+          }
+      } else if (mpirun_globals.debug) {
+          ompi_output(0, "mpirun: wrote setup file");
+       }
     }
+
 
     /*****    PREP TO START THE APPLICATION    *****/
     ompi_event_set(&term_handler, SIGTERM, OMPI_EV_SIGNAL,
@@ -265,20 +191,23 @@ main(int argc, char *argv[])
                    signal_callback, NULL);
     ompi_event_add(&int_handler, NULL);
 
-    /* get the jobid for the application */
-    if (ORTE_SUCCESS != orte_name_services.create_jobid(&new_jobid)) {
-        return ORTE_ERROR;
+    /* discover resources */
+    if (ORTE_SUCCESS != (ret = orte_rmgr.query())) {
+        ORTE_ERROR_LOG(ret);
+        goto CLEANUP;
+    }
+    
+    /* setup the jobid for the application */
+    if (ORTE_SUCCESS != (ret = orte_rmgr.create(&new_jobid))) {
+        ORTE_ERROR_LOG(ret);
+        orte_finalize();
+        return ret;
     }
 
-    /* get the spawn handle to start spawning stuff */
-    spawn_handle = ompi_rte_get_spawn_handle(OMPI_RTE_SPAWN_HIGH_QOS, true);
-
-    /* BWB - fix jobid, procs, and nodes */
-    nodelist = ompi_rte_allocate_resources(spawn_handle, new_jobid, 0, num_procs);
-    if (NULL == nodelist) {
-        ompi_show_help("help-mpirun.txt", "mpirun:allocate-resources",
-                       true, argv[0], errno);
-	return -1;
+    /* allocate resources to this job */
+    if (ORTE_SUCCESS != (ret = orte_rmgr.query())) {
+        ORTE_ERROR_LOG(ret);
+        goto CLEANUP;
     }
 
     /*

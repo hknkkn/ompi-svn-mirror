@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "include/constants.h"
+#include "mca/errmgr/errmgr.h"
 #include "mca/rds/base/base.h"
 #include "mca/ras/base/base.h"
 #include "mca/rmaps/base/base.h"
@@ -128,15 +129,19 @@ static int orte_rmgr_urm_spawn(
 
     if (ORTE_SUCCESS != 
         (rc = orte_rmgr_urm_create(app_context,num_context,jobid))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     if (ORTE_SUCCESS != (rc = orte_ras_base_allocate(*jobid))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     if (ORTE_SUCCESS != (rc = orte_rmgr_urm_map(*jobid))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     if (ORTE_SUCCESS != (rc = orte_rmgr_urm_launch(*jobid))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     return ORTE_SUCCESS;
