@@ -145,10 +145,13 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
         /* start more than one at a time, however must limit the
          * number of open sessions as each consumes resources
         */
-        for(i=0; i<NUM_CONCURRENT && item != ompi_list_get_end(&nodes); i++, item = ompi_list_get_next(&nodes)) {
+        for(i=0; i<NUM_CONCURRENT && item != ompi_list_get_end(&nodes); i++, item = ompi_list_get_next(item)) {
             orte_ras_base_node_t* node = (orte_ras_base_node_t*)item;
             int p_stdin[2];
             int p_stdout[2];
+
+            /* setup node name */
+            argv[node_name_index] = node->node_name;
 
             /* create a pipe to connect to stdin/stdout of the daemon */
             if(pipe(p_stdin) < 0 ||
@@ -169,6 +172,9 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
 
                 orte_process_name_t* name;
                 char* name_string;
+                char* cmd_string;
+
+                /* setup process name */
                 rc = orte_ns.create_process_name(&name, node->node_cellid, 0, vpid_start);
                 if(ORTE_SUCCESS != rc) {
                     ompi_output(0, "orte_pls_rsh: unable to create process name");
@@ -179,6 +185,12 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
                     ompi_output(0, "orte_pls_rsh: unable to create process name");
                     exit(-1);
                 }
+                argv[proc_name_index] = name_string;
+
+                if(mca_pls_rsh_component.debug) {
+                    cmd_string = ompi_argv_join(argv, ' ');
+                    ompi_output(0, "%s\n", cmd_string);
+                }
 
                 /* setup stdin/stdout/stderr */
                 close(p_stdin[1]);
@@ -188,8 +200,6 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
                 dup2(p_stdout[1], 2);
 
                 /* exec the daemon */
-                argv[node_name_index] = node->node_name;
-                argv[proc_name_index] = name_string;
                 execv(mca_pls_rsh_component.path, argv);
                 ompi_output(0, "orte_pls_rsh: execv failed with errno=%d\n", errno);
                 exit(-1);

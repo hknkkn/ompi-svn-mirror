@@ -17,7 +17,6 @@
 
 #include "ompi_config.h"
 
-#include "mpi.h"
 #include "threads/condition.h"
 #include "mca/mca.h"
 #include "mca/pls/pls.h"
