@@ -35,28 +35,26 @@
 /*
  * Global variables
  */
-int mca_svc_base_output = -1;
-ompi_list_t mca_svc_base_components;
-ompi_list_t mca_svc_base_modules;
 
+orte_svc_base_t orte_svc_base;
 
 /**
  * Function for finding and opening either all MCA components, 
  * or the one that was specifically requested via a MCA parameter.
  */
-int mca_svc_base_open(void)
+int orte_svc_base_open(void)
 {
     /* Open up all available components */
 
     if (OMPI_SUCCESS != 
         mca_base_components_open("svc", 0, mca_svc_base_static_components, 
-                               &mca_svc_base_components)) {
+                                 &orte_svc_base.svc_components)) {
         return OMPI_ERROR;
     }
 
     /* Initialize the list so that in mca_mpool_base_close(), we can
        iterate over it (even if it's empty, as in the case of ompi_info) */
-   OBJ_CONSTRUCT(&mca_svc_base_modules, ompi_list_t);
-   return OMPI_SUCCESS;
+    OBJ_CONSTRUCT(&orte_svc_base.svc_modules, ompi_list_t);
+    return OMPI_SUCCESS;
 }
 

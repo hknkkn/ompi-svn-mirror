@@ -23,33 +23,23 @@
 #include "mca/svc/base/base.h"
 
 
-int mca_svc_base_close(void)
+int orte_svc_base_close(void)
 {
-  ompi_list_item_t *item;
-  mca_svc_base_module_item_t *sm;
+    ompi_list_item_t *item;
 
-  /* Finalize all the svc components and free their list items */
+    /* Finalize all the svc modules */
+    while((item = ompi_list_remove_first(&orte_svc_base.svc_modules)) != NULL) {
+        orte_svc_base_selected_t* selected = (orte_svc_base_selected_t*)item;
+        selected->module->finalize();
+        OBJ_RELEASE(selected);
+    }
 
-  for (item = ompi_list_remove_first(&mca_svc_base_components);
-       NULL != item; 
-       item = ompi_list_remove_first(&mca_svc_base_components)) {
-    sm = (mca_svc_base_module_item_t *) item;
+    /* Close all remaining available components (may be one if this is a
+       OMPI RTE program, or [possibly] multiple if this is ompi_info) */
 
-    /* Blatently ignore the return code (what would we do to recover,
-       anyway?  This component is going away, so errors don't matter
-       anymore) */
-
-    sm->svc_module->svc_fini(sm->svc_module);
-    OBJ_RELEASE(sm);
-  }
-
-  /* Close all remaining available components (may be one if this is a
-     OMPI RTE program, or [possibly] multiple if this is ompi_info) */
-
-  mca_base_components_close(mca_svc_base_output, 
-                            &mca_svc_base_components, NULL);
-
-  /* All done */
-  return OMPI_SUCCESS;
+    mca_base_components_close(orte_svc_base.svc_output, 
+                              &orte_svc_base.svc_components, NULL);
+    OBJ_DESTRUCT(&orte_svc_base.svc_modules);
+    return OMPI_SUCCESS;
 }
 

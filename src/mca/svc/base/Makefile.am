@@ -27,9 +27,9 @@ headers = \
 
 libmca_svc_base_la_SOURCES = \
         $(headers) \
-        svc_base_open.c \
         svc_base_close.c \
-        svc_base_init.c 
+        svc_base_open.c \
+        svc_base_select.c 
 
 # Conditionally install the header files
 
