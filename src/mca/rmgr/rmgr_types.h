@@ -19,7 +19,6 @@
 /*
  * REGISTRY KEY NAMES FOR COMMON DATA
  */
-#define ORTE_RMGR_APP_CONTEXT   "orte-rmgr-app-context"
 #define ORTE_RMGR_APP_LOC       "orte-rmgr-app-location"
 #define ORTE_RMGR_LAUNCHER      "orte-rmgr-launcher"
 
