@@ -20,13 +20,13 @@
 /*
  * includes
  */
-#include "ompi_config.h"
+#include "orte_config.h"
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
 
-#include "include/constants.h"
 #include "class/ompi_list.h"
 #include "mca/mca.h"
-#include "mca/ns/ns_types.h"
-
+/* #include "mca/ns/ns_types.h" */
 #include "mca/soh/soh.h"
 
 
@@ -37,23 +37,105 @@
 extern "C" {
 #endif
 
-OMPI_DECLSPEC    int mca_soh_base_open(void);
-OMPI_DECLSPEC    int mca_soh_base_select(bool *allow_multi_user_threads,
-			                            bool *have_hidden_threads);
-OMPI_DECLSPEC    int mca_soh_base_close(void);
-OMPI_DECLSPEC    int mca_soh_base_update_cell_soh_not_available(orte_cellid_t cellid);
-OMPI_DECLSPEC    int mca_soh_base_get_proc_soh_not_available(orte_status_key_t *status,
+OMPI_DECLSPEC    int orte_soh_base_open(void);
+OMPI_DECLSPEC    int orte_soh_base_select(void);
+OMPI_DECLSPEC    int orte_soh_base_close(void);
+
+/* 
+ * 1. slave soh functions 
+ * 
+ */
+
+OMPI_DECLSPEC    int orte_soh_base_module_slave_init_not_available (void);
+OMPI_DECLSPEC    int orte_soh_base_module_slave_poll_not_available (void);
+OMPI_DECLSPEC    int orte_soh_base_module_slave_do_heatbeat_not_available (void);
+OMPI_DECLSPEC    int orte_soh_base_module_slave_request_monitor_not_available (orte_soh_entity_type_t type, 
+                                                                               orte_soh_entity_value_t value);
+OMPI_DECLSPEC    int orte_soh_base_module_slave_end_monitor_not_available (void);
+OMPI_DECLSPEC    int orte_soh_base_module_slave_finalise_not_available (void);
+
+/* 
+ * 2. master soh functions 
+ * 
+ */
+
+OMPI_DECLSPEC int orte_soh_base_module_master_init_not_available (void);
+OMPI_DECLSPEC int orte_soh_base_module_master_poll_not_available (void);
+OMPI_DECLSPEC int orte_soh_base_module_master_handle_request_not_available (void);
+OMPI_DECLSPEC int orte_soh_base_module_master_add_monitor_cell_not_available (orte_cellid_t cellid);
+OMPI_DECLSPEC int orte_soh_base_module_master_remove_monitor_cell_not_available (orte_cellid_t cellid);
+OMPI_DECLSPEC int orte_soh_base_module_master_add_monitor_node_not_available (orte_process_name_t node);
+OMPI_DECLSPEC int orte_soh_base_module_master_remove_monitor_node_not_available (orte_process_name_t node);
+OMPI_DECLSPEC int orte_soh_base_module_master_add_monitor_job_not_available (orte_jobid_t jobid);
+OMPI_DECLSPEC int orte_soh_base_module_master_remove_monitor_job_not_available (orte_jobid_t jobid);
+OMPI_DECLSPEC int orte_soh_base_module_master_add_monitor_proc_not_available (orte_process_name_t proc);
+OMPI_DECLSPEC int orte_soh_base_module_master_remove_monitor_proc_not_available (orte_process_name_t proc);
+OMPI_DECLSPEC int orte_soh_base_module_master_update_state_all_not_available (void);
+OMPI_DECLSPEC int orte_soh_base_module_master_update_state_cell_not_available (orte_cellid_t cellid);
+OMPI_DECLSPEC int orte_soh_base_module_master_update_state_node_not_available (orte_process_name_t node);
+OMPI_DECLSPEC int orte_soh_base_module_master_update_state_job_not_available (orte_jobid_t jobid );
+OMPI_DECLSPEC int orte_soh_base_module_master_update_state_proc_not_available (orte_jobid_t jobid );
+OMPI_DECLSPEC int orte_soh_base_module_master_pull_state_cell_not_available (orte_cellid_t cellid);
+OMPI_DECLSPEC int orte_soh_base_module_master_pull_state_node_not_available (orte_process_name_t node);
+OMPI_DECLSPEC int orte_soh_base_module_master_pull_state_job_not_available (orte_jobid_t jobid);
+OMPI_DECLSPEC int orte_soh_base_module_master_pull_state_proc_not_available (orte_process_name_t proc);
+OMPI_DECLSPEC int orte_soh_base_module_master_finalise_not_available (void);
+
+
+/* 
+ * 3. query soh functions 
+ * 
+ */
+OMPI_DECLSPEC    int orte_soh_base_get_proc_soh_not_available(orte_status_key_t *status,
                                                              orte_process_name_t *proc);
+OMPI_DECLSPEC    int orte_soh_base_get_node_soh_not_available(orte_status_key_t *status,
+                                                             orte_process_name_t *node);
+
+/* 
+ * 4. communication soh functions 
+ * 
+ */
+
+OMPI_DECLSPEC int orte_soh_base_module_send_monitor_request_not_available (orte_soh_entity_type_t type, orte_soh_entity_value_t value);
+OMPI_DECLSPEC int orte_soh_base_module_send_unmonitor_request_not_available (orte_soh_entity_type_t type, orte_soh_entity_value_t value);
+OMPI_DECLSPEC int orte_soh_base_module_send_push_state_not_available (orte_soh_entity_type_t type);
+OMPI_DECLSPEC int orte_soh_base_module_send_pull_state_not_available (orte_soh_entity_type_t type);
+OMPI_DECLSPEC int orte_soh_base_module_send_state_change_not_available (orte_soh_entity_type_t type, orte_soh_entity_value_t value);
+OMPI_DECLSPEC int orte_soh_base_module_recv_state_not_available (orte_soh_entity_type_t type, orte_soh_entity_value_t *value);
+
+
+/* 
+ * 5. support soh functions 
+ * 
+ */
+
+OMPI_DECLSPEC int orte_soh_base_module_finalize_soh_not_available (void);
+
+/* 
+ * 6. previous soh functions 
+ * 
+ */
+
+OMPI_DECLSPEC    int orte_soh_base_update_cell_soh_not_available(orte_cellid_t cellid);
+OMPI_DECLSPEC    int orte_soh_base_update_job_soh_not_available(orte_jobid_t jobid);
+OMPI_DECLSPEC    int orte_soh_base_update_proc_soh_not_available(orte_process_name_t proc);
+
 
 /*
  * globals that might be needed
  */
 
-OMPI_DECLSPEC extern int mca_soh_base_output;
-OMPI_DECLSPEC extern mca_soh_base_module_t ompi_soh_monitor;  /* holds selected module's function pointers */
-OMPI_DECLSPEC extern bool mca_soh_base_selected;
-OMPI_DECLSPEC extern ompi_list_t mca_soh_base_components_available;
-OMPI_DECLSPEC extern mca_soh_base_component_t mca_soh_base_selected_component;
+OMPI_DECLSPEC extern int orte_soh_base_output;
+OMPI_DECLSPEC extern orte_soh_base_module_t orte_soh;  /* holds selected module's function pointers */
+OMPI_DECLSPEC extern bool orte_soh_base_selected;
+
+typedef struct orte_soh_base_t {
+    int soh_output;
+    ompi_list_t soh_components;
+} orte_soh_base_t;
+
+OMPI_DECLSPEC extern orte_soh_base_t orte_soh_base;
+
 
 /*
  * external API functions will be documented in the mca/soh/soh.h file
