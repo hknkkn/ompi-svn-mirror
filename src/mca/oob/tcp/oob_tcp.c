@@ -640,7 +640,7 @@ int mca_oob_tcp_init(void)
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.subscribe\n", 
             ORTE_NAME_ARGS(orte_process_info.my_name));
     }
-
+#if 0
     /* setup the subscription description value */
     value = OBJ_NEW(orte_gpr_value_t);
     if (NULL == value) {
@@ -694,7 +694,6 @@ int mca_oob_tcp_init(void)
     trig_value.keyvals[0]->type = ORTE_INT;
     trig_value.keyvals[0]->value.i32 = (int32_t)orte_process_info.num_procs;
     
-#if 0
     rc = orte_gpr.subscribe(
         ORTE_GPR_KEYS_OR,
         ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_AT_LEVEL |
@@ -710,8 +709,8 @@ int mca_oob_tcp_init(void)
         OBJ_DESTRUCT(&trig_value);
         return rc;
     }
-#endif
     OBJ_DESTRUCT(&trig_value);  /* done with this one */
+#endif
 
     buffer = OBJ_NEW(orte_buffer_t);
     if(buffer == NULL) {
@@ -787,7 +786,7 @@ int mca_oob_tcp_init(void)
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-
+#endif
     return OMPI_SUCCESS;
 }
 
