@@ -136,6 +136,9 @@ rdas_base_int_hostfile_node_destruct(ompi_object_t *obj)
     OBJ_RELEASE(node->info);
 }
 
+void mca_rdas_base_deallocate(ompi_list_t *hostlist)
+{
+}
 
 ///** create instance information for \c mca_rdas_base_hostfile_data_t */
 //OBJ_CLASS_INSTANCE(mca_rdas_base_hostfile_data_t, 

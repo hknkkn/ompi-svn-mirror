@@ -412,7 +412,6 @@ orte_process_name_t*
 ompi_rte_get_self(void)
 {
     if (NULL == mca_pcmclient.pcmclient_get_self) {
-        errno = OMPI_ERR_NOT_IMPLEMENTED;
         return NULL;
     }
 
