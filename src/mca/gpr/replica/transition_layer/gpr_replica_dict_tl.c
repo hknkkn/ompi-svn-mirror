@@ -186,9 +186,8 @@ orte_gpr_replica_get_itag_list(orte_gpr_replica_itag_t **itaglist,
                     int *num_names)
 {
     char **namptr;
-    int num_itags, rc, i;
+    int rc, i;
 
-    *num_names = 0;
     *itaglist = NULL;
 
     /* check for errors */
@@ -201,28 +200,30 @@ orte_gpr_replica_get_itag_list(orte_gpr_replica_itag_t **itaglist,
 	   return ORTE_SUCCESS;
     }
 
-    /* count the number of names */
-    namptr = names;
-    num_itags = 0;
-    while (NULL != *namptr) {
-	   num_itags++;
-	   namptr++;
+    if (0 >= (*num_names)) { /* NULL-terminated list - count them */
+        *num_names = 0;
+        namptr = names;
+        while (NULL != *namptr) {
+	       *num_names = (*num_names) + 1;
+	       namptr++;
+        }
     }
 
-    *itaglist = (orte_gpr_replica_itag_t*)malloc(num_itags*sizeof(orte_gpr_replica_itag_t));
+    *itaglist = (orte_gpr_replica_itag_t*)malloc((*num_names)*sizeof(orte_gpr_replica_itag_t));
     if (NULL == *itaglist) {
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    *num_names = num_itags;
 
     namptr = names;
 
-    i = 0;
-    while (NULL != *namptr) {  /* traverse array of names until NULL */
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&((*itaglist)[i]), seg, *namptr))) {
-            return rc;
+    for (i=0; i < (*num_names); i++) {  /* traverse array of names - ignore any NULL's */
+        if (NULL != names[i]) {
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&((*itaglist)[i]), seg, names[i]))) {
+                free(*itaglist);
+                *itaglist = NULL;
+                return rc;
+            }
         }
-	    namptr++; i++;
     }
     return ORTE_SUCCESS;
 }

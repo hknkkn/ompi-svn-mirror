@@ -59,12 +59,11 @@ int main(int argc, char **argv)
     orte_gpr_replica_segment_t *seg=NULL;
     orte_gpr_replica_itag_t itag[10], itag2, *itaglist;
     orte_gpr_replica_container_t *cptr=NULL, **cptrs=NULL;
-    orte_gpr_keyval_t *kptr=NULL, *karray[20], **kvals;
+    orte_gpr_keyval_t *kptr=NULL, **kvals;
     orte_gpr_replica_itagval_t **ivals=NULL;
-    orte_gpr_value_t **values;
-    orte_gpr_notify_id_t synch, sub;
+    orte_gpr_value_t **values, *val;
     
-    test_init("test_gpr_replica_trigs");
+    test_init("test_gpr_replica");
 
    /*  test_out = fopen( "test_gpr_replica_out", "w+" ); */
     test_out = stderr;
@@ -111,98 +110,282 @@ int main(int argc, char **argv)
         exit (1);
     }
     
+    fprintf(stderr, "going to find seg\n");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, "test-segment"))) {
+        fprintf(test_out, "gpr_test: find_seg failed with error code %d\n", rc);
+        test_failure("gpr_test: find_seg failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: find_seg passed\n");
+    }
+    
+    fprintf(stderr, "creating tags\n");
+    for (i=0; i<10; i++) {
+        asprintf(&tmp, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&itag[i], seg, tmp))) {
+            fprintf(test_out, "gpr_test: create_itag failed with error code %d\n", rc);
+            test_failure("gpr_test: create_itag failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: create_itag passed\n");
+        }
+        free(tmp);
+    }
+    
+    fprintf(stderr, "lookup tags\n");
+    for (i=0; i<10; i++) {
+         asprintf(&tmp, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&itag2, seg, tmp)) ||
+             itag2 != itag[i]) {
+            fprintf(test_out, "gpr_test: lookup failed with error code %d\n", rc);
+            test_failure("gpr_test: lookup failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: lookup passed\n");
+        }
+        free(tmp);
+    }
+    
+    
+    fprintf(stderr, "reverse lookup tags\n");
+    for (i=0; i<10; i++) {
+         asprintf(&tmp2, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_reverse_lookup(&tmp, seg, itag[i])) ||
+             0 != strcmp(tmp2, tmp)) {
+            fprintf(test_out, "gpr_test: reverse lookup failed with error code %d\n", rc);
+            test_failure("gpr_test: reverse lookup failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: reverse lookup passed\n");
+        }
+        free(tmp);
+    }
+    
+    
+    fprintf(stderr, "delete tags\n");
+    for (i=0; i<10; i++) {
+         asprintf(&tmp, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_delete_itag(seg, tmp))) {
+            fprintf(test_out, "gpr_test: delete tag failed with error code %d\n", rc);
+            test_failure("gpr_test: delete tag failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: delete tag passed\n");
+        }
+        free(tmp);
+    }
+    
     fprintf(stderr, "get itag list\n");
     for (i=0; i < 14; i++) {
         asprintf(&names[i], "dummy%d", i);
     }
     names[14] = NULL;
-
-    fprintf(stderr, "register synchro on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_synchro(ORTE_GPR_XAND,
-                                    ORTE_GPR_SYNCHRO_MODE_LEVEL,
-                                    "test-segment",
-                                    NULL, NULL, 5, &synch,
-                                    gpr_test_trig_cb_fn, NULL))) {
-        fprintf(test_out, "gpr_test_trigs: synch on seg failed with error %s\n",
-                        ORTE_ERROR_NAME(rc));
-        test_failure("gpr_test_trigs: synch on seg failed");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itaglist, seg,
+                                                names, &num_names))) {
+        fprintf(test_out, "gpr_test: get itag list failed with error code %d\n", rc);
+        test_failure("gpr_test: get itag list failed");
         test_finalize();
         return rc;
     } else {
-        fprintf(test_out, "gpr_test_trigs: synch on seg registered\n");
+        fprintf(test_out, "gpr_test: get itag list passed\n");
     }
     
-    fprintf(stderr, "register subscription on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_XAND,
-                                    ORTE_GPR_NOTIFY_ADD_ENTRY,
-                                    "test-segment",
-                                    NULL, NULL, 5, &sub,
-                                    gpr_test_trig_cb_fn, NULL))) {
-        fprintf(test_out, "gpr_test_trigs: subscribe on seg failed with error %s\n",
-                        ORTE_ERROR_NAME(rc));
-        test_failure("gpr_test_trigs: subscribe on seg failed");
+    fprintf(test_out, "number of names found %d\n", num_names);
+    for (i=0; i < num_names; i++) {
+        fprintf(test_out, "\tname %s itag %d\n", names[i], itaglist[i]);
+    }
+    
+    
+    fprintf(stderr, "creating container\n");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_container(&cptr, seg,
+                                3, itaglist))) {
+        fprintf(test_out, "gpr_test: create_container failed with error code %d\n", rc);
+        test_failure("gpr_test: create_container failed");
         test_finalize();
         return rc;
     } else {
-        fprintf(test_out, "gpr_test_trigs: subscribe on seg registered\n");
+        fprintf(test_out, "gpr_test: create_container passed\n");
     }
     
-    orte_gpr_replica_dump(0);
+    fprintf(test_out, "itags for container\n");
+    for (i=0; i < cptr->num_itags; i++) {
+        fprintf(test_out, "\tindex %d itag %d\n", i, cptr->itags[i]);
+    }
 
-#if 0
-    fprintf(stderr, "put\n");
+    fprintf(stderr, "add keyval\n");
     kptr = OBJ_NEW(orte_gpr_keyval_t);
-    kptr->key = strdup("stupid-value-next-one");
-    kptr->type = ORTE_INT32;
-    kptr->value.i32 = 654321;
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
-                                "test-put-segment",
-                                names, 1, &kptr))) {
-        fprintf(test_out, "gpr_test: put of 1 keyval failed with error code %d\n", rc);
-        test_failure("gpr_test: put of 1 keyval failed");
+    kptr->key = strdup("stupid-value");
+    kptr->type = ORTE_INT16;
+    kptr->value.i16 = 21;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &kptr)) ||
+        NULL != kptr) {
+        fprintf(test_out, "gpr_test: add keyval failed with error code %d\n", rc);
+        test_failure("gpr_test: add keyval failed");
         test_finalize();
         return rc;
     } else {
-        fprintf(test_out, "gpr_test: put of 1 keyval passed\n");
+        fprintf(test_out, "gpr_test: add keyval passed\n");
+    }
+    
+    ivals = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
+    if (NULL != ivals[0]) {
+        fprintf(stderr, "ival[0] %d %d %d\n", ivals[0]->itag,
+                    ivals[0]->type, ivals[0]->value.i16);
+    }
+    
+    fprintf(stderr, "search container for single entry\n");
+    kptr = OBJ_NEW(orte_gpr_keyval_t);
+    kptr->key = strdup("stupid-value");
+    kptr->type = ORTE_STRING;
+    kptr->value.strptr = strdup("try-string-value");
+    orte_gpr_replica_create_itag(&itag2, seg, kptr->key);
+    if (!orte_gpr_replica_search_container(&num_found, itag2, cptr) ||
+        num_found != 1) {
+        fprintf(test_out, "gpr_test: search container for single entry failed - found %d for itag %d\n",
+                            num_found, itag2);
+        test_failure("gpr_test: search container for single entry failed");
+        test_finalize();
+        return -1;
+    } else {
+        fprintf(test_out, "gpr_test: search container for single entry passed - found %d\n", num_found);
+    }
+    OBJ_RELEASE(kptr);
+    
+    fprintf(stderr, "update single keyval\n");
+    kptr = OBJ_NEW(orte_gpr_keyval_t);
+    kptr->key = strdup("stupid-value");
+    kptr->type = ORTE_STRING;
+    kptr->value.strptr = strdup("try-string-value");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr, &kptr))) {
+        fprintf(test_out, "gpr_test: update single keyval failed with error code %d\n", rc);
+        test_failure("gpr_test: update single keyval failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: update single keyval passed\n");
+    }
+    
+    ivals = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
+    for (i=0; i < (cptr->itagvals)->size; i++) {
+        if (NULL != ivals[i]) {
+            if (ivals[i]->type == ORTE_INT16) {
+                fprintf(stderr, "ival[%d] %d %d %d\n", i, ivals[i]->itag,
+                    ivals[i]->type, ivals[i]->value.i16);
+            } else if (ivals[i]->type == ORTE_STRING) {
+                fprintf(stderr, "ival[%d] %d %d %s\n", i, ivals[i]->itag,
+                    ivals[i]->type, ivals[i]->value.strptr);
+            }
+        }
     }
 
-    fprintf(stderr, "put multiple\n");
+
+    fprintf(stderr, "check itag list\n");
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_XAND, 0, NULL, 15, itaglist)) {
+        fprintf(test_out, "check_itag_list: trivial NULL case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: trivial NULL case failed\n");
+    }
+    if (!orte_gpr_replica_check_itag_list(ORTE_GPR_XAND, 5, itaglist, 15, itaglist)) {
+        fprintf(test_out, "check_itag_list: trivial mismatched xand case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: trivial mismatched xand case failed\n");
+    }
+    if (!orte_gpr_replica_check_itag_list(ORTE_GPR_AND, 15, itaglist, 5, itaglist)) {
+        fprintf(test_out, "check_itag_list: trivial mismatched and case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: trivial mismatched and case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_XAND, 10, itaglist, 10, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial xand case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial xand case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_AND, 5, itaglist, 10, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial and case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial and case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_OR, 5, itaglist, 10, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial or case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial or case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_XOR, 10, itaglist, 5, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial or case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial or case failed\n");
+    }
+
+
+    fprintf(stderr, "put one value with single keyval\n");
+    val = OBJ_NEW(orte_gpr_value_t);
+    val->cnt = 1;
+    val->segment = strdup("test-put-segment");
+    val->num_tokens = 14;
+    for (i=0; i < 14; i++) {
+        asprintf(&(val->tokens[i]), "dummy%d", i);
+    }
+    val->tokens[14] = NULL;
+    val->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    val->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    (val->keyvals[0])->key = strdup("stupid-value-next-one");
+    (val->keyvals[0])->type = ORTE_INT32;
+    (val->keyvals[0])->value.i32 = 654321;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
+                                1, &val))) {
+        fprintf(test_out, "gpr_test: put of 1 value/1 keyval failed with error code %d\n", rc);
+        test_failure("gpr_test: put of 1 value/1 keyval failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: put of 1 value/1 keyval passed\n");
+    }
+    OBJ_RELEASE(val);
+    
+    fprintf(stderr, "put one value with multiple keyvals\n");
+    val = OBJ_NEW(orte_gpr_value_t);
+    val->cnt = 20;
+    val->segment = strdup("test-put-segment");
+    val->num_tokens = 14;
+    for (i=0; i < 14; i++) {
+        asprintf(&(val->tokens[i]), "dummy%d", i);
+    }
+    val->tokens[14] = NULL;
+    val->keyvals = (orte_gpr_keyval_t**)malloc(20*sizeof(orte_gpr_keyval_t*));
     for (i=0; i<20; i++) {
-        karray[i] = OBJ_NEW(orte_gpr_keyval_t);
-        asprintf(&(karray[i]->key), "stupid-test-%d", i);
-        karray[i]->type = ORTE_UINT32;
-        karray[i]->value.ui32 = (uint32_t)i;
+        val->keyvals[i] = OBJ_NEW(orte_gpr_keyval_t);
+        asprintf(&((val->keyvals[i])->key), "stupid-test-%d", i);
+        (val->keyvals[i])->type = ORTE_UINT32;
+        (val->keyvals[i])->value.ui32 = (uint32_t)i;
     }
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
-                                "test-put-segment",
-                                names, 20, karray))) {
-        fprintf(test_out, "gpr_test: put multiple keyval failed with error code %d\n", rc);
-        test_failure("gpr_test: put multiple keyval failed");
+                                1, &val))) {
+        fprintf(test_out, "gpr_test: put 1 value/multiple keyval failed with error code %d\n", rc);
+        test_failure("gpr_test: put 1 value/multiple keyval failed");
         test_finalize();
         return rc;
     } else {
-        fprintf(test_out, "gpr_test: put multiple keyval passed\n");
+        fprintf(test_out, "gpr_test: put 1 value/multiple keyval passed\n");
     }
 
-    fprintf(stderr, "put multiple - second container\n");
+    fprintf(stderr, "put 1 value/multiple keyvals - second container\n");
+    val->num_tokens = 10;
     names[10] = NULL;
-    for (i=0; i<10; i++) {
-        karray[i] = OBJ_NEW(orte_gpr_keyval_t);
-        asprintf(&(karray[i]->key), "stupid-test-%d", i);
-        karray[i]->type = ORTE_UINT32;
-        karray[i]->value.ui32 = (uint32_t)i;
-    }
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
-                                "test-put-segment",
-                                names, 10, karray))) {
-        fprintf(test_out, "gpr_test: put multiple keyval in second container failed with error code %d\n", rc);
-        test_failure("gpr_test: put multiple keyval in second container failed");
+                                1, &val))) {
+        fprintf(test_out, "gpr_test: put 1 value/multiple keyval in second container failed with error code %d\n", rc);
+        test_failure("gpr_test: put 1 value/multiple keyval in second container failed");
         test_finalize();
         return rc;
     } else {
-        fprintf(test_out, "gpr_test: put multiple keyval in second container passed\n");
+        fprintf(test_out, "gpr_test: put 1 value/multiple keyval in second container passed\n");
     }
-
+    OBJ_RELEASE(val);
     
     fprintf(stderr, "dump\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_dump(0))) {
@@ -214,8 +397,153 @@ int main(int argc, char **argv)
         fprintf(test_out, "gpr_test: dump passed\n");
     }
 
-#endif
+    fprintf(stderr, "get\n");
+    names[1] = NULL;
+    keys[0] = strdup("stupid-test-1");
+    keys[1] = NULL;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get(ORTE_GPR_OR,
+                                "test-put-segment",
+                                names, keys,
+                                &cnt, &values))) {
+        fprintf(test_out, "gpr_test: get failed with error code %d\n", rc);
+        test_failure("gpr_test: get failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: get passed\n");
+    }
 
+    fprintf(stderr, "get results:\n");
+    for (j=0; j < cnt; j++) {
+        fprintf(stderr, "value %d: cnt %d\t segment %s num_tokens %d\n", j,
+                            values[j]->cnt,
+                            values[j]->segment, values[j]->num_tokens);
+        for (i=0; i < values[j]->num_tokens; i++) {
+            fprintf(stderr, "token: %d %s\n", i, values[j]->tokens[i]);
+        }
+        kvals = values[j]->keyvals;
+        for (i=0; i < values[j]->cnt; i++) {
+            fprintf(stderr, "\tkey %s type %d\n", kvals[i]->key, kvals[i]->type);
+        }
+        OBJ_RELEASE(values[j]);
+    }
+    free(values);
+    
+    fprintf(stderr, "get multiple in one segment, multiple containers\n");
+    names[1] = NULL;
+    keys[0] = strdup("stupid-test-1");
+    keys[1] = strdup("stupid-test-3");
+    keys[2] = strdup("stupid-test-5");
+    keys[3] = strdup("stupid-test-8");
+    keys[4] = NULL;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get(ORTE_GPR_OR,
+                                "test-put-segment",
+                                names, keys,
+                                &cnt, &values))) {
+        fprintf(test_out, "gpr_test: get failed with error code %d\n", rc);
+        test_failure("gpr_test: get failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: get passed\n");
+    }
+
+    fprintf(stderr, "get results:\n");
+    for (j=0; j < cnt; j++) {
+        fprintf(stderr, "value %d: cnt %d\t segment %s num_tokens %d\n", j,
+                            values[j]->cnt,
+                            values[j]->segment, values[j]->num_tokens);
+        for (i=0; i < values[j]->num_tokens; i++) {
+            fprintf(stderr, "token: %d %s\n", i, values[j]->tokens[i]);
+        }
+        kvals = values[j]->keyvals;
+        for (i=0; i < values[j]->cnt; i++) {
+            fprintf(stderr, "\tkey %s type %d\n", kvals[i]->key, kvals[i]->type);
+        }
+        OBJ_RELEASE(values[j]);
+    }
+    free(values);
+    
+    fprintf(stderr, "put multiple copies of same entry in single container\n");
+    val = OBJ_NEW(orte_gpr_value_t);
+    val->cnt = 1;
+    val->segment = strdup("test-put-segment");
+    val->num_tokens = 14;
+    for (i=0; i < 14; i++) {
+        asprintf(&(val->tokens[i]), "dummy%d", i);
+    }
+    val->tokens[14] = NULL;
+    val->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    val->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    (val->keyvals[0])->key = strdup("stupid-value-next-one");
+    (val->keyvals[0])->type = ORTE_STRING;
+    (val->keyvals[0])->value.strptr = strdup("try-string-value");
+    for (i = 0; i < 10; i++) {
+        fprintf(stderr, "\tputting copy %d\n", i);
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
+                                    1, &val))) {
+            fprintf(test_out, "gpr_test: put multiple copies of one keyval in a container failed with error code %d\n", rc);
+            test_failure("gpr_test: put multiple copies of one keyval in a container failed");
+            test_finalize();
+            return rc;
+        }
+    }
+    
+    orte_gpr_replica_dump(0);
+    
+    fprintf(stderr, "search for multiple copies of one entry in container\n");
+    if(ORTE_SUCCESS != orte_gpr_replica_find_seg(&seg, false, "test-put-segment")) {
+        return -1;
+    }
+    
+    cptrs = (orte_gpr_replica_container_t**)((seg->containers)->addr);
+    cptr = cptrs[2];
+
+    /* now look for the values */
+    kptr = OBJ_NEW(orte_gpr_keyval_t);
+    kptr->key = strdup("really-stupid-value");
+    kptr->type = ORTE_STRING;
+    kptr->value.strptr = strdup("try-string-value");
+    orte_gpr_replica_create_itag(&itag2, seg, kptr->key);
+    if (!orte_gpr_replica_search_container(&num_found, 49, cptr) ||
+        num_found != 10) {
+        fprintf(test_out, "gpr_test: search container for multiple entries failed - found %d\n", num_found);
+        test_failure("gpr_test: search container for multiple entries failed");
+        test_finalize();
+        return -1;
+    } else {
+        fprintf(test_out, "gpr_test: search container for multiple entries passed - found %d values\n", num_found);
+    }
+    OBJ_RELEASE(kptr);
+    
+    fprintf(stderr, "update multiple keyvals in a container\n");
+    kptr = OBJ_NEW(orte_gpr_keyval_t);
+    kptr->key = strdup("really-stupid-value");
+    kptr->type = ORTE_INT32;
+    kptr->value.i32 = 123456;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr, &kptr))) {
+        fprintf(test_out, "gpr_test: update multiple keyvals failed with error code %d\n", rc);
+        test_failure("gpr_test: update multiple keyvals failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: update multiple keyvals passed\n");
+    }
+    
+    fprintf(stderr, "final dump\n");
+    orte_gpr_replica_dump(0);
+    
+    fprintf(stderr, "\nreleasing segment\n");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(&seg)) ||
+        NULL != seg) {
+        fprintf(test_out, "gpr_test: release segment failed with error code %d\n", rc);
+        test_failure("gpr_test: release segment failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: release segment passed\n");
+    }
+    
     fclose( test_out );
 /*    result = system( cmd_str );
     if( result == 0 ) {
@@ -228,13 +556,4 @@ int main(int argc, char **argv)
     test_finalize();
 
     return(0);
-}
-
-void gpr_test_trig_cb_fn(orte_gpr_notify_message_t *msg, void *tag)
-{
-    fprintf(test_out, "TRIGGER FIRED AND RECEIVED\n");
-    
-    fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", msg->segment, msg->cnt);
-    
-    OBJ_RELEASE(msg);
 }

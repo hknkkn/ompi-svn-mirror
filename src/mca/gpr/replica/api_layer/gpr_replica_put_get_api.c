@@ -65,8 +65,8 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
         }
     
         /* convert tokens to array of itags */
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg, val->tokens, &num_tokens)) ||
-            num_tokens != val->num_tokens) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg,
+                                            val->tokens, &(val->num_tokens)))) {
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
             return rc;
         }
