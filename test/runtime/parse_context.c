@@ -36,13 +36,13 @@ static FILE *test_out=NULL;
 
 static char *cmd_str="diff ./test_parse_context_out ./test_parse_context_out_std";
 
-void context_test(void);
+void context_test(void *value, int instance, int param);
 
 bool context_help;
 
 orte_context_value_names_t test_context_tbl[] = {
     /* start with usual help and version stuff */
-    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&context_help, (void*)false, context_test},
+    {{NULL, NULL, NULL}, "dummy", 2, ORTE_INT, (void*)&context_help, (void*)false, context_test},
     {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL, NULL} /* terminate the table */
 };
 
@@ -114,7 +114,9 @@ int main(int argc, char **argv)
     return(0);
 }
 
-void context_test(void)
+void context_test(void *value, int instance, int param)
 {
     fprintf(test_out, "context callback function called\n");
+    fprintf(test_out, "\tvalue %d instance %d param %d\n", *((int*)value),
+                instance, param);
 }

@@ -42,7 +42,7 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                        int argc, char **argv)
 {
     char *tmp;
-    int i, id, rc;
+    int i, j, k, num_inst, id, rc;
     
     if (ORTE_SUCCESS != (rc = orte_parse_context_setup_cmd(cmd_line, context_tbl))) {
         ORTE_ERROR_LOG(rc);
@@ -61,42 +61,48 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
         if (NULL != cmd_line && NULL != context_tbl[i].cmd_line_name &&
             ompi_cmd_line_is_taken(cmd_line, context_tbl[i].cmd_line_name)) {
             
-            switch (context_tbl[i].type) {
-                case ORTE_STRING:
-                    if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, 0, 0))) {
-                        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-                        return ORTE_ERR_BAD_PARAM;
-                    }
-                    *((char**)context_tbl[i].dest) = strdup(tmp);
-                    if (NULL == *((char**)context_tbl[i].dest)) {
-                        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                        return ORTE_ERR_OUT_OF_RESOURCE;
-                    }
-                    break;
-                
-                case ORTE_INT:
-                    if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, 0, 0))) {
-                        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-                        return ORTE_ERR_BAD_PARAM;
-                    }
-                    *((int*)context_tbl[i].dest) = (int)strtoul(tmp, NULL, 0);
-                    break;
-            
-                case ORTE_BOOL:
-                    *((bool*)context_tbl[i].dest) = true;
-                    break;
+            num_inst = ompi_cmd_line_get_ninsts(cmd_line, context_tbl[i].cmd_line_name);
+            for (j=0; j < num_inst; j++) {
+                k = 0;
+                do {
+                    switch (context_tbl[i].type) {
+                        case ORTE_STRING:
+                            if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, j, k))) {
+                                ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                                return ORTE_ERR_BAD_PARAM;
+                            }
+                            *((char**)context_tbl[i].dest) = strdup(tmp);
+                            if (NULL == *((char**)context_tbl[i].dest)) {
+                                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                                return ORTE_ERR_OUT_OF_RESOURCE;
+                            }
+                            break;
+                        
+                        case ORTE_INT:
+                            if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, j, k))) {
+                                ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                                return ORTE_ERR_BAD_PARAM;
+                            }
+                            *((int*)context_tbl[i].dest) = (int)strtoul(tmp, NULL, 0);
+                            break;
                     
-                default:
-                    ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-                    return ORTE_ERR_BAD_PARAM;
-                    break;
+                        case ORTE_BOOL:
+                            *((bool*)context_tbl[i].dest) = true;
+                            break;
+                            
+                        default:
+                            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                            return ORTE_ERR_BAD_PARAM;
+                            break;
+                    }
+        
+                    /* if specified, execute the requested callback function */
+                    if (NULL != context_tbl[i].cbfunc) {
+                       context_tbl[i].cbfunc(context_tbl[i].dest, j, k);
+                    }
+                    k++;
+                } while (k < context_tbl[i].num_params);
             }
-
-            /* if specified, execute the requested callback function */
-            if (NULL != context_tbl[i].cbfunc) {
-               context_tbl[i].cbfunc();
-            }
-
         } else if (NULL != context_tbl[i].name.prime) { /* otherwise get MCA parameter, if present */
     
             switch (context_tbl[i].type) {
@@ -142,7 +148,7 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
             }
             /* if specified, execute the requested callback function */
             if (NULL != context_tbl[i].cbfunc) {
-               context_tbl[i].cbfunc();
+               context_tbl[i].cbfunc(context_tbl[i].dest, 0, 0);
             }
 
         }

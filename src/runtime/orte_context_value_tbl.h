@@ -26,7 +26,7 @@
 
 #include "include/orte_types.h"
 
-typedef void (*orte_context_cb_fn_t)(void);
+typedef void (*orte_context_cb_fn_t)(void *value, int instance, int param);
 
 typedef struct {
     struct {
