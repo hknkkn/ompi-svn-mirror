@@ -198,7 +198,7 @@ int mca_base_param_kv_associate(int index, int keyval)
   }
 
   len = ompi_value_array_get_size(&mca_base_params);
-  if (index < 0 || ((size_t) index) > len) {
+  if (((size_t) index) > len) {
     return OMPI_ERROR;
   }
 
@@ -316,7 +316,7 @@ int mca_base_param_unset(int index)
     }
 
     len = ompi_value_array_get_size(&mca_base_params);
-    if (index < 0 || ((size_t) index) > len) {
+    if (((size_t) index) > len) {
         return OMPI_ERROR;
     }
 
@@ -393,7 +393,7 @@ int mca_base_param_set_internal(int index, bool internal)
     }
 
     len = ompi_value_array_get_size(&mca_base_params);
-    if (index < 0 || ((size_t) index) > len) {
+    if (((size_t) index) > len) {
         return OMPI_ERROR;
     }
 
@@ -435,18 +435,20 @@ int mca_base_param_dump(ompi_list_t **info, bool internal)
     len = ompi_value_array_get_size(&mca_base_params);
     array = OMPI_VALUE_ARRAY_GET_BASE(&mca_base_params, mca_base_param_t);
     for (i = 0; i < len; ++i) {
-        p = OBJ_NEW(mca_base_param_info_t);
-        p->mbpp_index = i;
-        p->mbpp_type_name = array[i].mbp_type_name;
-        p->mbpp_component_name = array[i].mbp_component_name;
-        p->mbpp_param_name = array[i].mbp_param_name;
-        p->mbpp_type = array[i].mbp_type;
-
-        /* JMS to be removed? */
-        p->mbpp_env_var_name = array[i].mbp_env_var_name;
-        p->mbpp_full_name = array[i].mbp_full_name;
-
-        ompi_list_append(*info, (ompi_list_item_t*) p);
+        if(array[i].mbp_internal == internal || internal) {
+            p = OBJ_NEW(mca_base_param_info_t);
+            p->mbpp_index = i;
+            p->mbpp_type_name = array[i].mbp_type_name;
+            p->mbpp_component_name = array[i].mbp_component_name;
+            p->mbpp_param_name = array[i].mbp_param_name;
+            p->mbpp_type = array[i].mbp_type;
+            
+            /* JMS to be removed? */
+            p->mbpp_env_var_name = array[i].mbp_env_var_name;
+            p->mbpp_full_name = array[i].mbp_full_name;
+            
+            ompi_list_append(*info, (ompi_list_item_t*) p);
+        }
     }
 
     /* All done */

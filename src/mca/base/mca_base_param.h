@@ -191,9 +191,13 @@ extern "C" {
      * mca_base_param_lookup_string() to retrieve the value of the
      * parameter.
      *
+     * Note that if a string value is read in from a file then it will
+     * never be NULL. It will always have a value, even if that value is
+     * the empty string.
+     *
      * This function is identical to mca_base_param_register_int()
      * except that you are registering a string parameter with an
-     * associated string default value (which is allowed to be NULL).
+     * associated string default value (which is \em not allowed to be NULL).
      * See mca_base_param_register_int() for all other details.
      */
     OMPI_DECLSPEC int mca_base_param_register_string(const char *type_name, 
@@ -282,6 +286,10 @@ extern "C" {
      * @retvalue OMPI_SUCCESS Upon success.  value will be filled with the
      * parameter's current value.
      *
+     * Note that if a string value is read in from a file then it will
+     * never be NULL. It will always have a value, even if that value is
+     * the empty string.
+     * 
      * The value of a specific MCA parameter can be looked up using the
      * return value from mca_base_param_register_string().
      */
