@@ -275,7 +275,7 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             dest->node_state = src->node_state;
             break;
             
-        case ORTE_STATUS_KEY:
+        case ORTE_PROC_STATE:
             dest->proc_status = src->proc_status;
             break;
             

@@ -17,7 +17,6 @@
 #include <string.h>
 
 #include "include/constants.h"
-#include "include/orte_names.h"
 #include "mca/rds/base/base.h"
 #include "mca/ras/base/base.h"
 #include "mca/rmaps/base/base.h"

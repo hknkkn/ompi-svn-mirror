@@ -111,15 +111,15 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
     free(segment);  /* done with this string */
     
     /* get vpid start and range from "global" container */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&toktag, seg, "global"))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&toktag, seg, ORTE_JOB_GLOBALS))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&keytags[0], seg, "vpid-start"))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&keytags[0], seg, ORTE_JOB_VPID_START))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&keytags[1], seg, "vpid-range"))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&keytags[1], seg, ORTE_JOB_VPID_RANGE))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
@@ -139,9 +139,9 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
             rc = ORTE_ERR_BAD_PARAM;
             goto CLEANUP;
         }
-        if (0 == strcmp(keyvals[i]->key, "vpid-start")) {
+        if (0 == strcmp(keyvals[i]->key, ORTE_JOB_VPID_START)) {
             vpid_start = keyvals[i]->value.vpid;
-        } else if (0 == strcmp(keyvals[i]->key, "vpid-range")) {
+        } else if (0 == strcmp(keyvals[i]->key, ORTE_JOB_VPID_RANGE)) {
             vpid_start = keyvals[i]->value.vpid;
         }
     }
@@ -189,10 +189,13 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
     for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
          if (NULL != trig[i] && seg == trig[i]->seg &&
              ORTE_GPR_SUBSCRIBE_CMD == trig[i]->cmd &&
-             ((ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA & ) ||/* see if they want data */
-                (ORTE_GPR_NOTIFY_INCLUDE_SHUTDOWN_DATA || ))) {
-             /* ok, trigger is on specified segment and wants startup data */
-             
+             ((ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA & trig[i]->flag.trig_action) ||/* see if they want data */
+                (ORTE_GPR_NOTIFY_INCLUDE_SHUTDOWN_DATA & trig[i]->flag.trig_action ))) {
+             /* ok, trigger is on specified segment and wants startup/shutdown data
+              * use array of target pointers to collect data for return
+              */
+
+
 	    include_data = false;
 
 	    /* construct the list of recipients and find out if data is desired */

@@ -30,6 +30,7 @@
 #include "util/output.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/soh/soh_types.h"
 
 #include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
 #include "gpr_replica_fn.h"
@@ -361,8 +362,8 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
             asprintf(&tmp, "\t\tData type: ORTE_NODE_STATE\tValue: %d\n", (int)iptr->value.node_state);
             break;
             
-        case ORTE_STATUS_KEY:
-            asprintf(&tmp, "\t\tData type: ORTE_STATUS_KEY\tValue: %d\n", (int)iptr->value.proc_status);
+        case ORTE_PROC_STATE:
+            asprintf(&tmp, "\t\tData type: ORTE_PROC_STATE\tValue: %d\n", (int)iptr->value.proc_status);
             break;
             
         case ORTE_EXIT_CODE:
