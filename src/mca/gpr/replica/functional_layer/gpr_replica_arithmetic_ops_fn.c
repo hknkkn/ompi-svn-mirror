@@ -119,6 +119,12 @@ int orte_gpr_replica_increment_value_fn(orte_gpr_addr_mode_t addr_mode,
         }
     }
 
+    /* check trigger conditions */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_VALUE_INCREMENTED))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
     return ORTE_SUCCESS;
 }
 
@@ -211,5 +217,11 @@ int orte_gpr_replica_decrement_value_fn(orte_gpr_addr_mode_t addr_mode,
         }
     }
 
+    /* check trigger conditions */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_VALUE_DECREMENTED))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
     return ORTE_SUCCESS;
 }

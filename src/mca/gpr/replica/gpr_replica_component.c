@@ -228,6 +228,31 @@ OBJ_CLASS_INSTANCE(
          orte_gpr_replica_itagval_destructor); /* destructor */
 
 
+/* TARGETS */
+/* constructor - used to initialize state of target instance */
+static void orte_gpr_replica_target_construct(orte_gpr_replica_target_t* targ)
+{
+    targ->cptr = NULL;
+    targ->num_ivals = 0;
+    orte_pointer_array_init(&(targ->ivals), 10, orte_gpr_replica_globals.max_size, 10);
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_gpr_replica_target_destructor(orte_gpr_replica_target_t* targ)
+{
+    if (NULL != targ->ivals) {
+       OBJ_RELEASE(targ->ivals);
+    }
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+         orte_gpr_replica_target_t,           /* type name */
+         ompi_object_t,                 /* parent "class" name */
+         orte_gpr_replica_target_construct,   /* constructor */
+         orte_gpr_replica_target_destructor); /* destructor */
+
+
 /* TRIGGERS */
 /* constructor - used to initialize state of trigger instance */
 static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig)

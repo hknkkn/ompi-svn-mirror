@@ -177,7 +177,6 @@ int orte_gpr_replica_recv_delete_entries_cmd(orte_buffer_t *buffer, orte_buffer_
 
     if (ORTE_SUCCESS == ret) {
         orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_ENTRY_DELETED);
-        orte_gpr_replica_check_synchros(seg);
     }
     
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);

@@ -109,10 +109,11 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
             for (j=0; j < (trig[i]->targets)->size; j++) {
                 if (NULL != targets[j]) {
                     if (cptr == targets[j]->cptr) {
-                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_trigger(seg, trig[i], cptr, targets[j]->iptr,
-                                            ORTE_GPR_REPLICA_ENTRY_DELETED))) {
-                            ORTE_ERROR_LOG(rc);
-                            return rc;
+                        if (ORTE_GPR_REPLICA_ENTRY_DELETED && trig[i]->action) {
+                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_register_callback(trig[i]))) {
+                                ORTE_ERROR_LOG(rc);
+                                return rc;
+                            }
                         }
                     }
                     orte_pointer_array_set_item(trig[i]->targets, j, NULL);
@@ -186,7 +187,9 @@ int orte_gpr_replica_update_keyval(orte_gpr_replica_segment_t *seg,
     orte_pointer_array_t *ptr;
     orte_gpr_replica_itagval_t *iptr;
     size_t j, n;
-    
+
+    /* NEED TO CHECK SUBSCRIPTIONS CHG_TO/FROM HERE */
+        
     /* for each item in the search array, delete it */
     ptr = orte_gpr_replica_globals.srch_ival;
     
@@ -244,6 +247,86 @@ int orte_gpr_replica_search_container(int *cnt, orte_gpr_replica_addr_mode_t add
         }
     }
     
+    return ORTE_SUCCESS;
+}
+
+
+int orte_gpr_replica_get_value(void *value, orte_gpr_replica_itagval_t *ival)
+{
+    orte_gpr_value_union_t *src;
+    
+    src = &(ival->value);
+    
+    switch(ival->type) {
+
+        case ORTE_UINT8:
+            *((uint8_t*)value) = src->ui8;
+            break;
+            
+        case ORTE_UINT16:
+            *((uint16_t*)value) = src->ui16;
+            break;
+            
+        case ORTE_UINT32:
+            *((uint32_t*)value) = src->ui32;
+            break;
+            
+#ifdef HAVE_I64
+        case ORTE_UINT64:
+            *((uint64_t*)value) = src->ui64;
+            break;
+#endif
+
+        case ORTE_INT8:
+            *((int8_t*)value) = src->i8;
+            break;
+        
+        case ORTE_INT16:
+            *((int16_t*)value) = src->i16;
+            break;
+        
+        case ORTE_INT32:
+            *((int32_t*)value) = src->i32;
+            break;
+        
+#ifdef HAVE_I64
+        case ORTE_INT64:
+            *((int64_t*)value) = src->i64;
+            break;
+#endif
+
+        case ORTE_JOBID:
+            *((orte_jobid_t*)value) = src->jobid;
+            break;
+            
+        case ORTE_CELLID:
+            *((orte_cellid_t*)value) = src->cellid;
+            break;
+            
+        case ORTE_VPID:
+            *((orte_vpid_t*)value) = src->vpid;
+            break;
+            
+        case ORTE_NODE_STATE:
+            *((orte_node_state_t*)value) = src->node_state;
+            break;
+            
+        case ORTE_PROC_STATE:
+            *((orte_proc_state_t*)value) = src->proc_state;
+            break;
+            
+        case ORTE_EXIT_CODE:
+            *((orte_exit_code_t*)value) = src->exit_code;
+            break;
+            
+        case ORTE_NULL:
+            *((uint8_t*)value) = NULL;
+            break;
+            
+        default:
+            return ORTE_ERR_BAD_PARAM;
+            break;
+    }
     return ORTE_SUCCESS;
 }
 

@@ -32,7 +32,6 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
                                int exit_status)
 {
     orte_gpr_value_t *value;
-    orte_gpr_keyval_t **keyvals;
     int rc;
     orte_jobid_t jobid;
     orte_vpid_t vpid;
@@ -102,6 +101,62 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
         ORTE_ERROR_LOG(rc);
     }
     
+    /* check to see if we need to increment orte-standard counters */
+    /* first, cleanup value so it can be used for that purpose */
+    OBJ_RELEASE(value->keyvals[0]);
+    OBJ_RELEASE(value->keyvals[1]);
+    free(value->keyvals);
+    value->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    if (NULL == value->keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_RELEASE(value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    value->cnt = 1;
+    value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == value->keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_RELEASE(value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    (value->keyvals[0])->type = ORTE_NULL;
+    
+    /* see which state we are in - let that determine the counter, if any */
+    switch (state) {
+        case ORTE_PROC_STATE_AT_STG1:
+            (value->keyvals[0])->key = strdup(ORTE_PROC_NUM_AT_STG1);
+            break;
+            
+        case ORTE_PROC_STATE_AT_STG2:
+            (value->keyvals[0])->key = strdup(ORTE_PROC_NUM_AT_STG2);
+            break;
+            
+        case ORTE_PROC_STATE_AT_STG3:
+            (value->keyvals[0])->key = strdup(ORTE_PROC_NUM_AT_STG3);
+            break;
+            
+        case ORTE_PROC_STATE_FINALIZED:
+            (value->keyvals[0])->key = strdup(ORTE_PROC_NUM_FINALIZED);
+            break;
+            
+        case ORTE_PROC_STATE_TERMINATED:
+            (value->keyvals[0])->key = strdup(ORTE_PROC_NUM_TERMINATED);
+            break;
+            
+        case ORTE_PROC_STATE_ABORTED:
+            (value->keyvals[0])->key = strdup(ORTE_PROC_NUM_ABORTED);
+            break;
+    }
+    if (NULL != (value->keyvals[0])->key) { /* need to increment a counter */
+        if (ORTE_SUCCESS != (rc = orte_gpr.increment_value(value))) {
+            ORTE_ERROR_LOG(rc);
+            OBJ_RELEASE(value);
+            return rc;
+        }
+    }
+    
+    /* all done */
     OBJ_RELEASE(value);
+    
     return rc;
 }

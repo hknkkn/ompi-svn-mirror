@@ -181,28 +181,29 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
                     if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, keyvals[i]->key) &&
                         ORTE_SUCCESS == orte_gpr_replica_search_container(&num_found,
                                                 ORTE_GPR_REPLICA_OR,
-                                                &itag, 1, cptr[j]) &&
-                        0 < num_found) {
-                        /* this key already exists - overwrite, if permission given
-                         * else add this keyval to the container as a new entry
-                         */
-                         if (overwrite) {
-                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr[j], keyvals[i]))) {
-                                return rc;
-                            }
-                            overwrite = false;  /* only do it for the first one - rest get added */
-                            *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_UPDATED;
-                         } else {
+                                                &itag, 1, cptr[j])) {
+                        if (0 < num_found) {
+                            /* this key already exists - overwrite, if permission given
+                             * else add this keyval to the container as a new entry
+                             */
+                             if (overwrite) {
+                                if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr[j], keyvals[i]))) {
+                                    return rc;
+                                }
+                                overwrite = false;  /* only do it for the first one - rest get added */
+                                *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_CHANGED;
+                             } else {
+                                if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(&iptr, seg, cptr[j], keyvals[i]))) {
+                                    return rc;
+                                }
+                                *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
+                             }
+                        } else { /* new key - add to container */
                             if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(&iptr, seg, cptr[j], keyvals[i]))) {
                                 return rc;
                             }
                             *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
-                         }
-                    } else { /* new key - add to container */
-                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(&iptr, seg, cptr[j], keyvals[i]))) {
-                            return rc;
                         }
-                        *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
                     }
                 }
             }

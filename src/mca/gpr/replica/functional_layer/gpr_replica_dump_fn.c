@@ -51,13 +51,40 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
     orte_gpr_replica_itag_t *itaglist;
     orte_gpr_replica_itagval_t **iptr;
     orte_gpr_replica_triggers_t **trig;
+    ompi_list_item_t *item;
+    orte_gpr_replica_callbacks_t *cb;
     char *token;
     int num_objects;
     int i, j, k;
     char *tmp_out;
 
-    asprintf(&tmp_out, "DUMP OF GENERAL PURPOSE REGISTRY\n\n");
+    asprintf(&tmp_out, "\n\n\nDUMP OF GENERAL PURPOSE REGISTRY\n\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    
+    if (0 < ompi_list_get_size(&(orte_gpr_replica.callbacks))) {
+        asprintf(&tmp_out, "Registered Callbacks");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+        
+        for (i=0, item=ompi_list_get_first(&(orte_gpr_replica.callbacks));
+             item != ompi_list_get_end(&(orte_gpr_replica.callbacks));
+             i++, item=ompi_list_get_next(item)) {
+             cb = (orte_gpr_replica_callbacks_t*)item;
+             asprintf(&tmp_out, "\tInfo for callback %d", i);
+             orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+             if (NULL == cb->requestor) {
+                asprintf(&tmp_out, "\t\tLocal requestor - local notify idtag %d", (cb->message)->idtag);
+             } else {
+                asprintf(&tmp_out, "\t\tRequestor: [%d,%d,%d] - remote notify idtag",
+                        ORTE_NAME_ARGS(cb->requestor), cb->remote_idtag);
+             }
+             orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+             asprintf(&tmp_out, "\t\tNum values: %d", (cb->message)->cnt);
+             orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+        }
+        asprintf(&tmp_out, "\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    
     
     trig = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
     k = 0;
@@ -302,22 +329,17 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     } else {
         for (i=0; i < (trig->targets)->size; i++) {
             if (NULL != target[i]) {
-                if (NULL == target[i]->cptr) {
-                    asprintf(&tmp_out, "\t\tContainer: NULL");
-                } else {
-                    asprintf(&tmp_out, "\t\tContainer: %d", (target[i]->cptr)->index);
-                }
+                asprintf(&tmp_out, "\t\tContainer: %d", (target[i]->cptr)->index);
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-                if (NULL == target[i]->iptr) {
-                    asprintf(&tmp_out, "\t\tKeyval: NULL");
-                } else {
-                    if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token,
-                                            trig->seg, (target[i]->iptr)->itag)) {
-                        asprintf(&tmp_out, "\t\tKeyval: %s", token);
+                ival = (orte_gpr_replica_itagval_t**)((target[i]->ivals)->addr);
+                for (k=0; k < (target[i]->ivals)->size; k++) {
+                    if (NULL != ival[k] && ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token,
+                                            trig->seg, ival[k]->itag)) {
+                        asprintf(&tmp_out, "\t\t\tKeyval: %s", token);
                         free(token);
+                        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                     }
                 }
-                orte_gpr_replica_dump_load_string(buffer, &tmp_out);
             }
         }
     }
@@ -394,11 +416,19 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
             break;
             
         case ORTE_NAME:
-            asprintf(&tmp, "\t\tData type: ORTE_NAME\tValue: UNIMPLEMENTED");
+            asprintf(&tmp, "\t\tData type: ORTE_NAME\tValue: [%d,%d,%d]", ORTE_NAME_ARGS(&(iptr->value.proc)));
+            break;
+            
+        case ORTE_VPID:
+            asprintf(&tmp, "\t\tData type: ORTE_VPID\tValue: %d", (int)iptr->value.vpid);
             break;
             
         case ORTE_JOBID:
-            asprintf(&tmp, "\t\tData type: ORTE_JOBID\tValue: UNIMPLEMENTED");
+            asprintf(&tmp, "\t\tData type: ORTE_JOBID\tValue: %d", (int)iptr->value.jobid);
+            break;
+            
+        case ORTE_CELLID:
+            asprintf(&tmp, "\t\tData type: ORTE_CELLID\tValue: %d", (int)iptr->value.cellid);
             break;
             
         case ORTE_NODE_STATE:

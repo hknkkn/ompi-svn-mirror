@@ -55,6 +55,16 @@ typedef uint8_t orte_gpr_replica_addr_mode_t;
 #define ORTE_GPR_REPLICA_NOT    (uint8_t)0x40
 
 
+/* define a few action flags for trigger evaluation
+ */
+#define ORTE_GPR_REPLICA_ENTRY_ADDED       (int8_t) 1
+#define ORTE_GPR_REPLICA_ENTRY_DELETED     (int8_t) 2
+#define ORTE_GPR_REPLICA_ENTRY_CHANGED     (int8_t) 3
+#define ORTE_GPR_REPLICA_ENTRY_CHG_TO      (int8_t) 4
+#define ORTE_GPR_REPLICA_ENTRY_CHG_FRM     (int8_t) 5
+#define ORTE_GPR_REPLICA_VALUE_INCREMENTED (int8_t) 6
+#define ORTE_GPR_REPLICA_VALUE_DECREMENTED (int8_t) 7
+
 typedef struct {
     int debug;
     int isolate;
@@ -169,9 +179,13 @@ typedef struct {
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_itagval_t);
 
 typedef struct {
+    ompi_object_t super;
     orte_gpr_replica_container_t *cptr;
-    orte_gpr_replica_itagval_t *iptr;
+    int num_ivals;
+    orte_pointer_array_t *ivals;
 } orte_gpr_replica_target_t;
+
+OBJ_CLASS_DECLARATION(orte_gpr_replica_target_t);
 
 struct orte_gpr_replica_triggers_t {
     ompi_object_t super;                            /**< Make this an object */
@@ -213,13 +227,6 @@ struct orte_gpr_replica_triggers_t {
 typedef struct orte_gpr_replica_triggers_t orte_gpr_replica_triggers_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_triggers_t);
-
-/* define a few action flags for trigger evaluation
- */
-#define ORTE_GPR_REPLICA_ENTRY_ADDED       (int8_t) 1
-#define ORTE_GPR_REPLICA_ENTRY_DELETED     (int8_t) 2
-#define ORTE_GPR_REPLICA_ENTRY_UPDATED     (int8_t) 3
-#define ORTE_GPR_REPLICA_TRIGGER_FIRED     (int8_t) 5
 
 /*
  * Callback list objects

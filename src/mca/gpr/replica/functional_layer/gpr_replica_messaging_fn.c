@@ -32,12 +32,12 @@
 #include "mca/ns/ns.h"
 #include "mca/errmgr/errmgr.h"
 
+#include "mca/gpr/replica/communications/gpr_replica_comm.h"
 #include "gpr_replica_fn.h"
 
 
 int orte_gpr_replica_process_callbacks(void)
 {
-#if 0
     orte_gpr_replica_callbacks_t *cb;
 
     /* aggregate messages for identical recipient - local messages just get called */
@@ -57,13 +57,13 @@ int orte_gpr_replica_process_callbacks(void)
 	} else {  /* remote request - send message back */
 	    if (orte_gpr_replica_globals.debug) {
 		    ompi_output(0, "process_callbacks: remote to [%d,%d,%d]",
-                    ORTE_NAME_ARGS(*(cb->requestor));
+                    ORTE_NAME_ARGS(cb->requestor));
 	    }
 	    orte_gpr_replica_remote_notify(cb->requestor, cb->remote_idtag, cb->message);
 	}
 	OBJ_RELEASE(cb);
     }
-#endif
+
     return ORTE_SUCCESS;
 }
 

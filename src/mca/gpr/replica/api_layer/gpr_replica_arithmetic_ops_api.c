@@ -79,6 +79,10 @@ int orte_gpr_replica_increment_value(orte_gpr_value_t *value)
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
+    if (ORTE_SUCCESS == rc) {
+        orte_gpr_replica_process_callbacks();
+    }
+    
     return rc;
 }
 
@@ -131,5 +135,9 @@ int orte_gpr_replica_decrement_value(orte_gpr_value_t *value)
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
+    if (ORTE_SUCCESS == rc) {
+        orte_gpr_replica_process_callbacks();
+    }
+    
     return rc;
 }

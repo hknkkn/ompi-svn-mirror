@@ -112,8 +112,9 @@ int orte_gpr_replica_delete_entries(orte_gpr_addr_mode_t addr_mode,
                                             key_itags, num_keys);
 
     if (ORTE_SUCCESS == rc) {
-        orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_ENTRY_DELETED);
-        orte_gpr_replica_check_synchros(seg);
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_ENTRY_DELETED))) {
+            ORTE_ERROR_LOG(rc);
+        }
     }
     
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
@@ -127,7 +128,9 @@ int orte_gpr_replica_delete_entries(orte_gpr_addr_mode_t addr_mode,
     }
 
     if (ORTE_SUCCESS == rc) {
-        rc = orte_gpr_replica_process_callbacks();
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_process_callbacks())) {
+            ORTE_ERROR_LOG(rc);
+        }
     }
     
     return rc;

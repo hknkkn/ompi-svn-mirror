@@ -116,6 +116,13 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action,
             key_mode = ORTE_GPR_REPLICA_OR;
         }
         
+        /* locate the  trigger's segment - this is where the counters will be */
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, trigval->segment))) {
+            ORTE_ERROR_LOG(rc);
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+            return rc;
+        }
+
         /* convert the trigger's tokens to an itaglist */
         if (NULL != trigval->tokens && 0 < trigval->num_tokens) {
             num_tokens = trigval->num_tokens; /* indicates non-NULL terminated list */

@@ -150,8 +150,7 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
 
     /* Now do the individual triggers.
      * First, setup the triggers for the three main stage gates - these all compare
-     * their value to that in ORTE_JOB_SLOTS_KEY, and return the value of their
-     * own counter.
+     * their value to that in ORTE_JOB_SLOTS_KEY
      */
     trig.keyvals[0]->key = strdup(ORTE_JOB_SLOTS_KEY);
     if (NULL == trig.keyvals[0]->key) {
@@ -164,7 +163,9 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
     trig.keyvals[0]->type = ORTE_NULL;
     trig.keyvals[1]->type = ORTE_NULL;
     
-    /* do the three stage gate subscriptions */
+    /* do the three stage gate subscriptions. the first stage gate returns all the
+     * startup information required by the different subsystems
+     */
     for (i=0; i < 3; i++) {
         value.keyvals[0]->key = strdup(keys[0]);
         if (NULL == value.keyvals[0]->key) {

@@ -37,7 +37,7 @@ typedef int8_t orte_proc_state_t;
 #define ORTE_PROC_STATE_AT_STG3        0x07  /* process is at Stage Gate 3 barrier in orte_finalize */
 #define ORTE_PROC_STATE_FINALIZED      0x08  /* process has completed orte_finalize and is running */
 #define ORTE_PROC_STATE_TERMINATED     0x09  /* process has terminated and is no longer running */
-
+#define ORTE_PROC_STATE_ABORTED        0x0A  /* process aborted */
 
 /**
  * Node State, correspondinding to the ORTE_NODE_STATE_* #defines,
