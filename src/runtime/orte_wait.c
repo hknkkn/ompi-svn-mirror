@@ -463,19 +463,27 @@ do_waitall(int options)
     if (!cb_enabled) return;
 
     while (1) {
-        ret = internal_waitpid(-1, &status, WNOHANG | options);
+        int status;
+        pid_t ret = internal_waitpid(-1, &status, WNOHANG);
+        pending_pids_item_t *pending;
+        registered_cb_item_t *cb;
+
         if (-1 == ret && EINTR == errno) continue;
         if (ret <= 0) break;
 
-        pending = OBJ_NEW(pending_pids_item_t);
-
-        pending->pid = ret;
-        pending->status = status;
-        ompi_list_append(&pending_pids, (ompi_list_item_t*) pending);
-
-        reg_cb = find_waiting_cb(ret, false);
-        if (NULL == reg_cb) continue;
-        trigger_callback(reg_cb, pending);
+        cb = find_waiting_cb(ret, false);
+        if (NULL == cb) {
+            pending = OBJ_NEW(pending_pids_item_t);
+            pending->pid = ret;
+            pending->status = status;
+            ompi_list_append(&pending_pids, &pending->super);
+        } else {
+            ompi_list_remove_item(&registered_cb, &cb->super);
+            OMPI_THREAD_UNLOCK(&mutex);
+            cb->callback(cb->pid, status, cb->data);
+            OMPI_THREAD_LOCK(&mutex);
+            OBJ_RELEASE(cb);
+        }
     }
 }
 
