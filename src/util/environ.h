@@ -44,6 +44,10 @@ extern "C" {
      *
      * The array that is returned is an unencumbered array that should
      * later be freed with a call to ompi_argv_free().
+     *
+     * Either (or both) of \em major and \em minor can be NULL.  If
+     * one of the two is NULL, the other list is simply copied to the
+     * output.  If both are NULL, NULL is returned.
      */
     OMPI_DECLSPEC char **ompi_environ_merge(char **minor, char **major);
 

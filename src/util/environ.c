@@ -33,10 +33,26 @@ char **ompi_environ_merge(char **minor, char **major)
     char *a, *b;
     int i, j;
 
+    /* Check for bozo cases */
+
+    if (NULL == major) {
+        if (NULL == minor) {
+            return NULL;
+        } else {
+            return ompi_argv_copy(minor);
+        }
+    }
+
     /* First, copy major */
 
     argv = ompi_argv_copy(major);
     argc = ompi_argv_count(argv);
+
+    /* Do we have something in minor? */
+
+    if (NULL == minor) {
+        return argv;
+    }
 
     /* Now go through minor and see if there's any non-duplicated env
        variables in there that we can append to the new argv.  This is
@@ -79,5 +95,5 @@ char **ompi_environ_merge(char **minor, char **major)
 
     /* All done */
 
-    return OMPI_SUCCESS;
+    return argv;
 }
