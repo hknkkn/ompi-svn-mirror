@@ -29,7 +29,7 @@
 #include "dps_internal.h"
 
 int orte_dps_peek(orte_buffer_t *buffer,
-                  orte_pack_type_t *type,
+                  orte_data_type_t *type,
                   size_t *number)
 {
   return ORTE_ERR_NOT_IMPLEMENTED;

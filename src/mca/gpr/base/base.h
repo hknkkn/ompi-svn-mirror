@@ -97,7 +97,7 @@ extern "C" {
  * packing type definitions for GPR-specific types
  */
 /* CAUTION - any changes here must also change corresponding
- * typedefs above
+ * typedefs in gpr_types.h
  */
 #define ORTE_GPR_PACK_CMD                OMPI_INT16
 #define ORTE_GPR_PACK_ACTION             OMPI_INT16

@@ -14,36 +14,31 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-        base \
-        coll \
-        common \
-        gpr \
-        io \
-        mpool \
-        ns \
-        one \
-        oob \
-	pcmclient \
-	pls \
-        pml \
-        ptl \
-	ras \
-	rds \
-	rmaps \
-        soh \
-        svc \
-        topo
+noinst_LTLIBRARIES = libmca_ras_base.la
+
+# For VPATH builds, have to specify where static-modules.h will be found
+
+AM_CPPFLAGS = -I$(top_builddir)/src
 
 # Source code files
 
-headers = mca.h
+headers = \
+        base.h
+
+# Library
+
+libmca_ras_base_la_SOURCES = \
+        $(headers) \
+        ras_base_close.c \
+        ras_base_select.c \
+        ras_base_open.c \
+        ras_base_local_fns.c
+
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca
+ompidir = $(includedir)/openmpi/mca/ras/base
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)

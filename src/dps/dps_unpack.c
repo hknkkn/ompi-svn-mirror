@@ -35,10 +35,10 @@
 
 int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
                     size_t *max_num_vals,
-                    orte_pack_type_t type)
+                    orte_data_type_t type)
 {
     int rc=ORTE_SUCCESS;
-    orte_pack_type_t stored_type;
+    orte_data_type_t stored_type;
     size_t pack_type_size, num_vals;
     int32_t mem_left, tst;
     void *src;
@@ -62,7 +62,7 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
     mem_left = buffer->toend;  /* how much data is left in buffer */
 
     /* calculate the pack type size */
-    pack_type_size = sizeof(orte_pack_type_t);
+    pack_type_size = sizeof(orte_data_type_t);
     
     /* check to see if there is at least that much left in the buffer */
     if ((int32_t)pack_type_size > mem_left) {
@@ -74,19 +74,19 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
     switch(pack_type_size) {
         case 1:
             s8 = (uint8_t *) src;
-            stored_type = (orte_pack_type_t)*s8;
+            stored_type = (orte_data_type_t)*s8;
             s8++;
             src = (void *) s8;
             break;
         case 2:
             s16 = (uint16_t *) src;
-            stored_type = (orte_pack_type_t)ntohs(*s16);
+            stored_type = (orte_data_type_t)ntohs(*s16);
             s16 += 2;
             src = (void *) s16;
             break;
         case 4:
             s32 = (uint32_t *) src;
-            stored_type = (orte_pack_type_t)ntohl(*s32);
+            stored_type = (orte_data_type_t)ntohl(*s32);
             s32 += 4;
             src = (void *) s32;
             break;

@@ -20,7 +20,7 @@
 #include <math.h>
 #include <unistd.h>
 
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns_types.h"
 
 #include "dps_internal.h"
 
@@ -31,14 +31,24 @@
 /**
  * Calculate the memory storage required for the requested operation
  */
-size_t orte_dps_memory_required(void *src, size_t num_vals, orte_pack_type_t type)
+size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t type)
 {
     char *strptr=NULL;
     size_t i=0, mem_req=0;
+    orte_byte_object_t *sbyteptr=NULL;
     
     switch(type) {
         case ORTE_BYTE:
             return num_vals;
+            break;
+
+        case ORTE_BYTE_OBJECT:
+            mem_req = 0;
+            sbyteptr = (orte_byte_object_t *) src;
+            for (i=0; i<num_vals; i++) {
+                mem_req += sbyteptr->size + sizeof(sbyteptr->size);
+            }
+            return mem_req;
             break;
             
         case ORTE_INT8:
@@ -114,11 +124,14 @@ int orte_dps_buffer_extend(orte_buffer_t *bptr, size_t mem_req)
     int pages;
     void*  newbaseptr;
     int num_pages;
-    size_t mdiff;      /* difference in memory */
+    float frac_pages;
+    ssize_t mdiff;
     size_t  sdiff;          /* difference (increase) in space */
     
     /* how many pages are required */
-    num_pages = (int)ceil(((double)mem_req/(double)orte_dps_page_size));
+    frac_pages = (float)mem_req/(float)orte_dps_page_size;
+    frac_pages = ceilf(frac_pages);
+    num_pages = (int)frac_pages;
 
     /* push up page count */
     pages = bptr->pages + num_pages;
@@ -135,7 +148,7 @@ int orte_dps_buffer_extend(orte_buffer_t *bptr, size_t mem_req)
     
     /* ok, we have new memory */
     
-    /* update all the pointers in the buffer DT */
+    /* update all the pointers in the buffer */
     /* first calc change in memory location */
     mdiff = ((char*)newbaseptr) - ((char*)bptr->base_ptr);
     

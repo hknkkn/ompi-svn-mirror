@@ -28,7 +28,9 @@ SUBDIRS = \
 	pls \
         pml \
         ptl \
-	rdas \
+	ras \
+	rds \
+	rmaps \
         soh \
         svc \
         topo

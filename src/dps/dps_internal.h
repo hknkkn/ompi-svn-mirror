@@ -42,14 +42,14 @@ extern int orte_dps_page_size;
  */
 int orte_dps_pack(orte_buffer_t *buffer, void *src,
                   size_t num_vals,
-                  orte_pack_type_t type);
+                  orte_data_type_t type);
 
 int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
                   size_t *max_num_vals,
-                  orte_pack_type_t type);
+                  orte_data_type_t type);
                   
 int orte_dps_peek(orte_buffer_t *buffer,
-                  orte_pack_type_t *type,
+                  orte_data_type_t *type,
                   size_t *number);
 
 int orte_dps_unload(orte_buffer_t *buffer,
@@ -63,7 +63,7 @@ int orte_dps_load(orte_buffer_t *buffer,
 /*
  * Totally internal functions
  */
-size_t orte_dps_memory_required(void *src, size_t num_vals, orte_pack_type_t type);
+size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t type);
 
 int orte_dps_buffer_extend (orte_buffer_t *bptr, size_t mem_req);
 

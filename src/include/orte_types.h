@@ -19,41 +19,46 @@
  * Supported datatypes for messaging and storage operations.
  *
  */
-typedef enum {
-    ORTE_BYTE,              /**< a byte of data */
-    ORTE_BOOL,              /**< boolean */
+
+typedef uint8_t orte_data_type_t ;
+
+#define    ORTE_BYTE                (orte_data_type_t)    1 /**< a byte of data */
+#define    ORTE_BOOL                (orte_data_type_t)    2 /**< boolean */
+#define    ORTE_STRING              (orte_data_type_t)    3 /**< a NULL terminated string */
     /* all the integer flavors */
-    ORTE_INT,               /**< generic integer */
-    ORTE_INT8,              /**< an 8-bit integer */
-    ORTE_INT16,             /**< a 16-bit integer */
-    ORTE_INT32,             /**< a 32-bit integer */
-    ORTE_INT64,             /**< a 64-bit integer */
+#define    ORTE_INT                 (orte_data_type_t)    4 /**< generic integer */
+#define    ORTE_INT8                (orte_data_type_t)    5 /**< an 8-bit integer */
+#define    ORTE_INT16               (orte_data_type_t)    6 /**< a 16-bit integer */
+#define    ORTE_INT32               (orte_data_type_t)    7 /**< a 32-bit integer */
+#define    ORTE_INT64               (orte_data_type_t)    8 /**< a 64-bit integer */
     /* all the unsigned integer flavors */
-    ORTE_UINT,              /**< generic unsigned integer */
-    ORTE_UINT8,             /**< an 8-bit unsigned integer */
-    ORTE_UINT16,            /**< a 16-bit unsigned integer */
-    ORTE_UINT32,            /**< a 32-bit unsigned integer */
-    ORTE_UINT64,            /**< a 64-bit unsigned integer */
+#define    ORTE_UINT                (orte_data_type_t)   10 /**< generic unsigned integer */
+#define    ORTE_UINT8               (orte_data_type_t)   11 /**< an 8-bit unsigned integer */
+#define    ORTE_UINT16              (orte_data_type_t)   12 /**< a 16-bit unsigned integer */
+#define    ORTE_UINT32              (orte_data_type_t)   13 /**< a 32-bit unsigned integer */
+#define    ORTE_UINT64              (orte_data_type_t)   14 /**< a 64-bit unsigned integer */
     /* all the floating point flavors */
-    ORTE_FLOAT,             /**< single-precision float */
-    ORTE_FLOAT4,            /**< 4-byte float - usually equiv to single */
-    ORTE_DOUBLE,            /**< double-precision float */
-    ORTE_FLOAT8,            /**< 8-byte float - usually equiv to double */
-    ORTE_LONG_DOUBLE,       /**< long-double precision float */
-    ORTE_FLOAT12,           /**< 12-byte float - used as long-double on some systems */
-    ORTE_FLOAT16,           /**< 16-byte float - used as long-double on some systems */
-    /* string */
-    ORTE_STRING,            /**< a NULL terminated string */
+#define    ORTE_FLOAT               (orte_data_type_t)   15 /**< single-precision float */
+#define    ORTE_FLOAT4              (orte_data_type_t)   16 /**< 4-byte float - usually equiv to single */
+#define    ORTE_DOUBLE              (orte_data_type_t)   17 /**< double-precision float */
+#define    ORTE_FLOAT8              (orte_data_type_t)   18 /**< 8-byte float - usually equiv to double */
+#define    ORTE_LONG_DOUBLE         (orte_data_type_t)   19 /**< long-double precision float */
+#define    ORTE_FLOAT12             (orte_data_type_t)   20 /**< 12-byte float - used as long-double on some systems */
+#define    ORTE_FLOAT16             (orte_data_type_t)   21 /**< 16-byte float - used as long-double on some systems */
     /* orte-specific typedefs */
-    ORTE_NAME,              /**< an ompi_process_name_t */
-    ORTE_JOBID,             /**< a jobid */
-    ORTE_CELLID,            /**< a cellid */
-    ORTE_NODE_STATE,        /**< node status flag */
-    ORTE_PROCESS_STATUS,    /**< process status key */
-    ORTE_EXIT_CODE          /**< process exit code */
-} orte_data_type_t ;
+#define    ORTE_NAME                (orte_data_type_t)   22 /**< an ompi_process_name_t */
+#define    ORTE_VPID                (orte_data_type_t)   23 /**< a vpid */
+#define    ORTE_JOBID               (orte_data_type_t)   24 /**< a jobid */
+#define    ORTE_CELLID              (orte_data_type_t)   25 /**< a cellid */
+#define    ORTE_NODE_STATE          (orte_data_type_t)   26 /**< node status flag */
+#define    ORTE_PROCESS_STATUS      (orte_data_type_t)   27 /**< process status key */
+#define    ORTE_EXIT_CODE           (orte_data_type_t)   28 /**< process exit code */
+#define    ORTE_BYTE_OBJECT         (orte_data_type_t)   29 /**< byte object structure */
 
-
+typedef struct {
+    size_t size;
+    uint8_t *bytes;
+} orte_byte_object_t;
 
 typedef int8_t orte_exit_code_t;
 typedef int8_t orte_status_key_t;

@@ -13,14 +13,21 @@
 #
 
 include $(top_srcdir)/config/Makefile.options
-AM_CPPFLAGS = -I$(top_srcdir)/test/support -DOMPI_ENABLE_DEBUG_OVERRIDE=1 -g
 
-noinst_PROGRAMS = \
-	dps_test 
+SUBDIRS = base $(MCA_rmaps_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_rmaps_ALL_SUBDIRS)
 
-dps_test_SOURCES = dps_test.c
-dps_test_LDADD = \
-        $(top_builddir)/src/dps/libdps.la \
-        $(top_builddir)/src/libmpi.la \
-        $(top_builddir)/test/support/libsupport.la 
-dps_test_DEPENDENCIES = $(dps_test_LDADD)
+# Source code files
+
+headers = \
+	rmaps_types.h \
+	rmaps.h
+
+# Conditionally install the header files
+
+if WANT_INSTALL_HEADERS
+ompidir = $(includedir)/openmpi/mca/rmaps
+ompi_HEADERS = $(headers)
+else
+ompidir = $(includedir)
+endif

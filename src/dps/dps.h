@@ -27,6 +27,9 @@
 
 #include "orte_config.h"
 
+#include "include/orte_types.h"
+#include "include/orte_constants.h"
+
 #include "dps_types.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -93,7 +96,7 @@ OMPI_DECLSPEC int orte_dps_close(void);
  */
 typedef int (*orte_dps_pack_fn_t)(orte_buffer_t *buffer, void *src,
                                   size_t num_values,
-                                  orte_pack_type_t type);
+                                  orte_data_type_t type);
 
 /* Unpack one or more values from a buffer
  * The unpack function unpacks one or more values of a specified type from the
@@ -174,7 +177,7 @@ typedef int (*orte_dps_pack_fn_t)(orte_buffer_t *buffer, void *src,
  */
 typedef int (*orte_dps_unpack_fn_t)(orte_buffer_t *buffer, void *dest,
                                     size_t *max_num_values,
-                                    orte_pack_type_t type);
+                                    orte_data_type_t type);
 
 /*
  * Get the type and number of values of the next item in the buffer
@@ -183,7 +186,7 @@ typedef int (*orte_dps_unpack_fn_t)(orte_buffer_t *buffer, void *dest,
  * call that does not disturb the buffer, so it can be called multiple times if desired.
  * 
  * @param buffer A pointer to the buffer in question.
- * @param type A pointer to an orte_pack_type_t variable where the type of the
+ * @param type A pointer to an orte_data_type_t variable where the type of the
  * next item in the buffer is to be stored. Caller must have memory backing this
  * location.
  * @param number A pointer to a size_t variable where the number of data values
@@ -196,7 +199,7 @@ typedef int (*orte_dps_unpack_fn_t)(orte_buffer_t *buffer, void *dest,
  * For string types, the number of values corresponds to the length of the string.
  */
 typedef int (*orte_dps_peek_next_item_fn_t)(orte_buffer_t *buffer,
-                                            orte_pack_type_t *type,
+                                            orte_data_type_t *type,
                                             size_t *number);
 
 /*

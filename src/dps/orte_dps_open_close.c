@@ -39,8 +39,20 @@ orte_dps_t orte_dps = {
  */
 static void orte_buffer_construct (orte_buffer_t* buffer)
 {
-    buffer->base_ptr = buffer->data_ptr = buffer->from_ptr = NULL;
-    buffer->pages = buffer->size = buffer->len = buffer-> space = buffer-> toend = 0;
+    /* allocate the initial data space */
+    buffer->base_ptr = (void *)malloc(orte_dps_page_size);
+    if (NULL == buffer->base_ptr) {  /* got an error = can't init */
+        buffer->base_ptr = buffer->data_ptr = buffer->from_ptr = NULL;
+        buffer->pages = buffer->size = buffer->len = buffer-> space = buffer-> toend = 0;
+    } else {
+        buffer->data_ptr = buffer->base_ptr;
+        buffer->from_ptr = buffer->base_ptr;
+        buffer->pages = 1;
+        buffer->size = orte_dps_page_size;
+        buffer->space = orte_dps_page_size;
+        buffer->len = 0;
+        buffer->toend = 0;
+    }
 }
 
 static void orte_buffer_destruct (orte_buffer_t* buffer)

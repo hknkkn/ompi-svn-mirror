@@ -13,14 +13,12 @@
 #
 
 include $(top_srcdir)/config/Makefile.options
-AM_CPPFLAGS = -I$(top_srcdir)/test/support -DOMPI_ENABLE_DEBUG_OVERRIDE=1 -g
 
-noinst_PROGRAMS = \
-	dps_test 
+SUBDIRS			= $(MCA_rmaps_DSO_SUBDIRS)
+DISTCLEANFILES		= $(SUBDIRS)
 
-dps_test_SOURCES = dps_test.c
-dps_test_LDADD = \
-        $(top_builddir)/src/dps/libdps.la \
-        $(top_builddir)/src/libmpi.la \
-        $(top_builddir)/test/support/libsupport.la 
-dps_test_DEPENDENCIES = $(dps_test_LDADD)
+# Every directory under here is a sym link to something in the main
+# src/mca tree.  Hence, we don't want to distribute anything under
+# here.
+
+DIST_SUBDIRS		=
