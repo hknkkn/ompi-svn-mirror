@@ -257,18 +257,20 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             break;
 #endif
 
-        case ORTE_BYTE_OBJECT:
-            (dest->byteobject).size = (src->byteobject).size;
-            (dest->byteobject).bytes = (src->byteobject).bytes;
-            (src->byteobject).bytes = NULL;
-            break;
-            
         case ORTE_NAME:
             dest->proc = src->proc;;
             break;
             
         case ORTE_JOBID:
             dest->jobid = src->jobid;
+            break;
+            
+        case ORTE_CELLID:
+            dest->cellid = src->cellid;
+            break;
+            
+        case ORTE_VPID:
+            dest->vpid = src->vpid;
             break;
             
         case ORTE_NODE_STATE:
@@ -283,6 +285,12 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             dest->exit_code = src->exit_code;
             break;
             
+        case ORTE_BYTE_OBJECT:
+            (dest->byteobject).size = (src->byteobject).size;
+            (dest->byteobject).bytes = (src->byteobject).bytes;
+            (src->byteobject).bytes = NULL;
+            break;
+
         case ORTE_APP_CONTEXT:
             if(NULL == src->app_context) {
                 dest->app_context = NULL;
@@ -302,6 +310,10 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
                 dest->app_context->cwd = strdup(src->app_context->cwd);
             }
             break;
+
+        case ORTE_NULL:
+            break;
+            
         default:
             return ORTE_ERR_BAD_PARAM;
             break;
