@@ -49,6 +49,7 @@ orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
     
     trig = OBJ_NEW(orte_gpr_replica_triggers_t);
     if (NULL == trig) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
@@ -59,6 +60,7 @@ orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
         trig->flag.trig_synchro = flag->trig_synchro;
     } else {
         OBJ_RELEASE(trig);
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         return ORTE_ERR_BAD_PARAM;
     }
 
@@ -109,6 +111,25 @@ orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t local_idtag,
 int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
                                   orte_gpr_replica_triggers_t *trig)
 {
+    int rc;
+    
+    /* find all the targets to which this trigger applies */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_init_targets(seg, trig))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
+    /* if synchro, initialize the count */
+    
+    /* if subscribe, see if initial data requested - if so, queue callback */
+    
+    return ORTE_SUCCESS;
+}
+
+
+int orte_gpr_replica_init_targets(orte_gpr_replica_segment_t *seg,
+                                  orte_gpr_replica_triggers_t *trig)
+{
     int i, j, rc;
     int num_keys, num_tokens;
     orte_gpr_replica_container_t **cptr;
@@ -122,7 +143,10 @@ int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
      * target to trig list
      */
     if (0 == num_tokens && 0 == num_keys) {
-        return orte_gpr_replica_trig_op_add_target(trig, NULL, NULL);
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_trig_op_add_target(trig, NULL, NULL))) {
+            ORTE_ERROR_LOG(rc);
+        }
+        return rc;
     }
     
     /* if tokens provided, but no keys provided, then this applies only to
@@ -131,7 +155,7 @@ int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
     if (0 == num_keys) {
         cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
         for (i=0; i < (seg->containers)->size; i++) {
-            if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(trig->addr_mode,
+            if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(trig->token_addr_mode,
                     num_tokens,
                     ORTE_VALUE_ARRAY_GET_BASE(&(trig->tokentags), orte_gpr_replica_itag_t),
                     cptr[i]->num_itags, cptr[i]->itags)) {  /* got this container */
@@ -152,7 +176,7 @@ int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
             if (NULL != cptr[i]) {  /* for every container */
                 iptr = (orte_gpr_replica_itagval_t**)((cptr[i]->itagvals)->addr);
                 for (j=0; j < (cptr[i]->itagvals)->size; j++) {
-                    if (NULL != iptr[j] && orte_gpr_replica_check_itag_list(ORTE_GPR_OR,
+                    if (NULL != iptr[j] && orte_gpr_replica_check_itag_list(ORTE_GPR_REPLICA_OR,
                             num_keys,
                             ORTE_VALUE_ARRAY_GET_BASE(&(trig->keytags), orte_gpr_replica_itag_t),
                             1, &(iptr[j]->itag))) {  /* got this value */
@@ -171,13 +195,13 @@ int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
      */
     cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
     for (i=0; i < (seg->containers)->size; i++) {
-        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(trig->addr_mode,
+        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(trig->token_addr_mode,
                     num_tokens,
                     ORTE_VALUE_ARRAY_GET_BASE(&(trig->tokentags), orte_gpr_replica_itag_t),
                     cptr[i]->num_itags, cptr[i]->itags)) {  /* got this container */
              iptr = (orte_gpr_replica_itagval_t**)((cptr[i]->itagvals)->addr);
              for (j=0; j < (cptr[i]->itagvals)->size; j++) {
-                 if (NULL != iptr[j] && orte_gpr_replica_check_itag_list(ORTE_GPR_OR,
+                 if (NULL != iptr[j] && orte_gpr_replica_check_itag_list(ORTE_GPR_REPLICA_OR,
                             num_keys,
                             ORTE_VALUE_ARRAY_GET_BASE(&(trig->keytags), orte_gpr_replica_itag_t),
                             1, &(iptr[j]->itag))) {  /* got this value */
@@ -202,19 +226,15 @@ orte_gpr_replica_trig_op_add_target(orte_gpr_replica_triggers_t *trig,
     
     target = (orte_gpr_replica_target_t*)malloc(sizeof(orte_gpr_replica_target_t));
     if (NULL == target) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    if (NULL != cptr) {
-        target->container = cptr->index;
-    } else {
-        target->container = -1;
-    }
-    if (NULL != iptr) {
-        target->itagval = iptr->index;
-    } else {
-        target->itagval = -1;
-    }
+    
+    target->cptr = cptr;
+    target->iptr = iptr;
+    
     if (0 > orte_pointer_array_add(trig->targets, target)) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
@@ -230,6 +250,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
     /* process request */
     cb = OBJ_NEW(orte_gpr_replica_callbacks_t);
     if (NULL == cb) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
@@ -253,6 +274,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
   
     } else {  /* remote request - queue remote callback */
         if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&(cb->requestor), trig->requestor))) {
+            ORTE_ERROR_LOG(rc);
             OBJ_RELEASE(cb);
             return rc;
         }
@@ -298,7 +320,8 @@ int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
         (*msg)->flag.trig_synchro = trig->flag.trig_synchro;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(trig->addr_mode, trig->seg,
+    /* NEED TO FIX THIS LINE */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(trig->token_addr_mode, trig->seg,
         ORTE_VALUE_ARRAY_GET_BASE(&(trig->tokentags), orte_gpr_replica_itag_t),
         (int)orte_value_array_get_size(&(trig->tokentags)),
         ORTE_VALUE_ARRAY_GET_BASE(&(trig->keytags), orte_gpr_replica_itag_t),

@@ -41,8 +41,19 @@
 #define ORTE_GPR_REPLICA_MAX_SIZE INT32_MAX
 #define ORTE_GPR_REPLICA_BLOCK_SIZE 100
 
+
 typedef int32_t orte_gpr_replica_itag_t;
 #define ORTE_GPR_REPLICA_ITAG_MAX INT32_MAX
+
+
+typedef uint8_t orte_gpr_replica_addr_mode_t;
+
+#define ORTE_GPR_REPLICA_AND    (uint8_t)0x01
+#define ORTE_GPR_REPLICA_OR     (uint8_t)0x02
+#define ORTE_GPR_REPLICA_XAND   (uint8_t)0x04
+#define ORTE_GPR_REPLICA_XOR    (uint8_t)0x08
+#define ORTE_GPR_REPLICA_NOT    (uint8_t)0x40
+
 
 typedef struct {
     int debug;
@@ -163,26 +174,27 @@ typedef union {
 } orte_gpr_replica_act_sync_t;
 
 typedef struct {
-    int container;
-    int itagval;
+    orte_gpr_replica_container_t *cptr;
+    orte_gpr_replica_itagval_t *iptr;
 } orte_gpr_replica_target_t;
 
 struct orte_gpr_replica_triggers_t {
-    ompi_object_t super;                    /**< Make this an object */
-    orte_process_name_t *requestor;         /**< Name of requesting process */
-    orte_gpr_notify_cb_fn_t callback;       /**< Function to be called for notificaiton */
-    void *user_tag;                         /**< User-provided tag for callback function */
-    orte_gpr_notify_id_t local_idtag;       /**< Local ID tag of associated subscription */
-    orte_gpr_notify_id_t remote_idtag;      /**< Remote ID tag of subscription */
-    orte_gpr_addr_mode_t addr_mode;         /**< Addressing mode */
-    orte_value_array_t tokentags;           /**< Array of tokens defining which containers are affected */
-    orte_value_array_t keytags;             /**< Keys defining which key-value pairs are affected */
-    orte_gpr_cmd_flag_t cmd;                /**< command that generated the notify msg */
+    ompi_object_t super;                            /**< Make this an object */
+    orte_process_name_t *requestor;                 /**< Name of requesting process */
+    orte_gpr_notify_cb_fn_t callback;               /**< Function to be called for notificaiton */
+    void *user_tag;                                 /**< User-provided tag for callback function */
+    orte_gpr_notify_id_t local_idtag;               /**< Local ID tag of associated subscription */
+    orte_gpr_notify_id_t remote_idtag;              /**< Remote ID tag of subscription */
+    orte_gpr_replica_addr_mode_t token_addr_mode;   /**< Tokens addressing mode */
+    orte_gpr_replica_addr_mode_t key_addr_mode;     /**< Keys addressing mode */
+    orte_value_array_t tokentags;                   /**< Array of tokens defining which containers are affected */
+    orte_value_array_t keytags;                     /**< Keys defining which key-value pairs are affected */
+    orte_gpr_cmd_flag_t cmd;                        /**< command that generated the notify msg */
     orte_gpr_replica_act_sync_t flag;
-    uint32_t trigger;                       /**< Number of objects that trigger notification */
-    uint32_t count;                         /**< Number of qualifying objects currently in segment */
-    int8_t above_below;                     /**< Tracks transitions across level */
-    orte_gpr_replica_segment_t *seg;        /**< Pointer to the segment to which this trigger applies */
+    uint32_t trigger;                               /**< Number of objects that trigger notification */
+    uint32_t count;                                 /**< Number of qualifying objects currently in segment */
+    int8_t above_below;                             /**< Tracks transitions across level */
+    orte_gpr_replica_segment_t *seg;                /**< Pointer to the segment to which this trigger applies */
     orte_pointer_array_t *targets;
 };
 typedef struct orte_gpr_replica_triggers_t orte_gpr_replica_triggers_t;

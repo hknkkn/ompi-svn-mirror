@@ -147,7 +147,7 @@ int orte_rmgr_base_get_app_context(
     keys[1] = NULL;
 
     rc = orte_gpr.get(
-        ORTE_GPR_OR,
+        ORTE_GPR_TOKENS_OR,
         segment,
         tokens,
         keys,
@@ -211,7 +211,7 @@ int orte_rmgr_base_get_job_slots(orte_jobid_t jobid, size_t* proc_slots)
     keys[1] = NULL;
 
     rc = orte_gpr.get(
-        ORTE_GPR_OR,
+        ORTE_GPR_TOKENS_OR,
         segment,
         tokens,
         keys,
@@ -273,7 +273,7 @@ int orte_rmgr_base_set_job_slots(orte_jobid_t jobid, size_t proc_slots)
     value.num_tokens = 1;
     values[0] = &value;
 
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE|ORTE_GPR_AND, 1, values);
+    rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
     free(segment);
     return rc;
 }

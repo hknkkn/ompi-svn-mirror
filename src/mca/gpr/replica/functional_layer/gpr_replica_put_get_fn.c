@@ -26,6 +26,8 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 
+#include "mca/errmgr/errmgr.h"
+
 #include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
 
 #include "gpr_replica_fn.h"
@@ -142,7 +144,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
     cptr2 = NULL;
     for (i=0; i < (seg->containers)->size && NULL == cptr2; i++) {
-        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(ORTE_GPR_XAND,
+        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(ORTE_GPR_TOKENS_XAND,
                                              num_tokens, token_itags,
                                              cptr[i]->num_itags, cptr[i]->itags)) {
             cptr2 = cptr[i];
@@ -223,6 +225,7 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     orte_gpr_replica_container_t **cptr, *cptr2;
     orte_gpr_replica_itagval_t **iptr;
     orte_gpr_keyval_t **kptr;
+    orte_gpr_replica_addr_mode_t tokmode, keymode;
     int rc, i, j, k, num_found;
     
     if (orte_gpr_replica_globals.debug) {
@@ -231,16 +234,25 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
 
     /* initialize the list of findings */
     get_list = OBJ_NEW(ompi_list_t);
+    if (NULL == get_list) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
     *cnt = 0;
     *values = NULL;
+    tokmode = 0x00ff & addr_mode;
+    keymode = ((0xff00 & addr_mode) >> 8) & 0x00ff;
     iptr = (orte_gpr_replica_itagval_t**)((orte_gpr_replica_globals.search)->addr);
     
     /* find all containers that meet search criteria */
     cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
     for (i=0; i < (seg->containers)->size; i++) {
-        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(addr_mode,
+        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(tokmode,
                                              num_tokens, tokentags,
                                              cptr[i]->num_itags, cptr[i]->itags)) {
+            /* check the list of keys to see if it matches too - if so, grab
+             * all of the found keyvals
+             */
             gptr = OBJ_NEW(orte_gpr_replica_get_list_t);
             gptr->cptr = cptr[i];
             /* search container for matches and collect them onto list */

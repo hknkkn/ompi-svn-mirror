@@ -30,7 +30,7 @@
 /*
  * A mode of "NONE" or "OVERWRITE" defaults to "XAND" behavior
  */
-bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
+bool orte_gpr_replica_check_itag_list(orte_gpr_replica_addr_mode_t addr_mode,
                     int num_itags_search,
                     orte_gpr_replica_itag_t *itags,
                     int num_itags_entry,
@@ -46,12 +46,12 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
     }
 
     /* take care of trivial cases that don't require search */
-    if ((ORTE_GPR_XAND & addr_mode) &&
+    if ((ORTE_GPR_REPLICA_XAND & addr_mode) &&
 	    (num_itags_search != num_itags_entry)) { /* can't possibly turn out "true" */
 	    return false;
     }
 
-    if ((ORTE_GPR_AND & addr_mode) &&
+    if ((ORTE_GPR_REPLICA_AND & addr_mode) &&
 	    (num_itags_search > num_itags_entry)) {  /* can't find enough matches */
 	    return false;
     }
@@ -65,7 +65,7 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
         	    if (entry_itags[i] == itags[j]) { /* found a match */
             		num_found++;
             		no_match = false;
-            		if (ORTE_GPR_OR & addr_mode) { /* only need one match */
+            		if (ORTE_GPR_REPLICA_OR & addr_mode) { /* only need one match */
             		    return true;
             		}
         	    }
@@ -75,7 +75,7 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
         	}
     }
 
-    if (ORTE_GPR_XAND & addr_mode) {  /* deal with XAND case */
+    if (ORTE_GPR_REPLICA_XAND & addr_mode) {  /* deal with XAND case */
         	if (num_found == num_itags_entry) { /* found all, and nothing more */
         	    return true;
         	} else {  /* found either too many or not enough */
@@ -83,7 +83,7 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
         	}
     }
 
-    if (ORTE_GPR_XOR & addr_mode) {  /* deal with XOR case */
+    if (ORTE_GPR_REPLICA_XOR & addr_mode) {  /* deal with XOR case */
         	if (num_found > 0 && exclusive) {  /* found at least one and nothing not on list */
         	    return true;
         	} else {
@@ -91,7 +91,7 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
         	}
     }
 
-    if (ORTE_GPR_AND & addr_mode) {  /* deal with AND case */
+    if (ORTE_GPR_REPLICA_AND & addr_mode) {  /* deal with AND case */
         	if (num_found == num_itags_search) {  /* found all the required keys */
         	    return true;
         	} else {

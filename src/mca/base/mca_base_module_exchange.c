@@ -337,7 +337,7 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     keys[1] = NULL;
     
     rc = orte_gpr.subscribe(
-        	ORTE_GPR_OR,
+        	ORTE_GPR_TOKENS_OR,
         	ORTE_GPR_NOTIFY_ADD_ENTRY|ORTE_GPR_NOTIFY_DELETE_ENTRY|
         	ORTE_GPR_NOTIFY_MODIFICATION|
 		ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA|
@@ -431,7 +431,7 @@ int mca_base_modex_send(
         source_component->mca_component_minor_version);
     
     rc = orte_gpr.put(
-        ORTE_GPR_AND | ORTE_GPR_OVERWRITE, 
+        ORTE_GPR_TOKENS_AND | ORTE_GPR_OVERWRITE, 
         1,
         &value);
         

@@ -78,28 +78,11 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
             targets = (orte_gpr_replica_target_t**)((trig[i]->targets)->addr);
             for (j=0; j < (trig[i]->targets)->size; j++) {
                 if (NULL != targets[j]) {
-                    if (cptr->index == targets[j]->container ||
-                        0 > targets[j]->container) {
-
-                        if (0 < targets[j]->itagval) {  /* specific itagval target */
-
-                            /* check to see if that itagval is here */
-                            for (k=0; k < (cptr->itagvals)->size; k++) {
-                                if (NULL != iptr[k] && targets[j]->itagval == iptr[k]->itag) {
-                                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_trigger(seg, trig[i], cptr, iptr[k],
-                                                ORTE_GPR_REPLICA_ENTRY_DELETED))) {
-                                        return rc;
-                                    }
-                                    break;
-                                }
-                            }
-                            
-                        } else {  /* container itself targeted */
-
-                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_trigger(seg, trig[i], cptr, NULL,
-                                                ORTE_GPR_REPLICA_ENTRY_DELETED))) {
-                                return rc;
-                            }
+                    if (cptr == targets[j]->cptr) {
+                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_trigger(seg, trig[i], cptr, targets[j]->iptr,
+                                            ORTE_GPR_REPLICA_ENTRY_DELETED))) {
+                            ORTE_ERROR_LOG(rc);
+                            return rc;
                         }
                     }
                     orte_pointer_array_set_item(trig[i]->targets, j, NULL);

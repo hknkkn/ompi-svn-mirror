@@ -228,7 +228,8 @@ static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig
     trig->local_idtag = ORTE_GPR_NOTIFY_ID_MAX;
     trig->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
     trig->seg = NULL;
-    trig->addr_mode = 0;
+    trig->token_addr_mode = 0;
+    trig->key_addr_mode = 0;
     
     OBJ_CONSTRUCT(&(trig->tokentags), orte_value_array_t);
     orte_value_array_init(&(trig->tokentags), sizeof(orte_gpr_replica_itag_t));
@@ -250,6 +251,9 @@ static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* trig)
 {
+    int i;
+    orte_gpr_replica_target_t **targets;
+    
     if (NULL != trig->requestor) {
         free(trig->requestor);
     }
@@ -258,7 +262,11 @@ static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* tri
     OBJ_DESTRUCT(&(trig->keytags));
 
     if (NULL != trig->targets) {
-        OBJ_RELEASE(trig->targets);
+       targets = (orte_gpr_replica_target_t**)((trig->targets)->addr);
+       for (i=0; i < (trig->targets)->size; i++) {
+            if (NULL != targets[i]) free(targets[i]);
+       }
+       OBJ_RELEASE(trig->targets);
     }
 }
 
@@ -388,8 +396,6 @@ int orte_gpr_replica_close(void)
 
 orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority)
 {
-    int rc;
-
     /* If we are to host a replica, then we want to be selected, so do all the
        setup and return the module */
 
@@ -459,7 +465,7 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
 }
 
 
-static int orte_gpr_replica_module_init(void)
+int orte_gpr_replica_module_init(void)
 {
     /* issue the non-blocking receive */ 
     if (!orte_gpr_replica_globals.isolate) {

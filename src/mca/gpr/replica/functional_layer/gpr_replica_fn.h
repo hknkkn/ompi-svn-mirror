@@ -179,7 +179,7 @@ bool orte_gpr_replica_search_container(int *num_found,
  * DICTIONARY OPERATIONS
  */
  
-bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
+bool orte_gpr_replica_check_itag_list(orte_gpr_replica_addr_mode_t mode,
 				    int num_itags_search,
 				    orte_gpr_replica_itag_t *itags,
 				    int num_itags_entry,
@@ -192,6 +192,9 @@ int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
  * Trigger Operations
  */
 int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
+                    orte_gpr_replica_triggers_t *trig);
+
+int orte_gpr_replica_init_targets(orte_gpr_replica_segment_t *seg,
                     orte_gpr_replica_triggers_t *trig);
 
 int orte_gpr_replica_check_trigger(orte_gpr_replica_segment_t *seg,

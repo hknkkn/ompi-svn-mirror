@@ -47,7 +47,8 @@ int orte_gpr_replica_synchro_fn(orte_gpr_addr_mode_t addr_mode,
         return ORTE_ERR_BAD_PARAM;
     }
     
-    trig->addr_mode = addr_mode;
+    trig->token_addr_mode = 0x00ff & addr_mode;
+    trig->key_addr_mode = ((0xff00 & addr_mode) >> 8) & 0x00ff;
 
     if (num_tokens != orte_value_array_set_size(&(trig->tokentags), num_tokens)) {
         return ORTE_ERR_OUT_OF_RESOURCE;

@@ -100,12 +100,26 @@ typedef uint16_t orte_gpr_cmd_flag_t;
 
 
 /** Define the addressing mode bit-masks for registry operations.
+ *
+ * Token modes
  */
-#define ORTE_GPR_OVERWRITE  (uint16_t)0x0001   /**< Overwrite Permission */
-#define ORTE_GPR_AND        (uint16_t)0x0002   /**< AND tokens together for search results */
-#define ORTE_GPR_OR         (uint16_t)0x0004   /**< OR tokens for search results */
-#define ORTE_GPR_XAND       (uint16_t)0x0008   /**< All tokens required, nothing else allowed */
-#define ORTE_GPR_XOR        (uint16_t)0x0010   /**< Any one of the tokens required, nothing else allowed */
+#define ORTE_GPR_TOKENS_AND     (uint16_t)0x0001    /**< AND tokens together for search results */
+#define ORTE_GPR_TOKENS_OR      (uint16_t)0x0002    /**< OR tokens for search results */
+#define ORTE_GPR_TOKENS_XAND    (uint16_t)0x0004    /**< All tokens required, nothing else allowed */
+#define ORTE_GPR_TOKENS_XOR     (uint16_t)0x0008    /**< Any one of the tokens required, nothing else allowed */
+#define ORTE_GPR_TOKENS_NOT     (uint16_t)0x0040    /**< Everything except those that meet specs */
+/*
+ * Key modes
+ */
+#define ORTE_GPR_KEYS_AND       (uint16_t)0x0100    /**< AND keys together */
+#define ORTE_GPR_KEYS_OR        (uint16_t)0x0200    /**< OR keys together */
+#define ORTE_GPR_KEYS_XAND      (uint16_t)0x0400    /**< All keys required, nothing else allowed */
+#define ORTE_GPR_KEYS_XOR       (uint16_t)0x0800    /**< Any one of the keys required, nothing else allowed */
+#define ORTE_GPR_KEYS_NOT       (uint16_t)0x4000    /**< Everything except those that meet specs */
+/*
+ * General modes
+ */
+#define ORTE_GPR_OVERWRITE      (uint16_t)0x8000    /**< Allow overwrite of existing info */
 
 typedef uint16_t orte_gpr_addr_mode_t;
 

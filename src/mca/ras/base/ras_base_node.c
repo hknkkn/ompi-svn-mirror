@@ -58,7 +58,7 @@ int orte_ras_base_node_query(ompi_list_t* nodes)
     
     /* query all node entries */
     rc = orte_gpr.get(
-        ORTE_GPR_OR,
+        ORTE_GPR_TOKENS_OR,
         ORTE_NODE_SEGMENT,
         NULL,
         NULL,
@@ -131,7 +131,7 @@ int orte_ras_base_node_query_alloc(ompi_list_t* nodes, orte_jobid_t jobid)
 
     /* query selected node entries */
     rc = orte_gpr.get(
-        ORTE_GPR_OR,
+        ORTE_GPR_TOKENS_OR,
         ORTE_NODE_SEGMENT,
         NULL,
         keys,
@@ -280,7 +280,7 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
     
     /* try the insert */
     rc = orte_gpr.put(
-        ORTE_GPR_OVERWRITE|ORTE_GPR_AND,
+        ORTE_GPR_OVERWRITE,
         num_values,
         values);
 
@@ -315,7 +315,7 @@ int orte_ras_base_node_delete(ompi_list_t* nodes)
         tokens[2] = NULL;
 
         rc = orte_gpr.delete_entries(
-            ORTE_GPR_AND,
+            ORTE_GPR_TOKENS_AND,
             ORTE_NODE_SEGMENT,
             tokens,
             NULL);
@@ -413,7 +413,7 @@ int orte_ras_base_node_assign(ompi_list_t* nodes, orte_jobid_t jobid)
     
     /* try the insert */
     rc = orte_gpr.put(
-        ORTE_GPR_OVERWRITE|ORTE_GPR_AND,
+        ORTE_GPR_OVERWRITE,
         num_values,
         values);
     

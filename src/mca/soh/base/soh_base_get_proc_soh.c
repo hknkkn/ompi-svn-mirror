@@ -56,7 +56,7 @@ int orte_soh_base_get_proc_soh(orte_proc_state_t *state,
     keys[1] = strdup(ORTE_PROC_EXIT_CODE_KEY);
     keys[2] = NULL;
     
-    if (ORTE_SUCCESS != (rc = orte_gpr.get(ORTE_GPR_XAND, segment,
+    if (ORTE_SUCCESS != (rc = orte_gpr.get(ORTE_GPR_TOKENS_XAND, segment,
                                 tokens, keys, &cnt, &values))) {
         ORTE_ERROR_LOG(rc);
         goto CLEANUP;

@@ -255,7 +255,8 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 
     k = (int)orte_value_array_get_size(&(trig->tokentags));
     
-    asprintf(&tmp_out, "\tAddressing mode: %X\tNumber of tokens: %d", trig->addr_mode, k);
+    asprintf(&tmp_out, "\tToken addressing mode: %X\tKey addressing mode: %X\n\tNumber of tokens: %d",
+                            trig->token_addr_mode, trig->key_addr_mode, k);
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
     for (i=0; i < k; i++) {

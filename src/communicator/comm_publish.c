@@ -118,7 +118,7 @@ int ompi_comm_namepublish ( char *service_name, char *port_name )
     (value->keyvals[0])->key = strdup(OMPI_COMM_PORT_KEY);
     (value->keyvals[0])->type = ORTE_STRING;
     ((value->keyvals[0])->value).strptr = strdup(port_name);
-    rc = orte_gpr.put(ORTE_GPR_AND | ORTE_GPR_OVERWRITE,
+    rc = orte_gpr.put(ORTE_GPR_TOKENS_AND | ORTE_GPR_OVERWRITE,
                       1, &value);
     OBJ_RELEASE(value);
     return rc;
@@ -139,7 +139,7 @@ char* ompi_comm_namelookup ( char *service_name )
     key[0] = strdup(OMPI_COMM_PORT_KEY);
     key[1] = NULL;
     
-    ret = orte_gpr.get(ORTE_GPR_AND, OMPI_NAMESPACE_SEGMENT,
+    ret = orte_gpr.get(ORTE_GPR_TOKENS_AND, OMPI_NAMESPACE_SEGMENT,
                             token, key, &cnt, &values);
     if (ORTE_SUCCESS != ret) {
         return NULL;
@@ -166,7 +166,7 @@ int ompi_comm_nameunpublish ( char *service_name )
     token[0] = service_name;
     token[1] = NULL;
     
-    return orte_gpr.delete_entries(ORTE_GPR_AND,
+    return orte_gpr.delete_entries(ORTE_GPR_TOKENS_AND,
                                         OMPI_NAMESPACE_SEGMENT,
                                         token, NULL); 
 }
