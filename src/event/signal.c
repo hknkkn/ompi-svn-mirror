@@ -114,7 +114,7 @@ ompi_evsignal_add(sigset_t *evsigmask, struct ompi_event *ev)
 	return (0);
 }
 
-static int 
+int 
 ompi_evsignal_restart(void)
 {
     if(initialized) {
