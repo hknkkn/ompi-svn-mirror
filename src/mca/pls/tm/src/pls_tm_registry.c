@@ -76,14 +76,22 @@ int orte_pls_tm_put_tid(const orte_process_name_t* name,
 /**
  * Retreive all process tids for the specified job.
  */
+extern int orte_gpr_replica_dump_segments(int output_id);
+
 int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids, 
-                         size_t* num_tids)
+                         orte_process_name_t **names, size_t* size)
 {
     char *segment;
-    char *keys[2];
+    char *keys[3];
     orte_gpr_value_t** values = NULL;
     int i, num_values = 0;
     int rc;
+
+    /* Zero out in case of error */
+
+    *tids = NULL;
+    *names = NULL;
+    *size = 0;
 
     /* query the job segment on the registry */
     if (ORTE_SUCCESS != 
@@ -93,7 +101,8 @@ int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids,
     }
 
     keys[0] = TID_KEY;
-    keys[1] = NULL;
+    keys[1] = ORTE_PROC_NAME_KEY;
+    keys[2] = NULL;
 
     rc = orte_gpr.get(
         ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_OR,
@@ -103,6 +112,8 @@ int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids,
         &num_values,
         &values
         );
+    ompi_output(orte_pls_base.pls_output,
+                "pls:tm:reg:get_tids: got %d values", num_values);
     if (rc != ORTE_SUCCESS) {
         free(segment);
         return rc;
@@ -114,11 +125,18 @@ int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids,
         goto cleanup;
     }
 
-    *tids = (tm_task_id*) malloc(sizeof(tm_task_id) * num_values);
+    *tids = malloc(sizeof(tm_task_id) * num_values);
+    *names = malloc(sizeof(orte_process_name_t *) * num_values);
+    if (NULL == *tids || NULL == *names) {
+        rc = ORTE_ERR_OUT_OF_RESOURCE;
+        ORTE_ERROR_LOG(rc);
+        goto cleanup;
+    }
     for (i = 0; i < num_values; ++i) {
         (*tids)[i] = values[i]->keyvals[0]->value.ui32;
+        (*names)[i] = values[i]->keyvals[1]->value.proc;
     }
-    *num_tids = num_values;
+    *size = num_values;
 
 cleanup:
     if (NULL != values) {
