@@ -39,6 +39,14 @@ extern "C" {
  * Internal definitions
  */
 
+struct orte_ras_base_selected_t {
+    ompi_list_item_t super;
+    orte_ras_base_component_t *component;
+    orte_ras_base_module_t* module;
+};
+typedef struct orte_ras_base_selected_t orte_ras_base_selected_t;
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_ras_base_selected_t);
+
 /*
  * function definitions
  */
@@ -47,20 +55,16 @@ OMPI_DECLSPEC int orte_ras_base_select(bool *allow_multi_user_threads,
 			                           bool *have_hidden_threads);
 OMPI_DECLSPEC int orte_ras_base_close(void);
 
-    /*
-     * Base functions that are common to all implementations - can be overridden
-     */
-int orte_ras_base_allocate_not_available(orte_jobid_t);
-
-int orte_ras_base_deallocate_not_available(orte_jobid_t);
 
 /*
  * globals that might be needed
  */
 
+
 typedef struct orte_ras_base_t {
     int ras_output;
     ompi_list_t ras_components;
+    ompi_list_t ras_selected;
 } orte_ras_base_t;
  
 OMPI_DECLSPEC extern orte_ras_base_t orte_ras_base;

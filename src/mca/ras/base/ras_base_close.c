@@ -24,15 +24,22 @@
 #include "mca/ras/base/base.h"
 
 
-int orte_ras_ras_base_close(void)
+int orte_ras_base_close(void)
 {
-  /* Close all remaining available components (may be one if this is a
-     Open RTE program, or [possibly] multiple if this is ompi_info) */
+    ompi_list_item_t* item;
+                                                                                                                      
+    /* Finalize all selected modules */
+    while((item = ompi_list_remove_first(&orte_ras_base.ras_selected)) != NULL) {
+        orte_ras_base_selected_t* selected = (orte_ras_base_selected_t*)item;
+        selected->module->finalize();
+        OBJ_RELEASE(selected);
+    }
+                                                                                                                      
+    /* Close all remaining available components (may be one if this is a
+       Open RTE program, or [possibly] multiple if this is ompi_info) */
 
-  mca_base_components_close(orte_ras_base.ras_output, 
-                            &orte_ras_base.ras_components, NULL);
-
-  /* All done */
-
-  return ORTE_SUCCESS;
+    mca_base_components_close(orte_ras_base.ras_output, 
+                              &orte_ras_base.ras_components, NULL);
+    return ORTE_SUCCESS;
 }
+

@@ -31,8 +31,7 @@ libmca_rmaps_base_la_SOURCES = \
         $(headers) \
         rmaps_base_close.c \
         rmaps_base_select.c \
-        rmaps_base_open.c \
-        rmaps_base_local_fns.c
+        rmaps_base_open.c
 
 
 # Conditionally install the header files

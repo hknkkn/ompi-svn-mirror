@@ -14,8 +14,8 @@
 /** @file:
  */
 
-#ifndef MCA_ORTE_RAS_BASE_H
-#define MCA_ORTE_RAS_BASE_H
+#ifndef ORTE_RMGR_BASE_H
+#define ORTE_RMGR_BASE_H
 
 /*
  * includes
@@ -25,8 +25,7 @@
 
 #include "class/ompi_list.h"
 #include "mca/mca.h"
-
-#include "mca/orte_ras/orte_ras.h"
+#include "mca/rmgr/rmgr.h"
 
 
 /*
@@ -39,35 +38,34 @@ extern "C" {
 /*
  * Internal definitions
  */
-/*
 
 /*
  * function definitions
  */
-OMPI_DECLSPEC    int mca_orte_ras_base_open(void);
-OMPI_DECLSPEC    int mca_orte_ras_base_select(bool *allow_multi_user_threads,
-			                                 bool *have_hidden_threads);
-OMPI_DECLSPEC    int mca_orte_ras_base_close(void);
+OMPI_DECLSPEC    int orte_rmgr_base_open(void);
+OMPI_DECLSPEC    int orte_rmgr_base_select(bool *allow_multi_user_threads,
+			                               bool *have_hidden_threads);
+OMPI_DECLSPEC    int orte_rmgr_base_close(void);
 
-    /*
-     * Base functions that are common to all implementations - can be overridden
-     */
-int mca_orte_ras_base_allocate_not_available(void);
-
-int mca_orte_ras_base_deallocate_not_available(void);
+/*
+ * Base functions that are common to all implementations - can be overridden
+ */
+int orte_rmgr_base_query_not_available(void);
+int orte_rmgr_base_allocate_not_available(orte_jobid_t);
+int orte_rmgr_base_deallocate_not_available(orte_jobid_t);
+int orte_rmgr_base_map_not_available(orte_jobid_t);
+int orte_rmgr_base_finalize_not_available(void);
 
 /*
  * globals that might be needed
  */
 
-OMPI_DECLSPEC extern int mca_orte_ras_base_output;
-OMPI_DECLSPEC extern bool mca_orte_ras_base_selected;
-OMPI_DECLSPEC extern ompi_list_t mca_orte_ras_base_components_available;
-OMPI_DECLSPEC extern mca_orte_ras_base_component_t mca_orte_ras_base_selected_component;
+typedef struct orte_rmgr_base_t {
+    int rmgr_output;
+    ompi_list_t rmgr_components;
+} orte_rmgr_base_t;
 
-/*
- * external API functions will be documented in the mca/ns/ns.h file
- */
+OMPI_DECLSPEC extern orte_rmgr_base_t orte_rmgr_base;
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

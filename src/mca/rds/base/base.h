@@ -25,7 +25,6 @@
 
 #include "class/ompi_list.h"
 #include "mca/mca.h"
-
 #include "mca/rds/rds.h"
 
 
@@ -39,29 +38,39 @@ extern "C" {
 /*
  * Internal definitions
  */
-/*
+struct orte_rds_base_selected_t {
+    ompi_list_item_t super;
+    orte_rds_base_component_t *component;
+    orte_rds_base_module_t* module;
+};
+typedef struct orte_rds_base_selected_t orte_rds_base_selected_t;
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_rds_base_selected_t);
+
 
 /*
  * function definitions
  */
-OMPI_DECLSPEC    int orte_mca_rds_base_open(void);
-OMPI_DECLSPEC    int orte_mca_rds_base_select(bool *allow_multi_user_threads,
-			                                 bool *have_hidden_threads);
-OMPI_DECLSPEC    int orte_mca_rds_base_close(void);
+OMPI_DECLSPEC    int orte_rds_base_open(void);
+OMPI_DECLSPEC    int orte_rds_base_select(bool *allow_multi_user_threads,
+			                              bool *have_hidden_threads);
+OMPI_DECLSPEC    int orte_rds_base_close(void);
 
     /*
      * Base functions that are common to all implementations - can be overridden
      */
-int orte_mca_rds_base_query_not_available(void);
+int orte_rds_base_query_not_available(void);
 
 /*
  * globals that might be needed
  */
 
-OMPI_DECLSPEC extern int orte_mca_rds_base_output;
-OMPI_DECLSPEC extern bool orte_mca_rds_base_selected;
-OMPI_DECLSPEC extern ompi_list_t orte_mca_rds_base_components_available;
-OMPI_DECLSPEC extern orte_mca_rds_base_component_t orte_mca_rds_base_selected_component;
+typedef struct orte_rds_base_t {
+    int rds_output;
+    ompi_list_t rds_components;
+    ompi_list_t rds_selected;
+} orte_rds_base_t;
+
+OMPI_DECLSPEC extern orte_rds_base_t orte_rds_base;
 
 /*
  * external API functions will be documented in the mca/ns/ns.h file

@@ -16,8 +16,8 @@
  * The Open RTE Resource Discovery Subsystem (RDS)
  */
 
-#ifndef ORTE_MCA_RDS_H
-#define ORTE_MCA_RDS_H
+#ifndef ORTE_RDS_H
+#define ORTE_RDS_H
 
 /*
  * includes
@@ -43,44 +43,46 @@
  * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
  * @endcode
  */
-typedef int (*orte_mca_rds_base_module_query_fn_t)(void);
+typedef int (*orte_rds_base_module_query_fn_t)(void);
 
+/**
+ * Cleanup module resources.
+ */
+
+typedef int (*orte_rds_base_module_finalize_fn_t)(void);
 
 /*
  * Ver 1.0.0
  */
-struct orte_mca_rds_base_module_1_0_0_t {
-    orte_mca_rds_base_module_query_fn_t query;
+struct orte_rds_base_module_1_0_0_t {
+    orte_rds_base_module_query_fn_t query;
+    orte_rds_base_module_finalize_fn_t finalize;
 };
 
-typedef struct orte_mca_rds_base_module_1_0_0_t orte_mca_rds_base_module_1_0_0_t;
-typedef orte_mca_rds_base_module_1_0_0_t orte_mca_rds_base_module_t;
+typedef struct orte_rds_base_module_1_0_0_t orte_rds_base_module_1_0_0_t;
+typedef orte_rds_base_module_1_0_0_t orte_rds_base_module_t;
 
 /*
  * RDS Component
  */
 
-typedef orte_mca_rds_base_module_t* (*orte_mca_rds_base_component_init_fn_t)(
+typedef orte_rds_base_module_t* (*orte_rds_base_component_init_fn_t)(
     bool *allow_multi_user_threads,
     bool *have_hidden_threads,
     int *priority);
 
-typedef int (*orte_mca_rds_base_component_finalize_fn_t)(void);
  
 /*
  * the standard component data structure
  */
 
-struct orte_mca_rds_base_component_1_0_0_t {
+struct orte_rds_base_component_1_0_0_t {
     mca_base_component_t rds_version;
     mca_base_component_data_1_0_0_t rds_data;
-
-    orte_mca_rds_base_component_init_fn_t rds_init;
-    orte_mca_rds_base_component_finalize_fn_t rds_finalize;
+    orte_rds_base_component_init_fn_t rds_init;
 };
-typedef struct orte_mca_rds_base_component_1_0_0_t orte_mca_rds_base_component_1_0_0_t;
-typedef orte_mca_rds_base_component_1_0_0_t orte_mca_rds_base_component_t;
-
+typedef struct orte_rds_base_component_1_0_0_t orte_rds_base_component_1_0_0_t;
+typedef orte_rds_base_component_1_0_0_t orte_rds_base_component_t;
 
 
 /*
@@ -92,8 +94,5 @@ typedef orte_mca_rds_base_component_1_0_0_t orte_mca_rds_base_component_t;
   /* ras v1.0 */ \
   "orte_rds", 1, 0, 0
 
-/* Global structure for accessing RDS functions
- */
-OMPI_DECLSPEC extern orte_mca_rds_base_module_t orte_rds;  /* holds selected module's function pointers */
-
 #endif
+

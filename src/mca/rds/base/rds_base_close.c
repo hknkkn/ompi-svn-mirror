@@ -20,25 +20,27 @@
 
 #include "mca/mca.h"
 #include "mca/base/base.h"
-
 #include "mca/rds/base/base.h"
 
 
-int orte_mca_rds_base_close(void)
+int orte_rds_base_close(void)
 {
-  /* If we have a selected component and module, then finalize it */
+    ompi_list_item_t* item;
 
-  if (orte_mca_rds_base_selected) {
-    orte_mca_rds_base_selected_component.rds_finalize();
-  }
+    /* Finalize all selected modules */
+    while((item = ompi_list_remove_first(&orte_rds_base.rds_selected)) != NULL) {
+        orte_rds_base_selected_t* selected = (orte_rds_base_selected_t*)item;
+        selected->module->finalize();
+        OBJ_RELEASE(selected);
+    }
+    
+    /* Close all remaining available components (may be one if this is a
+       Open RTE program, or [possibly] multiple if this is ompi_info) */
 
-  /* Close all remaining available components (may be one if this is a
-     Open RTE program, or [possibly] multiple if this is ompi_info) */
+    mca_base_components_close(orte_rds_base.rds_output, 
+                              &orte_rds_base.rds_components, NULL);
 
-  mca_base_components_close(orte_mca_rds_base_output, 
-                            &orte_mca_rds_base_components_available, NULL);
-
-  /* All done */
-
-  return ORTE_SUCCESS;
+    OBJ_DESTRUCT(&orte_rds_base.rds_selected);
+    return ORTE_SUCCESS;
 }
+

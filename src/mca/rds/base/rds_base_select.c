@@ -27,77 +27,39 @@
  * Function for selecting one component from all those that are
  * available.
  */
-int orte_mca_rds_base_select(bool *allow_multi_user_threads, 
+int orte_rds_base_select(bool *allow_multi_user_threads, 
                        bool *have_hidden_threads)
 {
-  ompi_list_item_t *item;
-  mca_base_component_list_item_t *cli;
-  orte_mca_rds_base_component_t *component, *best_component = NULL;
-  orte_mca_rds_base_module_t *module, *best_module = NULL;
-  bool multi, hidden;
-  int priority, best_priority = -1;
+    ompi_list_item_t *item;
+    mca_base_component_list_item_t *cli;
+    orte_rds_base_component_t *component;
+    orte_rds_base_module_t *module;
+    bool multi, hidden;
+    int priority;
 
-  /* Iterate through all the available components */
+    /* Iterate through all the available components */
+  
+    for (item = ompi_list_get_first(&orte_rds_base.rds_components);
+         item != ompi_list_get_end(&orte_rds_base.rds_components);
+         item = ompi_list_get_next(item)) {
+        cli = (mca_base_component_list_item_t *) item;
+        component = (orte_rds_base_component_t *) cli->cli_component;
 
-  for (item = ompi_list_get_first(&orte_mca_rds_base_components_available);
-       item != ompi_list_get_end(&orte_mca_rds_base_components_available);
-       item = ompi_list_get_next(item)) {
-    cli = (mca_base_component_list_item_t *) item;
-    component = (orte_mca_rds_base_component_t *) cli->cli_component;
+        /* Call the component's init function and see if it wants to be
+         * selected
+         */
+        module = component->rds_init(&multi, &hidden, &priority);
 
-    /* Call the component's init function and see if it wants to be
-       selected */
-
-    module = component->rds_init(&multi, &hidden, &priority);
-
-    /* If we got a non-NULL module back, then the component wants to
-       be selected.  So save its multi/hidden values and save the
-       module with the highest priority */
-
-    if (NULL != module) {
-      /* If this is the best one, save it */
-
-      if (priority > best_priority) {
-
-        /* If there was a previous best one, finalize */
-
-        if (NULL != best_component) {
-          best_component->ns_finalize();
-        }
-
-        /* Save the new best one */
-
-        best_module = module;
-        best_component = component;
-        *allow_multi_user_threads = multi;
-        *have_hidden_threads = hidden;
-
-	/* update the best priority */
-	best_priority = priority;
-      } 
-
-      /* If it's not the best one, finalize it */
-
-      else {
-        component->rds_finalize();
-      }
+        /* If we got a non-NULL module back, then the component wants to
+         * be selected.   
+         */
+        if (NULL != module) {
+            orte_rds_base_selected_t* selected = OBJ_NEW(orte_rds_base_selected_t);
+            selected->module = module;
+            selected->component = component;
+            ompi_list_append(&orte_rds_base.rds_selected, &selected->super);
+        } 
     }
-  }
-
-  /* If we didn't find one to select, barf */
-
-  if (NULL == best_component) {
-    return ORTE_ERROR;
-  }
-
-  /* We have happiness -- save the component and module for later
-     usage */
-
-  orte_rds = *best_module;
-  orte_mca_rds_base_selected_component = *best_component;
-  orte_mca_rds_base_selected = true;
-
-  /* all done */
-
-  return ORTE_SUCCESS;
+    return (ompi_list_get_size(&orte_rds_base.rds_selected) > 0) ? ORTE_SUCCESS : ORTE_ERROR;
 }
+

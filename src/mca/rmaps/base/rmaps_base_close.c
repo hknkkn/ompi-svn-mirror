@@ -24,21 +24,24 @@
 #include "mca/rmaps/base/base.h"
 
 
-int orte_mca_rmaps_base_close(void)
+int orte_rmaps_base_close(void)
 {
-  /* If we have a selected component and module, then finalize it */
+    ompi_list_item_t* item;
+                                                                                                        
+    /* Finalize all selected modules */
+    while((item = ompi_list_remove_first(&orte_rmaps_base.rmaps_selected)) != NULL) {
+        orte_rmaps_base_selected_t* selected = (orte_rmaps_base_selected_t*)item;
+        selected->module->finalize();
+        OBJ_RELEASE(selected);
+    }
 
-  if (orte_mca_rmaps_base_selected) {
-    orte_mca_rmaps_base_selected_component.rmaps_finalize();
-  }
+    /* Close all remaining available components (may be one if this is a
+       Open RTE program, or [possibly] multiple if this is ompi_info) */
 
-  /* Close all remaining available components (may be one if this is a
-     Open RTE program, or [possibly] multiple if this is ompi_info) */
+    mca_base_components_close(orte_rmaps_base.rmaps_output, 
+                              &orte_rmaps_base.rmaps_components, NULL);
 
-  mca_base_components_close(orte_mca_rmaps_base_output, 
-                            &orte_mca_rmaps_base_components_available, NULL);
-
-  /* All done */
-
-  return ORTE_SUCCESS;
+    OBJ_DESTRUCT(&orte_rmaps_base.rmaps_selected);
+    return ORTE_SUCCESS;
 }
+

@@ -20,25 +20,19 @@
 
 #include "mca/mca.h"
 #include "mca/base/base.h"
+#include "mca/rmgr/base/base.h"
 
-#include "mca/orte_ras/base/base.h"
 
-
-int mca_orte_ras_base_close(void)
+int orte_rmgr_base_close(void)
 {
-  /* If we have a selected component and module, then finalize it */
+    /* finalize the selected component */
+    orte_rmgr.rmgr_finalize();
 
-  if (mca_orte_ras_base_selected) {
-    mca_orte_ras_base_selected_component.ras_finalize();
-  }
+    /* Close all remaining available components (may be one if this is a
+       Open RTE program, or [possibly] multiple if this is ompi_info) */
 
-  /* Close all remaining available components (may be one if this is a
-     Open RTE program, or [possibly] multiple if this is ompi_info) */
-
-  mca_base_components_close(mca_orte_ras_base_output, 
-                            &mca_orte_ras_base_components_available, NULL);
-
-  /* All done */
-
-  return ORTE_SUCCESS;
+    mca_base_components_close(orte_rmgr_base.rmgr_output, 
+                              &orte_rmgr_base.rmgr_components, NULL);
+    return ORTE_SUCCESS;
 }
+

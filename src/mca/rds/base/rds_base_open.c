@@ -39,38 +39,29 @@
 /*
  * Global variables
  */
-int orte_mca_rds_base_output = -1;
-orte_mca_rds_base_module_t orte_rds = {
-    orte_mca_ras_base_query_not_available,
-};
-bool orte_mca_rds_base_selected = false;
-ompi_list_t orte_mca_rds_base_components_available;
-orte_mca_rds_base_component_t orte_mca_rds_base_selected_component;
-
+orte_rds_base_t orte_rds_base;
 
 
 /**
  * Function for finding and opening either all MCA components, or the one
  * that was specifically requested via a MCA parameter.
  */
-int orte_mca_rds_base_open(void)
+int orte_rds_base_open(void)
 {
   /* Open up all available components */
 
   if (ORTE_SUCCESS != 
-      mca_base_components_open("orte_rds", 0, orte_mca_rds_base_static_components, 
-                               &orte_mca_rds_base_components_available)) {
+      mca_base_components_open("orte_rds", 0, mca_rds_base_static_components, 
+                               &orte_rds_base.rds_components)) {
     return ORTE_ERROR;
   }
+  OBJ_CONSTRUCT(&orte_rds_base.rds_selected, ompi_list_t);
 
   /* setup output for debug messages */
   if (!ompi_output_init) {  /* can't open output */
       return ORTE_ERR_NOT_AVAILABLE;
   }
-
-  orte_mca_rds_base_output = ompi_output_open(NULL);
-
-  /* All done */
-
+  orte_rds_base.rds_output = ompi_output_open(NULL);
   return ORTE_SUCCESS;
 }
+

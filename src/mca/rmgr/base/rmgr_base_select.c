@@ -19,85 +19,68 @@
 
 #include "mca/mca.h"
 #include "mca/base/base.h"
-
-#include "mca/orte_ras/base/base.h"
+#include "mca/rmgr/base/base.h"
 
 
 /**
  * Function for selecting one component from all those that are
  * available.
  */
-int mca_orte_ras_base_select(bool *allow_multi_user_threads, 
-                       bool *have_hidden_threads)
+int orte_rmgr_base_select(bool *allow_multi_user_threads, 
+                          bool *have_hidden_threads)
 {
-  ompi_list_item_t *item;
-  mca_base_component_list_item_t *cli;
-  mca_orte_ras_base_component_t *component, *best_component = NULL;
-  mca_orte_ras_base_module_t *module, *best_module = NULL;
-  bool multi, hidden;
-  int priority, best_priority = -1;
+    ompi_list_item_t *item;
+    mca_base_component_list_item_t *cli;
+    orte_rmgr_base_component_t *component, *best_component = NULL;
+    orte_rmgr_base_module_t *module, *best_module = NULL;
+    bool multi, hidden;
+    int priority, best_priority = -1;
 
-  /* Iterate through all the available components */
+    /* Iterate through all the available components */
+    for (item = ompi_list_get_first(&orte_rmgr_base.rmgr_components);
+         item != ompi_list_get_end(&orte_rmgr_base.rmgr_components);
+         item = ompi_list_get_next(item)) {
+        cli = (mca_base_component_list_item_t *) item;
+        component = (orte_rmgr_base_component_t *) cli->cli_component;
 
-  for (item = ompi_list_get_first(&mca_orte_ras_base_components_available);
-       item != ompi_list_get_end(&mca_orte_ras_base_components_available);
-       item = ompi_list_get_next(item)) {
-    cli = (mca_base_component_list_item_t *) item;
-    component = (mca_orte_ras_base_component_t *) cli->cli_component;
+        /* Call the component's init function and see if it wants to be selected */
+        module = component->rmgr_init(&multi, &hidden, &priority);
 
-    /* Call the component's init function and see if it wants to be
-       selected */
+        /* If we got a non-NULL module back, then the component wants to
+           be selected.  So save its multi/hidden values and save the
+           module with the highest priority */
 
-    module = component->ras_init(&multi, &hidden, &priority);
+        if (NULL == module)
+            continue;
 
-    /* If we got a non-NULL module back, then the component wants to
-       be selected.  So save its multi/hidden values and save the
-       module with the highest priority */
+        /* If this is the best one, save it */
 
-    if (NULL != module) {
-      /* If this is the best one, save it */
+        if (priority > best_priority) {
 
-      if (priority > best_priority) {
+            /* If there was a previous best one, finalize */
 
-        /* If there was a previous best one, finalize */
+            if (NULL != best_module) {
+                 best_module->rmgr_finalize();
+            }
 
-        if (NULL != best_component) {
-          best_component->ns_finalize();
-        }
+            /* Save the new best one */
+            best_module = module;
+            best_component = component;
+            *allow_multi_user_threads = multi;
+            *have_hidden_threads = hidden;
 
-        /* Save the new best one */
-
-        best_module = module;
-        best_component = component;
-        *allow_multi_user_threads = multi;
-        *have_hidden_threads = hidden;
-
-	/* update the best priority */
-	best_priority = priority;
-      } 
-
-      /* If it's not the best one, finalize it */
-
-      else {
-        component->ras_finalize();
-      }
+            /* update the best priority */
+            best_priority = priority;
+        } 
     }
-  }
 
-  /* If we didn't find one to select, barf */
+    /* If we didn't find one to select, barf */
+    if (NULL == best_module) {
+        return ORTE_ERROR;
+    }
 
-  if (NULL == best_component) {
-    return ORTE_ERROR;
-  }
-
-  /* We have happiness -- save the component and module for later
-     usage */
-
-  orte_ras = *best_module;
-  mca_orte_ras_base_selected_component = *best_component;
-  mca_orte_ras_base_selected = true;
-
-  /* all done */
-
-  return ORTE_SUCCESS;
+    /* save the module for later usage */
+    orte_rmgr = *best_module;
+    return ORTE_SUCCESS;
 }
+

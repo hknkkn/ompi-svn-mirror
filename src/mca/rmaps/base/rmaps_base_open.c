@@ -33,44 +33,30 @@
 #include "mca/rmaps/base/static-components.h"
 
 /*
- * globals
- */
-
-/*
  * Global variables
  */
-int orte_mca_rmaps_base_output = -1;
-orte_mca_rmaps_base_module_t orte_rmaps = {
-    orte_mca_ras_base_query_not_available,
-};
-bool orte_mca_rmaps_base_selected = false;
-ompi_list_t orte_mca_rmaps_base_components_available;
-orte_mca_rmaps_base_component_t orte_mca_rmaps_base_selected_component;
 
-
+orte_rmaps_base_t orte_rmaps_base;
 
 /**
  * Function for finding and opening either all MCA components, or the one
  * that was specifically requested via a MCA parameter.
  */
-int orte_mca_rmaps_base_open(void)
+int orte_rmaps_base_open(void)
 {
-  /* Open up all available components */
+    /* Open up all available components */
+    if (ORTE_SUCCESS != 
+        mca_base_components_open("orte_rmaps", 0, mca_rmaps_base_static_components, 
+                               &orte_rmaps_base.rmaps_components)) {
+       return ORTE_ERROR;
+    }
+    OBJ_CONSTRUCT(&orte_rmaps_base.rmaps_selected, ompi_list_t);
 
-  if (ORTE_SUCCESS != 
-      mca_base_components_open("orte_rmaps", 0, orte_mca_rmaps_base_static_components, 
-                               &orte_mca_rmaps_base_components_available)) {
-    return ORTE_ERROR;
-  }
-
-  /* setup output for debug messages */
-  if (!ompi_output_init) {  /* can't open output */
-      return ORTE_ERR_NOT_AVAILABLE;
-  }
-
-  orte_mca_rmaps_base_output = ompi_output_open(NULL);
-
-  /* All done */
-
-  return ORTE_SUCCESS;
+    /* setup output for debug messages */
+    if (!ompi_output_init) {  /* can't open output */
+         return ORTE_ERR_NOT_AVAILABLE;
+    }
+    orte_rmaps_base.rmaps_output = ompi_output_open(NULL);
+    return ORTE_SUCCESS;
 }
+

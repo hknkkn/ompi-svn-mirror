@@ -32,18 +32,9 @@
 #include "mca/ras/base/static-components.h"
 
 /*
- * globals
- */
-
-/*
  * Global variables
  */
 orte_ras_base_t orte_ras_base;
-orte_ras_base_module_t orte_ras = {
-    orte_ras_base_allocate_not_available,
-    orte_ras_base_deallocate_not_available
-};
-
 
 
 /**
@@ -55,10 +46,11 @@ int orte_ras_base_open(void)
   /* Open up all available components */
 
   if (ORTE_SUCCESS != 
-      mca_base_components_open("orte_ras", 0, orte_ras_base_static_components, 
+      mca_base_components_open("orte_ras", 0, mca_ras_base_static_components, 
                                &orte_ras_base.ras_components)) {
     return ORTE_ERROR;
   }
+  OBJ_CONSTRUCT(&orte_ras_base.ras_selected, ompi_list_t);
 
   /* setup output for debug messages */
   if (!ompi_output_init) {  /* can't open output */

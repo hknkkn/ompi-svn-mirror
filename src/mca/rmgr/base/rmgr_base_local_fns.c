@@ -18,23 +18,22 @@
 #include "orte_config.h"
 
 #include "include/orte_constants.h"
-
 #include "mca/mca.h"
-
-#include "mca/orte_ras/base/base.h"
+#include "mca/rmgr/base/base.h"
 
 
 /*
  * "not available" functions
  */
 int
-mca_orte_ras_base_allocate_not_available(void)
+orte_rmgr_base_allocate_not_available(orte_jobid_t jobid)
 {
     return ORTE_ERR_UNREACH;
 }
 
 int
-mca_orte_ras_base_deallocate_not_available(void)
+orte_rmgr_base_deallocate_not_available(orte_jobid_t jobid)
 {
     return ORTE_ERR_UNREACH;
 }
+

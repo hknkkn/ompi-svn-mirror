@@ -25,8 +25,7 @@
 /*
  * "not available" functions
  */
-int
-orte_mca_rds_base_query_not_available(void)
+int orte_rds_base_query_not_available(void)
 {
     return ORTE_ERR_UNREACH;
 }

@@ -16,8 +16,8 @@
  * The Open RTE Resource MAPping Subsystem (RMAPS)
  */
 
-#ifndef ORTE_MCA_RMAPS_H
-#define ORTE_MCA_RMAPS_H
+#ifndef ORTE_RMAPS_H
+#define ORTE_RMAPS_H
 
 /*
  * includes
@@ -43,43 +43,46 @@
  * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
  * @endcode
  */
-typedef int (*orte_mca_rmaps_base_module_map_fn_t)(orte_jobid_t job);
+typedef int (*orte_rmaps_base_module_map_fn_t)(orte_jobid_t job);
 
+/**
+ * Cleanup module resources.
+ */
+
+typedef int (*orte_rmaps_base_module_finalize_fn_t)(void);
 
 /*
  * Ver 1.0.0
  */
-struct orte_mca_rmaps_base_module_1_0_0_t {
-    orte_mca_rmaps_base_module_map_fn_t map;
+struct orte_rmaps_base_module_1_0_0_t {
+    orte_rmaps_base_module_map_fn_t map;
+    orte_rmaps_base_module_finalize_fn_t finalize;
 };
 
-typedef struct orte_mca_rmaps_base_module_1_0_0_t orte_mca_rmaps_base_module_1_0_0_t;
-typedef orte_mca_rmaps_base_module_1_0_0_t orte_mca_rmaps_base_module_t;
+typedef struct orte_rmaps_base_module_1_0_0_t orte_rmaps_base_module_1_0_0_t;
+typedef orte_rmaps_base_module_1_0_0_t orte_rmaps_base_module_t;
 
 /*
  * RMAPS Component
  */
 
-typedef orte_mca_rmaps_base_module_t* (*orte_mca_rmaps_base_component_init_fn_t)(
+typedef orte_rmaps_base_module_t* (*orte_rmaps_base_component_init_fn_t)(
     bool *allow_multi_user_threads,
     bool *have_hidden_threads,
     int *priority);
 
-typedef int (*orte_mca_rmaps_base_component_finalize_fn_t)(void);
  
 /*
  * the standard component data structure
  */
 
-struct orte_mca_rmaps_base_component_1_0_0_t {
+struct orte_rmaps_base_component_1_0_0_t {
     mca_base_component_t rmaps_version;
     mca_base_component_data_1_0_0_t rmaps_data;
-
-    orte_mca_rmaps_base_component_init_fn_t rmaps_init;
-    orte_mca_rmaps_base_component_finalize_fn_t rmaps_finalize;
+    orte_rmaps_base_component_init_fn_t rmaps_init;
 };
-typedef struct orte_mca_rmaps_base_component_1_0_0_t orte_mca_rmaps_base_component_1_0_0_t;
-typedef orte_mca_rmaps_base_component_1_0_0_t orte_mca_rmaps_base_component_t;
+typedef struct orte_rmaps_base_component_1_0_0_t orte_rmaps_base_component_1_0_0_t;
+typedef orte_rmaps_base_component_1_0_0_t orte_rmaps_base_component_t;
 
 
 
@@ -92,8 +95,5 @@ typedef orte_mca_rmaps_base_component_1_0_0_t orte_mca_rmaps_base_component_t;
   /* ras v1.0 */ \
   "orte_rmaps", 1, 0, 0
 
-/* Global structure for accessing RMAPS functions
- */
-OMPI_DECLSPEC extern orte_mca_rmaps_base_module_t orte_rmaps;  /* holds selected module's function pointers */
-
 #endif
+
