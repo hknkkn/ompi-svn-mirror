@@ -130,40 +130,53 @@ int main(int argc, char *argv[])
      * Detach from controlling terminal - setup stdin/stdout/stderr 
      */
 
-    if (!orted_globals.debug) {
+    if (orted_globals.debug == false || orte_universe_info.bootproxy > 0) {
         int fd;
         char log_file[PATH_MAX];
 
         /* connect input to /dev/null */
         fd = open("/dev/null", O_RDONLY);
-        if(fd > 0) {
-            dup2(fd, 0);
+        if(fd > STDIN_FILENO) {
+            dup2(fd, STDIN_FILENO);
             close(fd);
         }
 
         /* connect output to a log file in the session directory */
         sprintf(log_file, "orted-%d-%s.log", 
             orte_process_info.my_name->jobid, orte_system_info.nodename);
-	    log_path = orte_os_path(false, orte_process_info.universe_session_dir, log_file, NULL);
+	    log_path = orte_os_path(false, 
+            orte_process_info.tmpdir_base, 
+            orte_process_info.top_session_dir, 
+            log_file, 
+            NULL);
+
         fd = open(log_path, O_RDWR|O_CREAT|O_TRUNC, 0666);
+        if(fd < 0) {
+             fd = open("/tmp/orted.log", O_RDWR|O_CREAT|O_TRUNC, 0666);
+        }
         if(fd >= 0) {
-            dup2(fd, 1);
-            dup2(fd, 2);
-            if(fd > 2) {
+            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDERR_FILENO);
+            if(fd != STDOUT_FILENO && fd != STDERR_FILENO) {
                close(fd);
             }
         }
 
         /* detach from controlling terminal */
-        orte_daemon_init(NULL);
+        if(orted_globals.debug == false) {
+            orte_daemon_init(NULL);
+        }
     }
 
     /* check to see if I'm a bootproxy */
     if (orte_universe_info.bootproxy) { /* perform bootproxy-specific things */
+        ompi_output(0, "orted: bootproxy(%d)\n", orte_universe_info.bootproxy);
         if (ORTE_SUCCESS != (ret = orte_daemon_bootproxy())) {
             ORTE_ERROR_LOG(ret);
         }
-        ret = orte_finalize();
+        if (ORTE_SUCCESS != (ret = orte_finalize())) {
+            ORTE_ERROR_LOG(ret);
+        }
         exit(ret);
     }
 
