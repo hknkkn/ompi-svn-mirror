@@ -205,11 +205,10 @@ int ompi_list_sort(ompi_list_t* list, ompi_list_item_compare_fn_t compare)
 
     while(NULL != (item = ompi_list_remove_first(list))) {
         items[index++] = item;
-        ompi_list_remove_item(list,item);
     }
     
     qsort(items, list->ompi_list_length, sizeof(ompi_list_item_t*), (int(*)(const void*,const void*))compare);
-    for(i=0; i<list->ompi_list_length; i++)
+    for(i=0; i<index; i++)
         ompi_list_append(list,items[i]);
     free(items);
     return OMPI_SUCCESS;
