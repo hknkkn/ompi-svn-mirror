@@ -33,9 +33,8 @@ typedef int8_t orte_proc_state_t;
 #define ORTE_PROC_STATE_LAUNCHED       0x02  /* process has been launched by pls */
 #define ORTE_PROC_STATE_AT_STG1        0x03  /* process is at Stage Gate 1 barrier in orte_init */
 #define ORTE_PROC_STATE_AT_STG2        0x04  /* process is at Stage Gate 2 barrier in orte_init */
-#define ORTE_PROC_STATE_AT_STG3        0x05  /* process is at Stage Gate 3 barrier in orte_init */
 #define ORTE_PROC_STATE_RUNNING        0x06  /* process has exited orte_init and is running */
-#define ORTE_PROC_STATE_AT_STG4        0x07  /* process is at Stage Gate 4 barrier in orte_finalize */
+#define ORTE_PROC_STATE_AT_STG3        0x07  /* process is at Stage Gate 3 barrier in orte_finalize */
 #define ORTE_PROC_STATE_FINALIZED      0x08  /* process has completed orte_finalize and is running */
 #define ORTE_PROC_STATE_TERMINATED     0x09  /* process has terminated and is no longer running */
 
