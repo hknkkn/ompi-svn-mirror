@@ -525,6 +525,7 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
 
     init_globals();
     ompi_cmd_line_create(&cmd_line, cmd_line_init);
+    mca_base_cmd_line_setup(&cmd_line);
     cmd_line_made = true;
     ompi_cmd_line_make_opt3(&cmd_line, '\0', NULL, "rawmap", 2,
                             "Hidden / internal parameter -- users should not use this!");
@@ -534,6 +535,7 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
     if (OMPI_SUCCESS != rc) {
         goto cleanup;
     }
+    mca_base_cmd_line_process_args(&cmd_line);
 
     /* Is there an appfile in here? */
 
