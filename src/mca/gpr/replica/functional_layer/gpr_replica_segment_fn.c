@@ -390,6 +390,10 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
 
         case ORTE_STRING:
             dest->strptr = strdup(src->strptr);
+            if (NULL == dest->strptr) {
+                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                return ORTE_ERR_OUT_OF_RESOURCE;
+            }
             break;
             
         case ORTE_UINT8:
@@ -458,8 +462,12 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             
         case ORTE_BYTE_OBJECT:
             (dest->byteobject).size = (src->byteobject).size;
-            (dest->byteobject).bytes = (src->byteobject).bytes;
-            (src->byteobject).bytes = NULL;
+            (dest->byteobject).bytes = (uint8_t*)malloc((dest->byteobject).size*(uint8_t));
+            if (NULL == (dest->byteobject).bytes) {
+                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                return ORTE_ERR_OUT_OF_RESOURCE;
+            }
+            memcpy((dest->byteobject).bytes, (src->byteobject).bytes, (dest->byteobject).bytes);
             break;
 
         case ORTE_APP_CONTEXT:
