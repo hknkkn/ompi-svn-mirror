@@ -67,6 +67,16 @@ int orte_iof_base_open(void)
     mca_base_param_lookup_string(id,&str_value);
     orte_ns.convert_string_to_process_name(&orte_iof_base.iof_service, str_value);
  
+    /* Debugging / verbose output */
+
+    id = mca_base_param_register_int("iof", "base", "verbose", NULL, 0);
+    mca_base_param_lookup_int(id, &int_value);
+    if (int_value != 0) {
+        orte_iof_base.iof_output = ompi_output_open(NULL);
+    } else {
+        orte_iof_base.iof_output = -1;
+    }
+
     /* initialize free list */
     ompi_free_list_init(
         &orte_iof_base.iof_fragments,

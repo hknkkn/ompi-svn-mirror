@@ -98,9 +98,14 @@ int orte_iof_base_select(void)
     }
 
     /* setup reference to selected module */
-    if(NULL != selected_module) {
+    if (NULL != selected_module) {
         orte_iof = *selected_module;
+        return ORTE_SUCCESS;
     }
-    return OMPI_SUCCESS;
+
+    /* Oops -- this shouldn't happen */
+
+    ompi_output(orte_iof_base.iof_output, "iof:select: no components found!");
+    return ORTE_ERR_OUT_OF_RESOURCE;
 }
 
