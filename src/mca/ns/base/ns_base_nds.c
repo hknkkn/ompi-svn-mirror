@@ -17,19 +17,25 @@
 #include "orte_config.h"
 
 #include "include/orte_constants.h"
-
-#include "plsnds/plsnds.h"
-
+#include "mca/ns/base/ns_base_nds.h"
 #include "util/proc_info.h"
 #include "mca/base/mca_base_param.h"
 #include "mca/errmgr/errmgr.h"
-
 #include "mca/ns/base/base.h"
+#include "mca/ns/base/ns_base_nds.h"
+
+
+static orte_ns_nds_t orte_ns_nds[] = {
+{ "env", orte_ns_nds_env_get },
+{ "pipe", orte_ns_nds_pipe_get },
+{ NULL, NULL }
+};
+
 
 int orte_ns_base_set_my_name(void)
 {
-    int i, rc, launchid;
-    char *launcher;
+    int rc, id;
+    char *mode;
     orte_jobid_t jobid;
     orte_vpid_t vpid;
     
@@ -45,26 +51,18 @@ int orte_ns_base_set_my_name(void)
                                 &(orte_process_info.my_name), 0, 0, 0);
     }
     
-    /* if not seed, then check to see if the name is simply available in
-     * the environment
-     */
-    if (ORTE_SUCCESS == orte_plsnds[0].discover()) { /* got it! */
-        return ORTE_SUCCESS;
+    /* okay, not seed/singleton attempt another approach */
+    id = mca_base_param_register_string("ns", "nds", NULL, NULL, NULL);
+    mca_base_param_lookup_string(id, &mode);
+    if (NULL != mode) {  /* mode identified */ 
+        orte_ns_nds_t* nds = orte_ns_nds;
+        while(NULL != nds->mode) {
+            if (0 == strcmp(mode, nds->mode)) {
+                return nds->discover();
+            }
+            nds++;
+        }
     }
-    
-    /* okay, not seed/singleton and not provided in environment
-     * determine which launcher was used and if that
-     * launcher provided a name for us in the environment
-     */
-     launchid = mca_base_param_register_string("pls", "name", "launcher", "PLS_LAUNCHER", NULL);
-     mca_base_param_lookup_string(launchid, &launcher);
-     if (NULL != launcher) {  /* launcher identified */
-         for (i=0; i < orte_plsnds_max; i++) {
-              if (0 == strcmp(launcher, orte_plsnds[i].launcher)) {
-                    return orte_plsnds[i].discover();
-              }
-         }
-     }
      
     /* if launcher didn't provide the name, then let's try to get
      * one from the name server in the universe
@@ -82,7 +80,6 @@ int orte_ns_base_set_my_name(void)
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-
     return ORTE_SUCCESS;
 }
 

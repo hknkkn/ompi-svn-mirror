@@ -1,5 +1,4 @@
-/* -*- C -*-
- *
+/*
  * Copyright (c) 2004-2005 The Trustees of Indiana University.
  *                         All rights reserved.
  * Copyright (c) 2004-2005 The Trustees of the University of Tennessee.
@@ -12,34 +11,26 @@
  * 
  * $HEADER$
  */
-/**
- * @file
- *
- * Process Launch Subsystem's Name Discovery Services
- * THIS IS WHERE EACH FUNCTION IS PROTOTYPED
- *
- *
+/** @file:
  */
-
-#ifndef ORTE_PLSNDS_FNS_H_
-#define ORTE_PLSNDS_FNS_H_
 
 #include "orte_config.h"
+#include "include/orte_constants.h"
+#include "util/proc_info.h"
+#include "mca/base/mca_base_param.h"
+#include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
+#include "mca/ns/base/base.h"
+#include "mca/ns/base/ns_base_nds.h"
 
-#include "plsnds.h"
 
-#if defined(c_plusplus) || defined(__cplusplus)
-extern "C" {
-#endif
-
-/*
- * List the functions here
- */
-int orte_plsnds_env(void);
-
-#if defined(c_plusplus) || defined(__cplusplus)
+int orte_ns_nds_pipe_get(void)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
-#endif
 
+int orte_ns_nds_pipe_set(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
 
-#endif /* ORTE_PLSNDS_FNS_H */

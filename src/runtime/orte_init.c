@@ -34,7 +34,6 @@
 #include "mca/gpr/base/base.h"
 #include "mca/rmgr/base/base.h"
 #include "mca/soh/base/base.h"
-#include "plsnds/plsnds.h"
 #include "util/proc_info.h"
 #include "util/session_dir.h"
 #include "util/sys_info.h"
@@ -322,14 +321,6 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
         return ret;
     }
  
-    /*
-     * PLS Name Discovery Service
-     */
-    if (ORTE_SUCCESS != (ret = orte_plsnds_open())) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
-    
     /*****    SET MY NAME    *****/
     if (ORTE_SUCCESS != (ret = orte_ns.set_my_name())) {
         ORTE_ERROR_LOG(ret);
