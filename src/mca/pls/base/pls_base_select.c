@@ -23,6 +23,10 @@
 #include "mca/pls/base/base.h"
 
 
+OBJ_CLASS_INSTANCE(orte_pls_base_selected_t,
+                   ompi_list_item_t, NULL, NULL);
+
+
 /**
  * Function for selecting all available modules.
  */
