@@ -65,7 +65,12 @@ int orte_ras_base_select(void)
         } 
     }
 
-    return ompi_list_is_empty(&orte_ras_base.ras_selected) ? 
-        ORTE_ERROR: ORTE_SUCCESS;
+    if (ompi_list_is_empty(&orte_ras_base.ras_selected)) {
+        ompi_output(orte_ras_base.ras_output, 
+                    "ras:select: no components available!");
+        return ORTE_ERROR;
+    }
+
+    return ORTE_SUCCESS;
 }
 
