@@ -59,6 +59,7 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_NOTIFY_ACTION       (orte_data_type_t)   31 /**< registry notify action */
 #define    ORTE_SYNCHRO_MODE        (orte_data_type_t)   32 /**< registry synchro mode */
 #define    ORTE_GPR_CMD             (orte_data_type_t)   33 /**< registry command */
+#define    ORTE_GPR_NOTIFY_ID       (orte_data_type_t)   34 /**< registry notify id tag */
 
 typedef struct {
     size_t size;

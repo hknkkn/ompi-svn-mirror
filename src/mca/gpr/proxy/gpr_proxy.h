@@ -64,8 +64,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_proxy_notify_request_tracker_t);
 
 extern orte_process_name_t *orte_gpr_my_replica;
 extern ompi_list_t orte_gpr_proxy_notify_request_tracker;
-extern orte_gpr_notify_id_t orte_gpr_proxy_last_notify_id_tag;
-extern ompi_list_t orte_gpr_proxy_free_notify_id_tags;
+extern orte_gpr_notify_id_t orte_gpr_proxy_next_notify_id_tag;
 extern int orte_gpr_proxy_debug;
 extern ompi_mutex_t orte_gpr_proxy_mutex;
 extern bool orte_gpr_proxy_compound_cmd_mode;
@@ -214,7 +213,8 @@ orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *idtag, char *segment,
 				   void *user_tag);
 
 int
-orte_gpr_proxy_remove_notify_request(orte_gpr_notify_id_t local_idtag);
+orte_gpr_proxy_remove_notify_request(orte_gpr_notify_id_t local_idtag,
+                    orte_gpr_notify_id_t *remote_idtag);
 
 int orte_gpr_proxy_set_remote_idtag(orte_gpr_notify_id_t local_idtag,
 				   orte_gpr_notify_id_t remote_idtag);

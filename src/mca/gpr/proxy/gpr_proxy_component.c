@@ -30,6 +30,7 @@
 #include "util/proc_info.h"
 
 #include "mca/ns/ns.h"
+#include "mca/oob/oob_types.h"
 #include "mca/rml/rml.h"
 
 #include "gpr_proxy.h"
@@ -109,8 +110,7 @@ static bool initialized = false;
  */
 orte_process_name_t *orte_gpr_my_replica;
 ompi_list_t orte_gpr_proxy_notify_request_tracker;
-orte_gpr_notify_id_t orte_gpr_proxy_last_notify_id_tag;
-ompi_list_t orte_gpr_proxy_free_notify_id_tags;
+orte_gpr_notify_id_t orte_gpr_proxy_next_notify_id_tag;
 int orte_gpr_proxy_debug;
 ompi_mutex_t orte_gpr_proxy_mutex;
 bool orte_gpr_proxy_compound_cmd_mode;
@@ -218,8 +218,7 @@ orte_gpr_base_module_t* orte_gpr_proxy_init(bool *allow_multi_user_threads, bool
 
 	/* initialize the notify request tracker */
 	OBJ_CONSTRUCT(&orte_gpr_proxy_notify_request_tracker, ompi_list_t);
-	orte_gpr_proxy_last_notify_id_tag = 0;
-	OBJ_CONSTRUCT(&orte_gpr_proxy_free_notify_id_tags, ompi_list_t);
+	orte_gpr_proxy_next_notify_id_tag = 0;
 
 	/* initialize any local variables */
 	orte_gpr_proxy_silent_mode = false;

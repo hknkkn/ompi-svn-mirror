@@ -30,7 +30,7 @@
 
 #include "mca/gpr/base/base.h"
 
-void orte_gpr_base_print_dump(orte_buffer_t *buffer, int output_id)
+int orte_gpr_base_print_dump(orte_buffer_t *buffer, int output_id)
 {
     char *line;
     size_t n;
@@ -41,4 +41,6 @@ void orte_gpr_base_print_dump(orte_buffer_t *buffer, int output_id)
 	   free(line);
        n=1;
     }
+    OBJ_RELEASE(buffer);
+    return ORTE_SUCCESS;
 }

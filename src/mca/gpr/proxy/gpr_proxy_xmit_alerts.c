@@ -21,54 +21,66 @@
 /*
  * includes
  */
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "dps/dps_types.h"
+#include "util/output.h"
+#include "util/proc_info.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/oob/oob_types.h"
+#include "mca/rml/rml.h"
 
 #include "gpr_proxy.h"
 
-ompi_buffer_t mca_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
-					    ompi_list_t *recipients)
+int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
+                                    orte_buffer_t **msg,
+                                    size_t *cnt,
+                                    orte_process_name_t **procs)
 {
-    ompi_buffer_t msg, cmd, answer;
-    int recv_tag=MCA_OOB_TAG_GPR;
+    orte_buffer_t *cmd, *answer;
+    int rc;
 
-    if (mca_gpr_proxy_compound_cmd_mode) {
-    		if (mca_gpr_proxy_debug) {
-    			ompi_output(0, "[%d,%d,%d] gpr_proxy: getting startup msg - compound cmd",
-    						ORTE_NAME_ARGS(*ompi_rte_get_self()));
-    		}
-	mca_gpr_base_pack_get_startup_msg(mca_gpr_proxy_compound_cmd, jobid);
-	return NULL;
+    *msg = NULL;
+    *cnt = 0;
+    *procs = NULL;
+    
+    if (orte_gpr_proxy_compound_cmd_mode) {
+	   return orte_gpr_base_pack_get_startup_msg(orte_gpr_proxy_compound_cmd, jobid);
     }
 
-    if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return NULL;
+    cmd = OBJ_NEW(orte_buffer_t);
+    if (NULL == cmd) { /* got a problem */
+	    return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    msg = NULL;
-
-    if (OMPI_SUCCESS != mca_gpr_base_pack_get_startup_msg(cmd, jobid)) {
-	goto CLEANUP;
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_get_startup_msg(cmd, jobid))) {
+	    OBJ_RELEASE(cmd);
+        return rc;
     }
 
-	if (mca_gpr_proxy_debug) {
+	if (orte_gpr_proxy_debug) {
 		ompi_output(0, "[%d,%d,%d] gpr_proxy: getting startup msg for job %d",
-					ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
+					ORTE_NAME_ARGS(*(orte_process_info.my_name)), (int)jobid);
 	}
 
-    if (0 > mca_oob_send_packed(mca_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
-	goto CLEANUP;
+    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+	    return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (0 > mca_oob_recv_packed(mca_gpr_my_replica, &answer, &recv_tag)) {
-	goto CLEANUP;
+    answer = OBJ_NEW(orte_buffer_t);
+    if (NULL == answer) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+        OBJ_RELEASE(answer);
+	    return ORTE_ERR_COMM_FAILURE;
     }
 
-    msg = mca_gpr_base_unpack_get_startup_msg(answer, recipients);
-    ompi_buffer_free(answer);
+    rc = orte_gpr_base_unpack_get_startup_msg(answer, msg, cnt, procs);
+    OBJ_RELEASE(answer);
 
- CLEANUP:
-    ompi_buffer_free(cmd);
-    return msg;
+    return rc;
 }

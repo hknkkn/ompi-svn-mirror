@@ -30,6 +30,7 @@ libmca_gpr_base_la_SOURCES = \
         gpr_base_open.c \
         gpr_base_close.c \
         gpr_base_pack_cleanup.c \
+        gpr_base_unpack_cleanup.c \
         gpr_base_pack_del_index.c \
         gpr_base_unpack_del_index.c \
         gpr_base_pack_dump.c \

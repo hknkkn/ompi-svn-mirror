@@ -21,164 +21,194 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "dps/dps.h"
+#include "util/output.h"
+#include "util/proc_info.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/oob/oob_types.h"
+#include "mca/rml/rml.h"
 
 #include "gpr_proxy.h"
 
-ompi_registry_notify_id_t
-mca_gpr_proxy_subscribe(ompi_registry_mode_t mode,
-			ompi_registry_notify_action_t action,
-			char *segment, char **tokens,
-			ompi_registry_notify_cb_fn_t cb_func, void *user_tag)
+int
+orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
+                        orte_gpr_notify_action_t action,
+                        char *segment, char **tokens, char **keys,
+                        orte_gpr_notify_id_t *sub_number,
+                        orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
-    ompi_buffer_t cmd;
-    ompi_buffer_t answer;
-    int recv_tag=MCA_OOB_TAG_GPR;
-    ompi_registry_notify_id_t idtag, response, remote_idtag;
+    orte_buffer_t *cmd;
+    orte_buffer_t *answer;
+    int rc;
+    orte_gpr_notify_id_t idtag, remote_idtag;
 
+    *sub_number = ORTE_GPR_NOTIFY_ID_MAX;
+    
     /* need to protect against errors */
     if (NULL == segment) {
-	return OMPI_REGISTRY_NOTIFY_ID_MAX;
+	    return ORTE_ERR_BAD_PARAM;
     }
 
-    if (mca_gpr_proxy_compound_cmd_mode) {
-	if (OMPI_SUCCESS != mca_gpr_base_pack_subscribe(mca_gpr_proxy_compound_cmd,
-							mode, action, segment, tokens)) {
-	    return OMPI_REGISTRY_NOTIFY_ID_MAX;
-	}
+    if (orte_gpr_proxy_compound_cmd_mode) {
+	    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(orte_gpr_proxy_compound_cmd,
+							                         mode, action, segment, tokens, keys))) {
+            return rc;
+        }
 
-	OMPI_THREAD_LOCK(&mca_gpr_proxy_mutex);
+	    OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
 
-	/* store callback function and user_tag in local list for lookup */
-	/* generate id_tag to send to replica to identify lookup entry */
-	idtag = mca_gpr_proxy_enter_notify_request(segment, action, cb_func, user_tag);
+	    /* store callback function and user_tag in local list for lookup */
+	    /* generate id_tag to send to replica to identify lookup entry */
+	    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag, segment, action, cb_func, user_tag))) {
+            OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+            return rc;
+        }
 
-	OMPI_THREAD_UNLOCK(&mca_gpr_proxy_mutex);
+	    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
 
-	if (OMPI_SUCCESS != ompi_pack(mca_gpr_proxy_compound_cmd, &idtag, 1, MCA_GPR_OOB_PACK_NOTIFY_ID)) {
-	    return OMPI_REGISTRY_NOTIFY_ID_MAX;
-	}
-	return idtag;
+	    return orte_dps.pack(orte_gpr_proxy_compound_cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID);
     }
 
-
-    if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return OMPI_REGISTRY_NOTIFY_ID_MAX;
+    cmd = OBJ_NEW(orte_buffer_t);
+    if (NULL == cmd) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(cmd, mode, action, segment, tokens, keys))) {
+	    OBJ_RELEASE(cmd);
+        return rc;
     }
 
-    response = OMPI_REGISTRY_NOTIFY_ID_MAX;
-
-    if (OMPI_SUCCESS != mca_gpr_base_pack_subscribe(cmd, mode, action, segment, tokens)) {
-	goto CLEANUP;
-    }
-
-    OMPI_THREAD_LOCK(&mca_gpr_proxy_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
 
     /* store callback function and user_tag in local list for lookup */
     /* generate id_tag to send to replica to identify lookup entry */
-    idtag = mca_gpr_proxy_enter_notify_request(segment, action, cb_func, user_tag);
-
-    OMPI_THREAD_UNLOCK(&mca_gpr_proxy_mutex);
-
-    if (OMPI_SUCCESS != ompi_pack(cmd, &idtag, 1, MCA_GPR_OOB_PACK_NOTIFY_ID)) {
-	goto CLEANUP;
+    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag, segment, action, cb_func, user_tag))) {
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        OBJ_RELEASE(cmd);
+        return rc;
     }
 
-    if (mca_gpr_proxy_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr proxy subscribe: subscribing to segment %s local idtag %d",
-				ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, (int)idtag);
+    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+    
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+	    OBJ_RELEASE(cmd);
+        return rc;
+    }
+
+    if (orte_gpr_proxy_debug) {
+	    ompi_output(0, "[%d,%d,%d] gpr proxy subscribe: subscribing to segment %s local idtag %d",
+				ORTE_NAME_ARGS(*(orte_process_info.my_name)), segment, (int)idtag);
     }
 
 
-    if (0 > mca_oob_send_packed(mca_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
-	goto CLEANUP;
+    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+         OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
+         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+	     return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (0 > mca_oob_recv_packed(mca_gpr_my_replica, &answer, &recv_tag)) {
-	goto CLEANUP;
+    answer = OBJ_NEW(orte_buffer_t);
+    if (NULL == answer) {
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+	    OBJ_RELEASE(answer);
+        return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (OMPI_SUCCESS != mca_gpr_base_unpack_subscribe(answer, &remote_idtag)) {
-	if (mca_gpr_proxy_debug) {
-	    ompi_output(0, "proxy_subscribe: unable to unpack");
-	}
-	OMPI_THREAD_LOCK(&mca_gpr_proxy_mutex);
-	mca_gpr_proxy_remove_notify_request(idtag);
-	OMPI_THREAD_UNLOCK(&mca_gpr_proxy_mutex);
-
-	response = OMPI_REGISTRY_NOTIFY_ID_MAX;
-
-    } else {
-	response = remote_idtag;
-	mca_gpr_proxy_set_remote_idtag(idtag, remote_idtag);
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_unpack_subscribe(answer, &remote_idtag))) {
+	    OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+	    orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
+	    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        return rc;
     }
 
-    ompi_buffer_free(answer);
+    /* set the remote id tag field */
+    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_set_remote_idtag(idtag, remote_idtag))) {
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        return rc;
+    }
 
- CLEANUP:
-    ompi_buffer_free(cmd);
-    return response;
+    *sub_number = remote_idtag;
+    return rc;
 }
 
 
-int mca_gpr_proxy_unsubscribe(ompi_registry_notify_id_t sub_number)
+int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number)
 {
-    ompi_buffer_t cmd;
-    ompi_buffer_t answer;
-    int recv_tag=MCA_OOB_TAG_GPR;
-    int response;
-    ompi_registry_notify_id_t remote_idtag;
+    orte_buffer_t *cmd;
+    orte_buffer_t *answer;
+    int rc;
+    orte_gpr_notify_id_t remote_idtag;
 
-    OMPI_THREAD_LOCK(&mca_gpr_proxy_mutex);
-    remote_idtag = mca_gpr_proxy_remove_notify_request(sub_number);
-    if (OMPI_REGISTRY_NOTIFY_ID_MAX == remote_idtag) {
-	return OMPI_ERROR;
-    }
-    response = mca_gpr_base_pack_unsubscribe(mca_gpr_proxy_compound_cmd,
-					     mca_gpr_proxy_silent_mode,
-					     remote_idtag);
-    OMPI_THREAD_UNLOCK(&mca_gpr_proxy_mutex);
+    if (orte_gpr_proxy_compound_cmd_mode) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_unsubscribe(orte_gpr_proxy_compound_cmd, sub_number))) {
+            return rc;
+        }
 
-    if (mca_gpr_proxy_compound_cmd_mode || OMPI_SUCCESS != response) {
-	return response;
-    }
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
 
-
-    if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return OMPI_ERROR;
-    }
-
-
-    if (OMPI_SUCCESS != mca_gpr_base_pack_unsubscribe(cmd, mca_gpr_proxy_silent_mode,
-						      remote_idtag)) {
-	goto CLEANUP;
+        /* remove the notify tag */
+        if (ORTE_SUCCESS != (rc = orte_gpr_proxy_remove_notify_request(sub_number, &remote_idtag))) {
+            OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+            return rc;
+        }
+        
+        rc = orte_dps.pack(orte_gpr_proxy_compound_cmd, &remote_idtag, 1, ORTE_GPR_NOTIFY_ID);
+           
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        return rc;
     }
 
-    if (0 > mca_oob_send_packed(mca_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
-	goto CLEANUP;
+    cmd = OBJ_NEW(orte_buffer_t);
+    if (NULL == cmd) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_remove_notify_request(sub_number, &remote_idtag))) {
+        OBJ_RELEASE(cmd);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        return rc;
+    }
+    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);    
+
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_unsubscribe(cmd, remote_idtag))) {
+        OBJ_RELEASE(cmd);
+        return rc;
     }
 
-    if (mca_gpr_proxy_silent_mode) {
-	goto COMPLETE;
+    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+	    return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (0 > mca_oob_recv_packed(mca_gpr_my_replica, &answer, &recv_tag)) {
-	goto CLEANUP;
+    answer = OBJ_NEW(orte_buffer_t);
+    if (NULL == answer) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+	    OBJ_RELEASE(answer);
+        return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (OMPI_SUCCESS != mca_gpr_base_unpack_unsubscribe(answer)) {  /* got an error on replica */
-	ompi_buffer_free(answer);
-	goto CLEANUP;
-    }
+    rc = orte_gpr_base_unpack_unsubscribe(answer);
+	OBJ_RELEASE(answer);
+	return rc;
 
- COMPLETE:
-    ompi_buffer_free(answer);
-    ompi_buffer_free(cmd);
-    return OMPI_SUCCESS;
-
- CLEANUP:
-    ompi_buffer_free(cmd);
-    return OMPI_ERROR;
 }

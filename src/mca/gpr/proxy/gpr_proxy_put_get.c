@@ -21,120 +21,124 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "dps/dps_types.h"
+#include "util/output.h"
+#include "util/proc_info.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/oob/oob_types.h"
+#include "mca/rml/rml.h"
 
 #include "gpr_proxy.h"
 
-int mca_gpr_proxy_put(ompi_registry_mode_t mode, char *segment,
-		      char **tokens, ompi_registry_object_t object,
-		      ompi_registry_object_size_t size)
+int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
+         char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals)
 {
-    ompi_buffer_t cmd;
-    ompi_buffer_t answer;
-    int recv_tag=MCA_OOB_TAG_GPR;
-    int response;
+    orte_buffer_t *cmd;
+    orte_buffer_t *answer;
+    int rc;
 
-    if (mca_gpr_proxy_debug) {
-	ompi_output(0, "gpr_proxy_put: entered for segment %s 1st token %s", segment, *tokens);
+    if (orte_gpr_proxy_debug) {
+	    ompi_output(0, "[%d,%d,%d] gpr_proxy_put: entered for segment %s 1st token %s",
+                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), segment, *tokens);
     }
 
-    if (mca_gpr_proxy_compound_cmd_mode) {
-	return mca_gpr_base_pack_put(mca_gpr_proxy_compound_cmd, mca_gpr_proxy_silent_mode,
-				     mode, segment, tokens, object, size);
+    if (orte_gpr_proxy_compound_cmd_mode) {
+	   return orte_gpr_base_pack_put(orte_gpr_proxy_compound_cmd,
+				     mode, segment, tokens, cnt, keyvals);
     }
 
-
-    if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return OMPI_ERROR;
+    cmd = OBJ_NEW(orte_buffer_t);
+    if (NULL == cmd) { /* got a problem */
+	    return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    response = OMPI_ERROR;
-
-    if (OMPI_SUCCESS != mca_gpr_base_pack_put(cmd, mca_gpr_proxy_silent_mode,
-					      mode, segment, tokens, object, size)) {
-	goto CLEANUP;
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_put(cmd, mode, segment, tokens, cnt, keyvals))) {
+	    OBJ_RELEASE(cmd);
+        return rc;
     }
 
-    if (mca_gpr_proxy_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr_proxy_put: initiating send",
-                    ORTE_NAME_ARGS(*ompi_rte_get_self()));
-	if (NULL == mca_gpr_my_replica) {
-	    ompi_output(0, "\tBAD REPLICA");
-	}
+    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+        return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (0 > mca_oob_send_packed(mca_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
-	if (mca_gpr_proxy_debug) {
-	    ompi_output(0, "gpr_proxy_put: send failed");
-	}
-	goto CLEANUP;
+    answer = OBJ_NEW(orte_buffer_t);
+    if (NULL == answer) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+	    return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (mca_gpr_proxy_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr_proxy_put: send complete", ORTE_NAME_ARGS(*ompi_rte_get_self()));
-    }
+    rc = orte_gpr_base_unpack_put(answer);
+    OBJ_RELEASE(answer);
 
-    if (mca_gpr_proxy_silent_mode) {
-	ompi_buffer_free(cmd);
-	return OMPI_SUCCESS;
-    }
-
-    if (0 > mca_oob_recv_packed(mca_gpr_my_replica, &answer, &recv_tag)) {
-	goto CLEANUP;
-    }
-
-    response = mca_gpr_base_unpack_put(answer);
-    ompi_buffer_free(answer);
-
-CLEANUP:
-    ompi_buffer_free(cmd);
-    return response;
+    return rc;
 }
 
-
-ompi_list_t* mca_gpr_proxy_get(ompi_registry_mode_t mode, char *segment, char **tokens)
+int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
+                      char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals,
+                      orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
-    ompi_buffer_t cmd;
-    ompi_buffer_t answer;
-    int recv_tag=MCA_OOB_TAG_GPR;
-    ompi_list_t *returned_list;
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
 
-    returned_list = OBJ_NEW(ompi_list_t);
+int orte_gpr_proxy_get(orte_gpr_addr_mode_t mode,
+                                char *segment, char **tokens, char **keys,
+                                size_t *cnt, orte_gpr_keyval_t **keyvals)
 
+{
+    orte_buffer_t *cmd;
+    orte_buffer_t *answer;
+    int rc;
+
+    *keyvals = NULL;
+    *cnt = 0;
+    
     /* need to protect against errors */
-    if (NULL == segment || NULL == tokens || NULL == *tokens) {
-	return returned_list;
+    if (NULL == segment) {
+	    return ORTE_ERR_BAD_PARAM;
     }
 
-    if (mca_gpr_proxy_compound_cmd_mode) {
-	mca_gpr_base_pack_get(mca_gpr_proxy_compound_cmd, mode, segment, tokens);
-	return returned_list;
+    if (orte_gpr_proxy_compound_cmd_mode) {
+	    return orte_gpr_base_pack_get(orte_gpr_proxy_compound_cmd, mode, segment, tokens, keys);
     }
 
-
-    if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return returned_list;
+    cmd = OBJ_NEW(orte_buffer_t);
+    if (NULL == cmd) { /* got a problem */
+	    return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    if (OMPI_SUCCESS != mca_gpr_base_pack_get(cmd, mode, segment, tokens)) {
-	goto CLEANUP;
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_get(cmd, mode, segment, tokens, keys))) {
+	    return rc;
     }
 
-    if (0 > mca_oob_send_packed(mca_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
-	goto CLEANUP;
+    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+	    return ORTE_ERR_COMM_FAILURE;
     }
 
-
-    if (0 > mca_oob_recv_packed(mca_gpr_my_replica, &answer, &recv_tag)) {
-	goto CLEANUP;
+    answer = OBJ_NEW(orte_buffer_t);
+    if (NULL == answer) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+	    return ORTE_ERR_COMM_FAILURE;
     }
 
-    mca_gpr_base_unpack_get(answer, returned_list);
-    ompi_buffer_free(answer);
+    rc = orte_gpr_base_unpack_get(answer, cnt, keyvals);
+    OBJ_RELEASE(answer);
 
- CLEANUP:
-    ompi_buffer_free(cmd);
-    return returned_list;
+    return rc;
+}
+
+int orte_gpr_proxy_get_nb(orte_gpr_addr_mode_t addr_mode,
+                                char *segment, char **tokens, char **keys,
+                                orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
