@@ -89,12 +89,11 @@ main(int argc, char *argv[], char* env[])
     orte_app_context_t *apps[1];
     ompi_cmd_line_t cmd_line;
     char cwd[OMPI_PATH_MAX];
-    int rc;
+    int i, rc;
+    char *param, *value, *value2;
 
+    /* Parse application command line options. */
 
-    /*
-     * Parse application command line options.
-     */
     OBJ_CONSTRUCT(&app, orte_app_context_t);
     OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
 
@@ -104,6 +103,10 @@ main(int argc, char *argv[], char* env[])
 			   "Show help for this function");
     ompi_cmd_line_make_opt3(&cmd_line, 'n', "np", "np", 1,
                             "Number of processes to start");
+    ompi_cmd_line_make_opt3(&cmd_line, 'x', NULL, NULL, 1,
+                            "Environment variable to export");
+    ompi_cmd_line_make_opt3(&cmd_line, '\0', "wd", "wd", 1,
+                            "Working directory of process");
     ompi_cmd_line_make_opt3(&cmd_line, '\0', "hostfile", "hostfile", 1,
 			    "Host description file");
 
@@ -153,9 +156,7 @@ main(int argc, char *argv[], char* env[])
         app.num_procs = 1;
     }
 
-    /*
-     * Intialize our Open RTE environment
-     */
+    /* Intialize our Open RTE environment */
 
     if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
         ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
@@ -163,8 +164,8 @@ main(int argc, char *argv[], char* env[])
 	return rc;
     }
 
+    /* Prep to start the application */
 
-    /*****    PREP TO START THE APPLICATION    *****/
     ompi_event_set(&term_handler, SIGTERM, OMPI_EV_SIGNAL,
                    signal_callback, NULL);
     ompi_event_add(&term_handler, NULL);
@@ -172,9 +173,8 @@ main(int argc, char *argv[], char* env[])
                    signal_callback, NULL);
     ompi_event_add(&int_handler, NULL);
 
-    /* 
-     * Setup application context 
-     */
+    /* Setup application context */
+
     apps[0] = &app;
     ompi_cmd_line_get_tail(&cmd_line, &app.argc, &app.argv);
 
@@ -182,22 +182,59 @@ main(int argc, char *argv[], char* env[])
         ompi_show_help("help-orterun.txt", "orterun:no-application", true, argv[0], argv[0]);
         return 1;
     }
+
+    /* Did the user request to export any environment variables? */
+
     app.env = NULL;
     app.num_env = 0;
-    getcwd(cwd,sizeof(cwd));
-    app.cwd = strdup(cwd);
+    if (ompi_cmd_line_is_taken(&cmd_line, "x")) {
+        for (i = 0; i < ompi_cmd_line_get_ninsts(&cmd_line, "x"); ++i) {
+            param = ompi_cmd_line_get_param(&cmd_line, "x", i, 0);
+
+            if (NULL != strchr(param, '=')) {
+                ompi_argv_append(&app.num_env, &app.env, param);
+            } else {
+                value = getenv(param);
+                if (NULL != value) {
+                    if (NULL != strchr(value, '=')) {
+                        ompi_argv_append(&app.num_env, &app.env, value);
+                    } else {
+                        asprintf(&value2, "%s=%s", param, value);
+                        ompi_argv_append(&app.num_env, &app.env, value2);
+                    }
+                } else {
+                    fprintf(stderr, "Warning: could not find environment variable \"%s\"\n", param);
+                }
+            }
+            free(param);
+        }
+    }
+
+    /* What cwd do we want? */
+
+    if (ompi_cmd_line_is_taken(&cmd_line, "wd")) {
+        app.cwd = ompi_cmd_line_get_param(&cmd_line, "wd", 0, 0);
+    } else {
+        getcwd(cwd, sizeof(cwd));
+        app.cwd = strdup(cwd);
+    }
+
+    /* Find the argv[0] in the path */
+
     app.app = ompi_path_findv(app.argv[0], 0, env, app.cwd); 
- 
     if(NULL == app.app) {
         ompi_show_help("help-orterun.txt", "orterun:no-application", true, argv[0], argv[0]);
         return 1;
     }
 
     /* spawn it */
+
     rc = orte_rmgr.spawn(apps, 1, &jobid, NULL);
     if(ORTE_SUCCESS != rc) {
         ompi_output(0, "orterun: spawn failed with errno=%d\n", rc);
     }
+
+    /* All done */
 
     orte_finalize();
     OBJ_DESTRUCT(&app);
