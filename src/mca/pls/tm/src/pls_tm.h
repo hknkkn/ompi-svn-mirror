@@ -15,25 +15,39 @@
 #ifndef ORTE_PLS_TM_EXPORT_H
 #define ORTE_PLS_TM_EXPORT_H
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
-#include "mpi.h"
 #include "mca/mca.h"
 #include "mca/pls/pls.h"
+
+#include "tm.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
 
     /*
-     * Globally exported variable
+     * Globally exported variables
      */
     
     OMPI_COMP_EXPORT extern orte_pls_base_component_1_0_0_t 
         orte_pls_tm_component;
     OMPI_COMP_EXPORT extern orte_pls_base_module_1_0_0_t
         orte_pls_tm_module;
-    OMPI_COMP_EXPORT extern int orte_pls_tm_param_priorty;
+
+    /* Internal struct */
+
+    typedef struct pls_tm_proc_state_t {
+        tm_task_id tid;
+        uint32_t state;
+    } pls_tm_proc_state_t;
+
+    /* Local functions */
+
+    int orte_pls_tm_put_tid(const orte_process_name_t* name, 
+                            pls_tm_proc_state_t *proc_state);
+    int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids, 
+                             size_t *num_tids);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

@@ -23,6 +23,7 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <signal.h>
 
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
@@ -34,8 +35,10 @@
 #include "mca/rmaps/base/rmaps_base_map.h"
 #include "mca/pls/pls.h"
 #include "mca/pls/base/base.h"
+#include "mca/errmgr/errmgr.h"
+#include "mca/soh/soh_types.h"
+#include "mca/gpr/gpr.h"
 #include "pls_tm.h"
-#include "tm.h"
 
 
 /*
@@ -49,6 +52,7 @@ static int pls_tm_finalize(void);
 static int do_tm_resolve(char **hostnames, size_t num_hostnames, 
                          tm_node_id *app_tm_node_ids);
 static char* get_tm_hostname(tm_node_id node);
+static void kill_tids(tm_task_id *tids, int num_tids);
 
 
 /*
@@ -61,26 +65,29 @@ orte_pls_base_module_1_0_0_t orte_pls_tm_module = {
     pls_tm_finalize
 };
 
+extern char **environ;
+#define NUM_SIGTEM_POLL_ITERS 50
+
 
 static int pls_tm_launch(orte_jobid_t jobid)
 {
     int ret, local_errno;
     orte_app_context_t **app = NULL;
-    size_t i, j, app_size, count, total_count;
+    size_t i, j, app_size, count, job_size;
     struct tm_roots root;
     tm_event_t event;
     char *flat;
-    int *statuses = NULL;
     char old_cwd[OMPI_PATH_MAX];
     ompi_list_t mapping;
-    bool mapping_valid = false;
+    bool mapping_valid = false, proc_states_valid = false;
     char **hostnames = NULL;
     int num_hostnames = 0;
-    ompi_list_item_t *item, *item2;
-    tm_task_id tid;
+    ompi_list_item_t *item, *item2, *item3;
+    tm_task_id *tids = NULL;
     tm_node_id *tm_node_ids = NULL;
     char **mca_env, **tmp_env, **local_env;
     int num_mca_env;
+    pls_tm_proc_state_t *proc_states;
 
     /* Open up our connection to tm */
 
@@ -93,6 +100,7 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
     ret = orte_rmgr_base_get_app_context(jobid, &app, &app_size);
     if (ORTE_SUCCESS != ret) {
+        ORTE_ERROR_LOG(ret);
         goto cleanup;
     }
 
@@ -101,19 +109,23 @@ static int pls_tm_launch(orte_jobid_t jobid)
        loops below for higher efficiency, but I'm choosing to code for
        simplicity here). */
 
-    for (total_count = i = 0; i < app_size; ++i) {
-        total_count += app[i]->num_procs;
+    for (job_size = i = 0; i < app_size; ++i) {
+        job_size += app[i]->num_procs;
     }
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch: starting %d processes in %d apps",
-                total_count, app_size);
-    statuses = malloc(sizeof(int) * total_count);
-    if (NULL == statuses) {
+                job_size, app_size);
+    tids = calloc(job_size, sizeof(tm_task_id));
+    if (NULL == tids) {
         ret = ORTE_ERR_OUT_OF_RESOURCE;
+        ORTE_ERROR_LOG(ret);
         goto cleanup;
     }
-    for (i = 0; i < total_count; ++i) {
-        statuses[i] = ORTE_PROC_STARTING;
+    proc_states = calloc(job_size, sizeof(pls_tm_proc_state_t));
+    if (NULL == proc_states) {
+        ret = ORTE_ERR_OUT_OF_RESOURCE;
+        ORTE_ERROR_LOG(ret);
+        goto cleanup;
     }
 
     /* Check to ensure that all the cwd's exist */
@@ -126,8 +138,9 @@ static int pls_tm_launch(orte_jobid_t jobid)
         if (0 != chdir(app[i]->cwd) ||
             0 != chdir(old_cwd)) {
             ret = ORTE_ERR_NOT_FOUND;
-            goto cleanup;
-        }
+            ORTE_ERROR_LOG(ret);
+            goto cleanup; 
+       }
         ompi_output(orte_pls_base.pls_output,
                     "pls:tm:launch: app %d cwd (%s) exists",
                     i, app[i]->cwd);
@@ -143,7 +156,10 @@ static int pls_tm_launch(orte_jobid_t jobid)
     }
     mapping_valid = true;
 
-    for (item =  ompi_list_get_first(&mapping);
+    /* While we're traversing these data structures, also setup the
+       proc_status array for later a "put" to the registry */
+
+    for (i = 0, item =  ompi_list_get_first(&mapping);
          item != ompi_list_get_end(&mapping);
          item =  ompi_list_get_next(item)) {
         orte_rmaps_base_map_t* map = (orte_rmaps_base_map_t*) item;
@@ -156,33 +172,43 @@ static int pls_tm_launch(orte_jobid_t jobid)
             ompi_output(orte_pls_base.pls_output,
                         "pls:tm:launch: found hostname %s in map", 
                         node->node_name);
+
+            proc_states[i].tid = -1;
+            /* JMS may need to change */
+            proc_states[i].state = ORTE_PROC_STATE_TERMINATED;
         }
     }
+    proc_states_valid = true;
 
     /* Sanity check -- we should have exactly as many hosts as total
        number of processes to be launched */
 
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch: num_hostnames %d, total cound %d",
-                num_hostnames, total_count);
-    if (((size_t) num_hostnames) != total_count) {
+                num_hostnames, job_size);
+    if (((size_t) num_hostnames) != job_size) {
         ret = ORTE_ERR_BAD_PARAM;
+        ORTE_ERROR_LOG(ret);
         goto cleanup;
     }
 
     /* Convert all the hostnames to TM node IDs */
 
-    tm_node_ids = malloc(sizeof(tm_node_id) * num_hostnames);
+    tm_node_ids = calloc(num_hostnames, sizeof(tm_node_id));
     if (NULL == tm_node_ids) {
         ret = ORTE_ERR_OUT_OF_RESOURCE;
+        ORTE_ERROR_LOG(ret);
         goto cleanup;
     }
     ret = do_tm_resolve(hostnames, num_hostnames, tm_node_ids);
     if (ORTE_SUCCESS != ret) {
+        ORTE_ERROR_LOG(ret);
         goto cleanup;
     }
 
-    /* Launch them */
+    /* Launch them.  This loop makes the *CRITICAL ASSUMPTION* that
+       going through in order will EXACTLY MATCH the order defined by
+       the map. */
 
     for (count = i = 0; i < app_size; ++i) {
         flat = ompi_argv_join(app[i]->argv, ' ');
@@ -190,7 +216,7 @@ static int pls_tm_launch(orte_jobid_t jobid)
         /* Get an environment that we want to use */
 
         num_mca_env = 0;
-        mca_env = NULL;
+        mca_env = ompi_argv_copy(environ);
         mca_base_param_build_env(&mca_env, &num_mca_env, true);
         tmp_env = ompi_environ_merge(app[i]->env, mca_env);
         local_env = ompi_environ_merge(environ, tmp_env);
@@ -207,26 +233,28 @@ static int pls_tm_launch(orte_jobid_t jobid)
             ompi_output_verbose(10, 0, "Launching app %d, process %d: %s",
                                 i, j, flat);
             ret = tm_spawn(app[i]->argc, app[i]->argv, local_env,
-                           tm_node_ids[count], &tid, &event);
+                           tm_node_ids[count], &tids[count], &event);
             if (TM_SUCCESS != ret) {
-                statuses[count] = ORTE_PROC_EXITED;
                 ret = ORTE_ERR_RESOURCE_BUSY;
+                ORTE_ERROR_LOG(ret);
                 goto loop_error;
             }
             
             ret = tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
             if (TM_SUCCESS != ret) {
-                statuses[count] = ORTE_PROC_EXITED;
                 ret = ORTE_ERR_RESOURCE_BUSY;
+                ORTE_ERROR_LOG(ret);
                 goto loop_error;
             }
 
-            statuses[count] = ORTE_PROC_ALIVE;
             ret = ORTE_SUCCESS;
+            proc_states[count].state = ORTE_PROC_STATE_LAUNCHING;
+            proc_states[count].tid = tids[count];
             continue;
 
         loop_error:
-            count = app_size + 1;
+            kill_tids(tids, count);
+            i = app_size + 1;
             break;
         }
         if (NULL != local_env) {
@@ -238,6 +266,33 @@ static int pls_tm_launch(orte_jobid_t jobid)
     /* All done */
 
  cleanup:
+    if (NULL != proc_states) {
+        if (proc_states_valid) {
+            for (i = 0, item =  ompi_list_get_first(&mapping);
+                 item != ompi_list_get_end(&mapping);
+                 item =  ompi_list_get_next(item)) {
+                orte_rmaps_base_map_t* map = (orte_rmaps_base_map_t*) item;
+
+                for (item2 =  ompi_list_get_first(&map->nodes);
+                     item2 != ompi_list_get_end(&map->nodes);
+                     item2 =  ompi_list_get_next(item2)) {
+                    orte_rmaps_base_node_t *node = (orte_rmaps_base_node_t *) item2;
+                    for (item3 =  ompi_list_get_first(&node->node_procs);
+                         item3 != ompi_list_get_end(&node->node_procs);
+                         item3 =  ompi_list_get_next(item3), ++i) {
+                        orte_rmaps_base_proc_t* proc = (orte_rmaps_base_proc_t*)item;
+                        orte_pls_tm_put_tid(&proc->proc_name, 
+                                            &proc_states[i]);
+                    }
+                }
+            }
+        }
+        free(proc_states);
+        orte_gpr.dump(0);
+    }
+    if (NULL != tids) {
+        free(tids);
+    }
     if (mapping_valid) {
         while (NULL != (item = ompi_list_remove_first(&mapping))) {
             OBJ_RELEASE(item);
@@ -250,9 +305,6 @@ static int pls_tm_launch(orte_jobid_t jobid)
     if (NULL != tm_node_ids) {
         free(tm_node_ids);
     }
-    if (NULL != statuses) {
-        free(statuses);
-    }
     if (NULL != app) {
         free(app);
     }
@@ -263,8 +315,17 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
 static int pls_tm_terminate_job(orte_jobid_t jobid)
 {
-    /* JMS */
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    tm_task_id *tids;
+    size_t num_tids;
+    int ret;
+
+    ret = orte_pls_tm_get_tids(jobid, &tids, &num_tids);
+    if (ORTE_SUCCESS == ret) {
+        kill_tids(tids, num_tids);
+        free(tids);
+    }
+
+    return ret;
 }
 
 
@@ -388,4 +449,78 @@ static char* get_tm_hostname(tm_node_id node)
     /* All done */
 
     return hostname;
+}
+
+
+/*
+ * Kill a bunch of tids.  Don't care about errors here -- just make a
+ * best attempt to kill kill kill; if we fail, oh well.
+ */
+static void kill_tids(tm_task_id *tids, int num_tids)
+{
+    int j, i, ret, local_errno, exit_status;
+    tm_event_t event;
+    bool killed;
+
+    for (i = 0; i < num_tids; ++i) {
+
+        /* First, kill with SIGTERM */
+
+        ret = tm_kill(tids[i], SIGTERM, &event);
+        if (TM_SUCCESS == ret) {
+            tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
+        }
+
+        /* Did it die? */
+
+        ret = tm_obit(tids[i], &exit_status, &event);
+        if (TM_SUCCESS == ret) {
+            tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+
+            /* It didn't seem to die right away; poll a few times */
+
+            if (TM_NULL_EVENT == event) {
+                killed = false;
+                for (j = 0; j < NUM_SIGTEM_POLL_ITERS; ++j) {
+                    tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+                    if (TM_NULL_EVENT != event) {
+                        killed = true;
+                        break;
+                    }
+                    usleep(1);
+                }
+
+                /* No, it did not die.  Try with SIGKILL */
+
+                if (!killed) {
+                    ret = tm_kill(tids[i], SIGKILL, &event);
+                    if (TM_SUCCESS == ret) {
+                        tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
+                    }
+
+                    /* Did it die this time? */
+
+                    ret = tm_obit(tids[i], &exit_status, &event);
+                    if (TM_SUCCESS == ret) {
+                        tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+
+                        /* No -- poll a few times -- just to try to
+                           clean it up...  If we don't get it here, oh
+                           well.  Just let the resources hang; TM will
+                           clean them up when the job completed */
+
+                        if (TM_NULL_EVENT == event) {
+                            for (j = 0; j < NUM_SIGTEM_POLL_ITERS; ++j) {
+                                tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+                                if (TM_NULL_EVENT != event) {
+                                    break;
+                                }
+                                usleep(1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
