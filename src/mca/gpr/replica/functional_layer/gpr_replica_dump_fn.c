@@ -37,8 +37,8 @@
 
 static void orte_gpr_replica_dump_load_string(orte_buffer_t *buffer, char **tmp);
 
-static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
-                                                orte_gpr_replica_itagval_t *iptr);
+void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
+                                         orte_gpr_replica_itagval_t *iptr);
 
 static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
                                           orte_gpr_replica_triggers_t *trig);
@@ -403,8 +403,8 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 }
 
 
-static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
-                                                orte_gpr_replica_itagval_t *iptr)
+void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
+                                         orte_gpr_replica_itagval_t *iptr)
 {
     char *tmp;
     
@@ -511,7 +511,12 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
             break;
     }
     
-    orte_gpr_replica_dump_load_string(buffer, &tmp);
+    if (NULL == buffer) {
+        ompi_output(0, tmp);
+        free(tmp);
+    } else {
+        orte_gpr_replica_dump_load_string(buffer, &tmp);
+    }
 }
 
 

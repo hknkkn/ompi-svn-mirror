@@ -124,11 +124,20 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     orte_gpr_keyval_t **kptr;
     orte_gpr_replica_itagval_t *iptr;
     bool overwrite;
+    char **tmp;
     int rc, i, j, num_found;
 
     if (orte_gpr_replica_globals.debug) {
-	    ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s",
+	    ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s\nValues:",
 		    ORTE_NAME_ARGS(orte_process_info.my_name), seg->name);
+        for (i=0; i < cnt; i++) {
+            ompi_output(0, "\tKey: %s", keyvals[i]->key);
+        }
+        ompi_output(0, "Tokens:");
+        for (i=0; i < num_tokens; i++) {
+            orte_gpr_replica_dict_reverse_lookup(tmp, seg, token_itags[i]);
+            ompi_output(0, "\t%s", *tmp);
+        }
     }
 
     /* initialize action */

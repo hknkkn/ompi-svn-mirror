@@ -440,10 +440,15 @@ OBJ_CLASS_INSTANCE(
 
 int orte_gpr_replica_open(void)
 {
-    int id;
+    int id, tmp;
 
     id = mca_base_param_register_int("gpr", "replica", "debug", NULL, 0);
-    mca_base_param_lookup_int(id, &orte_gpr_replica_globals.debug);
+    mca_base_param_lookup_int(id, &tmp);
+    if (tmp) {
+        orte_gpr_replica_globals.debug = true;
+    } else {
+        orte_gpr_replica_globals.debug = false;
+    }
     
     id = mca_base_param_register_int("gpr", "replica", "maxsize", NULL,
                                      ORTE_GPR_REPLICA_MAX_SIZE);
@@ -454,7 +459,12 @@ int orte_gpr_replica_open(void)
     mca_base_param_lookup_int(id, &orte_gpr_replica_globals.block_size);
 
     id = mca_base_param_register_int("gpr", "replica", "isolate", NULL, 0);
-    mca_base_param_lookup_int(id, &orte_gpr_replica_globals.isolate);
+    mca_base_param_lookup_int(id, &tmp);
+    if (tmp) {
+        orte_gpr_replica_globals.isolate = true;
+    } else {
+        orte_gpr_replica_globals.isolate = false;
+    }
 
     return ORTE_SUCCESS;
 }

@@ -163,10 +163,15 @@ OBJ_CLASS_INSTANCE(
  */
 int orte_gpr_proxy_open(void)
 {
-    int id;
+    int id, tmp;
 
     id = mca_base_param_register_int("gpr", "proxy", "debug", NULL, 0);
-    mca_base_param_lookup_int(id, &orte_gpr_proxy_globals.debug);
+    mca_base_param_lookup_int(id, &tmp);
+    if (tmp) {
+        orte_gpr_proxy_globals.debug = true;
+    } else {
+        orte_gpr_proxy_globals.debug = false;
+    }
 
     id = mca_base_param_register_int("gpr", "proxy", "maxsize", NULL,
                                      ORTE_GPR_PROXY_MAX_SIZE);

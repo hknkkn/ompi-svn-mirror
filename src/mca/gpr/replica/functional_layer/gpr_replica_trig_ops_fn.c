@@ -335,7 +335,7 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                         if (NULL != targets[k] &&
                             cptr == targets[k]->cptr) {  /* got the right container */
                             if (ORTE_GPR_REPLICA_ENTRY_ADDED == action) {  /* case (b) */
-                                if (ORTE_SUCCESS != (rc = orte_pointer_array_add(targets[k]->ivals, iptr))) {
+                                if (0 > (rc = orte_pointer_array_add(targets[k]->ivals, iptr))) {
                                     ORTE_ERROR_LOG(rc);
                                     return rc;
                                 }
@@ -354,13 +354,13 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                                                 (targets[k]->num_ivals)--;
                                             } else if (ORTE_GPR_REPLICA_ENTRY_UPDATED == action) {
                                                 if (replaced) { /* only add rep_iptr in once */
-                                                    if (ORTE_SUCCESS != (rc =
+                                                    if (0 > (rc =
                                                         orte_pointer_array_set_item(targets[k]->ivals, m, NULL))) {
                                                         ORTE_ERROR_LOG(rc);
                                                         return rc;
                                                     }
                                                 } else {
-                                                    if (ORTE_SUCCESS != (rc =
+                                                    if (0 > (rc =
                                                         orte_pointer_array_set_item(targets[k]->ivals, m, rep_iptr))) {
                                                         ORTE_ERROR_LOG(rc);
                                                         return rc;
@@ -386,7 +386,7 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                     for (k=0, replaced=false; k < num_iptrs; k++) {
                         if (iptr[k] == cntrs[j]->iptr) {  /* got a match */
                             if (ORTE_GPR_REPLICA_ENTRY_DELETED == action) {  /* case (a) */
-                                if (ORTE_SUCCESS != (rc =
+                                if (0 >(rc =
                                     orte_pointer_array_set_item(trigs[i]->counters, j, NULL))) {
                                     ORTE_ERROR_LOG(rc);
                                     return rc;
@@ -394,13 +394,13 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                                 (trigs[i]->num_counters)--;
                             } else if (ORTE_GPR_REPLICA_ENTRY_UPDATED == action) {
                                 if (replaced) {
-                                    if (ORTE_SUCCESS != (rc =
+                                    if (0 > (rc =
                                         orte_pointer_array_set_item(trigs[i]->counters, j, NULL))) {
                                         ORTE_ERROR_LOG(rc);
                                         return rc;
                                     }
                                 } else {
-                                    if (ORTE_SUCCESS != (rc =
+                                    if (0 > (rc =
                                         orte_pointer_array_set_item(trigs[i]->counters, j, rep_iptr))) {
                                         ORTE_ERROR_LOG(rc);
                                         return rc;

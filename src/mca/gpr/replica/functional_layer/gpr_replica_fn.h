@@ -180,6 +180,9 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_replica_addr_mode_t mode,
 int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
                                     orte_gpr_replica_itag_t *src, int num_itags);
 
+void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
+                                         orte_gpr_replica_itagval_t *iptr);
+
 /*
  * Trigger Operations
  */
