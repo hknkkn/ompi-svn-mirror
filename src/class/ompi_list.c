@@ -211,6 +211,7 @@ int ompi_list_sort(ompi_list_t* list, ompi_list_item_compare_fn_t compare)
     qsort(items, list->ompi_list_length, sizeof(ompi_list_item_t*), (int(*)(const void*,const void*))compare);
     for(i=0; i<list->ompi_list_length; i++)
         ompi_list_append(list,items[i]);
+    free(items);
     return OMPI_SUCCESS;
 }
 
