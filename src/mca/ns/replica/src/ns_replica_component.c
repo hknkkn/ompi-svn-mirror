@@ -279,120 +279,129 @@ void orte_ns_replica_recv(int status, orte_process_name_t* sender,
     char *tagname;
     orte_rml_tag_t oob_tag;
     size_t count;
-    int32_t return_code=ORTE_SUCCESS;
+    int rc=ORTE_SUCCESS, ret;
 
     count = 1;
-    if (ORTE_SUCCESS != orte_dps.unpack(buffer, (void*)&command, &count, ORTE_NS_CMD)) {
-       return_code = ORTE_ERR_BAD_PARAM;
-	   goto RETURN_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, (void*)&command, &count, ORTE_NS_CMD))) {
+        ORTE_ERROR_LOG(rc);
+        rc = ORTE_ERR_BAD_PARAM;
+	    goto RETURN_ERROR;
     }
 
     if ((answer = OBJ_NEW(orte_buffer_t)) == NULL) {
-        return_code = ORTE_ERR_OUT_OF_RESOURCE;
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        rc = ORTE_ERR_OUT_OF_RESOURCE;
         goto RETURN_ERROR;
     }
 
     if (ORTE_NS_CREATE_CELLID_CMD == command) {   /* got a command to create a cellid */
-	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
+	   if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
+           ORTE_ERROR_LOG(rc);
 	       goto RETURN_ERROR;
 	   }
      
-	   if (ORTE_SUCCESS != (return_code = orte_ns_replica_create_cellid(&cell))) {
-            goto RETURN_ERROR;
-       }
+	   rc = orte_ns_replica_create_cellid(&cell);
        
-	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&cell, 1, ORTE_CELLID))) {
+	   if (ORTE_SUCCESS != (ret = orte_dps.pack(answer, (void*)&cell, 1, ORTE_CELLID))) {
+           ORTE_ERROR_LOG(ret);
 	       goto RETURN_ERROR;
 	   }
 	   if (0 > orte_rml.send_buffer(sender, answer, tag, 0)) {
-	    /* RHC -- not sure what to do if the return send fails */
+           ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
+           goto RETURN_ERROR;
 	   }
      
     } else if (ORTE_NS_CREATE_JOBID_CMD == command) {   /* got command to create jobid */
-	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
+	   if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
+           ORTE_ERROR_LOG(rc);
 	       goto RETURN_ERROR;
 	   }
      
-	   if (ORTE_SUCCESS != (return_code = orte_ns_replica_create_jobid(&job))) {
+	   if (ORTE_SUCCESS != (rc = orte_ns_replica_create_jobid(&job))) {
+            ORTE_ERROR_LOG(rc);
             goto RETURN_ERROR;
        }
        
-	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&job, 1, ORTE_JOBID))) {
+	   if (OMPI_SUCCESS != (rc = orte_dps.pack(answer, (void*)&job, 1, ORTE_JOBID))) {
+           ORTE_ERROR_LOG(rc);
 	       goto RETURN_ERROR;
 	   }
      
 	   if (0 > orte_rml.send_buffer(sender, answer, tag, 0)) {
-	       /* RHC -- not sure what to do if the return send fails */
+           ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
+           goto RETURN_ERROR;
 	   }
      
     } else if (ORTE_NS_RESERVE_RANGE_CMD == command) {  /* got command to reserve vpid range */
        count = 1;
-	   if (OMPI_SUCCESS != (return_code = orte_dps.unpack(buffer, (void*)&job, &count, ORTE_JOBID))) {
-               ORTE_ERROR_LOG(return_code);
+	   if (OMPI_SUCCESS != (rc = orte_dps.unpack(buffer, (void*)&job, &count, ORTE_JOBID))) {
+               ORTE_ERROR_LOG(rc);
 	       goto RETURN_ERROR;
 	   }
  
        count = 1;
-	   if (OMPI_SUCCESS != (return_code = orte_dps.unpack(buffer, (void*)&range, &count, ORTE_VPID))) {
-               ORTE_ERROR_LOG(return_code);
+	   if (OMPI_SUCCESS != (rc = orte_dps.unpack(buffer, (void*)&range, &count, ORTE_VPID))) {
+               ORTE_ERROR_LOG(rc);
 	       goto RETURN_ERROR;
 	   }
 
-	   if (ORTE_SUCCESS != (return_code = orte_ns_replica_reserve_range(job, range, &startvpid))) {
-               ORTE_ERROR_LOG(return_code);
+	   if (ORTE_SUCCESS != (rc = orte_ns_replica_reserve_range(job, range, &startvpid))) {
+               ORTE_ERROR_LOG(rc);
                goto RETURN_ERROR;
            }
        
-	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
-               ORTE_ERROR_LOG(return_code);
+	   if (OMPI_SUCCESS != (rc = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
+               ORTE_ERROR_LOG(rc);
 	       goto RETURN_ERROR;
 	   }
 
-	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&startvpid, 1, ORTE_VPID))) {
-               ORTE_ERROR_LOG(return_code);
+	   if (OMPI_SUCCESS != (rc = orte_dps.pack(answer, (void*)&startvpid, 1, ORTE_VPID))) {
+               ORTE_ERROR_LOG(rc);
 	       goto RETURN_ERROR;
 	   }
      
-	   if (0 > (return_code = orte_rml.send_buffer(sender, answer, tag, 0))) {
-               ORTE_ERROR_LOG(return_code);
+	   if (0 > (rc = orte_rml.send_buffer(sender, answer, tag, 0))) {
+           ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
+           goto RETURN_ERROR;
 	   }
 
         
     } else if (ORTE_NS_ASSIGN_OOB_TAG_CMD == command) {  /* got command to assign an OOB tag */
        count = 1;
        if (0 > orte_dps.unpack(buffer, &tagname, &count, ORTE_STRING)) {
-         return_code = ORTE_ERR_UNPACK_FAILURE;
+         rc = ORTE_ERR_UNPACK_FAILURE;
          goto RETURN_ERROR;
       }
 
        if (0 == strncmp(tagname, "NULL", 4)) {
-            if (ORTE_SUCCESS != (return_code = orte_ns_replica_assign_rml_tag(&oob_tag, NULL))) {
+            if (ORTE_SUCCESS != (rc = orte_ns_replica_assign_rml_tag(&oob_tag, NULL))) {
                 goto RETURN_ERROR;
             }
        } else {
-            if (ORTE_SUCCESS != (return_code = orte_ns_replica_assign_rml_tag(&oob_tag, tagname))) {
+            if (ORTE_SUCCESS != (rc = orte_ns_replica_assign_rml_tag(&oob_tag, tagname))) {
                 goto RETURN_ERROR;
             }
        }
        
-      if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
+      if (OMPI_SUCCESS != (rc = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_CMD))) {
          goto RETURN_ERROR;
       }
 
-      if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&oob_tag, 1, ORTE_UINT32))) {
+      if (OMPI_SUCCESS != (rc = orte_dps.pack(answer, (void*)&oob_tag, 1, ORTE_UINT32))) {
           goto RETURN_ERROR;
       }
      
       if (0 > orte_rml.send_buffer(sender, answer, tag, 0)) {
-         /* RHC -- not sure what to do if the return send fails */
-      }
+           ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
+           goto RETURN_ERROR;
+     }
 
         
     } else {  /* got an unrecognized command */
     RETURN_ERROR:
 	    OBJ_CONSTRUCT(&error_answer, orte_buffer_t);
 	    orte_dps.pack(&error_answer, (void*)&command, 1, ORTE_NS_CMD);
-        orte_dps.pack(&error_answer, (void*)&return_code, 1, ORTE_INT32);
+        orte_dps.pack(&error_answer, (void*)&rc, 1, ORTE_INT32);
 	    orte_rml.send_buffer(sender, &error_answer, tag, 0);
         OBJ_DESTRUCT(&error_answer);
     }
