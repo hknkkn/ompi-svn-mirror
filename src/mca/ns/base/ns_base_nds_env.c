@@ -53,15 +53,26 @@ int orte_ns_nds_env_get(void)
       
         id = mca_base_param_register_int("ns", "nds", "cellid", NULL, -1);
         mca_base_param_lookup_int(id, &cellid);
-        if (cellid < 0) return ORTE_ERR_NOT_FOUND;
+        if (cellid < 0) {
+            char* env = getenv("OMPI_MCA_ns_nds_cellid");
+            ompi_output(0, "OMPI_MCA_ns_nds_cellid=%s\n", env ? env : "NULL");
+            ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+            return ORTE_ERR_NOT_FOUND;
+        }
             
         id = mca_base_param_register_int("ns", "nds", "jobid", NULL, -1);
         mca_base_param_lookup_int(id, &jobid);
-        if (jobid < 0) return ORTE_ERR_NOT_FOUND;
+        if (jobid < 0) {
+            ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+            return ORTE_ERR_NOT_FOUND;
+        }
 
         id = mca_base_param_register_int("ns", "nds", "vpid", NULL, -1);
         mca_base_param_lookup_int(id, &vpid);
-        if (vpid < 0) return ORTE_ERR_NOT_FOUND;
+        if (vpid < 0) {
+            ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+            return ORTE_ERR_NOT_FOUND;
+        }
 
         if (ORTE_SUCCESS != (rc = orte_ns.create_process_name(
            &(orte_process_info.my_name),
@@ -75,11 +86,17 @@ int orte_ns_nds_env_get(void)
 
     id = mca_base_param_register_int("ns", "nds", "vpid_start", NULL, -1);
     mca_base_param_lookup_int(id, &vpid_start);
-    if (vpid_start < 0) return ORTE_ERR_NOT_FOUND;
+    if (vpid_start < 0) {
+        ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+        return ORTE_ERR_NOT_FOUND;
+    }
 
     id = mca_base_param_register_int("ns", "nds", "num_procs", NULL, -1);
     mca_base_param_lookup_int(id, &num_procs);
-    if (num_procs < 0) return ORTE_ERR_NOT_FOUND;
+    if (num_procs < 0) {
+        ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+        return ORTE_ERR_NOT_FOUND;
+    }
     
     orte_process_info.vpid_start = vpid_start;
     orte_process_info.num_procs = num_procs;
@@ -90,28 +107,24 @@ int orte_ns_nds_env_get(void)
 int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
 {
     char* param;
-    putenv("OMPI_MCA_ns_nds=env");
+    unsetenv("OMPI_MCA_seed");
 
-    asprintf(&param, "OMPI_MCA_ns_nds_cellid=%u", name->cellid);
-    putenv(param);
-    free(param);
+    asprintf(&param, "%d", name->cellid);
+    setenv("OMPI_MCA_ns_nds_cellid",param,true);
 
-    asprintf(&param, "OMPI_MCA_ns_nds_jobid=%u", name->jobid);
-    putenv(param);
-    free(param);
+    asprintf(&param, "%d", name->jobid);
+    setenv("OMPI_MCA_ns_nds_jobid",param,true);
 
-    asprintf(&param, "OMPI_MCA_ns_nds_vpid=%u", name->vpid);
-    putenv(param);
-    free(param);
+    asprintf(&param, "%d", name->vpid);
+    setenv("OMPI_MCA_ns_nds_vpid",param,true);
 
-    asprintf(&param, "OMPI_MCA_ns_nds_vpid_start=%u", vpid_start);
-    putenv(param);
-    free(param);
+    asprintf(&param, "%d", vpid_start);
+    setenv("OMPI_MCA_ns_nds_vpid_start",param,true);
 
-    asprintf(&param, "OMPI_MCA_ns_nds_num_procs=%u", num_procs);
-    putenv(param);
-    free(param);
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    asprintf(&param, "%d", num_procs);
+    setenv("OMPI_MCA_ns_nds_num_procs",param,false);
+
+    return ORTE_SUCCESS;
 }
 
 
