@@ -75,13 +75,6 @@ int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *ret, int *cnt, orte_gpr
         return ORTE_ERR_COMM_FAILURE;
     }
 
-    /* unpack the response code */
-    n=1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, ret, &n, ORTE_INT))) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
-    }
-    
     /* find out how many values came back */
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &num, &n, ORTE_INT))) {
         ORTE_ERROR_LOG(rc);
@@ -103,6 +96,17 @@ int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *ret, int *cnt, orte_gpr
         }
     }
     
+    /* unpack the response code */
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, ret, &n, ORTE_INT))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != *ret) {
+        ORTE_ERROR_LOG(*ret);
+        return rc;
+    }
+
     *cnt = num;
 
     return ORTE_SUCCESS;

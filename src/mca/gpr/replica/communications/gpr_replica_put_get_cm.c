@@ -31,7 +31,7 @@
 int orte_gpr_replica_recv_put_cmd(orte_buffer_t *buffer, orte_buffer_t *answer)
 {
     orte_gpr_cmd_flag_t command=ORTE_GPR_PUT_CMD;
-    orte_gpr_value_t **values, *val;
+    orte_gpr_value_t **values = NULL, *val;
     orte_gpr_replica_segment_t *seg=NULL;
     orte_gpr_replica_itag_t *itags=NULL;
     orte_gpr_addr_mode_t addr_mode;
@@ -48,12 +48,6 @@ int orte_gpr_replica_recv_put_cmd(orte_buffer_t *buffer, orte_buffer_t *answer)
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     cnt = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &addr_mode, &cnt, ORTE_GPR_ADDR_MODE))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
-        goto RETURN_ERROR;
-    }
-
     if (ORTE_SUCCESS != (rc = orte_dps.peek(buffer, &type, &cnt))) {
         ORTE_ERROR_LOG(rc);
         ret = rc;
@@ -153,13 +147,13 @@ int orte_gpr_replica_recv_get_cmd(orte_buffer_t *input_buffer,
     }
             
     n = 1;
-    if (ORTE_SUCCESS != (ret = orte_dps.unpack(input_buffer, &segment, &n, ORTE_STRING))) {
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(input_buffer, &addr_mode, &n, ORTE_GPR_ADDR_MODE))) {
         ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (ret = orte_dps.unpack(input_buffer, &addr_mode, &n, ORTE_GPR_ADDR_MODE))) {
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(input_buffer, &segment, &n, ORTE_STRING))) {
         ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
@@ -239,11 +233,12 @@ int orte_gpr_replica_recv_get_cmd(orte_buffer_t *input_buffer,
         goto RETURN_ERROR;
     }
 
+ RETURN_ERROR:
+
     /* pack the number of values */
     if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, &cnt, 1, ORTE_INT))) {
         ORTE_ERROR_LOG(rc);
         ret = rc;
-        goto RETURN_ERROR;
     }
 
     /* pack the answer into the output output_buffer */
@@ -251,11 +246,9 @@ int orte_gpr_replica_recv_get_cmd(orte_buffer_t *input_buffer,
         if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, values, cnt, ORTE_GPR_VALUE))) {
             ORTE_ERROR_LOG(rc);
             ret = rc;
-            goto RETURN_ERROR;
         }
     }
         
- RETURN_ERROR:
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     if (NULL != segment) {

@@ -66,12 +66,12 @@ int orte_gpr_base_pack_get(orte_buffer_t *cmd,
        return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &segment, 1, ORTE_STRING))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_ADDR_MODE))) {
     return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_ADDR_MODE))) {
-        return rc;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &segment, 1, ORTE_STRING))) {
+    return rc;
     }
 
     /* compute number of tokens */
@@ -88,8 +88,10 @@ int orte_gpr_base_pack_get(orte_buffer_t *cmd,
       return rc;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, tokens, (size_t)n, ORTE_STRING))) {
-      return rc;
+    if (n > 0) {
+         if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, tokens, (size_t)n, ORTE_STRING))) {
+           return rc;
+         }
     }
 
     /* compute number of keys */
@@ -106,8 +108,10 @@ int orte_gpr_base_pack_get(orte_buffer_t *cmd,
       return rc;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keys, (size_t)n, ORTE_STRING))) {
-      return rc;
+    if (n > 0) {
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keys, (size_t)n, ORTE_STRING))) {
+           return rc;
+        }
     }
 
     return ORTE_SUCCESS;
