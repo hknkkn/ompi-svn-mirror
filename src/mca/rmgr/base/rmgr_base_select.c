@@ -44,7 +44,7 @@ int orte_rmgr_base_select(bool *allow_multi_user_threads,
         component = (orte_rmgr_base_component_t *) cli->cli_component;
 
         /* Call the component's init function and see if it wants to be selected */
-        module = component->rmgr_init(&multi, &hidden, &priority);
+        module = component->rmgr_init(&priority, &multi, &hidden);
 
         /* If we got a non-NULL module back, then the component wants to
            be selected.  So save its multi/hidden values and save the

@@ -107,9 +107,9 @@ typedef orte_rmgr_base_module_1_0_0_t orte_rmgr_base_module_t;
  */
 
 typedef orte_rmgr_base_module_t* (*orte_rmgr_base_component_init_fn_t)(
+    int *priority,
     bool *allow_multi_user_threads,
-    bool *have_hidden_threads,
-    int *priority);
+    bool *have_hidden_threads);
 
  
 /*
@@ -129,7 +129,7 @@ typedef orte_rmgr_base_component_1_0_0_t orte_rmgr_base_component_t;
 /*
  * Macro for use in components that are of type ns v1.0.0
  */
-#define MCA_ORTE_RAS_BASE_VERSION_1_0_0 \
+#define ORTE_RMGR_BASE_VERSION_1_0_0 \
   /* rmgr v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* rmgr v1.0 */ \
