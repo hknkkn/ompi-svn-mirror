@@ -71,6 +71,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_pointer_array_t);
  * Initialize the pointer array
  * 
  * @param array Address of the pointer array object to be initialized
+ * @param initial_alloc The initial number of elements to be allocated
  * @param max_size Maximum size the array is allowed to reach
  * @param block_size Number of array elements to be added when increase required
  * 
@@ -79,6 +80,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_pointer_array_t);
  * 
  */
 OMPI_DECLSPEC int orte_pointer_array_init(orte_pointer_array_t **array,
+                                    int initial_allocation,
                                     int max_size, int block_size);
                                     
 /**

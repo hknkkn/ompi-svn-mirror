@@ -141,15 +141,17 @@ int orte_gpr_replica_dump(int output_id);
 
 
 /*
- * Messaging functions
+ * Job-related functions
  */
+int orte_gpr_replica_define_job_segment(orte_jobid_t job, int num_procs);
+
 void orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message);
 
 
 /*
  * Test internals
  */
-int orte_gpr_replica_test_internals(int level, ompi_list_t *results);
+int orte_gpr_replica_test_internals(int level, ompi_list_t **results);
 
 
 /*

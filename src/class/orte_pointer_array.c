@@ -61,6 +61,7 @@ void orte_pointer_array_destruct(orte_pointer_array_t *array)
  * initialize an array object
  */
 int orte_pointer_array_init(orte_pointer_array_t **array,
+                            int initial_allocation,
                             int max_size, int block_size)
 {
     /* check for errors */
@@ -76,12 +77,13 @@ int orte_pointer_array_init(orte_pointer_array_t **array,
    (*array)->max_size = max_size;
    (*array)->block_size = block_size;
    
-   (*array)->addr = (void *)malloc(block_size * sizeof(void*));
-   if (NULL == (*array)->addr) { /* out of memory */
-        OBJ_RELEASE(*array);
-        return ORTE_ERR_OUT_OF_RESOURCE;
+   if (0 < initial_allocation) {
+       (*array)->addr = (void *)malloc(initial_allocation * sizeof(void*));
+       if (NULL == (*array)->addr) { /* out of memory */
+            OBJ_RELEASE(*array);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+       }
    }
-   
    (*array)->number_free = block_size;
    (*array)->size = block_size;
    

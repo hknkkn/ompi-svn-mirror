@@ -127,10 +127,10 @@ int orte_gpr_proxy_cleanup_proc(bool purge, orte_process_name_t *proc);
  * Put-get functions
  */
 int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
-		  char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals);
+		  char **tokens, size_t cnt, orte_gpr_keyval_t *keyvals);
 
 int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
-                      char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals,
+                      char **tokens, size_t cnt, orte_gpr_keyval_t *keyvals,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
                       
 int orte_gpr_proxy_get(orte_gpr_addr_mode_t addr_mode,
@@ -182,12 +182,14 @@ int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_action_t state,
 /*
  * Test internals
  */
-int orte_gpr_proxy_test_internals(int level, ompi_list_t *results);
+int orte_gpr_proxy_test_internals(int level, ompi_list_t **results);
 
 
 /*
- * Startup functions
+ * Job-related functions
  */
+int orte_gpr_proxy_define_job_segment(orte_jobid_t job, int num_procs);
+
 int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
                                     orte_buffer_t **msg,
                                     size_t *cnt,

@@ -134,7 +134,7 @@ extern "C" {
 
     OMPI_DECLSPEC int orte_gpr_base_pack_put(orte_buffer_t *cmd,
 			      orte_gpr_addr_mode_t mode, char *segment,
-			      char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals);
+			      char **tokens, size_t cnt, orte_gpr_keyval_t *keyvals);
     OMPI_DECLSPEC int orte_gpr_base_unpack_put(orte_buffer_t *buffer);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_get(orte_buffer_t *cmd,
@@ -153,7 +153,7 @@ extern "C" {
     OMPI_DECLSPEC int orte_gpr_base_unpack_cleanup_proc(orte_buffer_t *buffer);
     
     OMPI_DECLSPEC int orte_gpr_base_pack_test_internals(orte_buffer_t *cmd, int level);
-    OMPI_DECLSPEC int orte_gpr_base_unpack_test_internals(orte_buffer_t *buffer, ompi_list_t *return_list);
+    OMPI_DECLSPEC int orte_gpr_base_unpack_test_internals(orte_buffer_t *buffer, ompi_list_t **return_list);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_notify_off(orte_buffer_t *cmd,
        			                orte_process_name_t *proc,

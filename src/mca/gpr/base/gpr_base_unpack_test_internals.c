@@ -29,14 +29,14 @@
 
 #include "mca/gpr/base/base.h"
 
-int orte_gpr_base_unpack_test_internals(orte_buffer_t *buffer, ompi_list_t *test_results)
+int orte_gpr_base_unpack_test_internals(orte_buffer_t *buffer, ompi_list_t **test_results)
 {
     char *strings[2];
     int rc;
-    int32_t num_responses;
+    int32_t num_responses, i;
     orte_gpr_internal_test_results_t *newptr=NULL;
     orte_gpr_cmd_flag_t command;
-    size_t n, i;
+    size_t n;
 
     n = 1;
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
@@ -64,7 +64,7 @@ int orte_gpr_base_unpack_test_internals(orte_buffer_t *buffer, ompi_list_t *test
 	   newptr = OBJ_NEW(orte_gpr_internal_test_results_t);
 	   newptr->test = strdup(strings[0]);
 	   newptr->message = strdup(strings[1]);
-	   ompi_list_append(test_results, &newptr->item);
+	   ompi_list_append(*test_results, &newptr->item);
     }
 
     return ORTE_SUCCESS;

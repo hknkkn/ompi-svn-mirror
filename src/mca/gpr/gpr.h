@@ -253,6 +253,28 @@ typedef int (*orte_gpr_base_module_cleanup_job_fn_t)(orte_jobid_t jobid);
 typedef int (*orte_gpr_base_module_cleanup_proc_fn_t)(bool purge, orte_process_name_t *proc);
 
 /*
+ * Define and initialize a job segment
+ * The registry contains a segment for each job that stores data on each
+ * process within that job. Although the registry can create this segment
+ * "on-the-fly", it is more efficient to initialize the segment via a separate
+ * command - thus allowing the registry to allocate the base storage for all
+ * the processes in a single malloc.
+ * 
+ * @param job The orte_jobid_t jobid of the job.
+ * @param num_procs The number of processes expected in this job. Usually, this
+ * is just the starting number requested by the user - the registry will
+ * dynamically expand the segment as required.
+ * 
+ * @retval ORTE_SUCCESS The operation was successfully executed.
+ * @retval ORTE_ERROR(s) An appropriate error code is returned.
+ * 
+ * @code
+ * status_code = orte_gpr.define_job_segment(jobid, num_procs);
+ * @endcode
+ */
+typedef int (*orte_gpr_base_module_define_job_segment_fn_t)(orte_jobid_t job, int num_procs);
+
+/*
  * Delete a segment from the registry (BLOCKING)
  * This command removes an entire segment from the registry, including all data objects,
  * associated subscriptions, and synchros. This is a non-reversible process, so it should
@@ -670,7 +692,7 @@ typedef int (*orte_gpr_base_module_deliver_notify_msg_fn_t)(orte_gpr_notify_acti
 /*
  * test interface for internal functions - optional to provide
  */
-typedef int (*orte_gpr_base_module_test_internals_fn_t)(int level, ompi_list_t *results);
+typedef int (*orte_gpr_base_module_test_internals_fn_t)(int level, ompi_list_t **results);
 
 
 /*
@@ -689,6 +711,9 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_delete_entries_nb_fn_t delete_entries_nb;
     orte_gpr_base_module_delete_segment_nb_fn_t delete_segment_nb;
     orte_gpr_base_module_index_nb_fn_t index_nb;
+    /* JOB-RELATED OPERATIONS */
+    orte_gpr_base_module_define_job_segment_fn_t define_job_segment;
+    orte_gpr_base_module_get_startup_msg_fn_t get_startup_msg;
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_base_module_subscribe_fn_t subscribe;
     orte_gpr_base_module_unsubscribe_fn_t unsubscribe;
@@ -707,7 +732,6 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_triggers_active_fn_t triggers_active;
     orte_gpr_base_module_triggers_inactive_fn_t triggers_inactive;
     /* MESSAGING OPERATIONS */
-    orte_gpr_base_module_get_startup_msg_fn_t get_startup_msg;
     orte_gpr_base_module_deliver_notify_msg_fn_t deliver_notify_msg;
     /* CLEANUP OPERATIONS */
     orte_gpr_base_module_cleanup_job_fn_t cleanup_job;

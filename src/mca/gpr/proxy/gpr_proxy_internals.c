@@ -113,13 +113,13 @@ int orte_gpr_proxy_set_remote_idtag(orte_gpr_notify_id_t local_idtag,
 }
 
 
-int orte_gpr_proxy_test_internals(int level, ompi_list_t *test_results)
+int orte_gpr_proxy_test_internals(int level, ompi_list_t **test_results)
 {
     orte_buffer_t *cmd, *answer;
     int rc;
 
-    test_results = OBJ_NEW(ompi_list_t);
-    if (NULL == test_results) {
+    *test_results = OBJ_NEW(ompi_list_t);
+    if (NULL == *test_results) {
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     

@@ -66,11 +66,16 @@ static orte_gpr_base_module_t orte_gpr_proxy = {
     orte_gpr_proxy_put,
     orte_gpr_proxy_delete_entries,
     orte_gpr_proxy_delete_segment,
+    orte_gpr_proxy_index,
     /* NON-BLOCKING OPERATIONS */
     orte_gpr_proxy_get_nb,
     orte_gpr_proxy_put_nb,
     orte_gpr_proxy_delete_entries_nb,
     orte_gpr_proxy_delete_segment_nb,
+    orte_gpr_proxy_index_nb,
+    /* JOB-RELATED OPERATIONS */
+    orte_gpr_proxy_define_job_segment,
+    orte_gpr_proxy_get_startup_msg,
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_proxy_subscribe,
     orte_gpr_proxy_unsubscribe,
@@ -81,16 +86,14 @@ static orte_gpr_base_module_t orte_gpr_proxy = {
     orte_gpr_proxy_begin_compound_cmd,
     orte_gpr_proxy_stop_compound_cmd,
     orte_gpr_proxy_exec_compound_cmd,
-    /* DUMP/INDEX */
+    /* DUMP */
     orte_gpr_proxy_dump,
-    orte_gpr_proxy_index,
     /* MODE OPERATIONS */
     orte_gpr_proxy_notify_on,
     orte_gpr_proxy_notify_off,
     orte_gpr_proxy_triggers_active,
     orte_gpr_proxy_triggers_inactive,
     /* MESSAGING OPERATIONS */
-    orte_gpr_proxy_get_startup_msg,
     orte_gpr_proxy_deliver_notify_msg,
     /* CLEANUP OPERATIONS */
     orte_gpr_proxy_cleanup_job,
@@ -326,7 +329,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     goto RETURN_ERROR;
     }
 
-    message->values = (orte_gpr_value_t**)malloc(cnt*sizeof(orte_gpr_value_t*));
+    message->values = (orte_gpr_value_t*)malloc(cnt*sizeof(orte_gpr_value_t*));
     if (NULL == message->values) {
         if (orte_gpr_proxy_debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: malloc failure",

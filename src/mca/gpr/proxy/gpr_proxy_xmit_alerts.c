@@ -34,6 +34,12 @@
 
 #include "gpr_proxy.h"
 
+int orte_gpr_proxy_define_job_segment(orte_jobid_t jobid, int num_procs)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
 int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
                                     orte_buffer_t **msg,
                                     size_t *cnt,

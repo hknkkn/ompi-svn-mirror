@@ -167,6 +167,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_value_t);
  */
 typedef struct {
     ompi_object_t super;                        /**< Make this an object */
+    orte_gpr_notify_id_t idtag;                 /**< Referenced notify request */
     char *segment;                              /**< Name of originating segment */
     size_t cnt;                                 /**< number of registry value objects */
     orte_gpr_value_t *values;                   /**< Contiguous array of gpr values */
@@ -191,6 +192,7 @@ struct orte_gpr_internal_test_results_t {
     ompi_list_item_t item;          /**< Allows this item to be placed on a list */
     char *test;
     char *message;
+    int exit_code;
 };
 typedef struct orte_gpr_internal_test_results_t orte_gpr_internal_test_results_t;
 
