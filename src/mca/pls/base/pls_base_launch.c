@@ -27,16 +27,19 @@
 int orte_pls_base_launch(orte_jobid_t jobid)
 {
     ompi_list_item_t* item;
-                                                                                                            
+
     /* Query all selected modules */
-    for(item =  ompi_list_get_first(&orte_pls_base.pls_selected);
-        item != ompi_list_get_end(&orte_pls_base.pls_selected);
-        item =  ompi_list_get_next(item)) {
-        orte_pls_base_selected_t* selected = (orte_pls_base_selected_t*)item;
-        int rc = selected->module->launch(jobid);
-        if(rc != ORTE_SUCCESS)
+    for (item =  ompi_list_get_first(&orte_pls_base.pls_available);
+         item != ompi_list_get_end(&orte_pls_base.pls_available);
+         item =  ompi_list_get_next(item)) {
+        orte_pls_base_available_t* available = 
+            (orte_pls_base_available_t*)item;
+        int rc = available->module->launch(jobid);
+        if (ORTE_SUCCESS != rc) {
             return rc;
+        }
     }
+
     return ORTE_SUCCESS;
 }
 

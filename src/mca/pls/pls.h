@@ -185,19 +185,19 @@ typedef struct orte_pls_base_module_1_0_0_t orte_pls_base_module_t;
  * Called by the MCA framework to initialize the component.  Will
  * be called exactly once in the lifetime of the process.
  *
- * @param have_threads (IN) Whether the current running process is
- *                       multi-threaded or not.  true means there
- *                       may be concurrent access into the
- *                       underlying components *and* that the
- *                       components may launch new threads.
+ * @param allow_multi_user_threads (OUT) Whether this component allows
+ *                       multiple user threads simultaneously.
+ * @param have_hidden_thread (OUT) Whether this component may use any
+ *                       hidden (e.g., "progress") threads.
  * @param priority (OUT) Relative priority or ranking use by MCA to
  *                       select a module.
  *
  */
-typedef struct orte_pls_base_module_1_0_0_t* 
+typedef const struct orte_pls_base_module_1_0_0_t* 
 (*orte_pls_base_component_init_fn_t)(
     bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+    bool *have_hidden_threads,
+    int *priority);
 
 /** 
  * PLS component 

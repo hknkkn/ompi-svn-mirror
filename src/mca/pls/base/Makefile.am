@@ -23,14 +23,15 @@ AM_CPPFLAGS = -I$(top_builddir)/src
 # Source code files
 
 headers = \
-	base.h
+        base.h
 
 libmca_pls_base_la_SOURCES = \
-    $(headers) \
-	pls_base_close.c \
-	pls_base_launch.c \
-	pls_base_open.c \
-	pls_base_select.c
+        $(headers) \
+        pls_base_close.c \
+        pls_base_get_argv.c \
+        pls_base_launch.c \
+        pls_base_open.c \
+        pls_base_select.c
 
 # Conditionally install the header files
 

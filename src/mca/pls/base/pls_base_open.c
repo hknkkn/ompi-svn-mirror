@@ -44,11 +44,12 @@ int orte_pls_base_open(void)
 
     /* Open up all available components */
     if (ORTE_SUCCESS != 
-        (ret = mca_base_components_open("pls", 0, mca_pls_base_static_components,
+        (ret = mca_base_components_open("pls", 0, 
+                                        mca_pls_base_static_components,
                                         &orte_pls_base.pls_components))) {
         return ret;
     }
-    OBJ_CONSTRUCT(&orte_pls_base.pls_selected, ompi_list_item_t);
+    OBJ_CONSTRUCT(&orte_pls_base.pls_available, ompi_list_item_t);
 
     /* setup output for debug messages */
     if (!ompi_output_init) {  /* can't open output */
