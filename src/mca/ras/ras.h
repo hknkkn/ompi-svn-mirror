@@ -27,7 +27,7 @@
 #include "include/orte_constants.h"
 
 #include "mca/mca.h"
-
+#include "mca/ns/ns_types.h"
 #include "ras_types.h"
 
 
@@ -57,38 +57,38 @@ typedef int (*orte_ras_base_module_deallocate_fn_t)(orte_jobid_t jobid);
 /*
  * Ver 1.0.0
  */
-struct orte_mca_ras_base_module_1_0_0_t {
-    orte_mca_ras_base_module_allocate_fn_t allocate;
-    orte_mca_ras_base_module_deallocate_fn_t deallocate;
+struct orte_ras_base_module_1_0_0_t {
+    orte_ras_base_module_allocate_fn_t allocate;
+    orte_ras_base_module_deallocate_fn_t deallocate;
 };
 
-typedef struct orte_mca_ras_base_module_1_0_0_t orte_mca_ras_base_module_1_0_0_t;
-typedef orte_mca_ras_base_module_1_0_0_t orte_mca_ras_base_module_t;
+typedef struct orte_ras_base_module_1_0_0_t orte_ras_base_module_1_0_0_t;
+typedef orte_ras_base_module_1_0_0_t orte_ras_base_module_t;
 
 /*
  * RAS Component
  */
 
-typedef orte_mca_ras_base_module_t* (*orte_mca_ras_base_component_init_fn_t)(
+typedef orte_ras_base_module_t* (*orte_ras_base_component_init_fn_t)(
     bool *allow_multi_user_threads,
     bool *have_hidden_threads,
     int *priority);
 
-typedef int (*orte_mca_ras_base_component_finalize_fn_t)(void);
+typedef int (*orte_ras_base_component_finalize_fn_t)(void);
  
 /*
  * the standard component data structure
  */
 
-struct orte_mca_ras_base_component_1_0_0_t {
+struct orte_ras_base_component_1_0_0_t {
     mca_base_component_t ras_version;
     mca_base_component_data_1_0_0_t ras_data;
 
-    orte_mca_ras_base_component_init_fn_t ras_init;
-    orte_mca_ras_base_component_finalize_fn_t ras_finalize;
+    orte_ras_base_component_init_fn_t ras_init;
+    orte_ras_base_component_finalize_fn_t ras_finalize;
 };
-typedef struct orte_mca_ras_base_component_1_0_0_t orte_mca_ras_base_component_1_0_0_t;
-typedef orte_mca_ras_base_component_1_0_0_t orte_mca_ras_base_component_t;
+typedef struct orte_ras_base_component_1_0_0_t orte_ras_base_component_1_0_0_t;
+typedef orte_ras_base_component_1_0_0_t orte_ras_base_component_t;
 
 
 
@@ -103,6 +103,6 @@ typedef orte_mca_ras_base_component_1_0_0_t orte_mca_ras_base_component_t;
 
 /* Global structure for accessing RAS functions
  */
-OMPI_DECLSPEC extern orte_mca_ras_base_module_t orte_ras;  /* holds selected module's function pointers */
+OMPI_DECLSPEC extern orte_ras_base_module_t orte_ras;  /* holds selected module's function pointers */
 
 #endif

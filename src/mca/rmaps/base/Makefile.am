@@ -14,7 +14,7 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-noinst_LTLIBRARIES = libmca_orte_rmaps_base.la
+noinst_LTLIBRARIES = libmca_rmaps_base.la
 
 # For VPATH builds, have to specify where static-modules.h will be found
 
@@ -38,7 +38,7 @@ libmca_rmaps_base_la_SOURCES = \
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca/orte_rmaps/base
+ompidir = $(includedir)/openmpi/mca/rmaps/base
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)

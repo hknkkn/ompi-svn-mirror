@@ -41,7 +41,7 @@ int ompi_open_port(char *port_name)
      */
   
     myproc = ompi_proc_self (&size);
-    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string (name, &(myproc[0]->proc_name)))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string (&name, &(myproc[0]->proc_name)))) {
         return rc;
     }
 
@@ -84,21 +84,22 @@ char *ompi_parse_port (char *port_name, orte_rml_tag_t *tag)
  */
 int ompi_comm_namepublish ( char *service_name, char *port_name ) 
 {
-
     char *token[2];
-    orte_gpr_keyval_t *keyval;
-    
+    orte_gpr_keyval_t keyval;
+    int rc;
+
     token[0] = service_name;
     token[1] = NULL;
     
-    keyval = OBJ_NEW(orte_gpr_keyval_t);
-    keyval->key = strdup("port_name");
-    keyval->type = ORTE_STRING;
-    keyval->value.strptr = strdup(port_name);
-    
-    return orte_gpr.put(ORTE_GPR_AND | ORTE_GPR_OVERWRITE,
-                             OMPI_NAMESPACE_SEGMENT,
-                             token, 1, &keyval);
+    OBJ_CONSTRUCT(&keyval, orte_gpr_keyval_t);
+    keyval.key = strdup("port_name");
+    keyval.type = ORTE_STRING;
+    keyval.value.strptr = strdup(port_name);
+    rc = orte_gpr.put(ORTE_GPR_AND | ORTE_GPR_OVERWRITE,
+                      OMPI_NAMESPACE_SEGMENT,
+                      token, 1, &keyval);
+    OBJ_DESTRUCT(&keyval);
+    return rc;
 }
 
 char* ompi_comm_namelookup ( char *service_name )

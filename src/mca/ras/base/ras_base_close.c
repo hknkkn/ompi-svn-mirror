@@ -24,19 +24,13 @@
 #include "mca/ras/base/base.h"
 
 
-int orte_mca_ras_base_close(void)
+int orte_ras_ras_base_close(void)
 {
-  /* If we have a selected component and module, then finalize it */
-
-  if (orte_mca_ras_base_selected) {
-    orte_mca_ras_base_selected_component.ras_finalize();
-  }
-
   /* Close all remaining available components (may be one if this is a
      Open RTE program, or [possibly] multiple if this is ompi_info) */
 
-  mca_base_components_close(orte_mca_ras_base_output, 
-                            &orte_mca_ras_base_components_available, NULL);
+  mca_base_components_close(orte_ras_base.ras_output, 
+                            &orte_ras_base.ras_components, NULL);
 
   /* All done */
 

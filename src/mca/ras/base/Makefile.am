@@ -14,7 +14,7 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-noinst_LTLIBRARIES = libmca_orte_ras_base.la
+noinst_LTLIBRARIES = libmca_ras_base.la
 
 # For VPATH builds, have to specify where static-modules.h will be found
 
