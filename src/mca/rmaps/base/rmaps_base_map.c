@@ -168,8 +168,10 @@ orte_rmaps_lookup_node(ompi_list_t* nodes, char* node_name, orte_rmaps_base_proc
         item != ompi_list_get_end(nodes);
         item =  ompi_list_get_next(item)) {
         node = (orte_rmaps_base_node_t*)item;
-        if(strcmp(node->node_name, node_name) == 0)
+        if(strcmp(node->node_name, node_name) == 0) {
+            ompi_list_append(&node->node_procs, &proc->super);
             return node;
+        }
     }
     node = OBJ_NEW(orte_rmaps_base_node_t);
     node->node_name = strdup(node_name);
