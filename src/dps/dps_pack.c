@@ -142,7 +142,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     }
 
 	/* debugging */
-	if (num_bytes+sizeof(uint32_t)+orte_dps_memory_required(NULL, 1, ORTE_DATA_TYPE)!=op_size) {
+	if (num_bytes+sizeof(uint32_t)+orte_dps_memory_required(NULL, 1, ORTE_DATA_TYPE) != (size_t)op_size) {
 		fprintf(stderr,"orte_dps_pack: Ops, num_bytes %d + headers %d = %d, but op_size was %d?!\n", 
 				(int)num_bytes, (int)hdr_bytes,  (int)(num_bytes+hdr_bytes), (int)op_size);
 	}

@@ -1,5 +1,6 @@
 #include "include/orte_names.h"
 #include "include/orte_constants.h"
+#include "mca/errmgr/errmgr.h"
 #include "mca/gpr/gpr.h"
 #include "mca/ns/ns.h"
 #include "ras_base_node.h"
@@ -93,53 +94,123 @@ int orte_ras_base_node_query(ompi_list_t* nodes)
 int orte_ras_base_node_insert(ompi_list_t* nodes)
 {
     ompi_list_item_t* item;
-    orte_gpr_keyval_t node_name   = {{OBJ_CLASS(ompi_object_t), 0}, ORTE_NODE_NAME_KEY, ORTE_STRING };
-    orte_gpr_keyval_t node_state  = {{OBJ_CLASS(ompi_object_t), 0}, ORTE_NODE_STATE_KEY, ORTE_NODE_STATE };
-    orte_gpr_keyval_t node_cellid = {{OBJ_CLASS(ompi_object_t), 0}, ORTE_CELLID_KEY, ORTE_CELLID };
-    orte_gpr_keyval_t node_slots  = {{OBJ_CLASS(ompi_object_t), 0}, ORTE_NODE_SLOTS_KEY, ORTE_UINT32 };
-    orte_gpr_keyval_t node_slots_max = {{OBJ_CLASS(ompi_object_t), 0}, ORTE_NODE_SLOTS_MAX_KEY, ORTE_UINT32 };
-    orte_gpr_keyval_t* keyvals[5];
-    int rc;
+    orte_gpr_value_t **values, *val;
+    int rc, num_values, i, j;
+    orte_ras_base_node_t* node;
+    char* cellid;
     
-    keyvals[0] = &node_name;
-    keyvals[1] = &node_state;
-    keyvals[2] = &node_cellid;
-    keyvals[3] = &node_slots;
-    keyvals[4] = &node_slots_max;
-
-    for(item =  ompi_list_get_first(nodes);
-        item != ompi_list_get_end(nodes);
-        item =  ompi_list_get_next(nodes)) {
-        orte_ras_base_node_t* node = (orte_ras_base_node_t*)item;
-        char* cellid;
-        char* tokens[3];
-
-        if(ORTE_SUCCESS != (rc = orte_ns.convert_cellid_to_string(&cellid, node->node_cellid)))
-            return rc;
-
-        /* setup index/keys for this node */
-        tokens[0] = node->node_name;
-        tokens[1] = cellid;
-        tokens[2] = NULL;
-
-        /* setup node key/value pairs */
-        node_name.value.strptr = node->node_name;
-        node_state.value.node_state = node->node_state;
-        node_cellid.value.cellid = node->node_cellid;
-        node_slots.value.ui32 = node->node_slots;
-        node_slots_max.value.ui32 = node->node_slots_max;
-
-        /* try the insert */
-        rc = orte_gpr.put(
-            ORTE_GPR_OVERWRITE|ORTE_GPR_AND,
-            ORTE_NODE_SEGMENT,
-            tokens,
-            sizeof(keyvals)/sizeof(keyvals[0]),
-            keyvals);
-        free(cellid);
-        if(ORTE_SUCCESS != rc)
-            return rc;
+    num_values = ompi_list_get_size(nodes);
+    if (0 >= num_values) {
+        return ORTE_ERR_BAD_PARAM;
     }
+    
+    values = (orte_gpr_value_t**)malloc(num_values * sizeof(orte_gpr_value_t*));
+    if (NULL == values) {
+       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+       return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    for(i=0, item =  ompi_list_get_first(nodes);
+        i < num_values && item != ompi_list_get_end(nodes);
+        i++, item =  ompi_list_get_next(nodes)) {
+
+        node = (orte_ras_base_node_t*)item;
+
+        values[i] = OBJ_NEW(orte_gpr_value_t);
+        if (NULL == values[i]) {
+            for (j=0; j <= i; j++) {
+                OBJ_RELEASE(values[j]);
+            }
+            free(values);
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        val = values[i];
+        
+        val->segment = strdup(ORTE_NODE_SEGMENT);
+        val->cnt = 5;
+    
+        val->keyvals = (orte_gpr_keyval_t**)malloc(5*sizeof(orte_gpr_keyval_t*));
+        if (NULL == val->keyvals) {
+            for (j=0; j <= i; j++) {
+                OBJ_RELEASE(values[j]);
+            }
+            free(values);
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+    
+        for (j=0; j < 5; j++) {
+            val->keyvals[j] = OBJ_NEW(orte_gpr_keyval_t);
+            if (NULL == val->keyvals[j]) {
+                for (j=0; j <= i; j++) {
+                OBJ_RELEASE(values[j]);
+                }
+                free(values);
+                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                return ORTE_ERR_OUT_OF_RESOURCE;
+            }
+        }
+        
+        (val->keyvals[0])->key = strdup(ORTE_NODE_NAME_KEY);
+        (val->keyvals[0])->type = ORTE_STRING;
+        (val->keyvals[0])->value.strptr = strdup(node->node_name);
+        
+        (val->keyvals[1])->key = strdup(ORTE_NODE_STATE_KEY);
+        (val->keyvals[1])->type = ORTE_NODE_STATE;
+        (val->keyvals[1])->value.node_state = node->node_state;
+        
+        (val->keyvals[2])->key = strdup(ORTE_CELLID_KEY);
+        (val->keyvals[2])->type = ORTE_CELLID;
+        (val->keyvals[2])->value.cellid = node->node_cellid;
+        
+        (val->keyvals[3])->key = strdup(ORTE_NODE_SLOTS_KEY);
+        (val->keyvals[3])->type = ORTE_UINT32;
+        (val->keyvals[3])->value.ui32 = node->node_slots;
+        
+        (val->keyvals[4])->key = strdup(ORTE_NODE_SLOTS_MAX_KEY);
+        (val->keyvals[4])->type = ORTE_UINT32;
+        (val->keyvals[4])->value.ui32 = node->node_slots_max;
+
+        val->tokens = (char**)malloc(3*sizeof(char*));
+        if (NULL == val->tokens) {
+            for (j=0; j <= i; j++) {
+                OBJ_RELEASE(values[j]);
+            }
+            OBJ_RELEASE(values);
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+    
+        /* setup index/keys for this node */
+        val->tokens[0] = strdup(node->node_name);
+        if (ORTE_SUCCESS != (rc = orte_ns.convert_cellid_to_string(&(val->tokens[1]),
+                                        node->node_cellid))) {
+            for (j=0; j <= i; j++) {
+                OBJ_RELEASE(values[j]);
+            }
+            free(values);
+            return rc;
+        }
+
+        val->tokens[1] = cellid;
+        val->tokens[2] = NULL;
+    }
+    
+    /* try the insert */
+    rc = orte_gpr.put(
+        ORTE_GPR_OVERWRITE|ORTE_GPR_AND,
+        num_values,
+        values);
+
+    for (j=0; j < num_values; j++) {
+          OBJ_RELEASE(values[j]);
+    }
+    free(values);
+    
+    if(ORTE_SUCCESS != rc)
+        return rc;
+
     return ORTE_SUCCESS;
 }
 

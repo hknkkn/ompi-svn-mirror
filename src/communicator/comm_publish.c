@@ -19,6 +19,9 @@
 
 #include "communicator/communicator.h"
 #include "include/constants.h"
+
+#include "include/orte_names.h"
+#include "mca/errmgr/errmgr.h"
 #include "mca/pml/pml.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
@@ -87,21 +90,38 @@ char *ompi_parse_port (char *port_name, orte_rml_tag_t *tag)
  */
 int ompi_comm_namepublish ( char *service_name, char *port_name ) 
 {
-    char *token[2];
-    orte_gpr_keyval_t *keyval;
+    orte_gpr_value_t *value;
     int rc;
 
-    token[0] = service_name;
-    token[1] = NULL;
+    value = OBJ_NEW(orte_gpr_value_t);
+    if (NULL == value) {
+       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+       return ORTE_ERR_OUT_OF_RESOURCE;
+    }
     
-    keyval = OBJ_NEW(orte_gpr_keyval_t);
-    keyval->key = strdup(OMPI_COMM_PORT_KEY);
-    keyval->type = ORTE_STRING;
-    (keyval->value).strptr = strdup(port_name);
+    value->segment = strdup(OMPI_NAMESPACE_SEGMENT);
+    
+    value->tokens = (char**)malloc(2*sizeof(char*));
+    if (NULL == value->tokens) {
+       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+       return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    value->tokens[0] = strdup(service_name);
+    value->tokens[1] = NULL;
+    
+    value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == value->keyvals[0]) {
+       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+       OBJ_RELEASE(value);
+       return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    (value->keyvals[0])->key = strdup(OMPI_COMM_PORT_KEY);
+    (value->keyvals[0])->type = ORTE_STRING;
+    ((value->keyvals[0])->value).strptr = strdup(port_name);
     rc = orte_gpr.put(ORTE_GPR_AND | ORTE_GPR_OVERWRITE,
-                      OMPI_NAMESPACE_SEGMENT,
-                      token, 1, &keyval);
-    OBJ_RELEASE(keyval);
+                      1, &value);
+    OBJ_RELEASE(value);
     return rc;
 }
 

@@ -34,21 +34,21 @@
 
 #include "gpr_proxy.h"
 
-int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
-         char **tokens, int cnt, orte_gpr_keyval_t **keyvals)
+int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode,
+                       int cnt, orte_gpr_value_t **values)
 {
     orte_buffer_t *cmd;
     orte_buffer_t *answer;
     int rc;
 
     if (orte_gpr_proxy_globals.debug) {
-	    ompi_output(0, "[%d,%d,%d] gpr_proxy_put: entered for segment %s 1st token %s",
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), segment, *tokens);
+	    ompi_output(0, "[%d,%d,%d] gpr_proxy_put: entered with %d values",
+                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), cnt);
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
 	   return orte_gpr_base_pack_put(orte_gpr_proxy_globals.compound_cmd,
-				     mode, segment, tokens, cnt, keyvals);
+				     mode, cnt, values);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -56,7 +56,7 @@ int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
 	    return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_put(cmd, mode, segment, tokens, cnt, keyvals))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_put(cmd, mode, cnt, values))) {
 	    OBJ_RELEASE(cmd);
         return rc;
     }
@@ -80,16 +80,16 @@ int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
     return rc;
 }
 
-int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
-                      char **tokens, int cnt, orte_gpr_keyval_t **keyvals,
+int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode,
+                      int cnt, orte_gpr_value_t **values,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 int orte_gpr_proxy_get(orte_gpr_addr_mode_t mode,
-                                char *segment, char **tokens, char **keys,
-                                int *cnt, orte_gpr_value_t ***values)
+                       char *segment, char **tokens, char **keys,
+                       int *cnt, orte_gpr_value_t ***values)
 
 {
     orte_buffer_t *cmd;

@@ -29,18 +29,18 @@
 
 #include "gpr_replica_api.h"
 
-int orte_gpr_replica_put(orte_gpr_addr_mode_t mode, char *segment,
-       char **tokens, int cnt, orte_gpr_keyval_t **keyvals)
+int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
+                         int cnt, orte_gpr_value_t **values)
 {
-    int rc;
+    int rc, i;
     int8_t action_taken;
+    orte_gpr_value_t *val;
     orte_gpr_replica_segment_t *seg=NULL;
     orte_gpr_replica_itag_t *itags=NULL;
     int num_tokens=0;
 
     /* protect ourselves against errors */
-    if (NULL == segment || NULL == keyvals || 0 == cnt ||
-	NULL == tokens || NULL == *tokens) {
+    if (NULL == values) {
         	if (orte_gpr_replica_globals.debug) {
         	    ompi_output(0, "[%d,%d,%d] gpr replica: error in input - put rejected",
                                 ORTE_NAME_ARGS(*(orte_process_info.my_name)));
@@ -50,29 +50,34 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode, char *segment,
 
     if (orte_gpr_replica_globals.compound_cmd_mode) {
 	   return orte_gpr_base_pack_put(orte_gpr_replica_globals.compound_cmd,
-				     mode, segment, tokens, cnt, keyvals);
+				     mode, cnt, values);
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
-    /* find the segment */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, segment))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
+    for (i=0; i < cnt; i++) {
+        val = values[i];
+        
+        /* find the segment */
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, val->segment))) {
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+            return rc;
+        }
+    
+        /* convert tokens to array of itags */
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg, val->tokens, &num_tokens)) ||
+            num_tokens != val->num_tokens) {
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+            return rc;
+        }
+    
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_put_fn(mode, seg, itags, num_tokens,
+    				val->cnt, val->keyvals, &action_taken))) {
+            goto CLEANUP;
+        }
+    
+        free(itags);
     }
-
-    /* convert tokens to array of itags */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg, tokens, &num_tokens))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_put_fn(mode, seg, itags, num_tokens,
-				cnt, keyvals, &action_taken))) {
-        goto CLEANUP;
-    }
-
-    goto CLEANUP;
     
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_subscriptions(seg, action_taken))) {
         goto CLEANUP;
@@ -89,7 +94,6 @@ CLEANUP:
     }
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-    return rc;
     
     if (ORTE_SUCCESS == rc) {
         return orte_gpr_replica_process_callbacks();
@@ -100,8 +104,8 @@ CLEANUP:
 }
 
 
-int orte_gpr_replica_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
-                      char **tokens, int cnt, orte_gpr_keyval_t **keyvals,
+int orte_gpr_replica_put_nb(orte_gpr_addr_mode_t addr_mode,
+                      int cnt, orte_gpr_value_t **values,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;

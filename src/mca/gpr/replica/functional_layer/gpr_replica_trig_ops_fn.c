@@ -23,6 +23,7 @@
 
 #include "orte_config.h"
 
+#include "mca/errmgr/errmgr.h"
 #include "mca/ns/ns.h"
 
 #include "gpr_replica_fn.h"
@@ -65,6 +66,7 @@ orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
     if (NULL != requestor) {
         if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&(trig->requestor),
                                             requestor))) {
+              ORTE_ERROR_LOG(rc);
               return rc;
         }
     } else {
@@ -93,6 +95,7 @@ orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t local_idtag,
 
     trig = (orte_gpr_replica_triggers_t*)((orte_gpr_replica.triggers)->addr[local_idtag]);
     if (NULL == trig) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         return ORTE_ERR_BAD_PARAM;
     }
     *remote_idtag = trig->remote_idtag;

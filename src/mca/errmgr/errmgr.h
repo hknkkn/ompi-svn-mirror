@@ -26,7 +26,15 @@
 
 #include "orte_config.h"
 #include "include/orte_constants.h"
+#include "include/orte_names.h"
 
+#include "mca/mca.h"
+
+/*
+ * Macro definitions
+ */
+#define ORTE_ERROR_LOG(n) \
+    orte_errmgr.log(ORTE_ERROR_NAME(n), __FILE__, __LINE__)
 
 
 /*

@@ -24,6 +24,7 @@
 
 #include "mca/mca.h"
 #include "mca/base/base.h"
+#include "mca/errmgr/errmgr.h"
 #include "mca/rml/rml.h"
 #include "mca/gpr/gpr.h"
 #include "mca/ns/ns.h"
@@ -379,34 +380,53 @@ int mca_base_modex_send(
     const void *data, 
     size_t size)
 {
-    char *segment;
-    char *tokens[2], *jobidstring;
-    orte_gpr_keyval_t *keyval;
+    char *jobidstring;
+    orte_gpr_value_t *value;
     int rc;
 
-    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&tokens[0], orte_process_info.my_name))) {
-        return rc;
-    }
-    tokens[1] = NULL;
-
-    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobidstring, orte_process_info.my_name))) {
-        return rc;
-    }
-    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
-
-    keyval = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == keyval) {
+    value = OBJ_NEW(orte_gpr_value_t);
+    if (NULL == value) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    keyval->type = ORTE_BYTE_OBJECT;
-    keyval->value.byteobject.size = size;
-    keyval->value.byteobject.bytes = (void *)malloc(size); 
-    if(NULL == keyval->value.byteobject.bytes) {
+
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobidstring, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+
+    if (0 > asprintf(&(value->segment), "%s-%s", ORTE_JOB_SEGMENT, jobidstring)) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+
+    value->tokens = (char**)malloc(2*sizeof(char*));
+    if (NULL == value->tokens) {
+       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&(value->tokens[0]), orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    value->tokens[1] = NULL;
+
+    value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == value->keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    (value->keyvals[0])->type = ORTE_BYTE_OBJECT;
+    (value->keyvals[0])->value.byteobject.size = size;
+    (value->keyvals[0])->value.byteobject.bytes = (void *)malloc(size); 
+    if(NULL == (value->keyvals[0])->value.byteobject.bytes) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return OMPI_ERR_OUT_OF_RESOURCE;
     }
-    memcpy(keyval->value.byteobject.bytes, data, size);
+    memcpy((value->keyvals[0])->value.byteobject.bytes, data, size);
     
-    asprintf(&(keyval->key), "modex-%s-%s-%d-%d", 
+    asprintf(&((value->keyvals[0])->key), "modex-%s-%s-%d-%d", 
         source_component->mca_type_name,
         source_component->mca_component_name,
         source_component->mca_component_major_version,
@@ -414,11 +434,11 @@ int mca_base_modex_send(
     
     rc = orte_gpr.put(
         ORTE_GPR_AND | ORTE_GPR_OVERWRITE, 
-        segment,
-        tokens,
         1,
-        &keyval);
-    free(segment);
+        &value);
+        
+    OBJ_RELEASE(value);
+
     return rc;
 }
 

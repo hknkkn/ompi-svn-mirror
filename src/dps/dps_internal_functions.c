@@ -227,7 +227,7 @@ int orte_dps_dump_buffer_simple (orte_buffer_t *buffer, int outid)
     ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
                         buffer->pages, buffer->size, buffer->len,
                         buffer->space, buffer->toend);
-	if (buffer->len != (size_t)(dptr-sptr)) {
+	if ((size_t)buffer->len != (size_t)(dptr-sptr)) {
 		ompi_output(outid, "data_ptr - base_ptr = %ld length %ld diff %ld\n\n",
 						(dptr-sptr), buffer->len, buffer->len - (dptr-sptr));
 		return (ORTE_ERROR);
@@ -253,9 +253,10 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
     ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
                         buffer->pages, buffer->size, buffer->len,
                         buffer->space, buffer->toend);
-	if (buffer->len != (buffer->data_ptr-buffer->base_ptr)) {
+	if (buffer->len != ((char*)buffer->data_ptr - (char*)buffer->base_ptr)) {
 		ompi_output(outid, "data_ptr - base_ptr = %ld length %ld diff %ld\n\n",
-						(buffer->data_ptr-buffer->base_ptr), buffer->len, buffer->len - (buffer->data_ptr-buffer->base_ptr));
+						((char*)buffer->data_ptr - (char*)buffer->base_ptr), buffer->len,
+                          buffer->len - ((char*)buffer->data_ptr - (char*)buffer->base_ptr));
 	}
 
     while (0 < mem_left) {
@@ -386,9 +387,10 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
         ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
                             buffer->pages, buffer->size, buffer->len,
                             buffer->space, buffer->toend);
-	    if (buffer->len != (buffer->data_ptr-buffer->base_ptr)) {
+	    if (buffer->len != ((char*)buffer->data_ptr - (char*)buffer->base_ptr)) {
 	   		 ompi_output(outid, "data_ptr - base_ptr = %ld length %ld diff %ld\n\n",
-						(buffer->data_ptr-buffer->base_ptr), buffer->len, buffer->len - (buffer->data_ptr-buffer->base_ptr));
+						((char*)buffer->data_ptr - (char*)buffer->base_ptr), buffer->len,
+                          buffer->len - ((char*)buffer->data_ptr - (char*)buffer->base_ptr));
 		} 
 
     }

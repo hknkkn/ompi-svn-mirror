@@ -93,11 +93,11 @@ int orte_gpr_replica_cleanup_proc(orte_process_name_t *proc);
 /*
  * Put-get functions
  */
-int orte_gpr_replica_put(orte_gpr_addr_mode_t mode, char *segment,
-       char **tokens, int cnt, orte_gpr_keyval_t **keyvals);
+int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
+                         int cnt, orte_gpr_value_t **values);
 
-int orte_gpr_replica_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
-                      char **tokens, int cnt, orte_gpr_keyval_t **keyvals,
+int orte_gpr_replica_put_nb(orte_gpr_addr_mode_t addr_mode,
+                      int cnt, orte_gpr_value_t **values,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
                       
 int orte_gpr_replica_get(orte_gpr_addr_mode_t addr_mode,
