@@ -44,7 +44,7 @@ int orte_iof_proxy_svc_publish(
     hdr.hdr_pub.pub_tag = tag;
     ORTE_IOF_BASE_HDR_PUB_NTOH(hdr.hdr_pub);
 
-    iov.iov_base = &hdr;
+    iov.iov_base = (void*)&hdr;
     iov.iov_len = sizeof(hdr);
 
     rc = orte_rml.send(
@@ -82,7 +82,7 @@ int orte_iof_proxy_svc_unpublish(
     hdr.hdr_pub.pub_tag = tag;
     ORTE_IOF_BASE_HDR_PUB_NTOH(hdr.hdr_pub);
 
-    iov.iov_base = &hdr;
+    iov.iov_base = (void*)&hdr;
     iov.iov_len = sizeof(hdr);
 
     rc = orte_rml.send(
@@ -127,7 +127,7 @@ int orte_iof_proxy_svc_subscribe(
     hdr.hdr_sub.dst_tag = dst_tag;
     ORTE_IOF_BASE_HDR_SUB_NTOH(hdr.hdr_sub);
 
-    iov.iov_base = &hdr;
+    iov.iov_base = (void*)&hdr;
     iov.iov_len = sizeof(hdr);
 
     rc = orte_rml.send(
@@ -170,7 +170,7 @@ int orte_iof_proxy_svc_unsubscribe(
     hdr.hdr_sub.dst_tag = dst_tag;
     ORTE_IOF_BASE_HDR_SUB_NTOH(hdr.hdr_sub);
 
-    iov.iov_base = &hdr;
+    iov.iov_base = (void*)&hdr;
     iov.iov_len = sizeof(hdr);
 
     rc = orte_rml.send(

@@ -19,6 +19,7 @@
 #include "mca/rml/rml.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
+#include "mca/iof/base/base.h"
 #include "mca/iof/base/iof_base_endpoint.h"
 #include "iof_proxy.h"
 #include "iof_proxy_svc.h"
