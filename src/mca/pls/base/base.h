@@ -83,8 +83,8 @@ extern "C" {
     /**
      * Utility routine to get/set proces pid
      */
-    OMPI_DECLSPEC int orte_pls_base_set_proc_pid(orte_process_name_t*, pid_t);
-    OMPI_DECLSPEC int orte_pls_base_get_proc_pid(orte_process_name_t*, pid_t*);
+    OMPI_DECLSPEC int orte_pls_base_set_proc_pid(const orte_process_name_t*, pid_t);
+    OMPI_DECLSPEC int orte_pls_base_get_proc_pid(const orte_process_name_t*, pid_t*);
     /**
      * Utility routine to retreive all process pids w/in a specified job.
      */

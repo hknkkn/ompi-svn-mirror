@@ -30,7 +30,7 @@
  * as being launched.
  */
 
-int orte_pls_base_set_proc_pid(orte_process_name_t* name, pid_t pid)
+int orte_pls_base_set_proc_pid(const orte_process_name_t* name, pid_t pid)
 {
     orte_gpr_value_t* values[1];
     orte_gpr_value_t value;
@@ -44,7 +44,7 @@ int orte_pls_base_set_proc_pid(orte_process_name_t* name, pid_t pid)
         return rc;
     }
 
-    if(ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&value.tokens, &value.num_tokens, name))) {
+    if(ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&value.tokens, &value.num_tokens, (orte_process_name_t*)name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
@@ -69,7 +69,7 @@ int orte_pls_base_set_proc_pid(orte_process_name_t* name, pid_t pid)
 /**
  *  Retreive a specified process pid from the registry.
  */
-int orte_pls_base_get_proc_pid(orte_process_name_t* name, pid_t* pid)
+int orte_pls_base_get_proc_pid(const orte_process_name_t* name, pid_t* pid)
 {
     char *segment;
     char **tokens;
@@ -85,7 +85,7 @@ int orte_pls_base_get_proc_pid(orte_process_name_t* name, pid_t* pid)
         return rc;
     }
 
-    if(ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&tokens, &num_tokens, name))) {
+    if(ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&tokens, &num_tokens, (orte_process_name_t*)name))) {
         free(segment);
         ORTE_ERROR_LOG(rc);
         return rc;
