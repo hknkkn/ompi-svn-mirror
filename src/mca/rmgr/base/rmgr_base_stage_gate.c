@@ -45,7 +45,7 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
 
     /* setup the counters */
     OBJ_CONSTRUCT(&value, orte_gpr_value_t);
-    value.addr_mode = ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
+    value.addr_mode = ORTE_GPR_OVERWRITE | ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
     if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value.segment), job))) {
         ORTE_ERROR_LOG(rc);
         OBJ_DESTRUCT(&value);
@@ -93,7 +93,7 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
      * do all the basic stuff
      */
     OBJ_CONSTRUCT(&sub, orte_gpr_subscription_t);
-    sub.addr_mode = ORTE_GPR_TOKENS_XAND || ORTE_GPR_KEYS_OR;
+    sub.addr_mode = ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
     if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(sub.segment), job))) {
         ORTE_ERROR_LOG(rc);
         OBJ_DESTRUCT(&sub);
@@ -107,13 +107,15 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
     }
     sub.tokens[0] = strdup(ORTE_JOB_GLOBALS); /* the counters are in the job's globals container */
     sub.num_tokens = 1;
-    sub.keys = (char**)malloc(sizeof(char*));
+    sub.keys = (char**)malloc(sizeof(char*)*3);
     if (NULL == sub.keys) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    sub.num_keys = 1;
+    sub.num_keys = 2;
+    sub.keys[1] = strdup(ORTE_JOB_SLOTS_KEY);
+
     sub.cbfunc = orte_rmgr_base_proc_stage_gate_mgr;
     sub.user_tag = NULL;
     
@@ -299,13 +301,14 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
      * procs in this job
      */
     values = data->values;
-    n = -1; k = -1;
+    n = -1; k = 0;
     for (i=0; i < data->cnt && (0 > n || 0 > k); i++) {
+        kvals = values[i]->keyvals;
         /* check to see if ORTE_JOB_GLOBALS is the token */
         if (NULL != values[i]->tokens &&
             0 == strcmp(ORTE_JOB_GLOBALS, values[i]->tokens[0])) {
             /* find the ORTE_JOB_SLOTS_KEY and the ORTE_JOB_VPID_START_KEY keyval */
-            for (j=0; j < values[i]->cnt && (0 > n || 0 > k); j++) {
+            for (j=0; j < values[i]->cnt && (0 > n); j++) {
                 if (NULL != kvals[j] && 0 > n &&
                     0 == strcmp(ORTE_JOB_SLOTS_KEY, kvals[j]->key)) {
                     n = (int)(kvals[j]->value.ui32);
@@ -318,7 +321,7 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
         }
     }
     
-    if (0 > k || 0 > n) {
+    if (0 > n) {
         ORTE_ERROR_LOG(ORTE_ERR_GPR_DATA_CORRUPT);
         return;
     }

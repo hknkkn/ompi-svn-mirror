@@ -46,7 +46,9 @@ int orte_dps_unload(orte_buffer_t *buffer,
     
     /* anything in the buffer - if not, nothing to do */
     if (NULL == buffer->base_ptr || 0 == buffer->len) {
-        return ORTE_ERROR;
+        *payload = NULL;
+        *size = 0;
+        return ORTE_SUCCESS;
     }
     
     /* okay, we have something to provide - pass it back
@@ -77,7 +79,7 @@ int orte_dps_load(orte_buffer_t *buffer,
     
     /* check that the payload is there */
     if (NULL == payload || 0 >= size) {
-        return ORTE_ERR_BAD_PARAM;
+        return ORTE_SUCCESS;
     }
     
     /* check if buffer already has payload - free it if so */

@@ -33,6 +33,7 @@
 #include "mca/ns/base/base.h"
 #include "mca/gpr/base/base.h"
 #include "mca/rmgr/base/base.h"
+#include "mca/rmaps/base/base.h"
 #include "mca/soh/base/base.h"
 #include "util/univ_info.h"
 #include "util/proc_info.h"
@@ -334,6 +335,34 @@ int orte_init(void)
         orte_rml.set_uri(orte_process_info.gpr_replica_uri);
     }
 
+    /* open/load rmgr/soh */
+
+    if (ORTE_SUCCESS != (ret = orte_rmgr_base_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    if (ORTE_SUCCESS != (ret = orte_soh_base_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+
+     /* setup jobid-0 */
+ 
+    if(orte_process_info.seed) {
+         if (ORTE_SUCCESS != (ret = orte_rmgr_base_set_job_slots(0,1))) {
+             ORTE_ERROR_LOG(ret);
+             return ret;
+         }
+         if (ORTE_SUCCESS != (ret = orte_rmaps_base_set_vpid_range(0,0,1))) {
+             ORTE_ERROR_LOG(ret);
+             return ret;
+         }
+         if (ORTE_SUCCESS != (ret = orte_rmgr_base_proc_stage_gate_init(0))) {
+             ORTE_ERROR_LOG(ret);
+             return ret;
+         }
+    }
+
     /* 
      * Initialize the selected modules now that all components/name are available.
      */
@@ -357,10 +386,6 @@ int orte_init(void)
      * setup the resource manager 
      */
 
-    if (ORTE_SUCCESS != (ret = orte_rmgr_base_open())) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
     if (ORTE_SUCCESS != (ret = orte_rmgr_base_select())) {
         ORTE_ERROR_LOG(ret);
         return ret;
@@ -369,10 +394,6 @@ int orte_init(void)
     /*
      * setup the state-of-health monitor
      */
-    if (ORTE_SUCCESS != (ret = orte_soh_base_open())) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
     if (ORTE_SUCCESS != (ret = orte_soh_base_select())) {
         ORTE_ERROR_LOG(ret);
         return ret;

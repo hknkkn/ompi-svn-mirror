@@ -90,6 +90,7 @@ int orte_ns_nds_env_get(void)
 int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
 {
     char* param;
+    putenv("OMPI_MCA_ns_nds=env");
 
     asprintf(&param, "OMPI_MCA_ns_nds_cellid=%u", name->cellid);
     putenv(param);

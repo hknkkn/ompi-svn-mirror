@@ -64,9 +64,6 @@ int orte_ns_base_set_my_name(void)
         }
     }
      
-    /* if launcher didn't provide the name, then let's try to get
-     * one from the name server in the universe
-     */
     if (ORTE_SUCCESS != (rc = orte_ns.create_jobid(&jobid))) {
         ORTE_ERROR_LOG(rc);
         return rc;
@@ -80,6 +77,8 @@ int orte_ns_base_set_my_name(void)
         ORTE_ERROR_LOG(rc);
         return rc;
     }
+    orte_process_info.num_procs = 1;
+    orte_process_info.vpid_start = vpid;
     return ORTE_SUCCESS;
 }
 

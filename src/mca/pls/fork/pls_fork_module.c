@@ -117,6 +117,7 @@ static int orte_pls_fork_proc(
             ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         }
 
+#if 0
         /* setup stdout/stderr */
         close(p_stdout[0]);
         close(p_stderr[0]);
@@ -128,6 +129,7 @@ static int orte_pls_fork_proc(
             dup2(p_stderr[1], STDERR_FILENO);
             close(p_stderr[1]);
         }
+#endif
 
         /* push name into environment */
         orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range);

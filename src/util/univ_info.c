@@ -55,7 +55,7 @@ int orte_univ_info(void)
     id = mca_base_param_register_string("universe", "path", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &(orte_universe_info.path));
 
-    id = mca_base_param_register_string("universe", "name", NULL, NULL, NULL);
+    id = mca_base_param_register_string("universe", "name", NULL, NULL, "default-universe");
     mca_base_param_lookup_string(id, &(orte_universe_info.name));
 
     id = mca_base_param_register_string("universe", "host", NULL, NULL, NULL);

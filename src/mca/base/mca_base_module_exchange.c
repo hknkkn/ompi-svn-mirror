@@ -20,6 +20,7 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 
+#include "dps/dps.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/errmgr/errmgr.h"
@@ -209,7 +210,7 @@ static void mca_base_modex_registry_callback(
     mca_base_modex_module_t *modex_module;
     mca_base_component_t component;
     bool isnew = false;
- 
+    int rc;
 
     /* process the callback */
     value = data->values;
@@ -224,9 +225,9 @@ static void mca_base_modex_registry_callback(
             token = value[i]->tokens;
             if (ORTE_SUCCESS == orte_ns.convert_string_to_process_name(&proc_name, token[0])) {
                 proc = ompi_proc_find_and_add(proc_name, &isnew);
-    
                 if(NULL == proc)
                     continue;
+
                 if(isnew) {
                     new_procs[new_proc_count] = proc;
                     new_proc_count++;
@@ -254,6 +255,7 @@ static void mca_base_modex_registry_callback(
                  */
                 keyval = value[i]->keyvals;
                 for (j=0; j < value[i]->cnt; j++) {
+#if 0
                     if(sscanf(keyval[j]->key, "modex-%[^-]-%[^-]-%d-%d", 
                         component.mca_type_name,
                         component.mca_component_name,
@@ -264,6 +266,64 @@ static void mca_base_modex_registry_callback(
                         OMPI_THREAD_UNLOCK(&proc->proc_lock);
                         continue;
                     }
+#else
+                    orte_buffer_t buffer;
+                    char *ptr;
+                    void* bytes = NULL;
+                    size_t cnt;
+                    size_t num_bytes;
+                    OBJ_CONSTRUCT(&buffer, orte_buffer_t);
+                    if (ORTE_SUCCESS != (rc = orte_dps.load(&buffer, 
+                        keyval[j]->value.byteobject.bytes, 
+                        keyval[j]->value.byteobject.size))) {
+                        ORTE_ERROR_LOG(rc);
+                        continue;
+                    }
+                    cnt = 1;
+                    if (ORTE_SUCCESS != (rc = orte_dps.unpack(&buffer, &ptr, &cnt, ORTE_STRING))) {
+                        ORTE_ERROR_LOG(rc);
+                        continue;
+                    }
+                    strcpy(component.mca_type_name,ptr);
+                    free(ptr);
+
+                    cnt = 1;
+                    if (ORTE_SUCCESS != (rc = orte_dps.unpack(&buffer, &ptr, &cnt, ORTE_STRING))) {
+                        ORTE_ERROR_LOG(rc);
+                        continue;
+                    }
+                    strcpy(component.mca_component_name,ptr);
+                    free(ptr);
+
+                    cnt = 1;
+                    if (ORTE_SUCCESS != (rc = orte_dps.unpack(&buffer, 
+                        &component.mca_component_major_version, &cnt, ORTE_INT32))) {
+                        ORTE_ERROR_LOG(rc);
+                        continue;
+                    }
+                    cnt = 1;
+                    if (ORTE_SUCCESS != (rc = orte_dps.unpack(&buffer, 
+                        &component.mca_component_minor_version, &cnt, ORTE_INT32))) {
+                        ORTE_ERROR_LOG(rc);
+                        continue;
+                    }
+                    cnt = 1;
+                    if (ORTE_SUCCESS != (rc = orte_dps.unpack(&buffer, 
+                        &num_bytes, &cnt, ORTE_UINT32))) {
+                        ORTE_ERROR_LOG(rc);
+                        continue;
+                    }
+                    if (num_bytes != 0) {
+                        if(NULL == (bytes = malloc(num_bytes))) {
+                            ORTE_ERROR_LOG(rc);
+                            continue;
+                        }
+                    } 
+                    if (ORTE_SUCCESS != (rc = orte_dps.unpack(&buffer, bytes, &num_bytes, ORTE_BYTE))) {
+                        ORTE_ERROR_LOG(rc);
+                        continue;
+                    }
+#endif
         
                     /*
                      * Lookup the corresponding modex structure
@@ -274,33 +334,30 @@ static void mca_base_modex_registry_callback(
                         OMPI_THREAD_UNLOCK(&proc->proc_lock);
                         return;
                     }
-        
+
+#if 0
                     /* 
                      * Create a copy of the data.
                      */
                     modex_module->module_data = (void*)keyval[j]->value.byteobject.bytes;
                     keyval[j]->value.byteobject.bytes = NULL;  /* dereference this pointer to avoid free'ng space */
                     modex_module->module_data_size = keyval[j]->value.byteobject.size;
+#else
+                    modex_module->module_data = bytes;
+                    modex_module->module_data_size = num_bytes;
+#endif
                     modex_module->module_data_avail = true;
                     ompi_condition_signal(&modex_module->module_data_cond);
                 }
+                OMPI_THREAD_UNLOCK(&proc->proc_lock);
             }  /* convert string to process name */
         }  /* if value[i]->cnt > 0 */
-        
-        /* update the pml/ptls with new proc */
-        OMPI_THREAD_UNLOCK(&proc->proc_lock);
         
         if(NULL != new_procs) {
             mca_pml.pml_add_procs(new_procs, new_proc_count);
             free(new_procs);
         }
-        
-        /* relock the thread */
-        OMPI_THREAD_LOCK(&proc->proc_lock);
     }
-    
-    /* unlock the thread to exit */
-    OMPI_THREAD_UNLOCK(&proc->proc_lock);
 }
 
 /**
@@ -353,7 +410,7 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
         OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    sub.keys[0] = strdup("modex-*");
+    sub.keys[0] = strdup("modex");
     if (NULL == sub.keys[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         OBJ_DESTRUCT(&sub);
@@ -450,6 +507,8 @@ int mca_base_modex_send(
     char *jobidstring;
     orte_gpr_value_t *value;
     int rc;
+    orte_buffer_t buffer;
+    char* ptr;
 
     value = OBJ_NEW(orte_gpr_value_t);
     if (NULL == value) {
@@ -467,7 +526,7 @@ int mca_base_modex_send(
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    value->tokens = (char**)malloc(2*sizeof(char*));
+    value->tokens = (char**)malloc(sizeof(char*));
     if (NULL == value->tokens) {
        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
@@ -477,32 +536,65 @@ int mca_base_modex_send(
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    value->tokens[1] = NULL;
+    value->num_tokens = 1;
 
+    value->cnt = 1;
+    value->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
     value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     if (NULL == value->keyvals[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     (value->keyvals[0])->type = ORTE_BYTE_OBJECT;
+#if 0
     (value->keyvals[0])->value.byteobject.size = size;
-    (value->keyvals[0])->value.byteobject.bytes = (void *)malloc(size); 
+    (value->keyvals[0])->value.byteobject.bytes = (void *)malloc(size);
     if(NULL == (value->keyvals[0])->value.byteobject.bytes) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return OMPI_ERR_OUT_OF_RESOURCE;
     }
     memcpy((value->keyvals[0])->value.byteobject.bytes, data, size);
-    
+
     asprintf(&((value->keyvals[0])->key), "modex-%s-%s-%d-%d", 
         source_component->mca_type_name,
         source_component->mca_component_name,
         source_component->mca_component_major_version,
         source_component->mca_component_minor_version);
-    
-    rc = orte_gpr.put(1, &value);
-        
-    OBJ_RELEASE(value);
+#else
+    OBJ_CONSTRUCT(&buffer, orte_buffer_t);
+    ptr = source_component->mca_type_name;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&buffer, &ptr, 1, ORTE_STRING))) {
+        goto cleanup;
+    }
+    ptr = source_component->mca_component_name;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&buffer, &ptr, 1, ORTE_STRING))) {
+        goto cleanup;
+    }
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&buffer, &source_component->mca_component_major_version, 1, ORTE_INT32))) {
+        goto cleanup;
+    }
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&buffer, &source_component->mca_component_minor_version, 1, ORTE_INT32))) {
+        goto cleanup;
+    }
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&buffer, &size, 1, ORTE_UINT32))) {
+        goto cleanup;
+    }
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&buffer, (void*)data, size, ORTE_BYTE))) {
+        goto cleanup;
+    }
+    if (ORTE_SUCCESS != (rc = orte_dps.unload(&buffer, 
+        (void**)&(value->keyvals[0])->value.byteobject.bytes,
+        (size_t*)&(value->keyvals[0])->value.byteobject.size))) {
+        goto cleanup;
+    }
+    OBJ_DESTRUCT(&buffer);
+    value->keyvals[0]->key = strdup("modex");
+#endif
 
+    rc = orte_gpr.put(1, &value);
+
+cleanup:
+    OBJ_RELEASE(value);
     return rc;
 }
 

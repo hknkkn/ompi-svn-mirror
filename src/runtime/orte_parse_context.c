@@ -46,13 +46,15 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
     int i, j, k, num_inst, id, rc;
     int ival;
 
-    if (ORTE_SUCCESS != (rc = orte_parse_context_setup_cmd(cmd_line, context_tbl))) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
-    }
-    if (ORTE_SUCCESS != (rc = ompi_cmd_line_parse(cmd_line, true, argc, argv))) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
+    if(NULL != cmd_line) {
+        if (ORTE_SUCCESS != (rc = orte_parse_context_setup_cmd(cmd_line, context_tbl))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+        if (ORTE_SUCCESS != (rc = ompi_cmd_line_parse(cmd_line, true, argc, argv))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
     }
     
     for (i=0; NULL != context_tbl[i].name.prime ||
@@ -216,7 +218,7 @@ static int orte_parse_context_setup_cmd(ompi_cmd_line_t *cmd_line,
                                         orte_context_value_names_t *context_tbl)
 {
     int i, rc;
-    
+    if(cmd_line != NULL) {
     for (i=0; NULL != context_tbl[i].name.prime ||
               NULL != context_tbl[i].cmd_line_name; i++) {
         if (NULL != context_tbl[i].cmd_line_name) {
@@ -227,6 +229,7 @@ static int orte_parse_context_setup_cmd(ompi_cmd_line_t *cmd_line,
                 return rc;
             }
         }
+    }
     }
     return ORTE_SUCCESS;
 }
