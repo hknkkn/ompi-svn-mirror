@@ -265,7 +265,7 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     }
     
     if (0 == *cnt) {  /* nothing found - report that */
-        rc = ORTE_ERR_NOT_FOUND;
+        rc = ORTE_SUCCESS;
         goto CLEANUP;
     }
     
