@@ -32,6 +32,7 @@
 #include "mca/ns/ns.h"
 #include "mca/errmgr/errmgr.h"
 
+#include "mca/gpr/base/base.h"
 #include "mca/gpr/replica/communications/gpr_replica_comm.h"
 #include "gpr_replica_fn.h"
 

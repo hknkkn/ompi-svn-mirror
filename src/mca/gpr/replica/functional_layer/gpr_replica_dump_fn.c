@@ -163,7 +163,7 @@ int orte_gpr_replica_dump_triggers_fn(orte_buffer_t *buffer)
              if (NULL == cb->requestor) {
                 asprintf(&tmp_out, "\t\tLocal requestor - local notify idtag %d", (cb->message)->idtag);
              } else {
-                asprintf(&tmp_out, "\t\tRequestor: [%d,%d,%d] - remote notify idtag",
+                asprintf(&tmp_out, "\t\tRequestor: [%d,%d,%d] - remote notify idtag %d",
                         ORTE_NAME_ARGS(cb->requestor), cb->remote_idtag);
              }
              orte_gpr_replica_dump_load_string(buffer, &tmp_out);

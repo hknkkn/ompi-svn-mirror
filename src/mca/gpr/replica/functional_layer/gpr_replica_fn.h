@@ -215,6 +215,8 @@ int orte_gpr_replica_process_callbacks(void);
 
 int orte_gpr_replica_purge_subscriptions(orte_process_name_t *proc);
 
+int orte_gpr_replica_add_values(orte_gpr_notify_data_t **data,
+                                orte_gpr_replica_subscribed_data_t *sptr);
 
 
 #endif

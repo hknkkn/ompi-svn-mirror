@@ -324,7 +324,7 @@ int orte_gpr_replica_get_value(void *value, orte_gpr_replica_itagval_t *ival)
             break;
             
         case ORTE_NULL:
-            *((uint8_t*)value) = NULL;
+            *((uint8_t*)value) = (uint8_t)NULL;
             break;
             
         default:
