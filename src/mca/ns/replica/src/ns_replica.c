@@ -54,7 +54,7 @@ int orte_ns_replica_create_jobid(orte_jobid_t *jobid)
 
     OMPI_THREAD_LOCK(&orte_ns_replica_mutex);
 
-    if (ORTE_JOBID_MAX < orte_ns_replica_next_jobid) {
+    if (ORTE_JOBID_MAX > orte_ns_replica_next_jobid) {
         *jobid = orte_ns_replica_next_jobid;
 	    orte_ns_replica_next_jobid++;
 	    new_nt = OBJ_NEW(orte_ns_replica_name_tracker_t);
