@@ -34,9 +34,17 @@
  /*
   * Arithemetic operations
   */
-int orte_gpr_replica_increment_value_fn(orte_gpr_value_t *value);
+int orte_gpr_replica_increment_value_fn(orte_gpr_addr_mode_t addr_mode,
+                                orte_gpr_replica_segment_t *seg,
+                                orte_gpr_replica_itag_t *itags,
+                                int num_tokens, int cnt,
+                                orte_gpr_keyval_t **keyvals);
 
-int orte_gpr_replica_decrement_value_fn(orte_gpr_value_t *value);
+int orte_gpr_replica_decrement_value_fn(orte_gpr_addr_mode_t addr_mode,
+                                orte_gpr_replica_segment_t *seg,
+                                orte_gpr_replica_itag_t *itags,
+                                int num_tokens, int cnt,
+                                orte_gpr_keyval_t **keyvals);
 
 /*
  * Delete-index functions

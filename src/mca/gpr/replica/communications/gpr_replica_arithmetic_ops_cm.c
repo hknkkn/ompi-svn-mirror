@@ -32,6 +32,8 @@ int orte_gpr_replica_recv_increment_value_cmd(orte_buffer_t *cmd, orte_buffer_t 
 {
     orte_gpr_cmd_flag_t command=ORTE_GPR_INCREMENT_VALUE_CMD;
     orte_gpr_value_t *value;
+    orte_gpr_replica_segment_t *seg=NULL;
+    orte_gpr_replica_itag_t *itags=NULL;
     size_t n;
     int rc, ret;
 
@@ -48,12 +50,34 @@ int orte_gpr_replica_recv_increment_value_cmd(orte_buffer_t *cmd, orte_buffer_t 
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    ret = orte_gpr_replica_increment_value_fn(value);
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+    /* find the segment */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, value->segment))) {
+        ORTE_ERROR_LOG(rc);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+        ret = rc;
+        goto RETURN_ERROR;
+    }
 
-    if (ORTE_SUCCESS != ret) {
+    /* convert tokens to array of itags */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg,
+                                        value->tokens, &(value->num_tokens)))) {
+        ORTE_ERROR_LOG(rc);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+        ret = rc;
+        goto RETURN_ERROR;
+    }
+    
+    if (ORTE_SUCCESS != (ret = orte_gpr_replica_increment_value_fn(value->addr_mode, seg,
+                                itags, value->num_tokens, value->cnt, value->keyvals))) {
         ORTE_ERROR_LOG(ret);
     }
+    
+    /* release list of itags */
+    if (NULL != itags) {
+      free(itags);
+    }
+
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
  RETURN_ERROR:
     if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, &ret, 1, ORTE_INT))) {
@@ -68,6 +92,8 @@ int orte_gpr_replica_recv_decrement_value_cmd(orte_buffer_t *cmd, orte_buffer_t 
 {
     orte_gpr_cmd_flag_t command=ORTE_GPR_DECREMENT_VALUE_CMD;
     orte_gpr_value_t *value;
+    orte_gpr_replica_segment_t *seg=NULL;
+    orte_gpr_replica_itag_t *itags=NULL;
     size_t n;
     int rc, ret;
 
@@ -84,12 +110,34 @@ int orte_gpr_replica_recv_decrement_value_cmd(orte_buffer_t *cmd, orte_buffer_t 
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    ret = orte_gpr_replica_decrement_value_fn(value);
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+    /* find the segment */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, value->segment))) {
+        ORTE_ERROR_LOG(rc);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+        ret = rc;
+        goto RETURN_ERROR;
+    }
 
-    if (ORTE_SUCCESS != ret) {
+    /* convert tokens to array of itags */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg,
+                                        value->tokens, &(value->num_tokens)))) {
+        ORTE_ERROR_LOG(rc);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+        ret = rc;
+        goto RETURN_ERROR;
+    }
+    
+    if (ORTE_SUCCESS != (ret = orte_gpr_replica_decrement_value_fn(value->addr_mode, seg,
+                                itags, value->num_tokens, value->cnt, value->keyvals))) {
         ORTE_ERROR_LOG(ret);
     }
+    
+    /* release list of itags */
+    if (NULL != itags) {
+      free(itags);
+    }
+
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
  RETURN_ERROR:
     if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, &ret, 1, ORTE_INT))) {
