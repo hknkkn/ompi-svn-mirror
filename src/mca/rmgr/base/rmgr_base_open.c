@@ -47,6 +47,66 @@ orte_rmgr_base_module_t orte_rmgr = {
     orte_rmgr_base_finalize_not_available
 };
 
+/*
+ * Setup up app_context_t class so we can use it
+ */
+
+/*
+ * orte_app_context_t constructor
+ */
+
+static void orte_app_context_construct(orte_app_context_t* app_context)
+{
+    app_context->idx=0;
+    app_context->app=NULL;
+    app_context->num_procs=0;
+    app_context->argc=0;
+    app_context->argv=NULL;
+    app_context->num_env=0;
+    app_context->env=NULL;
+    app_context->cwd=NULL;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_app_context_destructor(orte_app_context_t* app_context)
+{
+    int32_t i;
+
+	/* I have assumed that we allocated memory for copies of this data and it does not belong to the OS... GEF */
+
+
+	if (NULL != app_context->app) {
+		free (app_context->app);
+	}
+
+    if (0 < app_context->argc && NULL != app_context->argv) {
+        for (i=0; i < app_context->argc; i++) {
+            free(app_context->argv[i]);
+        }
+       free(app_context->argv);
+    }
+
+    if (0 < app_context->num_env && NULL != app_context->env) {
+        for (i=0; i < app_context->num_env; i++) {
+            free(app_context->env[i]);
+        }
+       free(app_context->env);
+    }
+
+	if (NULL != app_context->cwd) {
+		free (app_context->cwd);
+	}
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+           orte_app_context_t,  /* type name */
+           ompi_object_t, /* parent "class" name */
+           orte_app_context_construct, /* constructor */
+           orte_app_context_destructor); /* destructor */
+
+
+
 
 /**
  * Function for finding and opening either all MCA components, or the one
