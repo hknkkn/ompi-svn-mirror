@@ -21,45 +21,49 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_pack_cleanup_job(ompi_buffer_t buffer, orte_jobid_t jobid)
+int orte_gpr_base_pack_cleanup_job(orte_buffer_t *buffer, orte_jobid_t jobid)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_CLEANUP_JOB_CMD;
+    command = ORTE_GPR_CLEANUP_JOB_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(buffer, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(buffer, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(buffer, &jobid, 1, MCA_GPR_OOB_PACK_JOBID)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(buffer, &jobid, 1, ORTE_JOBID))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
 
 
-int mca_gpr_base_pack_cleanup_proc(ompi_buffer_t buffer, bool purge, orte_process_name_t *proc)
+int orte_gpr_base_pack_cleanup_proc(orte_buffer_t *buffer, bool purge, orte_process_name_t *proc)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_CLEANUP_PROC_CMD;
+    command = ORTE_GPR_CLEANUP_PROC_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(buffer, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(buffer, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(buffer, &purge, 1, MCA_GPR_OOB_PACK_BOOL)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(buffer, &purge, 1, ORTE_BOOL))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(buffer, proc, 1, MCA_GPR_OOB_PACK_NAME)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(buffer, proc, 1, ORTE_NAME))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }

@@ -72,7 +72,7 @@ typedef uint16_t orte_gpr_synchro_mode_t;
  */
 #define ORTE_GPR_DELETE_SEGMENT_CMD     (uint16_t)0x0001
 #define ORTE_GPR_PUT_CMD                (uint16_t)0x0002
-#define ORTE_GPR_DELETE_OBJECT_CMD      (uint16_t)0x0004
+#define ORTE_GPR_DELETE_ENTRIES_CMD     (uint16_t)0x0004
 #define ORTE_GPR_INDEX_CMD              (uint16_t)0x0008
 #define ORTE_GPR_SUBSCRIBE_CMD          (uint16_t)0x0010
 #define ORTE_GPR_UNSUBSCRIBE_CMD        (uint16_t)0x0020
