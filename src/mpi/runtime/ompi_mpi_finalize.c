@@ -73,7 +73,7 @@ int ompi_mpi_finalize(void)
 */
     /* Set process status to "terminating"*/
     if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
-                                ORTE_PROC_STATE_FINALIZING, 0))) {
+                                ORTE_PROC_STATE_AT_STG4, 0))) {
         ORTE_ERROR_LOG(ret);
     }
 

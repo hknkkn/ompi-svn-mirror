@@ -61,9 +61,7 @@ int mca_oob_xcast(
                 ORTE_ERROR_LOG(rc);
                 return rc;
             }
-            if (ORTE_PROC_STATE_RUNNING == state ||
-                ORTE_PROC_STATE_STARTING == state ||
-                ORTE_PROC_STATE_FINALIZING == state) {
+            if (state != ORTE_PROC_STATE_TERMINATED) {
                 if (ORTE_SUCCESS != (rc = mca_oob_send_packed(peers+i, buffer, tag, 0))) {
                     ORTE_ERROR_LOG(rc);
                     return rc;

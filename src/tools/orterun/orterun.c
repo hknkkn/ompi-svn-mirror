@@ -56,7 +56,7 @@ orte_jobid_t jobid = ORTE_JOBID_MAX;
 static void
 exit_callback(int fd, short event, void *arg)
 {
-    printf("we failed to exit cleanly :(\n");
+    fprintf(stderr, "orterun: abnormal exit\n");
     exit(1);
 }
 
@@ -66,6 +66,10 @@ signal_callback(int fd, short flags, void *arg)
     int ret;
     struct timeval tv = { 5, 0 };
     ompi_event_t* event;
+
+    static int signalled = 0;
+    if(signalled++ != 0)
+         return;
 
     if (jobid != ORTE_JOBID_MAX) {
         ret = orte_rmgr.terminate_job(jobid);

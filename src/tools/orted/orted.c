@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
      *  after the rte init is completed.
      */
     if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
-                                                     ORTE_PROC_STATE_STARTING, 0))) {
+                                                     ORTE_PROC_STATE_RUNNING, 0))) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }

@@ -786,7 +786,6 @@ int mca_oob_tcp_init(void)
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-#endif
     return OMPI_SUCCESS;
 }
 

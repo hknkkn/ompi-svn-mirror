@@ -417,9 +417,8 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
                 break;
             }
         }
-
-        ompi_output(0, "orte_pls_bproc: node=%s\n", node ? node->node_name : NULL);
         if(NULL == node) {
+            rc = ORTE_ERR_NOT_FOUND;
             ORTE_ERROR_LOG(rc);
             _exit(-1);
         }
@@ -431,7 +430,10 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             ORTE_ERROR_LOG(rc);
             _exit(-1);
         }
-        ompi_output(0, "orte_pls_bproc: node name=%d.%d.%d\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
+        if(mca_pls_bproc_seed_component.debug) {
+            ompi_output(0, "orte_pls_bproc: node=%s name=%d.%d.%d\n", 
+                node->node_name, orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
+        }
 
         /* restart the daemon w/ the new process name */
         rc = orte_restart(daemon_name, uri);
@@ -607,7 +609,7 @@ static void orte_pls_bproc_seed_launch_cb(int fd, short event, void* args)
         ompi_set_using_threads(false);
         rc = ompi_event_restart();
         if(ORTE_SUCCESS != rc) {
-            ompi_output(0, "orte_pls_bproc: ompi_event_restart() failed with status=%d\n", rc);
+            ORTE_ERROR_LOG(rc);
             exit(rc);
         }
         rc = orte_pls_bproc_seed_launch_internal(stack->jobid);
@@ -672,6 +674,9 @@ int orte_pls_bproc_seed_terminate_job(orte_jobid_t jobid)
     if(ORTE_SUCCESS != (rc = orte_pls_base_get_proc_pids(jobid, &pids, &num_pids)))
         return rc;
     for(i=0; i<num_pids; i++) {
+        if(mca_pls_bproc_seed_component.debug) {
+            ompi_output(0, "orte_pls_bproc: killing proc: %d\n", pids[i]);
+        }
         kill(pids[i], mca_pls_bproc_seed_component.terminate_sig);
     }
     if(NULL != pids)
@@ -680,7 +685,10 @@ int orte_pls_bproc_seed_terminate_job(orte_jobid_t jobid)
     /* kill daemons */
     if(ORTE_SUCCESS != (rc = orte_pls_base_get_node_pids(jobid, &pids, &num_pids)))
         return rc;
-    for(i=0; i<num_pids; i++) {
+    for(i=0; i<num_pids; i++) { 
+        if(mca_pls_bproc_seed_component.debug) {
+            ompi_output(0, "orte_pls_bproc: killing daemon: %d\n", pids[i]);
+        }
         kill(pids[i], mca_pls_bproc_seed_component.terminate_sig);
     }
     if(NULL != pids)

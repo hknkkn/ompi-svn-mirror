@@ -171,15 +171,13 @@ int orte_pls_base_get_proc_pids(orte_jobid_t jobid, pid_t **pids, size_t* num_pi
     }
 
     if(0 == num_values) {
-        rc = ORTE_ERR_NOT_FOUND;
-        ORTE_ERROR_LOG(rc);
-        goto cleanup;
-    }
-
-    *pids = (pid_t*)malloc(sizeof(pid_t)*num_values);
-    for(i=0; i<num_values; i++) {
-        (*pids)[i] = values[i]->keyvals[0]->value.ui32;
-    }
+        *pids = NULL;
+    } else {
+        *pids = (pid_t*)malloc(sizeof(pid_t)*num_values);
+        for(i=0; i<num_values; i++) {
+            (*pids)[i] = values[i]->keyvals[0]->value.ui32;
+        }
+    } 
     *num_pids = num_values;
 
 cleanup:
@@ -273,14 +271,12 @@ int orte_pls_base_get_node_pids(orte_jobid_t jobid, pid_t **pids, size_t* num_pi
     }
 
     if(0 == num_values) {
-        rc = ORTE_ERR_NOT_FOUND;
-        ORTE_ERROR_LOG(rc);
-        goto cleanup;
-    }
-
-    *pids = (pid_t*)malloc(sizeof(pid_t)*num_values);
-    for(i=0; i<num_values; i++) {
-        (*pids)[i] = values[i]->keyvals[0]->value.ui32;
+        *pids = NULL;
+    } else {
+        *pids = (pid_t*)malloc(sizeof(pid_t)*num_values);
+        for(i=0; i<num_values; i++) {
+            (*pids)[i] = values[i]->keyvals[0]->value.ui32;
+        }
     }
     *num_pids = num_values;
 
