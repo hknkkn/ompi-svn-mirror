@@ -40,16 +40,13 @@ int orte_ns_base_set_my_name(void)
     orte_vpid_t vpid;
     
     /* check to see if name has already been set - if so, leave it alone */
-    ompi_output(0, "orte_ns_nds\n");
     if (NULL != orte_process_info.my_name) {
-        ompi_output(0, "orte_ns_nds: my_name=%d.%d.%d\n", ORTE_NAME_ARGS(orte_process_info.my_name));
         return ORTE_SUCCESS;
     }
     
     /* first check if we are seed or singleton that couldn't
      * join an existing universe - if so, name is mandated */
     if (orte_process_info.seed || NULL == orte_process_info.ns_replica) {
-        ompi_output(0, "orte_ns_nds: seed\n");
         return orte_ns_base_create_process_name(
                                 &(orte_process_info.my_name), 0, 0, 0);
     }
@@ -57,7 +54,6 @@ int orte_ns_base_set_my_name(void)
     /* okay, not seed/singleton attempt another approach */
     id = mca_base_param_register_string("ns", "nds", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &mode);
-    ompi_output(0, "orte_ns_nds: mode=%s\n", (mode != NULL) ? mode : "NULL");
 
     if (NULL != mode) {  /* mode identified */ 
         orte_ns_nds_t* nds = orte_ns_nds;
