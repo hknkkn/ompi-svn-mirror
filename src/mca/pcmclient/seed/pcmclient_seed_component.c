@@ -79,7 +79,7 @@ mca_pcmclient_seed_init(int *priority,
                              bool *allow_multiple_user_threads, 
                              bool *have_hidden_threads)
 {
-    if (!ompi_process_info.seed) {
+    if (!orte_process_info.seed) {
         *priority = 0;
         return NULL;
     }

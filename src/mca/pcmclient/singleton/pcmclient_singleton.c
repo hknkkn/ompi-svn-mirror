@@ -55,7 +55,7 @@ init_proclist(void)
 }
 
 static void
-proc_registered_cb(ompi_registry_notify_message_t *match, 
+proc_registered_cb(orte_gpr_notify_message_t *match, 
                    void *cbdata)
 {
     ompi_rte_job_startup(mca_pcmclient_singleton_procs[0].jobid);
@@ -67,7 +67,9 @@ mca_pcmclient_singleton_init_cleanup(void)
 {
     int ret;
     char *segment, *jobidstring;
-    ompi_registry_notify_id_t rc_tag;
+    char **keys;
+    orte_gpr_notify_id_t synch_id;
+    int rc;
 
     if (NULL == mca_pcmclient_singleton_procs) {
         ret = init_proclist();
@@ -78,22 +80,27 @@ mca_pcmclient_singleton_init_cleanup(void)
        started executing).  At this point, do the broadcast code */
 
     /* setup segment for this job */
-    if (ORTE_SUCCESS != (ret = orte_name_services.convert_jobid_to_string(jobidstring, mca_pcmclient_singleton_procs[0].jobid))) {
+    if (ORTE_SUCCESS != (ret = orte_ns.convert_jobid_to_string(&jobidstring, mca_pcmclient_singleton_procs[0].jobid))) {
         return ret;
     }
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
+    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
+
+    keys[0] = "status";
+    keys[1] = NULL;
 
     /* register a synchro on the segment so we get notified for startup */
-    rc_tag = ompi_registry.synchro(
-	     OMPI_REGISTRY_SYNCHRO_MODE_LEVEL|OMPI_REGISTRY_SYNCHRO_MODE_ONE_SHOT|
-	     OMPI_REGISTRY_SYNCHRO_MODE_STARTUP,
-	     OMPI_REGISTRY_OR,
+    rc = orte_gpr.synchro(
+	     ORTE_GPR_SYNCHRO_MODE_LEVEL|ORTE_GPR_SYNCHRO_MODE_ONE_SHOT|
+	     ORTE_GPR_SYNCHRO_MODE_STARTUP,
+	     ORTE_GPR_OR,
 	     segment,
 	     NULL,
-             1,
-	     proc_registered_cb, NULL);
-
-    return OMPI_SUCCESS;
+         keys,
+         1,
+         &synch_id,
+	     proc_registered_cb, 
+         NULL);
+    return rc;
 }
 
 

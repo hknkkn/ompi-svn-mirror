@@ -156,7 +156,7 @@ mca_pcmclient_bproc_init(int *priority,
     mca_base_param_lookup_string(param_base_proc_name, &tmp);
     if (tmp == NULL) return NULL;
 
-    if (ORTE_SUCCESS != orte_name_services.convert_string_to_process_name(base_name, tmp)) {
+    if (ORTE_SUCCESS != orte_ns.convert_string_to_process_name(&base_name, tmp)) {
         return NULL;
     }
 
@@ -171,16 +171,16 @@ mca_pcmclient_bproc_init(int *priority,
            return type of get_peer_names */
         orte_process_name_t *tmp_name;
 
-        if (ORTE_SUCCESS != orte_name_services.copy_process_name(tmp_name, base_name)) {
+        if (ORTE_SUCCESS != orte_ns.copy_process_name(&tmp_name, base_name)) {
             return NULL;
         }
         /* BWB - this will eventually be a function in the NS */
-        if (ORTE_SUCCESS != orte_name_services.get_vpid(&vpid, base_name)) {
+        if (ORTE_SUCCESS != orte_ns.get_vpid(&vpid, base_name)) {
             return NULL;
         }
         tmp_name->vpid = vpid + i;
         mca_pcmclient_bproc_procs[i] = *tmp_name;
-        if (ORTE_SUCCESS != orte_name_services.free_name(&tmp_name)) {
+        if (ORTE_SUCCESS != orte_ns.free_name(&tmp_name)) {
             /* ignore */
         }
     }
