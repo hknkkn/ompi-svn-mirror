@@ -97,6 +97,7 @@ void ompi_progress(void)
 int
 ompi_progress_register(ompi_progress_callback_t cb)
 {
+    printf("Registering cb: %p\n", cb);
     /* see if we need to allocate more space */
     if (callbacks_len + 1 > callbacks_size) {
         ompi_progress_callback_t *tmp;
@@ -119,7 +120,7 @@ ompi_progress_unregister(ompi_progress_callback_t cb)
 
     for (i = 0 ; i < callbacks_len ; ++i) {
         if (cb == callbacks[i]) {
-            callbacks[i] == NULL;
+            callbacks[i] = NULL;
             return OMPI_SUCCESS;
         }
     }
