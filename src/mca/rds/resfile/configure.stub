@@ -88,13 +88,14 @@ AC_DEFUN([MCA_CONFIGURE_STUB],[
             AC_MSG_ERROR([Cannot find libxml2 library])
         fi
     fi
-
+    LIBS="$LIBS -lxml2"
+    
     # Save extra compiler/linker flags so that they can be added in
     # the wrapper compilers, if necessary.  Separate out the LIBS from
     # the LDFLAGS (because xml2-config [incorrectly] lumps them all
     # together into one string.
 
-    WRAPPER_EXTRA_LIBS="-lxml2"
+    WRAPPER_EXTRA_LIBS="$LIBS"
     WRAPPER_EXTRA_LDFLAGS=
     for flag in $EXTRA_LDFLAGS; do
 	case $flag in
