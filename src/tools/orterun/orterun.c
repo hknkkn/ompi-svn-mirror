@@ -145,25 +145,6 @@ int main(int argc, char *argv[], char* env[])
     orte_app_context_t **apps;
     int rc, i, num_apps;
 
-    /* Intialize our Open RTE environment */
-
-    ompi_cmd_line_create(&cmd_line, cmd_line_init);
-    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
-        ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
-                       "orte_init()", rc);
-        return rc;
-    }
-    OBJ_DESTRUCT(&cmd_line);
-
-     /* Prep to start the application */
-
-    ompi_event_set(&term_handler, SIGTERM, OMPI_EV_SIGNAL,
-                   signal_callback, NULL);
-    ompi_event_add(&term_handler, NULL);
-    ompi_event_set(&int_handler, SIGINT, OMPI_EV_SIGNAL,
-                   signal_callback, NULL);
-    ompi_event_add(&int_handler, NULL);
-
     /* Check for some "global" command line params */
 
     parse_globals(argc, argv);
@@ -186,6 +167,25 @@ int main(int argc, char *argv[], char* env[])
         apps[i] = (orte_app_context_t *) 
             ompi_pointer_array_get_item(&apps_pa, i);
     }
+
+    /* Intialize our Open RTE environment */
+
+    ompi_cmd_line_create(&cmd_line, cmd_line_init);
+    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
+        ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
+                       "orte_init()", rc);
+        return rc;
+    }
+    OBJ_DESTRUCT(&cmd_line);
+
+     /* Prep to start the application */
+
+    ompi_event_set(&term_handler, SIGTERM, OMPI_EV_SIGNAL,
+                   signal_callback, NULL);
+    ompi_event_add(&term_handler, NULL);
+    ompi_event_set(&int_handler, SIGINT, OMPI_EV_SIGNAL,
+                   signal_callback, NULL);
+    ompi_event_add(&int_handler, NULL);
 
     /* Spawn the job */
 
@@ -366,6 +366,10 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
     char *param, *value, *value2;
     orte_app_context_t *app;
     extern char **environ;
+    size_t j, len;
+    bool map_data;
+    int map_argc;
+    char **map_argv;
 
     /* Parse application command line options. */
 
@@ -392,7 +396,38 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
     /* See if there are any C, cX, N, or nX tokens at the front of the
        tail */
 
+    map_argc = 0;
+    map_argv = NULL;
     for (i = 0; i < app->argc; ++i) {
+        map_data = false;
+        if (0 == strcmp(app->argv[0], "C") ||
+            0 == strcmp(app->argv[0], "N")) {
+            map_data = true;
+        } 
+
+        /* Huersitic: if the string fits "[cn][0-9]+" or [cn][0-9],",
+           then accept it as mapping data */
+
+        else if ('c' == app->argv[0][0] || 'n' == app->argv[0][0]) {
+            len = strlen(app->argv[0]);
+            if (len > 1) {
+                for (j = 1; j < len; ++j) {
+                    if (',' == app->argv[0][j]) {
+                        map_data = true;
+                        break;
+                    } else if (!isdigit(app->argv[0][j])) {
+                        break;
+                    }
+                }
+                if (j >= len) {
+                    map_data = true;
+                }
+            }
+        }
+
+        /* If this token was map data, save it */
+
+        /* JMS continue here */
     }
 
     /* See if we have anything left */
