@@ -40,7 +40,7 @@
  * Global variables
  */
 int mca_ns_base_output = -1;
-mca_ns_base_module_t orte_name_services = {
+mca_ns_base_module_t orte_ns = {
     orte_ns_base_create_cellid_not_available,
     orte_ns_base_assign_cellid_to_process,
     orte_ns_base_create_jobid_not_available,
@@ -103,7 +103,7 @@ int orte_ns_base_open(void)
   /* Open up all available components */
 
   if (ORTE_SUCCESS != 
-      mca_base_components_open("ns", 0, mca_ns_base_static_components, 
+      mca_base_components_open("orte_ns", 0, mca_ns_base_static_components, 
                                &mca_ns_base_components_available)) {
     return ORTE_ERROR;
   }

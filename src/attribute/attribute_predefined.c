@@ -93,7 +93,7 @@ void ompi_attr_create_predefined_callback(
 
     /* Set some default values */
 
-    if (ORTE_SUCCESS != orte_name_services.get_jobid(&job, orte_process_info.my_name)) {
+    if (ORTE_SUCCESS != orte_ns.get_jobid(&job, orte_process_info.my_name)) {
         return;
     }
 

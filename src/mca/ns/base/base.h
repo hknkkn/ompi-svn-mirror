@@ -86,15 +86,15 @@ OMPI_DECLSPEC    int orte_ns_base_close(void);
 
 OMPI_DECLSPEC    int orte_ns_base_assign_cellid_to_process(orte_process_name_t* name);
 
-OMPI_DECLSPEC    int orte_ns_base_create_process_name(orte_process_name_t *name,
+OMPI_DECLSPEC    int orte_ns_base_create_process_name(orte_process_name_t **name,
                                   orte_cellid_t cell,
                                   orte_jobid_t job,
                                   orte_vpid_t vpid);
 
-OMPI_DECLSPEC    int orte_ns_base_copy_process_name(orte_process_name_t *dest,
+OMPI_DECLSPEC    int orte_ns_base_copy_process_name(orte_process_name_t **dest,
                                 orte_process_name_t* src);
 
-OMPI_DECLSPEC    int orte_ns_base_convert_string_to_process_name(orte_process_name_t *name,
+OMPI_DECLSPEC    int orte_ns_base_convert_string_to_process_name(orte_process_name_t **name,
                                              const char* name_string);
 
 OMPI_DECLSPEC    int orte_ns_base_get_proc_name_string(char *name_string,

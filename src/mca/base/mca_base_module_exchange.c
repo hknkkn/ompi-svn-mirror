@@ -202,7 +202,7 @@ static void mca_base_modex_registry_callback(
     orte_gpr_value_t **value;
     ompi_proc_t *proc;
     char **token;
-    orte_process_name_t proc_name;
+    orte_process_name_t *proc_name;
     mca_base_modex_t *modex;
     mca_base_modex_module_t *modex_module;
     mca_base_component_t component;
@@ -221,8 +221,8 @@ static void mca_base_modex_registry_callback(
              * Token for the value should be the process name - look it up
              */
             token = (*value)->tokens;
-            if (ORTE_SUCCESS == orte_name_services.convert_string_to_process_name(&proc_name, *token)) {
-                proc = ompi_proc_find_and_add(&proc_name, &isnew);
+            if (ORTE_SUCCESS == orte_ns.convert_string_to_process_name(&proc_name, *token)) {
+                proc = ompi_proc_find_and_add(proc_name, &isnew);
     
                 if(NULL == proc)
                     continue;
@@ -342,7 +342,7 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     OMPI_UNLOCK(&mca_base_modex_lock);
 
     /* otherwise - subscribe */
-    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, name))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(jobidstring, name))) {
         return rc;
     }
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
@@ -393,11 +393,11 @@ int mca_base_modex_send(
 {
     char *segment;
     char *tokens[2], *jobidstring;
-    orte_gpr_keyval_t keyval;
+    orte_gpr_keyval_t *keyval;
     orte_byte_object_t *bytedata;
     int rc;
 
-    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string(tokens[0], orte_process_info.my_name))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(tokens[0], orte_process_info.my_name))) {
         return rc;
     }
     
@@ -408,18 +408,19 @@ int mca_base_modex_send(
     bytedata->bytes = (void *)malloc(size);
     memcpy(bytedata->bytes, data, size);
     
-    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, orte_process_info.my_name))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(jobidstring, orte_process_info.my_name))) {
         return rc;
     }
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
 
-    asprintf(&keyval.key, "modex-%s-%s-%d-%d", 
+    keyval = OBJ_NEW(orte_gpr_keyval_t);
+    asprintf(&(keyval->key), "modex-%s-%s-%d-%d", 
         source_component->mca_type_name,
         source_component->mca_component_name,
         source_component->mca_component_major_version,
         source_component->mca_component_minor_version);
-    keyval.type = ORTE_BYTE_OBJECT;
-    keyval.value.byteobject = bytedata;
+    keyval->type = ORTE_BYTE_OBJECT;
+    keyval->value.byteobject = bytedata;
     
     rc = orte_gpr.put(
         ORTE_GPR_AND | ORTE_GPR_OVERWRITE, 

@@ -74,7 +74,7 @@ orte_ns_base_assign_rml_tag_not_available(orte_rml_tag_t *tag, char *name)
  * functions
  */
 
-int orte_ns_base_assign_cellid_to_process(orte_process_name_t* name)
+int orte_ns_base_assign_cellid_to_process(orte_process_name_t *name)
 {
     if (NULL == name) {
         return ORTE_ERR_BAD_PARAM;
@@ -85,7 +85,7 @@ int orte_ns_base_assign_cellid_to_process(orte_process_name_t* name)
 }
 
 
-int orte_ns_base_create_process_name(orte_process_name_t *name,
+int orte_ns_base_create_process_name(orte_process_name_t **name,
                                   orte_cellid_t cell,
                                   orte_jobid_t job,
                                   orte_vpid_t vpid)
@@ -98,14 +98,14 @@ int orte_ns_base_create_process_name(orte_process_name_t *name,
 	   return ORTE_ERR_BAD_PARAM;
     }
 
-    name = (orte_process_name_t*)malloc(sizeof(orte_process_name_t));
+    *name = (orte_process_name_t*)malloc(sizeof(orte_process_name_t));
     if (NULL == name) { /* got an error */
 	   return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    name->cellid = cell;
-    name->jobid = job;
-    name->vpid = vpid;
+    (*name)->cellid = cell;
+    (*name)->jobid = job;
+    (*name)->vpid = vpid;
     return ORTE_SUCCESS;
 }
 
@@ -117,7 +117,7 @@ int orte_ns_base_derive_vpid(orte_vpid_t *vpid, orte_vpid_t base_vpid, int offse
 }
 
 
-int orte_ns_base_copy_process_name(orte_process_name_t *dest,
+int orte_ns_base_copy_process_name(orte_process_name_t **dest,
                                 orte_process_name_t* src)
 {
     orte_cellid_t cell;
@@ -159,7 +159,7 @@ int orte_ns_base_get_proc_name_string(char *name_string,
     return ORTE_SUCCESS;
 }
 
-int orte_ns_base_convert_string_to_process_name(orte_process_name_t *name,
+int orte_ns_base_convert_string_to_process_name(orte_process_name_t **name,
                                              const char* name_string)
 {
     char *temp, *token;
@@ -171,7 +171,7 @@ int orte_ns_base_convert_string_to_process_name(orte_process_name_t *name,
 
     const char delimiters[] = ".";
 
-    name = NULL;
+    *name = NULL;
 
     /* check for NULL string - error */
     if (NULL == name_string) {

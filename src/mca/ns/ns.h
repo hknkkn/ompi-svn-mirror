@@ -140,7 +140,7 @@ typedef int (*orte_ns_base_module_create_jobid_fn_t)(orte_jobid_t *jobid);
  * new_name = ompi_name_server.create_process_name(cell, job, vpid);
  * @endcode
  */
-typedef int (*orte_ns_base_module_create_proc_name_fn_t)(orte_process_name_t *name,
+typedef int (*orte_ns_base_module_create_proc_name_fn_t)(orte_process_name_t **name,
                                                          orte_cellid_t cell,
                                                          orte_jobid_t job,
                                                          orte_vpid_t vpid);
@@ -166,7 +166,7 @@ typedef int (*orte_ns_base_module_derive_vpid_fn_t)(orte_vpid_t *vpid,
  * @retval NULL Indicates an error - most likely due to a NULL process name
  * pointer being supplied as input.
  */
-typedef int (*orte_ns_base_module_copy_proc_name_fn_t)(orte_process_name_t *dest,
+typedef int (*orte_ns_base_module_copy_proc_name_fn_t)(orte_process_name_t **dest,
                                                        orte_process_name_t* src);
 
 /**
@@ -185,7 +185,7 @@ typedef int (*orte_ns_base_module_copy_proc_name_fn_t)(orte_process_name_t *dest
  * name = ompi_name_server.convert_string_to_process_name(name_string);
  * @endcode
  */
-typedef int (*orte_ns_base_module_convert_string_to_process_name_fn_t)(orte_process_name_t *name,
+typedef int (*orte_ns_base_module_convert_string_to_process_name_fn_t)(orte_process_name_t **name,
                                                                        const char* name_string);
 
 
@@ -592,6 +592,6 @@ typedef mca_ns_base_component_1_0_0_t mca_ns_base_component_t;
 
 /* Global structure for accessing name server functions
  */
-OMPI_DECLSPEC extern mca_ns_base_module_t orte_name_services;  /* holds selected module's function pointers */
+OMPI_DECLSPEC extern mca_ns_base_module_t orte_ns;  /* holds selected module's function pointers */
 
 #endif

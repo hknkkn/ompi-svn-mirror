@@ -41,12 +41,12 @@ int ompi_open_port(char *port_name)
      */
   
     myproc = ompi_proc_self (&size);
-    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string (name, &(myproc[0]->proc_name)))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string (name, &(myproc[0]->proc_name)))) {
         return rc;
     }
 
     OMPI_THREAD_LOCK(&ompi_port_lock);
-    if (ORTE_SUCCESS != (rc = orte_name_services.assign_rml_tag(&lport_id, NULL))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.assign_rml_tag(&lport_id, NULL))) {
         return rc;
     }
     OMPI_THREAD_UNLOCK(&ompi_port_lock);

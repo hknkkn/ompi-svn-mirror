@@ -349,7 +349,7 @@ ompi_comm_start_processes(int count, char **array_of_commands,
     */
 
     /* get the jobid for the new processes */
-    if (ORTE_SUCCESS != (rc = orte_name_services.create_jobid(&new_jobid))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.create_jobid(&new_jobid))) {
         return rc;
     }
 
@@ -522,7 +522,7 @@ int ompi_comm_dyn_init (void)
        have to OBJ_RELEASE it as well.  The global
        ompi_proc_local_proc seemed to have been created for exactly
        this kind of purpose, so I took the liberty of using it. */
-    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid(&jobid, &(ompi_proc_local_proc->proc_name)))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, &(ompi_proc_local_proc->proc_name)))) {
         return rc;
     }
 
@@ -538,7 +538,7 @@ int ompi_comm_dyn_init (void)
 
 	/* we have been spawned */
 	oob_port = ompi_parse_port (port_name, &tag);
-	if (ORTE_SUCCESS != (rc = orte_name_services.convert_string_to_process_name(port_proc_name, oob_port))) {
+	if (ORTE_SUCCESS != (rc = orte_ns.convert_string_to_process_name(&port_proc_name, oob_port))) {
         return rc;
     }
 	ompi_comm_connect_accept (MPI_COMM_WORLD, root, port_proc_name,  
@@ -747,7 +747,7 @@ void ompi_comm_mark_dyncomm (ompi_communicator_t *comm)
        of different jobids.  */
     grp = comm->c_local_group;
     for (i=0; i< size; i++) {
-	if (ORTE_SUCCESS != orte_name_services.get_jobid(&thisjobid, &(grp->grp_proc_pointers[i]->proc_name))) {
+	if (ORTE_SUCCESS != orte_ns.get_jobid(&thisjobid, &(grp->grp_proc_pointers[i]->proc_name))) {
         return;
     }
 	found = 0;
@@ -766,7 +766,7 @@ void ompi_comm_mark_dyncomm (ompi_communicator_t *comm)
        and count number of different jobids */
     grp = comm->c_remote_group;
     for (i=0; i< rsize; i++) {
-    if (ORTE_SUCCESS != orte_name_services.get_jobid(&thisjobid, &(grp->grp_proc_pointers[i]->proc_name))) {
+    if (ORTE_SUCCESS != orte_ns.get_jobid(&thisjobid, &(grp->grp_proc_pointers[i]->proc_name))) {
         return;
     }
 	found = 0;
