@@ -58,16 +58,18 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
         return rc;
     }
     
-    /* create the space for the subscriptions */
-    subscriptions = (orte_gpr_subscription_t**)malloc(n * sizeof(orte_gpr_subscription_t*));
-    if (NULL == subscriptions) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(input_buffer, subscriptions, &n, ORTE_GPR_SUBSCRIPTION))) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
+    if (0 < n) {
+        /* create the space for the subscriptions */
+        subscriptions = (orte_gpr_subscription_t**)malloc(n * sizeof(orte_gpr_subscription_t*));
+        if (NULL == subscriptions) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        
+        if (ORTE_SUCCESS != (rc = orte_dps.unpack(input_buffer, subscriptions, &n, ORTE_GPR_SUBSCRIPTION))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
     }
     num_subs = (int)n;
     
@@ -76,19 +78,21 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
         return rc;
     }
     
-    /* create the space for the triggers */
-    trigs = (orte_gpr_value_t**)malloc(n * sizeof(orte_gpr_value_t*));
-    if (NULL == trigs) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-
-    if (ORTE_SUCCESS != orte_dps.unpack(input_buffer, trigs, &n, ORTE_GPR_VALUE)) {
-        ORTE_ERROR_LOG(rc);
-        goto RETURN_ERROR;
+    if (0 < n) {
+        /* create the space for the triggers */
+        trigs = (orte_gpr_value_t**)malloc(n * sizeof(orte_gpr_value_t*));
+        if (NULL == trigs) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+    
+        if (ORTE_SUCCESS != orte_dps.unpack(input_buffer, trigs, &n, ORTE_GPR_VALUE)) {
+            ORTE_ERROR_LOG(rc);
+            goto RETURN_ERROR;
+        }
     }
     num_trigs = (int)n;
-    
+
     n = 1;
     if (ORTE_SUCCESS != orte_dps.unpack(input_buffer, &idtag, &n, ORTE_GPR_NOTIFY_ID)) {
         ORTE_ERROR_LOG(rc);
