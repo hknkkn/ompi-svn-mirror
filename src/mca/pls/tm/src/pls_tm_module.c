@@ -38,6 +38,7 @@
 #include "mca/errmgr/errmgr.h"
 #include "mca/soh/soh_types.h"
 #include "mca/gpr/gpr.h"
+#include "mca/ns/base/ns_base_nds.h"
 #include "pls_tm.h"
 
 
@@ -168,6 +169,10 @@ static int pls_tm_launch(orte_jobid_t jobid)
                 ORTE_ERROR_LOG(ret);
                 goto cleanup;
             }
+
+            /* Set the job name in the environment */
+
+            orte_ns_nds_env_put(&proc->proc_name, count, 1, &local_env);
 
             /* Launch it */
             
