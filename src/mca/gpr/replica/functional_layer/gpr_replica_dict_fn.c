@@ -28,7 +28,6 @@
 #include "gpr_replica_fn.h"
 
 /*
- * A mode of "NONE" or "OVERWRITE" defaults to "XAND" behavior
  */
 bool orte_gpr_replica_check_itag_list(orte_gpr_replica_addr_mode_t addr_mode,
                     int num_itags_search,

@@ -67,7 +67,8 @@ typedef struct {
     ompi_mutex_t wait_for_compound_mutex;
     ompi_condition_t compound_cmd_condition;
     int compound_cmd_waiting;
-    orte_pointer_array_t *search;
+    orte_pointer_array_t *srch_cptr;
+    orte_pointer_array_t *srch_ival;
 } orte_gpr_replica_globals_t;
 
 
@@ -150,6 +151,7 @@ struct orte_gpr_replica_container_t {
     orte_gpr_replica_itag_t *itags;   /**< Array of itags that define this container */
     int num_itags;                    /**< Number of itags in array */
     orte_pointer_array_t *itagvals;   /**< Array of itagval pointers */
+    orte_value_array_t itaglist;     /**< Array of itags from all itagvals - used for rapid search */
 };
 typedef struct orte_gpr_replica_container_t orte_gpr_replica_container_t;
 

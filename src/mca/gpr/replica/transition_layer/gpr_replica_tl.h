@@ -71,6 +71,25 @@ int orte_gpr_replica_dict_reverse_lookup(char **name,
         orte_gpr_replica_segment_t *seg, orte_gpr_replica_itag_t itag);
 
 
+/*
+ * Get a list of itags for a list of string names
+ * Given a list of string names, this function will look them up in the specified
+ * segment's dictionary to see if they exist. If they do, then the function adds the
+ * corresponding itag to the list of itag values that will be returned to the caller.
+ * If the string doesn't exist in the dictionary, then the function has a dictionary
+ * entry created and includes that itag in the return list.
+ * 
+ * Providing a value of NULL for the list of string names will return a NULL list of
+ * itags. This corresponds to a wildcard case. The function will return the NULL list
+ * and provide an ORTE_SUCCESS response to the caller.
+ * 
+ * Providing a name with a wildcard character in it will cause the function to look
+ * for all itag values that match the specified pattern. In this case, no new dictionary
+ * elements will be created - calls to get_itag_list that include wildcards and generate
+ * no itag values to be returned to the caller will result in an ORTE_ERR_NOT_FOUND
+ * response.
+ * 
+ */
 int orte_gpr_replica_get_itag_list(orte_gpr_replica_itag_t **itaglist,
                     orte_gpr_replica_segment_t *seg, char **names,
                     int *num_names);

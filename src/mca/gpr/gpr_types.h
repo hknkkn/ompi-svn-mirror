@@ -120,6 +120,7 @@ typedef uint16_t orte_gpr_cmd_flag_t;
  * General modes
  */
 #define ORTE_GPR_OVERWRITE      (uint16_t)0x8000    /**< Allow overwrite of existing info */
+#define ORTE_GPR_NO_OVERWRITE   (uint16_t)0x0000    /**< Do not allow overwrite of existing info */
 
 typedef uint16_t orte_gpr_addr_mode_t;
 

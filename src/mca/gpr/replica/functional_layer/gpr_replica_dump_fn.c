@@ -255,8 +255,8 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 
     k = (int)orte_value_array_get_size(&(trig->tokentags));
     
-    asprintf(&tmp_out, "\tToken addressing mode: %X\tKey addressing mode: %X\n\tNumber of tokens: %d",
-                            trig->token_addr_mode, trig->key_addr_mode, k);
+    k = (int)orte_value_array_get_size(&(trig->tokentags));
+    asprintf(&tmp_out, "\tNumber of tokens: %d", k);
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
     for (i=0; i < k; i++) {
@@ -268,6 +268,30 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         }
 	}
 
+    asprintf(&tmp_out, "\tToken addressing mode:\n");
+    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+
+    if (ORTE_GPR_TOKENS_NOT & trig->token_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_TOKENS_NOT\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_TOKENS_AND & trig->token_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_TOKENS_AND\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_TOKENS_OR & trig->token_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_TOKENS_OR\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_TOKENS_XAND & trig->token_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_TOKENS_XAND\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_TOKENS_XOR & trig->token_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_TOKENS_XOR\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    
     k = (int)orte_value_array_get_size(&(trig->keytags));
     asprintf(&tmp_out, "\tNumber of keys: %d", k);
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
@@ -281,6 +305,30 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         }
     }
 
+    asprintf(&tmp_out, "\tKey addressing mode:\n");
+    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+
+    if (ORTE_GPR_KEYS_NOT & trig->key_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_KEYS_NOT\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_KEYS_AND & trig->key_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_KEYS_AND\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_KEYS_OR & trig->key_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_KEYS_OR\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_KEYS_XAND & trig->key_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_KEYS_XAND\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_KEYS_XOR & trig->key_addr_mode) {
+        asprintf(&tmp_out, "\tORTE_GPR_KEYS_XOR\n");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    
 	tmp_out = strdup("\n\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 

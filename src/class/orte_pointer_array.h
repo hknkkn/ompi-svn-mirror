@@ -157,7 +157,31 @@ static inline void orte_pointer_array_clear(orte_pointer_array_t *array)
     int i;
     OMPI_THREAD_LOCK(&(array->lock));
     for (i=0; i < array->size; i++) {
-       array->addr[i] = NULL;
+        array->addr[i] = NULL;
+    }
+    array->lowest_free = 0;
+    array->number_free = array->size;
+    OMPI_THREAD_UNLOCK(&(array->lock));
+}
+
+
+/**
+ * Clear the pointer array, freeing any storage
+ *
+ * @param array Pointer to array (IN)
+ *
+ * @returns void
+ *
+ * Simple inline function to clear the pointer array and reset all
+ * counters.
+ */
+static inline void orte_pointer_array_free_clear(orte_pointer_array_t *array)
+{
+    int i;
+    OMPI_THREAD_LOCK(&(array->lock));
+    for (i=0; i < array->size; i++) {
+        if (NULL != array->addr[i]) free(array->addr[i]);
+        array->addr[i] = NULL;
     }
     array->lowest_free = 0;
     array->number_free = array->size;

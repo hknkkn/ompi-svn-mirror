@@ -157,6 +157,9 @@ static void orte_gpr_replica_container_construct(orte_gpr_replica_container_t* r
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
 
+    OBJ_CONSTRUCT(&(reg->itaglist), orte_value_array_t);
+    orte_value_array_init(&(reg->itaglist), sizeof(orte_gpr_replica_itag_t));
+
     reg->itags = NULL;
     reg->num_itags = 0;
     
@@ -182,6 +185,9 @@ static void orte_gpr_replica_container_destructor(orte_gpr_replica_container_t* 
         }
         OBJ_RELEASE(reg->itagvals);
     }
+
+    OBJ_DESTRUCT(&(reg->itaglist));
+
 }
 
 /* define instance of ompi_class_t */
@@ -445,8 +451,12 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
         	/* initialize the mode tracker */
         	OBJ_CONSTRUCT(&orte_gpr_replica.notify_offs, ompi_list_t);
         
-        /* initialize the search array for temporarily storing search results */
-        if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica_globals.search),
+        /* initialize the search arrays for temporarily storing search results */
+        if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica_globals.srch_cptr),
+                                100, orte_gpr_replica_globals.max_size, 100)) {
+            return NULL;
+        }
+        if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica_globals.srch_ival),
                                 100, orte_gpr_replica_globals.max_size, 100)) {
             return NULL;
         }

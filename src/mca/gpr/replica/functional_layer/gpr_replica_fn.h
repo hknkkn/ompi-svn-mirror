@@ -148,6 +148,10 @@ int orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
  */
 int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t **seg);
 
+int orte_gpr_replica_find_containers(int *num_found, orte_gpr_replica_segment_t *seg,
+                                     orte_gpr_replica_addr_mode_t addr_mode,
+                                     orte_gpr_replica_itag_t *taglist, int num_tags);
+
 int orte_gpr_replica_create_container(orte_gpr_replica_container_t **cptr,
                                       orte_gpr_replica_segment_t *seg,
                                       int num_itags,
@@ -158,11 +162,11 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
 
 int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
                                 orte_gpr_replica_container_t *cptr,
-                                orte_gpr_keyval_t **kptr);
+                                orte_gpr_keyval_t *kptr);
 
 int orte_gpr_replica_update_keyval(orte_gpr_replica_segment_t *seg,
                                    orte_gpr_replica_container_t *cptr,
-                                   orte_gpr_keyval_t **kptr);
+                                   orte_gpr_keyval_t *kptr);
 
 int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
                                   orte_gpr_value_union_t *src,
@@ -171,9 +175,9 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
 int orte_gpr_replica_purge_itag(orte_gpr_replica_segment_t *seg,
                                 orte_gpr_replica_itag_t itag);
 
-bool orte_gpr_replica_search_container(int *num_found,
-                                       orte_gpr_replica_itag_t itag,
-                                       orte_gpr_replica_container_t *cptr);
+int orte_gpr_replica_search_container(bool *found, orte_gpr_replica_addr_mode_t addr_mode,
+                                      orte_gpr_replica_itag_t *itags, int num_itags,
+                                      orte_gpr_replica_container_t *cptr);
 
 /*
  * DICTIONARY OPERATIONS

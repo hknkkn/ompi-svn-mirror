@@ -33,7 +33,7 @@
 int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
                          int cnt, orte_gpr_value_t **values)
 {
-    int rc, i;
+    int rc, i, j;
     int8_t action_taken;
     orte_gpr_value_t *val;
     orte_gpr_replica_segment_t *seg=NULL;
@@ -58,6 +58,14 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
     for (i=0; i < cnt; i++) {
         val = values[i];
         
+        /* first check for error - all keyvals must have a non-NULL string key */
+        for (j=0; j < val->cnt; j++) {
+            if (NULL == (val->keyvals[j])->key) {
+                ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                return ORTE_ERR_BAD_PARAM;
+            }
+        }
+        
         /* find the segment */
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, val->segment))) {
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
@@ -65,12 +73,6 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
         }
     
         /* convert tokens to array of itags */
-        /* first, protect against errors - must be at least one token! */
-        if (NULL == val->tokens) {
-            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-            return ORTE_ERR_BAD_PARAM;
-        }
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg,
                                             val->tokens, &(val->num_tokens)))) {
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);

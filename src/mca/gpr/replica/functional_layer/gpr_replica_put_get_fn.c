@@ -120,9 +120,10 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 {
     orte_gpr_replica_container_t **cptr, *cptr2;
     orte_gpr_replica_itag_t itag;
+    orte_gpr_replica_addr_mode_t tok_mode;
     orte_gpr_keyval_t **kptr;
-    bool overwrite;
-    int rc, i, num_found;
+    bool overwrite, found;
+    int rc, i, j, num_found;
 
     if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s",
@@ -132,65 +133,74 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     /* initialize action */
     *action_taken = 0;
     
-    /* all tokens are used
-     * only overwrite permission mode flag has any affect
-     */
+    /* extract the token address mode and overwrite permissions */
     overwrite = false;
     if (addr_mode & ORTE_GPR_OVERWRITE) {
         overwrite = true;
     }
+    tok_mode = 0x00ff & addr_mode;
 
-    /* find the specified container */
-    cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
-    cptr2 = NULL;
-    for (i=0; i < (seg->containers)->size && NULL == cptr2; i++) {
-        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(ORTE_GPR_TOKENS_XAND,
-                                             num_tokens, token_itags,
-                                             cptr[i]->num_itags, cptr[i]->itags)) {
-            cptr2 = cptr[i];
-            break;
-        }
+    /* find the specified container(s) */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_containers(&num_found, seg, tok_mode,
+                                    token_itags, num_tokens))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
     }
     
-    if (NULL == cptr2) {  /* existing container not found - create one */
+    if (NULL == token_itags && 0 == num_found) { /* wildcard tokens but nothing found */
+        /* no ERROR_LOG entry created as this is not a system failure */
+        return ORTE_ERR_NOT_FOUND;
+    }
+    
+    if (0 == num_found) {  /* existing container not found - create one */
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_container(&cptr2, seg,
                                             num_tokens, token_itags))) {
+            ORTE_ERROR_LOG(rc);
             return rc;
         }
  
         /* ok, store all the keyvals in the container */
         kptr = keyvals;
         for (i=0; i < cnt; i++) {
-            if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr2, &(kptr[i])))) {
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr2, keyvals[i]))) {
+                ORTE_ERROR_LOG(rc);
                 return rc;
             }
         }
         *action_taken = ORTE_GPR_REPLICA_ENTRY_ADDED;
-    } else {  /* otherwise, see if entry already exists in container */
-        kptr = keyvals;
-        for (i=0; i < cnt; i++) {
-            if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, kptr[i]->key) &&
-                orte_gpr_replica_search_container(&num_found, itag, cptr2)) {
-                /* this key already exists - overwrite, if permission given
-                 * else add this keyval to the container as a new entry
-                 */
-                 if (overwrite) {
-                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr2, (&kptr[i])))) {
-                        return rc;
+    } else {  /* otherwise, go through list of containers. For each one,
+                 see if entry already exists in container - overwrite if allowed */
+        cptr = (orte_gpr_replica_container_t**)(orte_gpr_replica_globals.srch_cptr)->addr;
+        for (j=0; j < (orte_gpr_replica_globals.srch_cptr)->size; j++) {
+            if (NULL != cptr[j]) {
+                for (i=0; i < cnt; i++) {
+                    if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, keyvals[i]->key) &&
+                        ORTE_SUCCESS == orte_gpr_replica_search_container(&found,
+                                                ORTE_GPR_REPLICA_OR,
+                                                &itag, 1, cptr[j]) &&
+                        found) {
+                        /* this key already exists - overwrite, if permission given
+                         * else add this keyval to the container as a new entry
+                         */
+                         if (overwrite) {
+                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr[j], keyvals[i]))) {
+                                return rc;
+                            }
+                            overwrite = false;  /* only do it for the first one - rest get added */
+                            *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_UPDATED;
+                         } else {
+                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr[j], keyvals[i]))) {
+                                return rc;
+                            }
+                            *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
+                         }
+                    } else { /* new key - add to container */
+                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr[j], keyvals[i]))) {
+                            return rc;
+                        }
+                        *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
                     }
-                    overwrite = false;  /* only do it for the first one - rest get added */
-                    *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_UPDATED;
-                 } else {
-                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr2, &(kptr[i])))) {
-                        return rc;
-                    }
-                    *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
-                 }
-            } else { /* new key - add to container */
-                if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr2, &(kptr[i])))) {
-                    return rc;
                 }
-                *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
             }
         }
     }
@@ -226,7 +236,8 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     orte_gpr_replica_itagval_t **iptr;
     orte_gpr_keyval_t **kptr;
     orte_gpr_replica_addr_mode_t tokmode, keymode;
-    int rc, i, j, k, num_found;
+    int rc, i, j, num_found;
+    bool found;
     
     if (orte_gpr_replica_globals.debug) {
         	ompi_output(0, "[%d,%d,%d] gpr replica: get entered", ORTE_NAME_ARGS(orte_process_info.my_name));
@@ -242,37 +253,47 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     *values = NULL;
     tokmode = 0x00ff & addr_mode;
     keymode = ((0xff00 & addr_mode) >> 8) & 0x00ff;
-    iptr = (orte_gpr_replica_itagval_t**)((orte_gpr_replica_globals.search)->addr);
     
-    /* find all containers that meet search criteria */
-    cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
-    for (i=0; i < (seg->containers)->size; i++) {
-        if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(tokmode,
-                                             num_tokens, tokentags,
-                                             cptr[i]->num_itags, cptr[i]->itags)) {
-            /* check the list of keys to see if it matches too - if so, grab
-             * all of the found keyvals
-             */
+    /* find all containers that meet search criteria for tokens */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_containers(&num_found, seg, tokmode,
+                                    tokentags, num_tokens))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
+    /* if nothing found, then can return */
+    if (0 == num_found) {
+        OBJ_RELEASE(get_list);
+        return ORTE_SUCCESS;
+    }
+    
+    /* for each container that was found, search it to find all matching keytags
+     * subject to specified mode. Collect the results on get_list
+     */
+    cptr = (orte_gpr_replica_container_t**)((orte_gpr_replica_globals.srch_cptr)->addr);
+    for (i=0; i < (orte_gpr_replica_globals.srch_cptr)->size; i++) {
+        if ((NULL != cptr[i]) &&
+            (ORTE_SUCCESS == orte_gpr_replica_search_container(&found, keymode,
+                                    keytags, num_keys, cptr[i])) && found) {
             gptr = OBJ_NEW(orte_gpr_replica_get_list_t);
             gptr->cptr = cptr[i];
-            /* search container for matches and collect them onto list */
-            for (j=0; j < num_keys; j++) {
-                if (orte_gpr_replica_search_container(&num_found, keytags[j], cptr[i])) {
-                    for (k=0; k < num_found; k++) {
-                        ival_list = OBJ_NEW(orte_gpr_replica_ival_list_t);
-                        ival_list->itag = keytags[j];
-                        ival_list->type = iptr[k]->type;
-                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(
-                                    &(ival_list->value), &(iptr[k]->value), iptr[k]->type))) {
-                            OBJ_RELEASE(ival_list);
-                            return rc;
-                        }
-                        ompi_list_append(gptr->ival_list, &ival_list->item);
+            iptr = (orte_gpr_replica_itagval_t**)((orte_gpr_replica_globals.srch_ival)->addr);
+            for (j=0; j < (orte_gpr_replica_globals.srch_ival)->size; j++) {
+                if (NULL != iptr[j]) {
+                    ival_list = OBJ_NEW(orte_gpr_replica_ival_list_t);
+                    ival_list->itag = iptr[j]->itag;
+                    ival_list->type = iptr[j]->type;
+                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(
+                                &(ival_list->value), &(iptr[j]->value), iptr[j]->type))) {
+                        ORTE_ERROR_LOG(rc);
+                        OBJ_RELEASE(ival_list);
+                        return rc;
                     }
+                    ompi_list_append(gptr->ival_list, &ival_list->item);
                 }
             }
             ompi_list_append(get_list, &gptr->item);
-            (*cnt)++;
+            (*cnt)++; /* update number of containers that had something found */
         }
     }
     
@@ -281,8 +302,13 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
         goto CLEANUP;
     }
     
-    /* if something on the list, convert it to array of values */
+    /* if something found, convert it to array of values */
     *values = (orte_gpr_value_t**)malloc((*cnt) * sizeof(orte_gpr_value_t*));
+    if (NULL == *values) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        rc = ORTE_ERR_OUT_OF_RESOURCE;
+        goto CLEANUP;
+    }
     for (i=0; i < *cnt; i++) {
         gptr = (orte_gpr_replica_get_list_t*)ompi_list_remove_first(get_list);
         if (NULL == gptr) {
