@@ -29,7 +29,7 @@
 
 int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
                                orte_proc_state_t state,
-                               int status)
+                               int exit_status)
 {
     orte_gpr_value_t *value;
     orte_gpr_keyval_t **keyvals;
@@ -83,7 +83,7 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
     }
     (value->keyvals[1])->key = strdup(ORTE_PROC_EXIT_CODE_KEY);
     (value->keyvals[0])->type = ORTE_EXIT_CODE;
-    (value->keyvals[0])->value.exit_code = status;
+    (value->keyvals[0])->value.exit_code = exit_status;
 
     if (ORTE_SUCCESS != (rc = orte_gpr.put(ORTE_GPR_XAND, 1, &value))) {
         ORTE_ERROR_LOG(rc);

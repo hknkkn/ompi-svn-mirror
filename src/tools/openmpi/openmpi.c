@@ -52,8 +52,6 @@
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
 
-#include "tools/ompid/ompid.h"
-
 #include "runtime/runtime.h"
 
 

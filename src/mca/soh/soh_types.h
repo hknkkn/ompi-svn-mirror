@@ -21,10 +21,7 @@
  * Process exit codes
  */
 
-typedef int8_t orte_exit_code_t;
-
-#define ORTE_PROC_EXIT_CODE_NORMAL      0x00
-#define ORTE_PROC_EXIT_CODE_ABNORMAL    0x01
+typedef int orte_exit_code_t;
 
 /*
  * Process state codes

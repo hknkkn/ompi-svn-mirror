@@ -28,7 +28,7 @@
 #include "mca/soh/base/base.h"
 
 int orte_soh_base_get_proc_soh(orte_proc_state_t *state,
-                               int *status,
+                               int *exit_status,
                                orte_process_name_t *proc)
 {
     orte_gpr_value_t **values;
@@ -69,7 +69,7 @@ int orte_soh_base_get_proc_soh(orte_proc_state_t *state,
                 if (ORTE_PROC_STATE == keyvals[j]->type) {
                     *state = keyvals[j]->value.proc_state;
                 } else if (ORTE_EXIT_CODE == keyvals[j]->type) {
-                    *status = keyvals[j]->value.exit_code;
+                    *exit_status = keyvals[j]->value.exit_code;
                 } else {
                     ORTE_ERROR_LOG(ORTE_ERR_GPR_DATA_CORRUPT);
                     rc = ORTE_ERR_GPR_DATA_CORRUPT;
