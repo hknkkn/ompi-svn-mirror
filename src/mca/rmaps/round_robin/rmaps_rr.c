@@ -112,6 +112,7 @@ static int orte_rmaps_rr_map_app(
             proc->proc_rank = rank;
             rank++;
             orte_ns.free_name(&proc_name);
+            OBJ_RETAIN(proc); /* bump reference count for the node */
             ompi_list_append(&rmaps_node->node_procs, &proc->super);
             map->procs[proc_index++] = proc;
         }

@@ -39,8 +39,12 @@ static void orte_rmaps_base_node_construct(orte_rmaps_base_node_t* node)
 
 static void orte_rmaps_base_node_destruct(orte_rmaps_base_node_t* node)
 {
+    ompi_list_item_t* item;
     if(NULL != node->node_name)
         free(node->node_name);
+    while(NULL != (item = ompi_list_remove_first(&node->node_procs))) {
+        OBJ_RELEASE(item);
+    }
     OBJ_DESTRUCT(&node->node_procs);
 }
 
@@ -169,15 +173,17 @@ orte_rmaps_lookup_node(ompi_list_t* nodes, char* node_name, orte_rmaps_base_proc
         item =  ompi_list_get_next(item)) {
         node = (orte_rmaps_base_node_t*)item;
         if(strcmp(node->node_name, node_name) == 0) {
+            OBJ_RETAIN(proc);
             ompi_list_append(&node->node_procs, &proc->super);
             return node;
         }
     }
     node = OBJ_NEW(orte_rmaps_base_node_t);
     node->node_name = strdup(node_name);
+    OBJ_RETAIN(proc);
     ompi_list_append(&node->node_procs, &proc->super);
     ompi_list_prepend(nodes, &node->super);
-    return NULL;
+    return node;
 }
 
 
