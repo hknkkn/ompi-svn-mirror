@@ -540,8 +540,8 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
     /* See if we have anything left */
 
     if (0 == app->argc) {
-        ompi_show_help("help-orterun.txt", "orterun:no-application", true,
-                       argv[0], argv[0]);
+        ompi_show_help("help-orterun.txt", "orterun:executable-not-specified",
+                       true, argv[0], argv[0]);
         rc = ORTE_ERR_NOT_FOUND;
         goto cleanup;
     }
@@ -638,8 +638,8 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
 
     app->app = ompi_path_findv(app->argv[0], 0, environ, app->cwd); 
     if (NULL == app->app) {
-        ompi_show_help("help-orterun.txt", "orterun:no-application", true, 
-                       argv[0], app->argv[0], argv[0]);
+        ompi_show_help("help-orterun.txt", "orterun:executable-not-found",
+                       true, argv[0], app->argv[0], argv[0]);
         rc = ORTE_ERR_NOT_FOUND;
         goto cleanup;
     }
