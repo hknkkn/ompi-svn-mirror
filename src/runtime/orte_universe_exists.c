@@ -134,7 +134,7 @@ int orte_universe_exists()
 	contact_file = orte_os_path(false, orte_process_info.universe_session_dir,
 				    "universe-setup.txt", NULL);
 
-	if (OMPI_SUCCESS != (ret = ompi_read_universe_setup_file(contact_file))) {
+	if (OMPI_SUCCESS != (ret = orte_read_universe_setup_file(contact_file))) {
 	    if (orte_debug_flag) {
 		ompi_output(0, "could not read contact file %s", contact_file);
 	    }

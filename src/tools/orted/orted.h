@@ -29,7 +29,7 @@
 /*
  * Definitions needed for communication
  */
-#define ORTE_DAEMON_OOB_PACK_CMD        ORTE_INT16
+#define ORTE_DAEMON_CMD        ORTE_INT16
 
 #define ORTE_DAEMON_HOSTFILE_CMD        0x01
 #define ORTE_DAEMON_SCRIPTFILE_CMD      0x02
@@ -42,7 +42,7 @@
  * Globals
  */
 
-typedef uint16_t ompi_daemon_cmd_flag_t;
+typedef uint16_t orte_daemon_cmd_flag_t;
 
 typedef struct {
     bool debug;

@@ -15,7 +15,7 @@
  * $Id: orte_universe_setup_file I/O functions $
  * 
  */
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
@@ -27,17 +27,17 @@
 #include <unistd.h>
 #endif
 
-#include "include/constants.h"
+#include "include/orte_constants.h"
 
 #include "util/output.h"
 #include "runtime/runtime.h"
 #include "util/universe_setup_file_io.h"
 
-#define OMPI_UNIV_SETUP_FILE_MAX_LINE_LENGTH 1024
+#define ORTE_UNIV_SETUP_FILE_MAX_LINE_LENGTH 1024
 
-static char *ompi_getline(FILE *fp);
+static char *orte_getline(FILE *fp);
 
-int ompi_write_universe_setup_file(char *filename)
+int orte_write_universe_setup_file(char *filename)
 {
     FILE *fp;
 
@@ -91,7 +91,7 @@ int ompi_write_universe_setup_file(char *filename)
     return OMPI_ERROR;
 }
 
-int ompi_read_universe_setup_file(char *filename)
+int orte_read_universe_setup_file(char *filename)
 {
     char *input;
     FILE *fp;
@@ -104,22 +104,22 @@ int ompi_read_universe_setup_file(char *filename)
 	}
     }
 
-    orte_universe_info.name = ompi_getline(fp);
+    orte_universe_info.name = orte_getline(fp);
     if (NULL == orte_universe_info.name) {
 	goto CLEANUP;
     }
 
-    orte_universe_info.host = ompi_getline(fp);
+    orte_universe_info.host = orte_getline(fp);
     if (NULL == orte_universe_info.host) {
 	goto CLEANUP;
     }
 
-    orte_universe_info.uid = ompi_getline(fp);
+    orte_universe_info.uid = orte_getline(fp);
     if (NULL == orte_universe_info.uid) {
 	goto CLEANUP;
     }
 
-    input = ompi_getline(fp);
+    input = orte_getline(fp);
     if (NULL == input) {
 	goto CLEANUP;
     }
@@ -133,12 +133,12 @@ int ompi_read_universe_setup_file(char *filename)
     }
     free(input);
 
-    orte_universe_info.scope = ompi_getline(fp);
+    orte_universe_info.scope = orte_getline(fp);
     if (NULL == orte_universe_info.scope) {
 	goto CLEANUP;
     }
  
-    input = ompi_getline(fp);
+    input = orte_getline(fp);
     if (NULL == input) {
 	goto CLEANUP;
     }
@@ -152,7 +152,7 @@ int ompi_read_universe_setup_file(char *filename)
     }
     free(input);
 
-    orte_universe_info.seed_uri = ompi_getline(fp);
+    orte_universe_info.seed_uri = orte_getline(fp);
     if (NULL == orte_universe_info.seed_uri) {
 	goto CLEANUP;
     }
@@ -165,12 +165,12 @@ int ompi_read_universe_setup_file(char *filename)
     return OMPI_ERROR;
 }
 
-static char *ompi_getline(FILE *fp)
+static char *orte_getline(FILE *fp)
 {
     char *ret, *buff;
-    char input[OMPI_UNIV_SETUP_FILE_MAX_LINE_LENGTH];
+    char input[ORTE_UNIV_SETUP_FILE_MAX_LINE_LENGTH];
 
-    ret = fgets(input, OMPI_UNIV_SETUP_FILE_MAX_LINE_LENGTH, fp);
+    ret = fgets(input, ORTE_UNIV_SETUP_FILE_MAX_LINE_LENGTH, fp);
     if (NULL != ret) {
 	input[strlen(input)-1] = '\0';  /* remove newline */
 	buff = strdup(input);

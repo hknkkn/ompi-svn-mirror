@@ -26,7 +26,7 @@
 /*
  * Main functions
  */
-int ompi_rte_wait_startup_msg(void)
+int orte_wait_startup_msg(void)
 {
 
     return orte_rml.xcast(NULL, NULL, 0, NULL, orte_gpr.decode_startup_msg);
