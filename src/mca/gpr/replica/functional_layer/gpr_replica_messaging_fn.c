@@ -293,7 +293,7 @@ int orte_gpr_replica_add_values(orte_gpr_notify_data_t **data,
                                 matches++;
                             }
                         }
-                        if (num_tokens == matches) { /* from same container - just add keyvals to it */
+                        if (((*data)->values[k])->num_tokens == matches) { /* from same container - just add keyvals to it */
                             data_values = &((*data)->values[k]);
                             goto MOVEON;
                         }
