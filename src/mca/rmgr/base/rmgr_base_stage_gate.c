@@ -23,6 +23,7 @@
 
 #include "mca/gpr/gpr.h"
 #include "mca/errmgr/errmgr.h"
+#include "mca/rml/rml.h"
 
 #include "mca/rmgr/base/base.h"
 
@@ -73,7 +74,7 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
         value.keyvals[i]->key = strdup(keys[i]);
-        value.keyvals[i]->type = ORTE_INT32;
+        value.keyvals[i]->type = ORTE_UINT32;
         value.keyvals[i]->value.i32 = 0;
     }
     values = &value;
@@ -208,8 +209,8 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
     }
     
     /* Next, setup the trigger that watches the NUM_ABORTED counter to see if
-     * any process abnormally terminates - if so, then call the stage_gate_mgr
-     * so it can in turn call the error manager
+     * any process abnormally terminates - if so, then call the stage_gate_mgr_abort
+     * so it can in turn order the job to be aborted
      */
     sub.keys[0] = strdup(ORTE_PROC_NUM_ABORTED);
     if (NULL == sub.keys[0]) {
@@ -272,5 +273,82 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
 void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
                                         void *user_tag)
 {
+    orte_gpr_value_t **values;
+    orte_gpr_keyval_t **kvals;
+    orte_process_name_t *recipients;
+    int i, j, n, k, rc;
+    orte_buffer_t msg;
+    orte_jobid_t job;
+    
+    /* for the purposes of the stage gate manager, we don't actually have
+     * to determine anything from the message. All we have to do is respond
+     * by sending an xcast to all processes
+     */
+    
+    OBJ_CONSTRUCT(&msg, orte_buffer_t);
+    
+    /* get the jobid from the segment name */
+    if (ORTE_SUCCESS != (rc = orte_schema.extract_jobid_from_segment_name(&job, data->segment))) {
+        ORTE_ERROR_LOG(rc);
+        return;
+    }
+    
+    /* value returned will contain the counter, which contains the number of
+     * procs in this job
+     */
+    values = data->values;
+    n = -1; k = -1;
+    for (i=0; i < data->cnt && (0 > n || 0 > k); i++) {
+        /* check to see if ORTE_JOB_GLOBALS is the token */
+        if (NULL != values[i]->tokens &&
+            0 == strcmp(ORTE_JOB_GLOBALS, values[i]->tokens[0])) {
+            /* find the ORTE_JOB_SLOTS_KEY and the ORTE_JOB_VPID_START_KEY keyval */
+            for (j=0; j < values[i]->cnt && (0 > n || 0 > k); j++) {
+                if (NULL != kvals[j] && 0 > n &&
+                    0 == strcmp(ORTE_JOB_SLOTS_KEY, kvals[j]->key)) {
+                    n = (int)(kvals[j]->value.ui32);
+                }
+                if (NULL != kvals[j] && 0 > k &&
+                    0 == strcmp(ORTE_JOB_VPID_START_KEY, kvals[j]->key)) {
+                    k = (int)(kvals[j]->value.ui32);
+                }
+            }
+        }
+    }
+    
+    if (0 > k || 0 > n) {
+        ORTE_ERROR_LOG(ORTE_ERR_GPR_DATA_CORRUPT);
+        return;
+    }
+    
+    /* now can generate the list of recipients */
+    recipients = (orte_process_name_t*)malloc(n * sizeof(orte_process_name_t));
+    for (i=0; i < n; i++) {
+        recipients[i].cellid = 0;
+        recipients[i].jobid = job;
+        recipients[i].vpid = (orte_vpid_t)(k + i);
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_rml.xcast(orte_process_info.my_name, recipients,
+                                        n, &msg, NULL))) {
+        ORTE_ERROR_LOG(rc);
+        return;
+    }
     OBJ_RELEASE(data);
+    free(recipients);
+}
+
+void orte_rmgr_base_proc_stage_gate_mgr_abort(orte_gpr_notify_data_t *data,
+                                        void *user_tag)
+{
+    orte_jobid_t job;
+    int rc;
+    
+     /* get the jobid from the segment name */
+    if (ORTE_SUCCESS != (rc = orte_schema.extract_jobid_from_segment_name(&job, data->segment))) {
+        ORTE_ERROR_LOG(rc);
+        return;
+    }
+    
+    orte_errmgr.incomplete_start(job);
 }

@@ -112,6 +112,7 @@ typedef int (*orte_schema_get_cell_tokens_fn_t)(
 
 typedef int (*orte_schema_get_job_segment_name_fn_t)(char **name, orte_jobid_t jobid);
 
+typedef int (*orte_schema_extract_jobid_from_segment_name_fn_t)(orte_jobid_t *jobid, char *name);
 /*
  * Base structure for the convenience functions
  */
@@ -120,6 +121,7 @@ typedef struct {
     orte_schema_get_node_tokens_fn_t get_node_tokens;
     orte_schema_get_cell_tokens_fn_t get_cell_tokens;
     orte_schema_get_job_segment_name_fn_t get_job_segment_name;
+    orte_schema_extract_jobid_from_segment_name_fn_t extract_jobid_from_segment_name;
 } orte_schema_t;
 
 OMPI_DECLSPEC extern orte_schema_t orte_schema;

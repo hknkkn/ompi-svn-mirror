@@ -23,6 +23,8 @@
  */
 #include "orte_config.h"
 
+#include <string.h>
+
 #include "include/orte_constants.h"
 
 #include "mca/ns/ns.h"
@@ -34,6 +36,7 @@ int orte_schema_get_proc_tokens(char ***tokens, int32_t* num_tokens, orte_proces
 int orte_schema_get_node_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid, char *nodename);
 int orte_schema_get_cell_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid);
 int orte_schema_get_job_segment_name(char **name, orte_jobid_t jobid);
+int orte_schema_extract_jobid_from_segment_name(orte_jobid_t *jobid, char *name);
 
 /*
  * globals
@@ -42,7 +45,8 @@ orte_schema_t orte_schema = {
     orte_schema_get_proc_tokens,
     orte_schema_get_node_tokens,
     orte_schema_get_cell_tokens,
-    orte_schema_get_job_segment_name
+    orte_schema_get_job_segment_name,
+    orte_schema_extract_jobid_from_segment_name
 };
 
 int orte_schema_open(void)
@@ -149,4 +153,29 @@ int orte_schema_get_job_segment_name(char **name, orte_jobid_t jobid)
     free(jobidstring);
     return ORTE_SUCCESS;
 }
-   
+
+
+int orte_schema_extract_jobid_from_segment_name(orte_jobid_t *jobid, char *name)
+{
+    char *jobstring, *tmp;
+    orte_jobid_t job;
+    int rc;
+    
+    tmp = strrchr(name, '-');
+    if (NULL == tmp) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+        return ORTE_ERR_BAD_PARAM;
+    }
+    jobstring = strpbrk(tmp, "0123456789");
+    if (NULL == jobstring) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+        return ORTE_ERR_BAD_PARAM;
+    }
+    if (ORTE_SUCCESS != (rc = orte_ns.convert_string_to_jobid(&job, jobstring))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    *jobid = job;
+    return ORTE_SUCCESS;
+}
+

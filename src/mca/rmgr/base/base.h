@@ -84,6 +84,9 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job);
 void orte_rmgr_base_proc_stage_gate_mgr(
         orte_gpr_notify_data_t *data,
         void *user_tag);
+void orte_rmgr_base_proc_stage_gate_mgr_abort(
+        orte_gpr_notify_data_t *data,
+        void *user_tag);
 int orte_rmgr_base_spawn_not_available(
     orte_app_context_t** app_context, 
     size_t num_context, 

@@ -83,9 +83,6 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     ompi_proc_t** procs;
     size_t nprocs;
     char *error = NULL;
-    orte_gpr_value_t value;
-    orte_gpr_notify_id_t idtag;
-    orte_jobid_t jobid;
     
     /* Join the run-time environment */
     if (ORTE_SUCCESS != (ret = orte_init(NULL, argc, argv))) {
@@ -242,8 +239,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     }
 
     /*
-     *  Set my process status to "starting". Note that this must be done
-     *  after the rte init is completed.
+     *  Let system know we are at STG1 Barrier
      */
     if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
                                 ORTE_PROC_STATE_AT_STG1, 0))) {
@@ -260,8 +256,8 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     }
 */
 
-    /* FIRST BARRIER - WAIT FOR MSG CONTAINING CONTACT INFO FROM OTHER PROCESSES TO ARRIVE */
-    if (ORTE_SUCCESS != (ret = orte_rml.xcast(NULL, NULL, 0, NULL, orte_gpr.deliver_notify_msg))) {
+    /* FIRST BARRIER - WAIT FOR MSG FROM RMGR_PROC_STAGE_GATE_MGR TO ARRIVE */
+    if (ORTE_SUCCESS != (ret = orte_rml.xcast(NULL, NULL, 0, NULL, NULL))) {
         ORTE_ERROR_LOG(ret);
 	    error = "ompi_mpi_init: failed to see all procs register\n";
 	    goto error;
@@ -322,8 +318,23 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     ompi_progress_events(OMPI_EVLOOP_NONBLOCK);
 #endif
 
-    /* Wait for everyone to initialize */
-    mca_oob_barrier();
+    /*
+     *  Let system know we are at STG2 Barrier
+     */
+    if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
+                                ORTE_PROC_STATE_AT_STG2, 0))) {
+        ORTE_ERROR_LOG(ret);
+        error = "set process state failed";
+        goto error;
+    }
+
+    /* SECOND BARRIER - WAIT FOR MSG FROM RMGR_PROC_STAGE_GATE_MGR TO ARRIVE */
+    if (ORTE_SUCCESS != (ret = orte_rml.xcast(NULL, NULL, 0, NULL, NULL))) {
+        ORTE_ERROR_LOG(ret);
+       error = "ompi_mpi_init: failed to see all procs register\n";
+       goto error;
+    }
+
 
     /* new very last step: check whether we have been spawned or not.
        We introduce that at the very end, since we need collectives,

@@ -42,19 +42,24 @@ void orte_errmgr_base_log(int error_code, char *filename, int line)
 
 void orte_errmgr_base_proc_aborted(orte_process_name_t *proc)
 {
-    orte_finalize();
-    exit(1);
+    orte_jobid_t job;
+    int rc;
+    
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&job, proc))) {
+        ORTE_ERROR_LOG(rc);
+        return;
+    }
+    
+    orte_rmgr.terminate_job(job);
 }
 
 void orte_errmgr_base_incomplete_start(orte_jobid_t job)
 {
-/*    orte_rmgr.terminate_job(job); */
+    orte_rmgr.terminate_job(job);
 }
 
 void orte_errmgr_base_error_detected(int error_code)
 {
-    orte_finalize();
-    exit(1);
 }
 
 int orte_errmgr_base_register_job(orte_jobid_t job)
