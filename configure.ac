@@ -1104,6 +1104,8 @@ AC_CONFIG_FILES([
     src/mca/base/Makefile
     src/mca/common/Makefile
 
+    src/mca/errmgr/Makefile
+    src/mca/errmgr/base/Makefile
     src/mca/gpr/Makefile
     src/mca/gpr/base/Makefile
     src/mca/ns/Makefile
@@ -1150,6 +1152,7 @@ AC_CONFIG_FILES([
 
     src/dynamic-mca/common/Makefile
 
+    src/dynamic-mca/errmgr/Makefile
     src/dynamic-mca/gpr/Makefile
     src/dynamic-mca/ns/Makefile
     src/dynamic-mca/oob/Makefile

@@ -16,7 +16,7 @@
 
 include $(top_ompi_srcdir)/config/Makefile.options
 
-SUBDIRS = api_layer functional_layer transition_layer
+SUBDIRS = api_layer functional_layer transition_layer communications
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
@@ -36,7 +36,8 @@ mca_gpr_replica_la_SOURCES =
 mca_gpr_replica_la_LIBADD = \
 	api_layer/libmca_gpr_replica.la \
 	transition_layer/libmca_gpr_replica.la \
-	functional_layer/libmca_gpr_replica.la
+	functional_layer/libmca_gpr_replica.la \
+	communications/libmca_gpr_replica.la
 mca_gpr_replica_la_LDFLAGS = -module -avoid-version
 
 noinst_LTLIBRARIES = $(component_noinst)
@@ -44,5 +45,6 @@ libmca_gpr_replica_la_SOURCES =
 libmca_gpr_replica_la_LIBADD = \
 	api_layer/libmca_gpr_replica.la \
 	transition_layer/libmca_gpr_replica.la \
-	functional_layer/libmca_gpr_replica.la
+	functional_layer/libmca_gpr_replica.la \
+	communications/libmca_gpr_replica.la
 libmca_gpr_replica_la_LDFLAGS = -module -avoid-version

@@ -14,39 +14,18 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-    base \
-    coll \
-    common \
-    errmgr \
-    io \
-    iof \
-    mpool \
-    ns \
-    one \
-    oob \
-	pcmclient \
-	pls \
-    pml \
-    ptl \
-    rml \
-	ras \
-	rds \
-	rmaps \
-	rmgr \
-    soh \
-    svc \
-    topo
+SUBDIRS = base $(MCA_errmgr_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_errmgr_ALL_SUBDIRS)
 
 # Source code files
 
-headers = mca.h
+headers = \
+	errmgr.h
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca
+ompidir = $(includedir)/openmpi/mca/errmgr
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)
