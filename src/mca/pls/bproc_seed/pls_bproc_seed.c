@@ -41,10 +41,17 @@
 #include "pls_bproc_seed.h"
 
 extern int ompi_evsignal_restart(void);
+#if OMPI_HAVE_POSIX_THREADS && OMPI_THREADS_HAVE_DIFFERENT_PIDS
+int orte_pls_bproc_seed_launch_threaded(orte_jobid_t);
+#endif
 
 
 orte_pls_base_module_t orte_pls_bproc_seed_module = {
+#if OMPI_HAVE_POSIX_THREADS && OMPI_THREADS_HAVE_DIFFERENT_PIDS
+    orte_pls_bproc_seed_launch_threaded,
+#else
     orte_pls_bproc_seed_launch,
+#endif
     orte_pls_bproc_seed_terminate_job,
     orte_pls_bproc_seed_terminate_proc,
     orte_pls_bproc_seed_finalize
@@ -525,11 +532,13 @@ cleanup:
     return rc;
 }
 
+
 /*
- * Launch 
+ * Query for the default mapping.  Launch each application context 
+ * w/ a distinct set of daemons.
  */
 
-static int orte_pls_bproc_seed_launch_internal(orte_jobid_t jobid)
+static int orte_pls_bproc_seed_launch(orte_jobid_t jobid)
 {
     ompi_list_item_t* item;
     ompi_list_t mapping;
@@ -562,116 +571,11 @@ cleanup:
 }
 
 
-
-/*
- * Query for the default mapping.  Launch each application context 
- * w/ a distinct set of daemons.
- */
-
-#if OMPI_HAVE_POSIX_THREADS && OMPI_THREADS_HAVE_DIFFERENT_PIDS
-
-struct orte_pls_bproc_stack_t {
-    ompi_condition_t cond;
-    ompi_mutex_t mutex;
-    bool complete;
-    orte_jobid_t jobid;
-    int rc;
-};
-typedef struct orte_pls_bproc_stack_t orte_pls_bproc_stack_t;
-
-static void orte_pls_bproc_stack_construct(orte_pls_bproc_stack_t* stack)
-{
-    OBJ_CONSTRUCT(&stack->mutex, ompi_mutex_t);
-    OBJ_CONSTRUCT(&stack->cond, ompi_condition_t);
-    stack->rc = 0;
-    stack->complete = false;
-}
-
-static void orte_pls_bproc_stack_destruct(orte_pls_bproc_stack_t* stack)
-{
-    OBJ_DESTRUCT(&stack->mutex);
-    OBJ_DESTRUCT(&stack->cond);
-}
-
-static OBJ_CLASS_INSTANCE(
-    orte_pls_bproc_stack_t,
-    ompi_object_t,
-    orte_pls_bproc_stack_construct,
-    orte_pls_bproc_stack_destruct);
-
-
-static void orte_pls_bproc_seed_launch_cb(int fd, short event, void* args)
-{
-    orte_pls_bproc_stack_t *stack = (orte_pls_bproc_stack_t*)args;
-    int pid;
-    int rc;
-
-    pid = fork();
-    if(pid < 0) {
-        ompi_output(0, "orte_pls_bproc: fork failed with errno=%d\n", errno);
-        stack->rc = ORTE_ERR_OUT_OF_RESOURCE;
-
-    } else if (pid == 0) {
-
-        pthread_kill_other_threads_np();
-        ompi_set_using_threads(false);
-        rc = ompi_event_restart();
-        if(ORTE_SUCCESS != rc) {
-            ORTE_ERROR_LOG(rc);
-            exit(rc);
-        }
-        rc = orte_pls_bproc_seed_launch_internal(stack->jobid);
-        orte_finalize();
-        exit(rc);
-
-    } else {
-
-        OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
-        mca_pls_bproc_seed_component.num_children++;
-        OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
-        orte_wait_cb(pid, orte_pls_bproc_wait_proc, NULL);
-
-        stack->rc = ORTE_SUCCESS;
-    }
-
-    OMPI_THREAD_LOCK(&stack->mutex);
-    stack->complete = true;
-    ompi_condition_signal(&stack->cond);
-    OMPI_THREAD_UNLOCK(&stack->mutex);
-}
-
-#endif
-
-
-int orte_pls_bproc_seed_launch(orte_jobid_t jobid)
-{
-#if OMPI_HAVE_POSIX_THREADS && OMPI_THREADS_HAVE_DIFFERENT_PIDS
-    struct timeval tv = { 0, 0 };
-    struct ompi_event event;
-    struct orte_pls_bproc_stack_t stack;
-
-    OBJ_CONSTRUCT(&stack, orte_pls_bproc_stack_t);
-
-    stack.jobid = jobid;
-    ompi_evtimer_set(&event, orte_pls_bproc_seed_launch_cb, &stack);
-    ompi_evtimer_add(&event, &tv);
-   
-    OMPI_THREAD_LOCK(&stack.mutex);
-    while(stack.complete == false)
-         ompi_condition_wait(&stack.cond, &stack.mutex);
-    OMPI_THREAD_UNLOCK(&stack.mutex);
-    OBJ_DESTRUCT(&stack);
-    return stack.rc;
-#else
-    return orte_pls_bproc_seed_launch_internal(jobid);
-#endif
-}
-
-
 /**
  * Terminate all processes associated with this job - including
  * daemons.
  */
+
 int orte_pls_bproc_seed_terminate_job(orte_jobid_t jobid)
 {
     pid_t* pids;
@@ -736,5 +640,104 @@ int orte_pls_bproc_seed_finalize(void)
 {
     return ORTE_SUCCESS;
 }
+
+
+/*
+ * Handle threading issues.
+ */
+
+#if OMPI_HAVE_POSIX_THREADS && OMPI_THREADS_HAVE_DIFFERENT_PIDS
+
+struct orte_pls_bproc_stack_t {
+    ompi_condition_t cond;
+    ompi_mutex_t mutex;
+    bool complete;
+    orte_jobid_t jobid;
+    int rc;
+};
+typedef struct orte_pls_bproc_stack_t orte_pls_bproc_stack_t;
+
+static void orte_pls_bproc_stack_construct(orte_pls_bproc_stack_t* stack)
+{
+    OBJ_CONSTRUCT(&stack->mutex, ompi_mutex_t);
+    OBJ_CONSTRUCT(&stack->cond, ompi_condition_t);
+    stack->rc = 0;
+    stack->complete = false;
+}
+
+static void orte_pls_bproc_stack_destruct(orte_pls_bproc_stack_t* stack)
+{
+    OBJ_DESTRUCT(&stack->mutex);
+    OBJ_DESTRUCT(&stack->cond);
+}
+
+static OBJ_CLASS_INSTANCE(
+    orte_pls_bproc_stack_t,
+    ompi_object_t,
+    orte_pls_bproc_stack_construct,
+    orte_pls_bproc_stack_destruct);
+
+
+static void orte_pls_bproc_seed_launch_cb(int fd, short event, void* args)
+{
+    orte_pls_bproc_stack_t *stack = (orte_pls_bproc_stack_t*)args;
+    int pid;
+    int rc;
+
+    pid = fork();
+    if(pid < 0) {
+        ompi_output(0, "orte_pls_bproc: fork failed with errno=%d\n", errno);
+        stack->rc = ORTE_ERR_OUT_OF_RESOURCE;
+
+    } else if (pid == 0) {
+
+        pthread_kill_other_threads_np();
+        ompi_set_using_threads(false);
+        rc = ompi_event_restart();
+        if(ORTE_SUCCESS != rc) {
+            ORTE_ERROR_LOG(rc);
+            exit(rc);
+        }
+        rc = orte_pls_bproc_seed_launch(stack->jobid);
+        orte_finalize();
+        exit(rc);
+
+    } else {
+
+        OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
+        mca_pls_bproc_seed_component.num_children++;
+        OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
+        orte_wait_cb(pid, orte_pls_bproc_wait_proc, NULL);
+
+        stack->rc = ORTE_SUCCESS;
+    }
+
+    OMPI_THREAD_LOCK(&stack->mutex);
+    stack->complete = true;
+    ompi_condition_signal(&stack->cond);
+    OMPI_THREAD_UNLOCK(&stack->mutex);
+}
+
+int orte_pls_bproc_seed_launch_threaded(orte_jobid_t jobid)
+{
+    struct timeval tv = { 0, 0 };
+    struct ompi_event event;
+    struct orte_pls_bproc_stack_t stack;
+
+    OBJ_CONSTRUCT(&stack, orte_pls_bproc_stack_t);
+
+    stack.jobid = jobid;
+    ompi_evtimer_set(&event, orte_pls_bproc_seed_launch_cb, &stack);
+    ompi_evtimer_add(&event, &tv);
+   
+    OMPI_THREAD_LOCK(&stack.mutex);
+    while(stack.complete == false)
+         ompi_condition_wait(&stack.cond, &stack.mutex);
+    OMPI_THREAD_UNLOCK(&stack.mutex);
+    OBJ_DESTRUCT(&stack);
+    return stack.rc;
+}
+
+#endif
 
 

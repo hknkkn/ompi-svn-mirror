@@ -43,7 +43,8 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
 {
     char *tmp;
     int i, j, k, num_inst, id, rc;
-    
+    int ival;
+
     if (ORTE_SUCCESS != (rc = orte_parse_context_setup_cmd(cmd_line, context_tbl))) {
         ORTE_ERROR_LOG(rc);
         return rc;
@@ -164,7 +165,6 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                     break;
                         
                 case ORTE_INT:
-                case ORTE_BOOL:
                     if (0 > (id = mca_base_param_register_int(context_tbl[i].name.prime,
                                                 context_tbl[i].name.second,
                                                 context_tbl[i].name.third,
@@ -178,6 +178,22 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                         return rc;
                     }
                     break;
+
+                case ORTE_BOOL:
+                    if (0 > (id = mca_base_param_register_int(context_tbl[i].name.prime,
+                                                context_tbl[i].name.second,
+                                                context_tbl[i].name.third,
+                                                NULL, (int)(context_tbl[i].def)))) {
+                        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                        return ORTE_ERR_BAD_PARAM;
+                    }
+                    if (ORTE_SUCCESS != (rc = mca_base_param_lookup_int(id, &ival))) {
+                        ORTE_ERROR_LOG(rc);
+                        return rc;
+                    }
+                    *((bool*)context_tbl[i].dest) = (ival ? true : false);
+                    break;
+
 
                 default:
                     ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);

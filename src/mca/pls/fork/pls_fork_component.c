@@ -97,18 +97,6 @@ static  int orte_pls_fork_param_register_int(
     return param_value;
 }
                                                                                                   
-                                                                                                  
-static char* orte_pls_fork_param_register_string(
-    const char* param_name,
-    const char* default_value)
-{
-    char *param_value;
-    int id = mca_base_param_register_string("pls","fork",param_name,NULL,default_value);
-    mca_base_param_lookup_string(id, &param_value);
-    return param_value;
-}
-                                                                                                  
-                                                                                                  
 
 int orte_pls_fork_component_open(void)
 {

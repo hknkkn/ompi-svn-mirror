@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 
 #include "include/orte_constants.h"
+#include "event/event.h"
 #include "util/argv.h"
 #include "util/output.h"
 #include "util/sys_info.h"
@@ -43,9 +44,15 @@
 #include "pls_fork.h"
 
 
+static int orte_pls_fork_launch_threaded(orte_jobid_t);
+
 
 orte_pls_base_module_1_0_0_t orte_pls_fork_module = {
+#if OMPI_HAVE_POSIX_THREADS && OMPI_THREADS_HAVE_DIFFERENT_PIDS
+    orte_pls_fork_launch_threaded,
+#else
     orte_pls_fork_launch,
+#endif
     orte_pls_fork_terminate_job,
     orte_pls_fork_terminate_proc,
     orte_pls_fork_finalize
@@ -67,7 +74,7 @@ static void orte_pls_fork_wait_proc(pid_t pid, int status, void* cbdata)
         ORTE_ERROR_LOG(rc);
     }
     OBJ_RELEASE(proc);
-                                                                                                                  
+
     /* release any waiting threads */
     OMPI_THREAD_LOCK(&mca_pls_fork_component.lock);
     mca_pls_fork_component.num_children--;
@@ -143,7 +150,7 @@ static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_
             ORTE_ERROR_LOG(rc);
             return rc;
         }
-                                                                                                                      
+
         rc = orte_iof.iof_publish(&proc->proc_name, ORTE_IOF_SOURCE, ORTE_IOF_STDERR, p_stderr[0]);
         if(ORTE_SUCCESS != rc) {
             ORTE_ERROR_LOG(rc);
@@ -207,4 +214,73 @@ int orte_pls_fork_finalize(void)
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
+
+/**
+ * Handle threading issues.
+ */
+
+#if OMPI_HAVE_POSIX_THREADS && OMPI_THREADS_HAVE_DIFFERENT_PIDS
+                                                                                                        
+struct orte_pls_fork_stack_t {
+    ompi_condition_t cond;
+    ompi_mutex_t mutex;
+    bool complete;
+    orte_jobid_t jobid;
+    int rc;
+};
+typedef struct orte_pls_fork_stack_t orte_pls_fork_stack_t;
+                                                                                                        
+static void orte_pls_fork_stack_construct(orte_pls_fork_stack_t* stack)
+{
+    OBJ_CONSTRUCT(&stack->mutex, ompi_mutex_t);
+    OBJ_CONSTRUCT(&stack->cond, ompi_condition_t);
+    stack->rc = 0;
+    stack->complete = false;
+}
+                                                                                                        
+static void orte_pls_fork_stack_destruct(orte_pls_fork_stack_t* stack)
+{
+    OBJ_DESTRUCT(&stack->mutex);
+    OBJ_DESTRUCT(&stack->cond);
+}
+                                                                                                        
+static OBJ_CLASS_INSTANCE(
+    orte_pls_fork_stack_t,
+    ompi_object_t,
+    orte_pls_fork_stack_construct,
+    orte_pls_fork_stack_destruct);
+                                                                                                        
+
+static void orte_pls_fork_launch_cb(int fd, short event, void* args)
+{
+    orte_pls_fork_stack_t *stack = (orte_pls_fork_stack_t*)args;
+    OMPI_THREAD_LOCK(&stack->mutex);
+    stack->rc = orte_pls_fork_launch(stack->jobid);
+    stack->complete = true;
+    ompi_condition_signal(&stack->cond);
+    OMPI_THREAD_UNLOCK(&stack->mutex);
+}
+
+static int orte_pls_fork_launch_threaded(orte_jobid_t jobid)
+{
+
+    struct timeval tv = { 0, 0 };
+    struct ompi_event event;
+    struct orte_pls_fork_stack_t stack;
+                                                                                                        
+    OBJ_CONSTRUCT(&stack, orte_pls_fork_stack_t);
+                                                                                                        
+    stack.jobid = jobid;
+    ompi_evtimer_set(&event, orte_pls_fork_launch_cb, &stack);
+    ompi_evtimer_add(&event, &tv);
+                                                                                                        
+    OMPI_THREAD_LOCK(&stack.mutex);
+    while(stack.complete == false)
+         ompi_condition_wait(&stack.cond, &stack.mutex);
+    OMPI_THREAD_UNLOCK(&stack.mutex);
+    OBJ_DESTRUCT(&stack);
+    return stack.rc;
+}
+                                                                                                        
+#endif
 

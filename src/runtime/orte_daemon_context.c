@@ -28,11 +28,11 @@
 #include "runtime/runtime.h"
 
 orte_context_value_names_t orte_daemon_context_tbl[] = {
-    {{"universe", "scope", NULL}, "scope", 1, ORTE_STRING, (void*)&(orte_universe_info.scope), "exclusive"},
+    {{"universe", "scope", NULL}, "scope", 1, ORTE_STRING, (void*)&(orte_universe_info.scope), "public"},
     {{"universe", "persistence", NULL}, "persistent", 0, ORTE_BOOL, (void*)&(orte_universe_info.persistence), (void*)false},
     {{"universe", "console", NULL}, "console", 0, ORTE_BOOL, (void*)&(orte_universe_info.console), (void*)false},
     {{"universe", "script", NULL}, "script", 1, ORTE_STRING, (void*)&(orte_universe_info.scriptfile), NULL},
-    {{"orte", "bootproxy", NULL}, "bootproxy", 0, ORTE_INT, (void*)&(orte_universe_info.bootproxy), (void*)false},
+    {{"orte", "bootproxy", NULL}, "bootproxy", 1, ORTE_INT, (void*)&(orte_universe_info.bootproxy), (void*)false},
     {{"gpr", "replica", "uri"}, "gprreplica", 1, ORTE_STRING, (void*)&(orte_process_info.gpr_replica_uri), NULL},
     {{"ns", "replica", "uri"}, "nsreplica", 1, ORTE_STRING, (void*)&(orte_process_info.ns_replica_uri), NULL},
     {{"ns", "nds", "name"}, "name", 1, ORTE_NAME, (void*)&(orte_process_info.my_name), NULL},

@@ -26,6 +26,7 @@
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
+#include <fcntl.h>
 #include <errno.h>
 
 #include "include/orte_constants.h"
@@ -78,8 +79,8 @@ int main(int argc, char *argv[])
 {
     int ret = 0;
     ompi_cmd_line_t *cmd_line = NULL;
-    char *contact_file;
-    char *filenm;
+    char *contact_path = NULL;
+    char *log_path = NULL;
 
     /* setup to check common command line options that just report and die */
     cmd_line = OBJ_NEW(ompi_cmd_line_t);
@@ -105,28 +106,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    /* set debug flag for now */
-    orted_globals.debug = true;
-    
-    /* check to see if I'm a bootproxy */
-    if (orte_universe_info.bootproxy) { /* perform bootproxy-specific things */
-        if (ORTE_SUCCESS != (ret = orte_daemon_bootproxy())) {
-            ORTE_ERROR_LOG(ret);
-        }
-        ret = orte_finalize();
-        exit(ret);
-    }
-    
-    /* if not debugging or bootproxy, daemonize myself */
-#ifndef WIN32
-    if (!orted_globals.debug && !orte_universe_info.bootproxy) {
-        ompi_output(0, "orted: daemonizing");
-        orte_daemon_init(NULL);
-    } else {
-        ompi_output(0, "orted: debug mode - not daemonizing");
-    }
-#endif
-
     /* Okay, now on to serious business
      * First, ensure the process info structure in instantiated and initialized
      * and set the daemon flag to true
@@ -145,6 +124,47 @@ int main(int argc, char *argv[])
     if (ORTE_SUCCESS != (ret = orte_init(cmd_line, argc, argv))) {
         fprintf(stderr, "orted: failed to init rte\n");
         return ret;
+    }
+
+    /*
+     * Detach from controlling terminal - setup stdin/stdout/stderr 
+     */
+
+    if (!orted_globals.debug) {
+        int fd;
+        char log_file[PATH_MAX];
+
+        /* connect input to /dev/null */
+        fd = open("/dev/null", O_RDONLY);
+        if(fd > 0) {
+            dup2(fd, 0);
+            close(fd);
+        }
+
+        /* connect output to a log file in the session directory */
+        sprintf(log_file, "orted-%d-%s.log", 
+            orte_process_info.my_name->jobid, orte_system_info.nodename);
+	    log_path = orte_os_path(false, orte_process_info.universe_session_dir, log_file, NULL);
+        fd = open(log_path, O_RDWR|O_CREAT|O_TRUNC, 0666);
+        if(fd >= 0) {
+            dup2(fd, 1);
+            dup2(fd, 2);
+            if(fd > 2) {
+               close(fd);
+            }
+        }
+
+        /* detach from controlling terminal */
+        orte_daemon_init(NULL);
+    }
+
+    /* check to see if I'm a bootproxy */
+    if (orte_universe_info.bootproxy) { /* perform bootproxy-specific things */
+        if (ORTE_SUCCESS != (ret = orte_daemon_bootproxy())) {
+            ORTE_ERROR_LOG(ret);
+        }
+        ret = orte_finalize();
+        exit(ret);
     }
 
     /* setup the thread lock and condition variable */
@@ -182,11 +202,11 @@ int main(int argc, char *argv[])
 	        orte_universe_info.seed_uri = NULL;
 	    }
 	    orte_universe_info.seed_uri = orte_rml.get_uri();
-	    contact_file = orte_os_path(false, orte_process_info.universe_session_dir,
+	    contact_path = orte_os_path(false, orte_process_info.universe_session_dir,
 				    "universe-setup.txt", NULL);
-	    ompi_output(0, "ompid: contact_file %s", contact_file);
+	    ompi_output(0, "ompid: contact_file %s", contact_path);
 
-	    if (OMPI_SUCCESS != (ret = orte_write_universe_setup_file(contact_file))) {
+	    if (OMPI_SUCCESS != (ret = orte_write_universe_setup_file(contact_path))) {
 	        if (orted_globals.debug) {
 		        ompi_output(0, "[%d,%d,%d] ompid: couldn't write setup file", ORTE_NAME_ARGS(orte_process_info.my_name));
 	        }
@@ -228,10 +248,12 @@ int main(int argc, char *argv[])
 	   ompi_output(0, "[%d,%d,%d] ompid: mutex cleared - finalizing", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
-    /* if i'm the seed, remove the universe-setup file */
-    if (orte_process_info.seed) {
-	   filenm = orte_os_path(false, orte_process_info.universe_session_dir, "universe-setup.txt", NULL);
-	   unlink(filenm);
+    /* cleanup */
+    if (NULL != contact_path) {
+	    unlink(contact_path);
+    }
+    if (NULL != log_path) {
+        unlink(log_path);
     }
 
     /* finalize the system */

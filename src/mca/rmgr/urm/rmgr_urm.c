@@ -152,6 +152,17 @@ static int orte_rmgr_urm_spawn(
     int rc;
     orte_process_name_t* name;
  
+    /* 
+     * Perform resource discovery.
+     */
+    if (mca_rmgr_urm_component.urm_rds == false &&
+        ORTE_SUCCESS != (rc = orte_rds_base_query())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    } else {
+        mca_rmgr_urm_component.urm_rds = true;
+    }
+
     /*
      * Initialize job segment and allocate resources
      */

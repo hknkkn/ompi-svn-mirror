@@ -118,10 +118,15 @@ int orte_pls_rsh_component_open(void)
     /* initialize globals */
     OBJ_CONSTRUCT(&mca_pls_rsh_component.lock, ompi_mutex_t);
     OBJ_CONSTRUCT(&mca_pls_rsh_component.cond, ompi_condition_t);
+    mca_pls_rsh_component.num_children = 0;
 
     /* lookup parameters */
     mca_pls_rsh_component.debug = orte_pls_rsh_param_register_int("debug",1);
+    mca_pls_rsh_component.num_concurrent = orte_pls_rsh_param_register_int("num_concurrent",128);
+    mca_pls_rsh_component.orted = orte_pls_rsh_param_register_string("orted","orted");
     mca_pls_rsh_component.priority = orte_pls_rsh_param_register_int("priority",10);
+    mca_pls_rsh_component.reap = orte_pls_rsh_param_register_int("priority",10);
+
     param = orte_pls_rsh_param_register_string("agent","ssh");
     mca_pls_rsh_component.argv = ompi_argv_split(param, ' ');
     mca_pls_rsh_component.argc = ompi_argv_count(mca_pls_rsh_component.argv);
@@ -145,6 +150,14 @@ orte_pls_base_module_t *orte_pls_rsh_component_init(int *priority)
 
 int orte_pls_rsh_component_close(void)
 {
+    if(mca_pls_rsh_component.reap) {
+        OMPI_THREAD_LOCK(&mca_pls_rsh_component.lock);
+        while(mca_pls_rsh_component.num_children > 0) {
+            ompi_condition_wait(&mca_pls_rsh_component.cond, &mca_pls_rsh_component.lock);
+        }
+        OMPI_THREAD_UNLOCK(&mca_pls_rsh_component.lock);
+    }
+
     OBJ_DESTRUCT(&mca_pls_rsh_component.lock);
     OBJ_DESTRUCT(&mca_pls_rsh_component.cond);
     ompi_argv_free(mca_pls_rsh_component.argv);

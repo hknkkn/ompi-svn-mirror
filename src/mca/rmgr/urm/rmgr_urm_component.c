@@ -118,6 +118,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
         ORTE_ERROR_LOG(rc);
         return NULL;
     }
+    mca_rmgr_urm_component.urm_rds = false;
 
     /**
      * Select RAS component

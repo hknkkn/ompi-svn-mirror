@@ -55,7 +55,16 @@ int orte_universe_exists()
     orte_sys_info();
     
     /* if both ns_replica and gpr_replica were provided, check for contact with them */
-    if (NULL != orte_process_info.ns_replica && NULL != orte_process_info.gpr_replica) {
+    if (NULL != orte_process_info.ns_replica_uri && NULL != orte_process_info.gpr_replica_uri) {
+       orte_process_name_t name;
+       if(ORTE_SUCCESS != (ret = orte_rml.parse_uris(orte_process_info.ns_replica_uri, &name, NULL)))
+           return ret;
+       if(ORTE_SUCCESS != (ret = orte_ns.copy_process_name(&orte_process_info.ns_replica, &name)))
+           return ret;
+       if(ORTE_SUCCESS != (ret = orte_rml.parse_uris(orte_process_info.gpr_replica_uri, &name, NULL)))
+           return ret;
+       if(ORTE_SUCCESS != (ret = orte_ns.copy_process_name(&orte_process_info.gpr_replica, &name)))
+           return ret;
 	   return ORTE_SUCCESS;
     }
 

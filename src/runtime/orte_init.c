@@ -361,6 +361,14 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
         return ret;
     }
 
+    /* set contact info for ns/gpr */
+    if(NULL != orte_process_info.ns_replica_uri) {
+        orte_rml.set_uri(orte_process_info.ns_replica_uri);
+    }
+    if(NULL != orte_process_info.gpr_replica_uri) {
+        orte_rml.set_uri(orte_process_info.gpr_replica_uri);
+    }
+
     /* 
      * Initialize the selected modules now that all components/name are available.
      */

@@ -51,10 +51,14 @@ int orte_pls_rsh_terminate_proc(const orte_process_name_t* proc_name);
 struct orte_pls_rsh_component_t {
     orte_pls_base_component_t super;
     int debug;
+    int reap;
     int priority;
     char** argv;
     int argc;
+    char* orted;
     char* path;
+    size_t num_children;
+    size_t num_concurrent;
     ompi_mutex_t lock;
     ompi_condition_t cond;
 };
