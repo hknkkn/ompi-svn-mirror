@@ -18,6 +18,7 @@
 
 #include <sys/types.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "mca/ns/base/base.h"
 

@@ -23,6 +23,7 @@
 #include "orte_config.h"
 
 #include <sys/types.h>
+#include <netinet/in.h>
 
 #include "mca/ns/base/base.h"
 

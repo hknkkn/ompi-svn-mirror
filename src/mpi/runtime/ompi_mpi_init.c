@@ -267,7 +267,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
         error = "orte_name_services - failed to get jobid";
         goto error;
     }
-    if (ORTE_SUCCESS != orte_name_services.get_jobid_string(&jobid_string, ompi_rte_get_self())) {
+    if (ORTE_SUCCESS != orte_name_services.get_jobid_string(jobid_string, ompi_rte_get_self())) {
         error = "orte_name_services - failed to get jobid string";
         goto error;
     }
@@ -279,7 +279,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     ompi_registry.assign_ownership(segment, jobid);
     free(segment);
 
-    if (ORTE_SUCCESS != orte_name_services.get_vpid(&my_status.rank, ompi_rte_get_self())) {
+    if (ORTE_SUCCESS != orte_name_services.get_vpid((orte_vpid_t*)(&my_status.rank), ompi_rte_get_self())) {
         error = "orte_name_services - failed to get vpid";
         goto error;
     }

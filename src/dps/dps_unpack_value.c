@@ -23,6 +23,7 @@
 #include "orte_config.h"
 
 #include <sys/types.h>
+#include <netinet/in.h>
 
 #include "mca/ns/base/base.h"
 
@@ -192,15 +193,15 @@ int orte_dps_unpack_value(orte_buffer_t *buffer, void *dest,
                 return ORTE_ERR_OUT_OF_RESOURCE;
             }
             proc_status_src = (orte_process_status_t *) src;
-            if (1 == tst) {  /* single byte field */
-                *proc_status_dest = *proc_status_src;
-            } else if (2 == tst) {  /* two byte field */
-                *proc_status_dest = ntohs(*proc_status_src);
-            } else if (4 == tst) { /* four byte field */
-                *proc_status_dest = ntohl(*proc_status_src);
-            } else {  /* no idea what this is */
-                return ORTE_ERROR;
-            }
+//            if (1 == tst) {  /* single byte field */
+//                *proc_status_dest = *proc_status_src;
+//            } else if (2 == tst) {  /* two byte field */
+//                *proc_status_dest = ntohs(*proc_status_src);
+//            } else if (4 == tst) { /* four byte field */
+//                *proc_status_dest = ntohl(*proc_status_src);
+//            } else {  /* no idea what this is */
+//                return ORTE_ERROR;
+//            }
             dest = (void *) proc_status_dest;
             break;
 

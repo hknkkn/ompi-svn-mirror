@@ -79,7 +79,7 @@ ompi_rte_process_status_t *ompi_rte_get_process_status(orte_process_name_t *proc
 int ompi_rte_set_process_status(ompi_rte_process_status_t *status,
 				orte_process_name_t *proc)
 {
-    char *segment, jobidstring;
+    char *segment, *jobidstring;
     char *tokens[2];
     void *addr;
     int size, rc;

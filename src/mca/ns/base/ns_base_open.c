@@ -69,6 +69,7 @@ mca_ns_base_module_t orte_name_services = {
     orte_ns_base_unpack_cellid,
     orte_ns_base_pack_jobid,
     orte_ns_base_unpack_jobid,
+    orte_ns_base_derive_vpid,
     orte_ns_base_assign_oob_tag_not_available
 };
 bool mca_ns_base_selected = false;
