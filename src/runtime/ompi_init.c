@@ -130,7 +130,6 @@ char *orte_data_strings[] = {
     "ORTE_GPR_NOTIFY_ID",
     "ORTE_GPR_VALUE",
     "ORTE_DATA_TYPE",
-    "ORTE_APP_INFO",
     "ORTE_APP_CONTEXT",
     "ORTE_NULL"
 };

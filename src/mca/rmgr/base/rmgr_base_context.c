@@ -77,6 +77,7 @@ int orte_rmgr_base_put_app_context(
         (value->keyvals[i])->key = strdup(ORTE_APP_CONTEXT_KEY);
         (value->keyvals[i])->type = ORTE_APP_CONTEXT;
         (value->keyvals[i])->value.app_context = app_context[i];
+        app_context[i]->idx = i;
     }
             
     rc = orte_gpr.put(
@@ -88,6 +89,22 @@ cleanup:
     OBJ_RELEASE(value);
     free(jobid_string);
     return rc;
+}
+
+
+/*
+ * Comparison function for sorting context by index.
+ */
+
+static int orte_rmgr_base_cmp_app_context(
+    orte_app_context_t* app1,
+    orte_app_context_t* app2)
+{
+    if(app1->idx < app2->idx)
+        return -1;
+    if(app1->idx > app2->idx)
+        return 1;
+    return 0;
 }
 
 
@@ -146,6 +163,8 @@ int orte_rmgr_base_get_app_context(
             keyval->value.app_context = NULL;
         }
     }
+    qsort(app_context, *num_context, sizeof(orte_app_context_t*), 
+        (int (*)(const void*,const void*))orte_rmgr_base_cmp_app_context);
 
 cleanup:
     for(i=0; i<num_values; i++) {

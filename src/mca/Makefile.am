@@ -16,27 +16,28 @@ include $(top_srcdir)/config/Makefile.options
 
 SUBDIRS = \
 	allocator \
-    base \
-    coll \
-    common \
-    errmgr \
-    gpr \
-    io \
-    iof \
-    mpool \
-    ns \
-    oob \
+	base \
+	coll \
+	common \
+	errmgr \
+	gpr \
+	io \
+	iof \
+	gpr \
+	mpool \
+	ns \
+	oob \
 	pls \
-    pml \
-    ptl \
-    rml \
+	pml \
+	ptl \
+	rml \
 	ras \
 	rds \
 	rmaps \
 	rmgr \
-    soh \
-    svc \
-    topo
+	soh \
+	svc \
+	topo
 
 # Source code files
 

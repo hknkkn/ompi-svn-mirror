@@ -78,6 +78,7 @@ typedef struct {
                                                                                             
 typedef struct {
     ompi_object_t super;
+    int32_t idx;          /* unique index when multiple apps per job */ 
     char   *app;
     int32_t num_procs;
     int32_t argc;
@@ -103,6 +104,7 @@ typedef int8_t orte_node_state_t;
 #define ORTE_NODE_STATE_UNKNOWN  0x00
 #define ORTE_NODE_STATE_DOWN     0x01
 #define ORTE_NODE_STATE_UP       0x02
+#define ORTE_NODE_STATE_REBOOT   0x03
 
 
 #endif  /* ORTE_TYPES_H */

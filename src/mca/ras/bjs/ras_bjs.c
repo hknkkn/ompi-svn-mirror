@@ -32,13 +32,16 @@
 
 static int orte_ras_bjs_node_state(int node)
 {
-    char status[32];
-    bproc_nodestatus(node, status, sizeof(status));
-    if(strcmp(status, "up") == 0)
+    switch(bproc_nodestatus(node)) {
+    case bproc_node_up:
         return ORTE_NODE_STATE_UP;
-    if(strcmp(status, "down") == 0)
+    case bproc_node_down:
         return ORTE_NODE_STATE_DOWN;
-    return ORTE_NODE_STATE_UNKNOWN;
+    case bproc_node_boot:
+        return ORTE_NODE_STATE_REBOOT;
+    default:
+        return ORTE_NODE_STATE_UNKNOWN;
+    }
 }
 
 
@@ -159,7 +162,7 @@ static int orte_ras_bjs_discover(ompi_list_t* nodelist)
             rc = ORTE_NODE_DOWN;
             goto cleanup;
         }
-        if(bproc_access(node, BPROC_X_OK) != 0) {
+        if(bproc_access(node_num, BPROC_X_OK) != 0) {
             ompi_output(0, "error: a specified node (%d) is not accessible.\n", node_num);
             rc = ORTE_NODE_ERROR;
             goto cleanup;
