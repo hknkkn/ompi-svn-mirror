@@ -87,7 +87,7 @@ main(int argc, char *argv[], char* env[])
     orte_app_context_t app;
     orte_app_context_t *apps[1];
     ompi_cmd_line_t cmd_line;
-    char cwd[MAXPATHLEN];
+    char cwd[OMPI_PATH_MAX];
     int rc;
 
 
