@@ -366,7 +366,6 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
     }
     
     /* allocate a range of vpids for the daemons */
-    ompi_output(0, "num_nodes=%d\n", num_nodes);
     if(ORTE_SUCCESS != (rc = orte_ns.reserve_range(0, num_nodes, &daemon_vpid_start))) {
         ORTE_ERROR_LOG(rc);
         goto cleanup;
@@ -443,8 +442,11 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             _exit(-1);
         }
         if(mca_pls_bproc_seed_component.debug) {
-            ompi_output(0, "orte_pls_bproc: node=%s name=%d.%d.%d\n", 
-                node->node_name, orte_process_info.my_name->cellid, 0, daemon_vpid_start+rank);
+            ompi_output(0, "orte_pls_bproc: node=%s name=%d.%d.%d procs=%d\n", 
+                node->node_name, 
+                orte_process_info.my_name->cellid, 0, 
+                daemon_vpid_start+rank,
+                ompi_list_get_size(&node->node_procs));
         }
 
         /* restart the daemon w/ the new process name */
