@@ -44,6 +44,8 @@ int mca_io_base_component_init(void)
 {
     OBJ_CONSTRUCT(&components_in_use, ompi_list_t);
 
+    ompi_progress_register(mca_io_base_progress);
+
     return OMPI_SUCCESS;
 }
 
@@ -190,6 +192,8 @@ int mca_io_base_progress(void)
     }
 
     OMPI_THREAD_UNLOCK(&mutex);
+
+    ompi_progress_pending_io_reqs -= count;
 
     return count;
 }

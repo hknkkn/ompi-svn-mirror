@@ -151,6 +151,9 @@ int mca_pml_base_select(mca_pml_base_module_t *selected,
                      "select: component %s selected",
                      component->pmlm_version.mca_component_name);
 
+  /* register the winner's callback */
+  ompi_progress_register(mca_pml.pml_progress);
+
   /* All done */
 
   return OMPI_SUCCESS;
