@@ -44,7 +44,7 @@ int mca_oob_barrier(void)
             return rc;
         }
  
-        rc = mca_oob_recv(&peers[0],&iov,1,&tag,0);
+        rc = mca_oob_recv(&peers[0],&iov,1,tag,0);
         if (rc < 0) {
             return rc;
         }
@@ -54,7 +54,7 @@ int mca_oob_barrier(void)
     else {
         int tag=-1;
         for (i = 1; i < npeers; i++) {
-            rc = mca_oob_recv(&peers[i],&iov,1,&tag,0);
+            rc = mca_oob_recv(&peers[i],&iov,1,tag,0);
             if (rc < 0) {
                 return rc;
             }

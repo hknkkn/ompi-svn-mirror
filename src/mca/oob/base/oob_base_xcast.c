@@ -49,9 +49,7 @@ int mca_oob_xcast(
     int cmpval;
 
     /* check to see if I am the root process name */
-    if (ORTE_SUCCESS != (rc = orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, root, ompi_rte_get_self()))) {
-        return rc;
-    }
+    cmpval = orte_ns.compare(ORTE_NS_CMP_ALL, root, orte_process_info.my_name);
     if(NULL != root && 0 == cmpval) {
         for (ptr = (orte_name_services_namelist_t*)ompi_list_get_first(peers);
 	     ptr != (orte_name_services_namelist_t*)ompi_list_get_end(peers);

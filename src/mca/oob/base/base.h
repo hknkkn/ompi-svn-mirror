@@ -41,7 +41,6 @@ extern "C" {
 
 OMPI_DECLSPEC extern orte_process_name_t mca_oob_name_any;
 OMPI_DECLSPEC extern orte_process_name_t mca_oob_name_seed;
-OMPI_DECLSPEC extern orte_process_name_t mca_oob_name_self;
 
 /*
  * OOB API 
@@ -210,7 +209,7 @@ OMPI_DECLSPEC int mca_oob_recv(
     orte_process_name_t* peer, 
     struct iovec *msg, 
     int count, 
-    int* tag, 
+    int tag, 
     int flags);
 
 /**
@@ -230,8 +229,8 @@ OMPI_DECLSPEC int mca_oob_recv(
 
 OMPI_DECLSPEC int mca_oob_recv_packed (
 	orte_process_name_t* peer, 
-	orte_buffer_t* *buf, 
-	int* tag);
+	orte_buffer_t *buf, 
+	int tag);
 
 /*
  * Non-blocking versions of send/recv.

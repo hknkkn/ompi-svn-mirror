@@ -44,7 +44,6 @@ OBJ_CLASS_INSTANCE(
     NULL
 );
 
-orte_process_name_t mca_oob_name_self  = { ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX };
 orte_process_name_t mca_oob_name_seed  = { 0, 0, 0 };
 orte_process_name_t mca_oob_name_any  = { ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX };
 
@@ -68,7 +67,7 @@ int mca_oob_parse_contact_info(
     }
     *ptr = '\0';
     ptr++;
-    if (ORTE_SUCCESS != orte_name_services.convert_string_to_process_name(proc_name, cinfo)) {
+    if (ORTE_SUCCESS != orte_ns.convert_string_to_process_name(&proc_name, cinfo)) {
         name = NULL;
         return OMPI_ERROR;
     }
@@ -199,7 +198,7 @@ char* mca_oob_get_contact_info()
     size_t size = strlen(proc_name) + 1 + strlen(proc_addr) + 1;
     char *contact_info = malloc(size);
     
-    if (ORTE_SUCCESS != orte_name_services.get_proc_name_string(proc_name, MCA_OOB_NAME_SELF)) {
+    if (ORTE_SUCCESS != orte_ns.get_proc_name_string(proc_name, orte_process_info.my_name)) {
         return NULL;
     }
     sprintf(contact_info, "%s;%s", proc_name, proc_addr);
@@ -251,9 +250,6 @@ int mca_oob_set_contact_info(const char* contact_info)
 int mca_oob_base_module_init(void)
 {
   ompi_list_item_t* item;
-
-  /* setup self to point to actual process name */
-  mca_oob_name_self = *ompi_rte_get_self();
 
   /* Initialize all modules after oob/gpr/ns have initialized */
   for (item =  ompi_list_get_first(&mca_oob_base_modules);

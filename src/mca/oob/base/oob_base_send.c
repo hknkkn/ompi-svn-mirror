@@ -25,8 +25,8 @@
 
 #include "include/constants.h"
 
+#include "dps/dps.h"
 #include "mca/ns/ns_types.h"
-
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
 #include "util/output.h"
@@ -54,7 +54,7 @@ int mca_oob_send(orte_process_name_t* peer, struct iovec *msg, int count, int ta
 * @return            OMPI error code (<0) on error or number of bytes actually sent.
 */
                                                                                                          
-int mca_oob_send_packed (orte_process_name_t* peer, orte_buffer_t buffer, int tag, int flags)
+int mca_oob_send_packed (orte_process_name_t* peer, orte_buffer_t* buffer, int tag, int flags)
 {
     void *dataptr;
     size_t datalen;

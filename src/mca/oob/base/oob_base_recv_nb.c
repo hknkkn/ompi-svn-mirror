@@ -16,8 +16,8 @@
 #include "ompi_config.h"
 #include "include/constants.h"
 
+#include "dps/dps.h"
 #include "mca/ns/ns_types.h"
-
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
 #include <string.h>
@@ -146,7 +146,7 @@ static void mca_oob_recv_callback(
     }
 
     /* init a buffer with the received message */
-    OBJ_CONSTRUCT(&buffer);
+    OBJ_CONSTRUCT(&buffer, orte_buffer_t);
     orte_dps.load(&buffer,msg[0].iov_base,msg[0].iov_len);
 
     /* call users callback function */
