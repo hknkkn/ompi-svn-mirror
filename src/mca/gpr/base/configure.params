@@ -16,9 +16,7 @@
 # Specific to this module
 
 PARAM_INIT_FILE = \
-	"api_layer/gpr_replica_del_index_api.c \
-	transition_layer/gpr_replica_segment_tl.c \
-	functional_layer/gpr_replica_alerts_fn.c \
-	communications/gpr_replica_recv_proxy_msgs.c"
+	"pack_api_cmd/gpr_base_pack_cleanup.c \
+	unpack_api_response/gpr_base_unpack_cleanup.c"
 
-PARAM_CONFIG_FILES="Makefile api_layer/Makefile transition_layer/Makefile functional_layer/Makefile communications/Makefile"
+PARAM_CONFIG_FILES="Makefile pack_api_cmd/Makefile unpack_api_response/Makefile"
