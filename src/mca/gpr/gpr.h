@@ -200,7 +200,8 @@ typedef int (*orte_gpr_base_module_triggers_inactive_fn_t)(orte_jobid_t jobid);
  * functionality is beyond the purview of the registry.
  *
  * @param *cnt (OUT) A pointer to the number of recipients.
- * @param recipients (OUT) An array of pointers to process names for the recipients.
+ * @param recipients (OUT) An array of process names for the recipients. The caller
+ * needs to provide the address of a pointer to the array.
  *
  * @retval ORTE_SUCCESS Operation was successfully completed.
  * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
@@ -303,7 +304,7 @@ typedef int (*orte_gpr_base_module_delete_segment_nb_fn_t)(char *segment,
  *
  * @param cnt The number of key-value pair structures to be stored.
  * 
- * @param *keyval An orte_gpr_keyval_t pointer to one or more key_value pair
+ * @param *keyval An orte_gpr_keyval_t pointer to a contiguous array of one or more key_value pair
  * structures to be stored. The registry will copy this data onto the specified segment - the
  * calling program is responsible for freeing any memory, if appropriate.
  *
@@ -321,14 +322,14 @@ typedef int (*orte_gpr_base_module_delete_segment_nb_fn_t)(char *segment,
  * @endcode
  */
 typedef int (*orte_gpr_base_module_put_fn_t)(orte_gpr_addr_mode_t addr_mode, char *segment,
-					    char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals);
+					    char **tokens, size_t cnt, orte_gpr_keyval_t *keyvals);
 
 /*
  * Put data on the registry (NON-BLOCKING)
  * A non-blocking version of put.
  */
 typedef int (*orte_gpr_base_module_put_nb_fn_t)(orte_gpr_addr_mode_t addr_mode, char *segment,
-                      char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals,
+                      char **tokens, size_t cnt, orte_gpr_keyval_t *keyvals,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
 
 
@@ -357,7 +358,7 @@ typedef int (*orte_gpr_base_module_put_nb_fn_t)(orte_gpr_addr_mode_t addr_mode, 
  * described by the segment/token combination are to be returned.
  * 
  * @param *cnt (OUT) A pointer to the number of objects returned by the request.
- * @param *values (OUT) An array of pointers to orte_gpr_value_t objects containing the data
+ * @param **keyvals (OUT) A pointer to an array of keyvals containing the data
  * returned by the specified search.
  *
  * @retval ORTE_SUCCESS Operation was successfully completed.
