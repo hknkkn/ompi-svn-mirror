@@ -33,9 +33,9 @@
  * DPS_PACK_VALUE
  */
 
-int orte_dps_pack_value(orte_buffer_t *buffer, void *src,
-                        char *description,
-                        orte_pack_type_t type)
+int orte_dps_pack(orte_buffer_t *buffer, void *src,
+                  size_t num_vals,
+                  orte_pack_type_t type)
 {
     int rc;
     void *dest;
@@ -50,7 +50,6 @@ int orte_dps_pack_value(orte_buffer_t *buffer, void *src,
     uint32_t * s32;
     char * str;
     char * dstr;
-    orte_byte_object_t * byte_ptr;
     orte_node_state_t *node_state_src, *node_state_dest;
     orte_process_status_t *proc_status_src, *proc_status_dest;
     orte_exit_code_t *exit_code_src, *exit_code_dest;
@@ -67,17 +66,6 @@ int orte_dps_pack_value(orte_buffer_t *buffer, void *src,
     
     /* add in the space for the pack type */
     op_size += sizeof(orte_pack_type_t);
-    
-    /* check for and add in space for description */
-    if (NULL != description) {
-        if (255 < strlen(description)) {
-            return 0;
-        }
-        op_size += strlen(description) + 1; /* need space for length */
-    } else {
-       op_size += 1;  /* need space for zero length */
-    }
-    
     
     /* check to see if current buffer has enough room */
     if (op_size > buffer->space) {  /* need to extend the buffer */
@@ -112,41 +100,18 @@ int orte_dps_pack_value(orte_buffer_t *buffer, void *src,
             return ORTE_ERROR;
     }
     
-    /* if provided, store the description - else store a zero */
-    if (NULL != description) {
-        desc_len = strlen(description);
-        if (255 < desc_len) {  /* too long */
-            return ORTE_ERR_BAD_PARAM;
-        }
-        d8 = (uint8_t *) dest;
-        *d8 = (uint8_t) desc_len;
-        d8++;
-        dest = (void *) d8;
-        
-        str = description;
-        dstr = (char *) dest;
-        memcpy(dstr, str, desc_len);
-        dstr += desc_len + 1;  /* step over the NULL terminator */
-        dest = (void *)dstr;
-    } else {
-        d8 = (uint8_t *) dest;
-        *d8 = 0;
-        d8++;
-        dest = (void *)d8;
-    }
-    
     /* pack the data */
     switch(type) {
-        case ORTE_BYTE_OBJECT:
-            byte_ptr = (orte_byte_object_t *) src;
+        case ORTE_BYTE:
+            byte_ptr = (uint8_t *) src;
             /* first store size - uint32_t */
             d32 = (uint32_t *) dest;
-            *d32 = htonl(byte_ptr->size);
+            *d32 = htonl(num_vals);
             d32 += 4;
             dest = (void *) d32;
             /* now store bytes */
-            memcpy(dest, byte_ptr->bytes, byte_ptr->size);
-            dest = (void *)((char *)dest + byte_ptr->size);
+            memcpy(dest, byte_ptr, num_vals);
+            dest = (void *)((char *)dest + num_vals);
             break;
             
         case ORTE_INT8:

@@ -35,50 +35,51 @@ extern "C" {
 
 /**
  * Supported datatypes for conversion operations.
- * NOTE, these have (or should) a one to one match to ompi_pack_type_t
  *
  */
-
-typedef uint8_t orte_pack_type_t;
-
-#define ORTE_BYTE_OBJECT               (orte_pack_type_t)  0x01     /**< a byte of data */
-#define ORTE_INT8                      (orte_pack_type_t)  0x02     /**< an 8-bit integer */
-#define ORTE_INT16                     (orte_pack_type_t)  0x03     /**< a 16 bit integer */
-#define ORTE_INT32                     (orte_pack_type_t)  0x04     /**< a 32 bit integer */
-#define ORTE_STRING                    (orte_pack_type_t)  0x05     /**< a NULL terminated string */
-#define ORTE_NAME                      (orte_pack_type_t)  0x06     /**< an ompi_process_name_t */
-#define ORTE_JOBID                     (orte_pack_type_t)  0x07     /**< a jobid */
-#define ORTE_CELLID                    (orte_pack_type_t)  0x08     /**< a cellid */
-#define ORTE_NODE_STATE                (orte_pack_type_t)  0x09     /**< node status flag */
-#define ORTE_PROCESS_STATUS            (orte_pack_type_t)  0x0A     /**< process status key */
-#define ORTE_EXIT_CODE                 (orte_pack_type_t)  0x0B     /**< process exit code */
-
-struct orte_byte_object_t {
-     /* first member must be the objects parent */
-    ompi_object_t parent;
-    
-    uint32_t size;
-    uint8_t *bytes;
-};
-typedef struct orte_byte_object_t orte_byte_object_t;
-/* formalise the declaration */
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION (orte_byte_object_t);
+typedef enum {
+    ORTE_BYTE,              /**< a byte of data */
+    /* all the integer flavors */
+    ORTE_INT,               /**< generic integer */
+    ORTE_INT8,              /**< an 8-bit integer */
+    ORTE_INT16,             /**< a 16 bit integer */
+    ORTE_INT32,             /**< a 32 bit integer */
+    /* all the unsigned integer flavors */
+    ORTE_UINT,              /**< generic unsigned integer */
+    ORTE_UINT8,             /**< an 8-bit integer */
+    ORTE_UINT16,            /**< a 16 bit integer */
+    ORTE_UINT32,            /**< a 32 bit integer */
+    /* all the floating point flavors */
+    ORTE_FLOAT,             /**< single-precision float */
+    ORTE_FLOAT4,            /**< 4-byte float - usually equiv to single */
+    ORTE_DOUBLE,            /**< double-precision float */
+    ORTE_FLOAT8,            /**< 8-byte float - usually equiv to double */
+    ORTE_LONG_DOUBLE,       /**< long-double precision float */
+    ORTE_FLOAT12,           /**< 12-byte float - used as long-double on some systems */
+    ORTE_FLOAT16,           /**< 16-byte float - used as long-double on some systems */
+    /* string */
+    ORTE_STRING,            /**< a NULL terminated string */
+    /* orte-specific typedefs */
+    ORTE_NAME,              /**< an ompi_process_name_t */
+    ORTE_JOBID,             /**< a jobid */
+    ORTE_CELLID,            /**< a cellid */
+    ORTE_NODE_STATE,        /**< node status flag */
+    ORTE_PROCESS_STATUS,    /**< process status key */
+    ORTE_EXIT_CODE          /**< process exit code */
+} orte_pack_type_t ;
 
 
 typedef struct orte_buffer_t {
     /* first member must be the objects parent */
     ompi_object_t parent;
     
-    /* now for the real elements of the type */
-    char *label;       /* provide a label for the user to id this buffer */
-
     void*   base_ptr;  /* start of my memory */
     void*   data_ptr;  /* location of where next data will go */
     void*   from_ptr;  /* location of where to get the next data from */
 
     /* counters */
 
-    int32_t   pages;     /* number of pages of memory used (pages) */
+    int32_t   pages;     /* number of orte_dps_size pages of memory used (pages) */
     int32_t   size;      /* total size of this buffer (bytes) */
     int32_t   len;       /* total amount already packed (bytes) */
     int32_t   space;     /* how much space we have left (bytes) */

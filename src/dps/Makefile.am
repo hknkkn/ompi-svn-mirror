@@ -26,10 +26,9 @@ headers = \
 libdps_la_SOURCES = \
     $(headers) \
     orte_dps_open_close.c \
-    dps_init_free.c \
-    dps_pack_unpack_object.c \
-    dps_pack_value.c \
-    dps_unpack_value.c \
+    dps_pack.c \
+    dps_unpack.c \
+    dps_peek.c \
     dps_internal_functions.c
 
 # Conditionally install the header files

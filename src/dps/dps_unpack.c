@@ -33,9 +33,9 @@
  * DPS UNPACK VALUE
  */
 
-int orte_dps_unpack_value(orte_buffer_t *buffer, void *dest,
-                          char *description,
-                          orte_pack_type_t *type)
+int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
+                    size_t max_num_vals,
+                    orte_pack_type_t type)
 {
     size_t pack_type_size, mem_req;
     int32_t mem_left, tst;
@@ -96,39 +96,6 @@ int orte_dps_unpack_value(orte_buffer_t *buffer, void *dest,
     /* account for the memory used */
     mem_left = mem_left - pack_type_size;
 
-    /*
-     * is there enough left in the buffer for the description length
-     */
-    if (0 >= mem_left) {  /* nothing left */
-        return ORTE_ERR_UNPACK_FAILURE;
-    }
-    
-    /* look at the description length - see if we have enough left
-     */
-    d8 = (uint8_t *) src;
-    if (mem_left < (*d8 + 1)) {
-        return ORTE_ERR_UNPACK_FAILURE;
-    }
-    
-    /* okay, got enough left - unpack the description */
-    
-    if (0 == *d8) {  /* no description packed */
-        description = NULL;
-        d8++;
-        src = (void *) d8;
-        mem_left--;
-    } else {
-        description = (char *)malloc(*d8+1);  /* add space for NULL */
-        if (NULL == description) {
-            return ORTE_ERR_OUT_OF_RESOURCE;
-        }
-        str = (char *) (d8+1);
-        memcpy(description, str, *d8);
-        str = str + *d8 + 1;  /* need to add one for the description length */
-        src = (void *) str;
-        mem_left = mem_left - (*d8) - 1;
-    }
-    
     /* calculate required data size */
     if (0 == (mem_req = orte_dps_memory_required(true, src, *type))) {
         return ORTE_ERR_UNPACK_FAILURE;

@@ -52,26 +52,142 @@ OMPI_DECLSPEC int orte_dps_close(void);
  * DPS interface functions
  */
 
-typedef int (*orte_dps_init_buffer_fn_t)(orte_buffer_t **buffer, char *label);
+/*
+ * Pack one or more values into a buffer
+ * The pack function packs one or more values of a specified type into the specified buffer.
+ * The buffer must have already been initialized via an OBJ_NEW call - 
+ * otherwise, the pack_value function will return an error. Providing an
+ * unsupported type flag will likewise be reported as an error.
+ * 
+ * Note that any data to be packed that is not hard type cast (i.e., not type cast
+ * to a specific size) may lose precision when unpacked by a non-homogeneous recipient.
+ * The DPS will do its best to
+ * deal with heterogeneity issues between the packer and unpacker in such cases. Sending
+ * a number larger than can be handled by the recipient will return an error code (generated
+ * by the DPS upon unpacking) via the RML upon transmission - the DPS cannot detect
+ * such errors during packing.
+ * 
+ * @param buffer A pointer to the buffer into which the value is to be packed.
+ * @param src A void* pointer to the data that is to be packed. Note that strings are
+ * to be passed as (char **) - i.e., the caller must pass the address of the pointer
+ * to the string as the void*. This allows the DPS to use a single interface function,
+ * but still allow the caller to pass multiple strings in a single call.
+ * @param num A size_t value indicating the number of values that are to be
+ * packed, beginning at the location pointed to by src. A string value is counted as a
+ * single value regardless of length. The values must be contiguous in memory. Arrays of
+ * pointers (e.g., string arrays) should be contiguous, although (obviously) the data
+ * pointed to need not be contiguous across array entries.
+ * @param type The type of the data to be packed - must be one of the DPS defined
+ * data types.
+ * 
+ * @retval ORTE_SUCCESS The data was packed as requested.
+ * @retval ORTE_ERROR(s) An appropriate ORTE error code indicating the problem
+ * encountered. This error code should be handled appropriately.
+ * 
+ * @code
+ * orte_buffer_t *buffer;
+ * int32_t src;
+ * 
+ * status_code = orte_dps.pack(buffer, &src, 1, ORTE_INT32);
+ * @endcode
+ */
+typedef int (*orte_dps_pack_fn_t)(orte_buffer_t *buffer, void *src,
+                                  size_t num_values,
+                                  orte_pack_type_t type);
 
-typedef int (*orte_dps_pack_value_fn_t)(orte_buffer_t *buffer, void *src,
-                                        char *description,
-                                        orte_pack_type_t type);
+/* Unpack one or more values from a buffer
+ * The unpack function unpacks one or more values of a specified type from the
+ * specified buffer.
+ * The buffer must have already been initialized via an OBJ_NEW call - 
+ * otherwise, the unpack_value function will return an error. Providing an
+ * unsupported type flag will likewise be reported as an error, as will specifying a
+ * data type that DOES NOT match the type of the next item in the buffer. An attempt
+ * to read beyond the end of the stored data held in the buffer will also return
+ * an error.
+ * 
+ * Unpacking values is a "destructive" process - i.e., the values are removed from
+ * the buffer, thus reducing the buffer size. It is therefore not possible for the
+ * caller to re-unpack a value from the same buffer.
+ * 
+ * Warning: The caller is responsible for providing adequate memory storage for
+ * the requested data. The DPS peek_next_item function is provided to assist in
+ * meeting this requirement. The user can provide a max_num_values argument to ensure
+ * that memory overruns are prevented.
+ * 
+ * Note that any data that was not hard type cast (i.e., not type cast
+ * to a specific size) when packed may lose precision when unpacked by a non-homogeneous recipient.
+ * The DPS will do its best to
+ * deal with heterogeneity issues between the packer and unpacker in such cases. Sending
+ * a number larger than can be handled by the recipient will return an error code  (generated
+ * by the DPS upon unpacking) via the RML upon transmission - the DPS cannot detect
+ * such errors during packing.
+ * 
+ * @param buffer A pointer to the buffer from which the value will be extracted.
+ * @param dest A void* pointer to the memory location into which the data is to be
+ * stored. Note that these values will be stored contiguously in memory. For strings,
+ * this pointer must be to (char **) to provide a means of supporting multiple string
+ * operations. The DPS unpack function will allocate memory for each string in the array -
+ * the caller must only provide adequate memory for the array of pointers.
+ * @param num A size_t value indicating the maximum number of values that are to be
+ * unpacked, beginning at the location pointed to by src. This is provided to help
+ * protect the caller from memory overrun - providing a value of "0" tells the DPS
+ * to unpack ALL of the values stored in this item. This should be used with caution
+ * as the caller must then be absolutely certain that adequate memory has been allocated
+ * for this operation. Note that a string value is counted as a single value regardless
+ * of length.
+ * @param type The type of the data to be unpacked - must be one of the DPS defined
+ * data types.
+ * 
+ * @retval num_unpacked The number of values actually unpacked. In most cases,
+ * this should match the maximum number provided in the parameters - but in no case
+ * will it exceed that parameter. Numbers less than zero are returned ORTE error codes
+ * and should be handled accordingly.
+ * 
+ * @code
+ * orte_buffer_t *buffer;
+ * int32_t dest;
+ * char **string_array;
+ * 
+ * num_values = orte_dps.unpack(buffer, (void*)&dest, 1, ORTE_INT32);
+ * if (1 > num_values) {
+ *  got an error
+ * }
+ * 
+ * string_array = malloc(5*sizeof(char *));
+ * num_strings = orte_dps.unpack(buffer, (void*)(&string_array), 5, ORTE_STRING);
+ * if (5 > num_strings) {
+ *  got an error
+ * }
+ * 
+ * @endcode
+ * 
+ */
+typedef int (*orte_dps_unpack_fn_t)(orte_buffer_t *buffer, void *dest,
+                                    size_t max_num_values,
+                                    orte_pack_type_t type);
 
-typedef int (*orte_dps_unpack_value_fn_t)(orte_buffer_t *buffer, void *dest,
-                                          char *description,
-                                          orte_pack_type_t *type);
-
-typedef int (*orte_dps_pack_object_fn_t)(orte_buffer_t *buffer, void *src,
-                                         char **descriptions,
-                                         orte_pack_type_t *types);
-
-typedef int (*orte_dps_unpack_object_fn_t)(orte_buffer_t *buffer, void **dest,
-                                           char **descriptions,
-                                           orte_pack_type_t *types);
-
-typedef int (*orte_dps_free_buffer_fn_t)(orte_buffer_t **buffer);
-
+/*
+ * Get the type and number of values of the next item in the buffer
+ * The peek function looks at the next item in the buffer and returns both its
+ * type and the number of values in the item. This is a non-destructive function
+ * call that does not disturb the buffer, so it can be called multiple times if desired.
+ * 
+ * @param buffer A pointer to the buffer in question.
+ * @param type A pointer to an orte_pack_type_t variable where the type of the
+ * next item in the buffer is to be stored. Caller must have memory backing this
+ * location.
+ * @param number A pointer to a size_t variable where the number of data values
+ * in the next item is to be stored. Caller must have memory backing this location.
+ * 
+ * @retval ORTE_SUCCESS Requested info was successfully returned.
+ * @retval ORTE_ERROR(s) An appropriate error code indicating the problem will be
+ * returned. This should be handled appropriately by the caller.
+ * 
+ * For string types, the number of values corresponds to the length of the string.
+ */
+typedef int (*orte_dps_peek_next_item_fn_t)(orte_buffer_t *buffer,
+                                            orte_pack_type_t *type,
+                                            size_t *number);
 
 /**
  * Base structure for the DPS
@@ -80,12 +196,9 @@ typedef int (*orte_dps_free_buffer_fn_t)(orte_buffer_t **buffer);
  * pointers to the calling interface. 
  */
 struct orte_dps_t {
-    orte_dps_init_buffer_fn_t buffer_init;
-    orte_dps_pack_value_fn_t pack_value;
-    orte_dps_unpack_value_fn_t unpack_value;
-    orte_dps_pack_object_fn_t pack_object;
-    orte_dps_unpack_object_fn_t unpack_object;
-    orte_dps_free_buffer_fn_t buffer_free;
+    orte_dps_pack_fn_t pack;
+    orte_dps_unpack_fn_t unpack;
+    orte_dps_peek_next_item_fn_t peek;
 };
 typedef struct orte_dps_t orte_dps_t;
 

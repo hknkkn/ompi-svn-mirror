@@ -24,12 +24,9 @@
 bool orte_dps_debug;
 
 orte_dps_t orte_dps = {
-    orte_dps_buffer_init,
-    orte_dps_pack_value,
-    orte_dps_unpack_value,
-    orte_dps_pack_object,
-    orte_dps_unpack_object,
-    orte_dps_buffer_free
+    orte_dps_pack,
+    orte_dps_unpack,
+    orte_dps_peek
 };
 
 /**
@@ -37,7 +34,7 @@ orte_dps_t orte_dps = {
  */
 static void orte_buffer_construct (orte_buffer_t* buffer)
 {
-    buffer->base_ptr = buffer->data_ptr = buffer->from_ptr = buffer->label = NULL;
+    buffer->base_ptr = buffer->data_ptr = buffer->from_ptr = NULL;
     buffer->pages = buffer->size = buffer->len = buffer-> space = buffer-> toend = 0;
 }
 
@@ -46,37 +43,12 @@ static void orte_buffer_destruct (orte_buffer_t* buffer)
     /* paranoid check */
     if (NULL != buffer) {
         if (NULL != buffer->base_ptr) free (buffer->base_ptr);
-
-        if (NULL != buffer->label) free(buffer->label);
     }
 }
 OBJ_CLASS_INSTANCE(orte_buffer_t,
                    ompi_object_t,
                    orte_buffer_construct,
                    orte_buffer_destruct);
-
-
-/**
- * Object constructors, destructors, and instantiations
- */
-static void orte_byte_object_construct (orte_byte_object_t* ptr)
-{
-    ptr->size = 0;
-    ptr->bytes = NULL;
-}
-
-static void orte_byte_object_destruct (orte_byte_object_t* ptr)
-{
-    /* paranoid check */
-    if (NULL != ptr) {
-        if (NULL != ptr->bytes) free (ptr->bytes);
-    }
-
-}
-OBJ_CLASS_INSTANCE(orte_byte_object_t,
-                   ompi_object_t,
-                   orte_byte_object_construct,
-                   orte_byte_object_destruct);
 
 
 int orte_dps_open(void)

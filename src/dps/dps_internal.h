@@ -27,6 +27,11 @@ extern "C" {
 #endif
 
 /*
+ * DEFINE THE DEFAULT PAGE SIZE FOR THE DPS BUFFERS - IN KILOBYTES
+ */
+#define ORTE_DPS_DEFAULT_PAGE_SIZE  1
+
+/*
  * globals needed within dps
  */
 extern bool orte_dps_debug;
@@ -34,25 +39,18 @@ extern bool orte_dps_debug;
 /*
  * Implementations of API functions
  */
-int orte_dps_buffer_init(orte_buffer_t **buffer, char *label);
+int orte_dps_pack(orte_buffer_t *buffer, void *src,
+                  size_t num_vals,
+                  orte_pack_type_t type);
 
-int orte_dps_pack_value(orte_buffer_t *buffer, void *src,
-                        char *description,
-                        orte_pack_type_t type);
+int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
+                  size_t max_num_vals,
+                  orte_pack_type_t type);
+                  
+int orte_dps_peek(orte_buffer_t *buffer,
+                  orte_pack_type_t *type,
+                  size_t *number);
 
-int orte_dps_unpack_value(orte_buffer_t *buffer, void *dest,
-                          char *description,
-                          orte_pack_type_t *type);
-
-int orte_dps_pack_object(orte_buffer_t *buffer, void *src,
-                         char **descriptions,
-                         orte_pack_type_t *types);
-
-int orte_dps_unpack_object(orte_buffer_t *buffer, void **dest,
-                           char **descriptions,
-                           orte_pack_type_t *types);
-
-int orte_dps_buffer_free(orte_buffer_t **buffer);
 
 
 /*
@@ -61,7 +59,6 @@ int orte_dps_buffer_free(orte_buffer_t **buffer);
 size_t orte_dps_memory_required(bool packed, void *src, orte_pack_type_t type);
 
 int orte_dps_buffer_extend (orte_buffer_t *bptr, size_t mem_req);
-
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
