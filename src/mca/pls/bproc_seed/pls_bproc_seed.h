@@ -57,6 +57,7 @@ struct orte_pls_bproc_component_t {
     int name_fd;
     int priority;
     int reap;
+    int terminate_sig;
     size_t image_frag_size;
     size_t num_children;
     ompi_mutex_t lock;

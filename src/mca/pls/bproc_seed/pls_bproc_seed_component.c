@@ -77,7 +77,8 @@ int orte_pls_bproc_seed_component_open(void)
     mca_pls_bproc_seed_component.reap = orte_pls_bproc_param_register_int("reap", 1);
     mca_pls_bproc_seed_component.image_frag_size = orte_pls_bproc_param_register_int("image_frag_size", 256*1024);
     mca_pls_bproc_seed_component.name_fd = orte_pls_bproc_param_register_int("name_fd", 3);
-    mca_pls_bproc_seed_component.priority = orte_pls_bproc_param_register_int("priority", 20);
+    mca_pls_bproc_seed_component.priority = orte_pls_bproc_param_register_int("priority", 100);
+    mca_pls_bproc_seed_component.terminate_sig = orte_pls_bproc_param_register_int("terminate_sig", 9);
 
     return ORTE_SUCCESS;
 }

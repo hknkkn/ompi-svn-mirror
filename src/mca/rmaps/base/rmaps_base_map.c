@@ -179,6 +179,7 @@ orte_rmaps_lookup_node(ompi_list_t* nodes, char* node_name, orte_rmaps_base_proc
         }
     }
     node = OBJ_NEW(orte_rmaps_base_node_t);
+    node->node_cellid = proc->proc_name.cellid;
     node->node_name = strdup(node_name);
     OBJ_RETAIN(proc);
     ompi_list_append(&node->node_procs, &proc->super);

@@ -48,6 +48,7 @@ extern "C" {
 
 struct orte_rmaps_base_node_t {
     ompi_list_item_t super;
+    orte_cellid_t node_cellid;
     char* node_name;
     ompi_list_t node_procs;
 };
