@@ -19,8 +19,12 @@
  */
 
 #include "ompi_config.h"
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "include/orte_constants.h"
+#include "util/argv.h"
+#include "util/path.h"
 #include "mca/pls/pls.h"
 #include "pls_fork.h"
 #include "mca/pls/fork/pls-fork-version.h"
@@ -35,25 +39,12 @@ const char *mca_pls_fork_component_version_string =
 
 
 /*
- * Local variable
- */
-static int param_priority = -1;
-
-
-/*
- * Local function
- */
-static int pls_fork_open(void);
-static struct orte_pls_base_module_1_0_0_t *pls_fork_init(int *priority);
-
-
-/*
  * Instantiate the public struct with all of our public information
  * and pointers to our public functions in it
  */
 
-orte_pls_base_component_1_0_0_t mca_pls_fork_component = {
-
+orte_pls_fork_component_t mca_pls_fork_component = {
+    {
     /* First, the mca_component_t struct containing meta information
        about the component itself */
 
@@ -72,8 +63,8 @@ orte_pls_base_component_1_0_0_t mca_pls_fork_component = {
 
         /* Component open and close functions */
 
-        pls_fork_open,
-        NULL
+        orte_pls_fork_component_open,
+        orte_pls_fork_component_close
     },
 
     /* Next the MCA v1.0.0 component meta data */
@@ -85,25 +76,73 @@ orte_pls_base_component_1_0_0_t mca_pls_fork_component = {
     },
 
     /* Initialization / querying functions */
-    
-    pls_fork_init
+
+    orte_pls_fork_component_init
+    }
 };
 
 
-static int pls_fork_open(void)
-{
-    param_priority = 
-        mca_base_param_register_int("pls", "fork", "priority", NULL, 50);
 
+/**
+ *  Convience functions to lookup MCA parameter values.
+ */
+                                                                                                  
+static  int orte_pls_fork_param_register_int(
+    const char* param_name,
+    int default_value)
+{
+    int id = mca_base_param_register_int("pls","fork",param_name,NULL,default_value);
+    int param_value = default_value;
+    mca_base_param_lookup_int(id,&param_value);
+    return param_value;
+}
+                                                                                                  
+                                                                                                  
+static char* orte_pls_fork_param_register_string(
+    const char* param_name,
+    const char* default_value)
+{
+    char *param_value;
+    int id = mca_base_param_register_string("pls","fork",param_name,NULL,default_value);
+    mca_base_param_lookup_string(id, &param_value);
+    return param_value;
+}
+                                                                                                  
+                                                                                                  
+
+int orte_pls_fork_component_open(void)
+{
+    /* initialize globals */
+    OBJ_CONSTRUCT(&mca_pls_fork_component.lock, ompi_mutex_t);
+    OBJ_CONSTRUCT(&mca_pls_fork_component.cond, ompi_condition_t);
+
+    /* lookup parameters */
+    mca_pls_fork_component.debug = orte_pls_fork_param_register_int("debug",1);
+    mca_pls_fork_component.reap = orte_pls_fork_param_register_int("reap",1);
+    mca_pls_fork_component.priority = orte_pls_fork_param_register_int("priority",1);
     return ORTE_SUCCESS;
 }
 
 
-static struct orte_pls_base_module_1_0_0_t *pls_fork_init(int *priority)
+orte_pls_base_module_t *orte_pls_fork_component_init(int *priority)
 {
-    /* This component can always run */
-
-    mca_base_param_lookup_int(param_priority, priority);
-
+    *priority = mca_pls_fork_component.priority;
     return &orte_pls_fork_module;
 }
+
+
+int orte_pls_fork_component_close(void)
+{
+    if(mca_pls_fork_component.reap) {
+        OMPI_THREAD_LOCK(&mca_pls_fork_component.lock);
+        while(mca_pls_fork_component.num_children > 0) {
+            ompi_condition_wait(&mca_pls_fork_component.cond,
+                &mca_pls_fork_component.lock);
+        }
+    }
+
+    OBJ_DESTRUCT(&mca_pls_fork_component.lock);
+    OBJ_DESTRUCT(&mca_pls_fork_component.cond);
+    return ORTE_SUCCESS;
+}
+
