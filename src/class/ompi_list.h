@@ -582,6 +582,14 @@ static inline void ompi_list_insert_pos(ompi_list_t *list, ompi_list_item_t *pos
                           ompi_list_t *xlist, ompi_list_item_t *first,
                           ompi_list_item_t *last);
 
+    /**
+     * Sort a list in place given the specified comparison function.
+     */
+
+    typedef int (*ompi_list_item_compare_fn_t)(ompi_list_item_t*, ompi_list_item_t*);
+    void ompi_list_sort(ompi_list_t* list, ompi_list_item_compare_fn_t compare);
+
+
 #if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
