@@ -176,6 +176,8 @@ int orte_ns_replica_close(void)
 
 mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority)
 {
+    orte_ns_replica_name_tracker_t *new_nt;
+
     /* If we are to host a replica, then we want to be selected, so do all the
        setup and return the module */
 
@@ -207,6 +209,17 @@ mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool 
 
       /* setup the thread lock */
       OBJ_CONSTRUCT(&orte_ns_replica_mutex, ompi_mutex_t);
+      
+      /* setup the "0" job counter - this is the default one that belongs to
+       * all daemons. Seed must automatically have it.
+       */
+       new_nt = OBJ_NEW(orte_ns_replica_name_tracker_t);
+       if (NULL == new_nt) {  /* out of memory */
+           return NULL;
+       }
+       new_nt->job = 0;
+       new_nt->last_used_vpid = 0;
+       ompi_list_append(&orte_ns_replica_name_tracker, &new_nt->item);
     
      /* Return the module */
 

@@ -50,7 +50,11 @@ int mca_oob_tcp_ping(
     msg->msg_hdr.msg_type = MCA_OOB_TCP_PING;
     msg->msg_hdr.msg_size = 0;
     msg->msg_hdr.msg_tag = 0;
-    msg->msg_hdr.msg_src = *orte_process_info.my_name;
+    if (NULL == orte_process_info.my_name) {  /* don't know my name yet */
+        msg->msg_hdr.msg_src = *MCA_OOB_NAME_ANY;
+    } else {
+        msg->msg_hdr.msg_src = *orte_process_info.my_name;
+    }
     msg->msg_hdr.msg_dst = *name;
     MCA_OOB_TCP_HDR_HTON(&msg->msg_hdr);
 
