@@ -14,20 +14,18 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = sys
+SUBDIRS = base $(MCA_pls_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_pls_ALL_SUBDIRS)
 
-noinst_HEADERS = \
-        constants.h \
-        orte_constants.h \
-        ompi.h \
-        totalview.h \
-        types.h
+# Source code files
+
+headers = pls.h
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/include
-ompi_HEADERS = $(noinst_HEADERS)
+ompidir = $(includedir)/openmpi/mca/pls
+ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)
 endif

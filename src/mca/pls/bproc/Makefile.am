@@ -12,22 +12,12 @@
 # $HEADER$
 #
 
-include $(top_srcdir)/config/Makefile.options
+include $(top_ompi_srcdir)/config/Makefile.options
 
-SUBDIRS = sys
+AM_CPPFLAGS = -I$(top_ompi_builddir)/src/include
 
-noinst_HEADERS = \
-        constants.h \
-        orte_constants.h \
-        ompi.h \
-        totalview.h \
-        types.h
-
-# Conditionally install the header files
-
-if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/include
-ompi_HEADERS = $(noinst_HEADERS)
-else
-ompidir = $(includedir)
-endif
+noinst_LTLIBRARIES = libmca_pls_bproc.la
+libmca_pls_bproc_la_SOURCES = \
+	pls_bproc.h \
+	pls_bproc_component.c \
+	pls_bproc_spawn.c

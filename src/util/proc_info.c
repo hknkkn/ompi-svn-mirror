@@ -35,6 +35,7 @@ ompi_proc_info_t ompi_process_info = {
     /*  .init =                 */   false,
     /*  .pid =                  */   0,
     /*  .seed =                 */   false,
+    /*  .daemon =               */   false,
     /*  .ns_replica =           */   NULL,
     /*  .gpr_replica =          */   NULL,
     /*  .my_universe            */   NULL,

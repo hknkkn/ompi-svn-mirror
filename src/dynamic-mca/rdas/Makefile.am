@@ -14,20 +14,11 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = sys
+SUBDIRS			= $(MCA_rdas_DSO_SUBDIRS)
+DISTCLEANFILES		= $(SUBDIRS)
 
-noinst_HEADERS = \
-        constants.h \
-        orte_constants.h \
-        ompi.h \
-        totalview.h \
-        types.h
+# Every directory under here is a sym link to something in the main
+# src/mca tree.  Hence, we don't want to distribute anything under
+# here.
 
-# Conditionally install the header files
-
-if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/include
-ompi_HEADERS = $(noinst_HEADERS)
-else
-ompidir = $(includedir)
-endif
+DIST_SUBDIRS		=

@@ -65,7 +65,7 @@ fi
 # The list of MCA types (it's fixed)
 
 AC_MSG_CHECKING([for MCA types])
-found_types="common allocator coll gpr io llm mpool ns one oob op pcm pcmclient pml ptl soh svc topo"
+found_types="common allocator coll dps gpr io mpool ns one oob op pcmclient pls pml ptl rdas soh svc topo"
 AC_MSG_RESULT([$found_types])
 
 # Get the list of all the non-configure MCA components that were found by
@@ -322,17 +322,12 @@ AC_SUBST(MCA_common_STATIC_SUBDIRS)
 AC_SUBST(MCA_common_DSO_SUBDIRS)
 AC_SUBST(MCA_common_STATIC_LTLIBS)
 
-# OMPI types
+# ORTE types
 
 AC_SUBST(MCA_oob_ALL_SUBDIRS)
 AC_SUBST(MCA_oob_STATIC_SUBDIRS)
 AC_SUBST(MCA_oob_DSO_SUBDIRS)
 AC_SUBST(MCA_oob_STATIC_LTLIBS)
-
-AC_SUBST(MCA_pcm_ALL_SUBDIRS)
-AC_SUBST(MCA_pcm_STATIC_SUBDIRS)
-AC_SUBST(MCA_pcm_DSO_SUBDIRS)
-AC_SUBST(MCA_pcm_STATIC_LTLIBS)
 
 AC_SUBST(MCA_pcmclient_ALL_SUBDIRS)
 AC_SUBST(MCA_pcmclient_STATIC_SUBDIRS)
@@ -344,15 +339,25 @@ AC_SUBST(MCA_gpr_STATIC_SUBDIRS)
 AC_SUBST(MCA_gpr_DSO_SUBDIRS)
 AC_SUBST(MCA_gpr_STATIC_LTLIBS)
 
-AC_SUBST(MCA_llm_ALL_SUBDIRS)
-AC_SUBST(MCA_llm_STATIC_SUBDIRS)
-AC_SUBST(MCA_llm_DSO_SUBDIRS)
-AC_SUBST(MCA_llm_STATIC_LTLIBS)
-
 AC_SUBST(MCA_ns_ALL_SUBDIRS)
 AC_SUBST(MCA_ns_STATIC_SUBDIRS)
 AC_SUBST(MCA_ns_DSO_SUBDIRS)
 AC_SUBST(MCA_ns_STATIC_LTLIBS)
+
+AC_SUBST(MCA_rdas_ALL_SUBDIRS)
+AC_SUBST(MCA_rdas_STATIC_SUBDIRS)
+AC_SUBST(MCA_rdas_DSO_SUBDIRS)
+AC_SUBST(MCA_rdas_STATIC_LTLIBS)
+
+AC_SUBST(MCA_dps_ALL_SUBDIRS)
+AC_SUBST(MCA_dps_STATIC_SUBDIRS)
+AC_SUBST(MCA_dps_DSO_SUBDIRS)
+AC_SUBST(MCA_dps_STATIC_LTLIBS)
+
+AC_SUBST(MCA_pls_ALL_SUBDIRS)
+AC_SUBST(MCA_pls_STATIC_SUBDIRS)
+AC_SUBST(MCA_pls_DSO_SUBDIRS)
+AC_SUBST(MCA_pls_STATIC_LTLIBS)
 
 # MPI types
 

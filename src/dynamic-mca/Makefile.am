@@ -18,17 +18,18 @@ SUBDIRS = \
 	allocator \
         coll \
         common \
+	dps \
         gpr \
         io \
         mpool \
-	llm \
         ns \
         one \
         oob \
-        pcm \
 	pcmclient \
+	pls \
         pml \
         ptl \
+	rdas \
         soh \
         svc \
         topo

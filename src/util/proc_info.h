@@ -49,6 +49,7 @@ struct ompi_proc_info_t {
 			    */
     pid_t pid;             /**< Local process ID for this process */
     bool seed;             /**< Indicate whether or not this is seed daemon */
+    bool daemon;           /**< Indicate whether or not I am a daemon */
     ompi_process_name_t *ns_replica;       /**< Name of my name server replica (NULL=>me) */
     ompi_process_name_t *gpr_replica;      /**< Name of my registry replica (NULL=>me) */
     char *my_universe;     /**< Name of the universe to which this process belongs */
