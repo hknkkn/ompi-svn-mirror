@@ -182,8 +182,8 @@ void ompi_info::open_components()
   orte_pls_base_open();
   component_map["pls"] = &orte_pls_base.pls_opened;
 
-  mca_soh_base_open();
-  component_map["soh"] = &mca_soh_base_components_available;
+  orte_soh_base_open();
+  component_map["soh"] = &orte_soh_base.soh_components;
 
   // All done
 
