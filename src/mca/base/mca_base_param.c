@@ -159,6 +159,9 @@ int mca_base_param_register_int(const char *type_name,
                                 int default_value)
 {
   mca_base_param_storage_t storage;
+  int id = mca_base_param_find(type_name,component_name,param_name);
+  if(id >= 0)
+      return id;
 
   storage.intval = default_value;
   return param_register(type_name, component_name, param_name, mca_param_name,
@@ -176,6 +179,10 @@ int mca_base_param_register_string(const char *type_name,
                                    const char *default_value)
 {
   mca_base_param_storage_t storage;
+  int id = mca_base_param_find(type_name,component_name,param_name);
+  if(id >= 0)
+      return id;
+
   if (NULL != default_value) {
     storage.stringval = (char *) default_value;
   } else {
@@ -256,7 +263,8 @@ int mca_base_param_set_int(int index, int value)
 
     mca_base_param_unset(index);
     storage.intval = value;
-    return param_set_override(index, &storage, MCA_BASE_PARAM_TYPE_INT);
+    param_set_override(index, &storage, MCA_BASE_PARAM_TYPE_INT);
+    return OMPI_SUCCESS;
 }
 
 
@@ -299,8 +307,9 @@ int mca_base_param_set_string(int index, char *value)
     mca_base_param_storage_t storage;
 
     mca_base_param_unset(index);
-    storage.stringval = value;
-    return param_set_override(index, &storage, MCA_BASE_PARAM_TYPE_STRING);
+    storage.stringval = strdup(value);
+    param_set_override(index, &storage, MCA_BASE_PARAM_TYPE_STRING);
+    return OMPI_SUCCESS;
 }
 
 
