@@ -75,9 +75,15 @@ extern char **environ;
 #define NUM_SIGNAL_POLL_ITERS 50
 
 
+/*
+ * Local variables
+ */
+static bool wait_cb_set = false;
+static pid_t child_pid = -1;
+
+
 static int pls_tm_launch(orte_jobid_t jobid)
 {
-    pid_t pid;
     orte_jobid_t *save;
 
     /* Copy the jobid */
@@ -93,23 +99,24 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch: launching child to do the work");
-    pid = fork();
-    if (0 == pid) {
+    child_pid = fork();
+    if (0 == child_pid) {
         if (ORTE_SUCCESS != orte_pls_tm_child_init() ||
             ORTE_SUCCESS != orte_pls_tm_child_launch(jobid) ||
             ORTE_SUCCESS != orte_pls_tm_child_wait(jobid) ||
             ORTE_SUCCESS != orte_pls_tm_child_finalize()) {
             /* Bogus logic just to stop at the first failure */
-            pid++;
+            child_pid++;
         }
         exit(0);
     }
-    printf("tm child PID: %d\n", pid);
+    printf("tm child PID: %d\n", child_pid);
     fflush(stdout);
 
     /* Parent */
 
-    orte_wait_cb(pid, do_wait_proc, save);
+    orte_wait_cb(child_pid, do_wait_proc, save);
+    wait_cb_set = true;
 
     return ORTE_SUCCESS;
 }
@@ -179,6 +186,10 @@ static int pls_tm_terminate_proc(const orte_process_name_t *name)
  */
 static int pls_tm_finalize(void)
 {
+    if (wait_cb_set) {
+        orte_wait_cb_cancel(child_pid);
+    }
+
     return ORTE_SUCCESS;
 }
 
