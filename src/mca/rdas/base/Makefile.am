@@ -14,36 +14,34 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-        base \
-        coll \
-        common \
-	dps \
-        gpr \
-        io \
-        mpool \
-        ns \
-        one \
-        oob \
-	pcmclient \
-	pls \
-        pml \
-        ptl \
-	rdas \
-        soh \
-        svc \
-        topo
+noinst_LTLIBRARIES = libmca_rdas_base.la
+
+# For VPATH builds, have to specify where static-modules.h will be found
+
+AM_CPPFLAGS = -I$(top_builddir)/src
+AM_LFLAGS = -Pmca_rdas_base_yy
+LEX_OUTPUT_ROOT = lex.mca_rdas_base_yy
 
 # Source code files
 
-headers = mca.h
+headers = \
+	base.h \
+	rdas_base_parse_hostfile_lex.h
+
+libmca_rdas_base_la_SOURCES = \
+    $(headers) \
+	rdas_base_close.c \
+	rdas_base_open.c \
+	rdas_base_parse_hostfile.c \
+	rdas_base_parse_hostfile_lex.l \
+	rdas_base_select.c
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca
+ompidir = $(includedir)/openmpi/mca/rdas/base
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)
 endif
+

@@ -14,35 +14,17 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-        base \
-        coll \
-        common \
-	dps \
-        gpr \
-        io \
-        mpool \
-        ns \
-        one \
-        oob \
-	pcmclient \
-	pls \
-        pml \
-        ptl \
-	rdas \
-        soh \
-        svc \
-        topo
+SUBDIRS = base $(MCA_rdas_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_rdas_ALL_SUBDIRS)
 
 # Source code files
 
-headers = mca.h
+headers = rdas.h
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca
+ompidir = $(includedir)/openmpi/mca/rdas
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)
