@@ -69,8 +69,8 @@ orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    trig->local_idtag = (orte_gpr_notify_id_t)rc;
-    *local_idtag = trig->local_idtag;
+    trig->index = rc;
+    *local_idtag = (orte_gpr_notify_id_t)rc;
 
     return ORTE_SUCCESS;
 }
@@ -299,7 +299,7 @@ int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
     }
     
     if (NULL == trig->requestor) {  /* local recipient */
-        (*msg)->idtag = trig->local_idtag;
+        (*msg)->idtag = (orte_gpr_notify_id_t)(trig->index);
     } else {  /* remote recipient */
         (*msg)->idtag = trig->remote_idtag;
     }

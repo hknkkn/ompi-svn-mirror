@@ -232,19 +232,22 @@ OBJ_CLASS_INSTANCE(
 /* constructor - used to initialize state of trigger instance */
 static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig)
 {
+    trig->seg = NULL;
+    trig->action = 0;
+    
     trig->requestor = NULL;
     trig->callback = NULL;
     trig->user_tag = NULL;
-    trig->local_idtag = ORTE_GPR_NOTIFY_ID_MAX;
+    
     trig->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
-    trig->seg = NULL;
+    
     trig->token_addr_mode = 0;
     trig->key_addr_mode = 0;
-    trig->num_keys = 0;
     
     OBJ_CONSTRUCT(&(trig->tokentags), orte_value_array_t);
     orte_value_array_init(&(trig->tokentags), sizeof(orte_gpr_replica_itag_t));
 
+    trig->num_keys = 0;
     orte_pointer_array_init(&(trig->itagvals), orte_gpr_replica_globals.block_size,
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
@@ -253,9 +256,10 @@ static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
 
-    trig->action = 0;
-    trig->trigger = 0;
-    trig->count = 0;
+    trig->num_counters = 0;
+    orte_pointer_array_init(&(trig->counters), 1, orte_gpr_replica_globals.max_size, 1);
+
+    trig->trigger_level = 0;
 }
 
 /* destructor - used to free any resources held by instance */
@@ -263,7 +267,6 @@ static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* tri
 {
     int i;
     orte_gpr_replica_target_t **targets;
-    orte_gpr_replica_itagval_t **ivals;
     
     if (NULL != trig->requestor) {
         free(trig->requestor);
@@ -272,10 +275,6 @@ static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* tri
     OBJ_DESTRUCT(&(trig->tokentags));
     
     if (NULL != trig->itagvals) {
-       ivals = (orte_gpr_replica_itagval_t**)((trig->itagvals)->addr);
-       for (i=0; i < (trig->itagvals)->size; i++) {
-            if (NULL != ivals[i]) OBJ_RELEASE(ivals[i]);
-       }
        OBJ_RELEASE(trig->itagvals);
     }
 
@@ -285,6 +284,10 @@ static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* tri
             if (NULL != targets[i]) free(targets[i]);
        }
        OBJ_RELEASE(trig->targets);
+    }
+
+    if (NULL != trig->counters) {
+       OBJ_RELEASE(trig->counters);
     }
 }
 
@@ -322,31 +325,6 @@ OBJ_CLASS_INSTANCE(
          ompi_list_item_t,            /* parent "class" name */
          orte_gpr_replica_callbacks_construct,   /* constructor */
          orte_gpr_replica_callbacks_destructor); /* destructor */
-
-
-/* NOTIFY OFF */
-/* constructor - used to initialize state of notify_off instance */
-static void orte_gpr_replica_notify_off_construct(orte_gpr_replica_notify_off_t* off)
-{
-    off->sub_number = ORTE_GPR_NOTIFY_ID_MAX;
-    off->proc = NULL;
-}
-
-/* destructor - used to free any resources held by notify_off instance */
-static void orte_gpr_replica_notify_off_destructor(orte_gpr_replica_notify_off_t* off)
-{
-    if (NULL != off->proc) {
-	    free(off->proc);
-        off->proc = NULL;
-    }
-}
-
-/* define instance of notify_off class */
-OBJ_CLASS_INSTANCE(
-		   orte_gpr_replica_notify_off_t,
-		   ompi_list_item_t,
-		   orte_gpr_replica_notify_off_construct,
-		   orte_gpr_replica_notify_off_destructor);
 
 
 /* REPLICA LIST - NOT IMPLEMENTED YET! */
@@ -460,9 +438,6 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
         	/* initialize the callback list head */
         	OBJ_CONSTRUCT(&orte_gpr_replica.callbacks, ompi_list_t);
         
-        	/* initialize the mode tracker */
-        	OBJ_CONSTRUCT(&orte_gpr_replica.notify_offs, ompi_list_t);
-        
         /* initialize the search arrays for temporarily storing search results */
         if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica_globals.srch_cptr),
                                 100, orte_gpr_replica_globals.max_size, 100)) {
@@ -506,7 +481,6 @@ int orte_gpr_replica_finalize(void)
     orte_gpr_replica_segment_t** seg;
     orte_gpr_replica_triggers_t** trig;
     orte_gpr_replica_callbacks_t* cb;
-    orte_gpr_replica_notify_off_t* no;
     
     if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "finalizing gpr replica");
@@ -531,11 +505,6 @@ int orte_gpr_replica_finalize(void)
     }
     OBJ_DESTRUCT(&orte_gpr_replica.callbacks);
 
-
-    while (NULL != (no = (orte_gpr_replica_notify_off_t*)ompi_list_remove_first(&orte_gpr_replica.notify_offs))) {
-        OBJ_RELEASE(no);
-    }
-    OBJ_DESTRUCT(&orte_gpr_replica.notify_offs);
 
     /* clean up the globals */
     if (NULL != orte_gpr_replica_globals.compound_cmd) {

@@ -66,6 +66,8 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
     }
     
     asprintf(&tmp_out, "Number of triggers: %d\n", k);
+    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    
     /* dump the trigger info for the registry */
     for (j=0, k=0; j < (orte_gpr_replica.triggers)->size; j++) {
         if (NULL != trig[j]) {
@@ -79,19 +81,19 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
     for (i=0; i < (orte_gpr_replica.segments)->size; i++) {
          if (NULL != seg[i]) {
 
-            	asprintf(&tmp_out, "GPR Dump for Segment: %s", seg[i]->name);
+            	asprintf(&tmp_out, "\nGPR Dump for Segment: %s", seg[i]->name);
             	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
             
             	num_objects = (seg[i]->containers)->size - (seg[i]->containers)->number_free;
             
-            	asprintf(&tmp_out, "\tNumber of objects: %d\n", num_objects);
+            	asprintf(&tmp_out, "\tNumber of containers: %d\n", num_objects);
             	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
             
             	/* loop through all containers and print their info and contents */
              cptr = (orte_gpr_replica_container_t**)(seg[i]->containers)->addr;
             	for (j=0; j < (seg[i]->containers)->size; j++) {
                 if (NULL != cptr[j]) {
-                	    asprintf(&tmp_out, "\tInfo for container %d\tNumber of keyvals: %d\nTokens:\n",
+                	    asprintf(&tmp_out, "\n\tInfo for container %d\tNumber of keyvals: %d\n\tTokens:\n",
                                  j, (cptr[j]->itagvals)->size - (cptr[j]->itagvals)->number_free);
                 	    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 
@@ -100,17 +102,17 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
                 	    for (k=0; k < cptr[j]->num_itags; k++) {
                 		     if (ORTE_SUCCESS != orte_gpr_replica_dict_reverse_lookup(
                                                             &token, seg[i], itaglist[k])) {
-                		          asprintf(&tmp_out, "\t\titag num: %d - No entry found for itag %X",
+                		          asprintf(&tmp_out, "\t\titag num %d: No entry found for itag %X",
                 			             k, itaglist[k]);
                 		     } else {
-                		          asprintf(&tmp_out, "\t\titag num: %d - itag %d Token: %s",
+                		          asprintf(&tmp_out, "\t\titag num %d: itag %d\tToken: %s",
                 			             k, itaglist[k], token);
                 		          free(token);
                 		     }
                 		     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 	    }
                      
-                     asprintf(&tmp_out, "\tKeyval info:\n");
+                     asprintf(&tmp_out, "\n\tKeyval info:");
                      orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 
                      /* loop through all itagvals and print their info */
@@ -119,10 +121,10 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
                           if (NULL != iptr[k]) {
                               if (ORTE_SUCCESS != orte_gpr_replica_dict_reverse_lookup(
                                                         &token, seg[i], iptr[k]->itag)) {
-                                   asprintf(&tmp_out, "\t\titag num: %d - No entry found for itag %X",
+                                   asprintf(&tmp_out, "\n\t\titag num %d: No entry found for itag %X",
                                        k, iptr[k]->itag);
                               } else {
-                                   asprintf(&tmp_out, "\t\tEntry: %d - itag %d Key: %s",
+                                   asprintf(&tmp_out, "\n\t\tEntry %d: itag %d\tKey: %s",
                                         k, iptr[k]->itag, token);
                                    free(token);
                               }
@@ -146,17 +148,17 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     orte_gpr_replica_target_t **target;
     orte_gpr_replica_itagval_t **ival;
     
-	asprintf(&tmp_out, "Data for trigger %d on segment %s",
+	asprintf(&tmp_out, "\nData for trigger %d on segment %s",
                         cnt, (trig->seg)->name);
 	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-	asprintf(&tmp_out, "\tAssociated with notify number: %d",trig->local_idtag);
-	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-	/* find recipient info from notify list */
+
+	/* output recipient info */
 		if (NULL == trig->requestor) {
 		    asprintf(&tmp_out, "\tIntended recipient: LOCAL");
     	} else {
 	    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(trig->requestor));
 	}
+ 
 	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 	tmp_out = strdup("\tActions:");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
@@ -203,66 +205,66 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
 
-	asprintf(&tmp_out, "\tTrigger level: %d\tCurrent count: %d", trig->trigger, trig->count);
+	asprintf(&tmp_out, "\tData covered by this subscription");
 	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
     k = (int)orte_value_array_get_size(&(trig->tokentags));
     
     k = (int)orte_value_array_get_size(&(trig->tokentags));
     if (0 == k) {
-        asprintf(&tmp_out, "\tNULL token (wildcard)");
+        asprintf(&tmp_out, "\t\tNULL token (wildcard)");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     } else {
-        asprintf(&tmp_out, "\tNumber of tokens: %d", k);
+        asprintf(&tmp_out, "\t\tNumber of tokens: %d", k);
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     
         for (i=0; i < k; i++) {
             if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
                     ORTE_VALUE_ARRAY_GET_ITEM(&(trig->tokentags), orte_gpr_replica_itag_t, i))) {
-                asprintf(&tmp_out, "\t\tToken: %s", token);
+                asprintf(&tmp_out, "\t\t\tToken: %s", token);
     		    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 free(token);
             }
     	   }
     }
     
-    asprintf(&tmp_out, "\tToken addressing mode:\n");
+    asprintf(&tmp_out, "\t\tToken addressing mode:\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
     if (ORTE_GPR_REPLICA_NOT & trig->token_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_TOKENS_NOT\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_TOKENS_NOT\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_AND & trig->token_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_TOKENS_AND\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_TOKENS_AND\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_OR & trig->token_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_TOKENS_OR\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_TOKENS_OR\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_XAND & trig->token_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_TOKENS_XAND\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_TOKENS_XAND\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_XOR & trig->token_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_TOKENS_XOR\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_TOKENS_XOR\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     
     k = (int)((trig->itagvals)->size);
     if (0 == k) {
-        asprintf(&tmp_out, "\tNULL key (wildcard)");
+        asprintf(&tmp_out, "\t\tNULL key (wildcard)");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     } else {
-        asprintf(&tmp_out, "\tNumber of keys: %d", k);
+        asprintf(&tmp_out, "\t\tNumber of keys: %d", k);
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
         ival = (orte_gpr_replica_itagval_t**)((trig->itagvals)->addr);
         for (i=0; i < k; i++) {
             if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
                     ival[i]->itag)) {
-                asprintf(&tmp_out, "\t\tKey: %s", token);
+                asprintf(&tmp_out, "\t\t\tKey: %s", token);
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 free(token);
             }
@@ -270,27 +272,27 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         }
     }
     
-    asprintf(&tmp_out, "\tKey addressing mode:\n");
+    asprintf(&tmp_out, "\t\tKey addressing mode:\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
     if (ORTE_GPR_REPLICA_NOT & trig->key_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_KEYS_NOT\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_KEYS_NOT\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_AND & trig->key_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_KEYS_AND\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_KEYS_AND\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_OR & trig->key_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_KEYS_OR\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_KEYS_OR\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_XAND & trig->key_addr_mode) {
-        asprintf(&tmp_out, "\tORTE_GPR_KEYS_XAND\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_KEYS_XAND\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     if (ORTE_GPR_REPLICA_XOR & trig->key_addr_mode) {
-        asprintf(&tmp_out, "\t\tORTE_GPR_KEYS_XOR\n");
+        asprintf(&tmp_out, "\t\t\tORTE_GPR_KEYS_XOR\n");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     
@@ -318,9 +320,21 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
             orte_gpr_replica_dump_load_string(buffer, &tmp_out);
         }
     }
-	tmp_out = strdup("\n\n");
-    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-
+    
+    if (0 < trig->num_counters) {
+        ival = (orte_gpr_replica_itagval_t**)((trig->counters)->addr);
+        for (i=0; i < trig->num_counters; i++) {
+            if (NULL != ival[i] &&
+                ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
+                    ival[i]->itag)) {
+                asprintf(&tmp_out, "\t\tCounter: %d\tName: %s", i, token);
+                free(token);
+                orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+                orte_gpr_replica_dump_itagval_value(buffer, ival[i]);
+            }
+        }
+    }
+    
     return;
 }
 
@@ -333,71 +347,71 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
     switch(iptr->type) {
 
         case ORTE_STRING:
-            asprintf(&tmp, "\t\tData type: ORTE_STRING\tValue: %s\n", iptr->value.strptr);
+            asprintf(&tmp, "\t\tData type: ORTE_STRING\tValue: %s", iptr->value.strptr);
             break;
             
         case ORTE_UINT8:
-            asprintf(&tmp, "\t\tData type: ORTE_UINT8\tValue: %d\n", (int)iptr->value.ui8);
+            asprintf(&tmp, "\t\tData type: ORTE_UINT8\tValue: %d", (int)iptr->value.ui8);
             break;
             
         case ORTE_UINT16:
-            asprintf(&tmp, "\t\tData type: ORTE_UINT16\tValue: %d\n", (int)iptr->value.ui16);
+            asprintf(&tmp, "\t\tData type: ORTE_UINT16\tValue: %d", (int)iptr->value.ui16);
             break;
             
         case ORTE_UINT32:
-            asprintf(&tmp, "\t\tData type: ORTE_UINT32\tValue: %d\n", (int)iptr->value.ui32);
+            asprintf(&tmp, "\t\tData type: ORTE_UINT32\tValue: %d", (int)iptr->value.ui32);
             break;
             
 #ifdef HAVE_I64
         case ORTE_UINT64:
-            asprintf(&tmp, "\t\tData type: ORTE_UINT64\tValue: %d\n", (int)iptr->value.ui64);
+            asprintf(&tmp, "\t\tData type: ORTE_UINT64\tValue: %d", (int)iptr->value.ui64);
             break;
 #endif
 
         case ORTE_INT8:
-            asprintf(&tmp, "\t\tData type: ORTE_INT8\tValue: %d\n", (int)iptr->value.i8);
+            asprintf(&tmp, "\t\tData type: ORTE_INT8\tValue: %d", (int)iptr->value.i8);
             break;
         
         case ORTE_INT16:
-            asprintf(&tmp, "\t\tData type: ORTE_INT16\tValue: %d\n", (int)iptr->value.i16);
+            asprintf(&tmp, "\t\tData type: ORTE_INT16\tValue: %d", (int)iptr->value.i16);
             break;
         
         case ORTE_INT32:
-            asprintf(&tmp, "\t\tData type: ORTE_INT32\tValue: %d\n", (int)iptr->value.i32);
+            asprintf(&tmp, "\t\tData type: ORTE_INT32\tValue: %d", (int)iptr->value.i32);
             break;
         
 #ifdef HAVE_I64
         case ORTE_INT64:
-            asprintf(&tmp, "\t\tData type: ORTE_INT64\tValue: %d\n", (int)iptr->value.i64);
+            asprintf(&tmp, "\t\tData type: ORTE_INT64\tValue: %d", (int)iptr->value.i64);
             break;
 #endif
 
         case ORTE_BYTE_OBJECT:
-            asprintf(&tmp, "\t\tData type: ORTE_BYTE_OBJECT\tSize: %d\n", (int)(iptr->value.byteobject).size);
+            asprintf(&tmp, "\t\tData type: ORTE_BYTE_OBJECT\tSize: %d", (int)(iptr->value.byteobject).size);
             break;
             
         case ORTE_NAME:
-            asprintf(&tmp, "\t\tData type: ORTE_NAME\tValue: UNIMPLEMENTED\n");
+            asprintf(&tmp, "\t\tData type: ORTE_NAME\tValue: UNIMPLEMENTED");
             break;
             
         case ORTE_JOBID:
-            asprintf(&tmp, "\t\tData type: ORTE_JOBID\tValue: UNIMPLEMENTED\n");
+            asprintf(&tmp, "\t\tData type: ORTE_JOBID\tValue: UNIMPLEMENTED");
             break;
             
         case ORTE_NODE_STATE:
-            asprintf(&tmp, "\t\tData type: ORTE_NODE_STATE\tValue: %d\n", (int)iptr->value.node_state);
+            asprintf(&tmp, "\t\tData type: ORTE_NODE_STATE\tValue: %d", (int)iptr->value.node_state);
             break;
             
         case ORTE_PROC_STATE:
-            asprintf(&tmp, "\t\tData type: ORTE_PROC_STATE\tValue: %d\n", (int)iptr->value.proc_state);
+            asprintf(&tmp, "\t\tData type: ORTE_PROC_STATE\tValue: %d", (int)iptr->value.proc_state);
             break;
             
         case ORTE_EXIT_CODE:
-            asprintf(&tmp, "\t\tData type: ORTE_EXIT_CODE\tValue: %d\n", (int)iptr->value.exit_code);
+            asprintf(&tmp, "\t\tData type: ORTE_EXIT_CODE\tValue: %d", (int)iptr->value.exit_code);
             break;
             
         default:
-            asprintf(&tmp, "\t\tData type: UNKNOWN\n");
+            asprintf(&tmp, "\t\tData type: UNKNOWN");
             break;
     }
     

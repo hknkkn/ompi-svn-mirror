@@ -50,6 +50,12 @@ orte_gpr_replica_subscribe(orte_gpr_notify_action_t action,
 	    return ORTE_ERR_BAD_PARAM;
     }
 
+    /* if this has a trigger in it, must specify the trigger condition */
+    if (ORTE_GPR_TRIG_ANY & action && NULL == trig) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
+    }
+    
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     /* locate the segment */
@@ -96,7 +102,7 @@ orte_gpr_replica_subscribe(orte_gpr_notify_action_t action,
     }
 
     /* register subscription */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(seg, value, trig, idtag))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(action, seg, value, trig, idtag))) {
         ORTE_ERROR_LOG(rc);
         orte_gpr_replica_remove_notify_request(idtag, &remote_idtag);
     }

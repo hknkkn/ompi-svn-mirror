@@ -48,7 +48,7 @@ void orte_errmgr_base_proc_aborted(orte_process_name_t *proc)
 
 void orte_errmgr_base_incomplete_start(orte_jobid_t job)
 {
-    orte_rmgr.terminate_job(job);
+/*    orte_rmgr.terminate_job(job); */
 }
 
 void orte_errmgr_base_error_detected(int error_code)

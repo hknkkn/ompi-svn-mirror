@@ -96,7 +96,7 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
         }
 
         /* register subscription */
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(seg,
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(action, seg,
                           value, trig, local_idtag))) {
             orte_gpr_replica_remove_notify_request(local_idtag, &idtag);
             ORTE_ERROR_LOG(rc);
@@ -113,7 +113,7 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
 
     } else {  /* local sender - idtag is for local notify tracking system */
         /* register subscription */
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(seg,
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(action, seg,
                           value, trig, idtag))) {
             orte_gpr_replica_remove_notify_request(idtag, &idtag);
             ORTE_ERROR_LOG(rc);

@@ -30,6 +30,7 @@
 #include "mca/pls/rsh/pls-rsh-version.h"
 #include "mca/base/mca_base_param.h"
 
+extern char **environ;
 
 /*
  * Public string showing the pls ompi_rsh component version number

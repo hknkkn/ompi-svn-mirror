@@ -45,6 +45,8 @@
 #define ORTE_GPR_NOTIFY_DEL_ENTRY       (uint16_t)0x0008   /**< Notifies subscriber when entry deleted */
 #define ORTE_GPR_NOTIFY_ALL             (uint16_t)0x000f   /**< Notifies subscriber upon any action */
 #define ORTE_GPR_NOTIFY_PRE_EXISTING    (uint16_t)0x0010   /**< Provide list of all pre-existing data */
+#define ORTE_GPR_NOTIFY_ANY             (uint16_t)0x00ff   /**< Used to test if any action flags set */
+
 #define ORTE_GPR_TRIG_ONE_SHOT          (uint16_t)0x0100   /**< Only trigger once - then delete subscription */
 #define ORTE_GPR_TRIG_AT_LEVEL          (uint16_t)0x0200   /**< Trigger whenever count reaches specified level */
 #define ORTE_GPR_TRIG_CMP_LEVELS        (uint16_t)0x0400   /**< Trigger when all the specified values are equal */
@@ -53,6 +55,8 @@
 #define ORTE_GPR_TRIG_INCLUDE_DATA      (uint16_t)0x2000   /**< Include the trigger data in the trigger msg */
 #define ORTE_GPR_TRIG_ALL_AT            (uint16_t)0xdb00   /**< Use all trig defs except include trig data with AT - a typical situation */
 #define ORTE_GPR_TRIG_ALL_CMP           (uint16_t)0xdd00   /**< Use all trig defs except include trig data with CMP */
+#define ORTE_GPR_TRIG_ANY               (uint16_t)0xff00   /**< Used to test if any trigs are set */
+
 typedef uint16_t orte_gpr_notify_action_t;
 
 typedef int32_t orte_gpr_notify_id_t;

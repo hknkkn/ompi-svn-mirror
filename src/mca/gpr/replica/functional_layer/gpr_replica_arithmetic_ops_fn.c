@@ -41,7 +41,6 @@ int orte_gpr_replica_increment_value_fn(orte_gpr_addr_mode_t addr_mode,
     orte_gpr_replica_itag_t itag;
     orte_gpr_replica_addr_mode_t tok_mode;
     orte_gpr_replica_itagval_t **ival;
-    bool found;
     int rc, i, j, k, num_found;
 
     /* extract the token address mode */
@@ -69,9 +68,9 @@ int orte_gpr_replica_increment_value_fn(orte_gpr_addr_mode_t addr_mode,
         if (NULL != cptr[j]) {
             for (i=0; i < cnt; i++) { /* for each provided keyval to be incremented */
                 if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, keyvals[i]->key) &&
-                    ORTE_SUCCESS == orte_gpr_replica_search_container(&found,
+                    ORTE_SUCCESS == orte_gpr_replica_search_container(&num_found,
                                             ORTE_GPR_REPLICA_OR, &itag, 1, cptr[j]) &&
-                    found) {
+                    0 < num_found) {
                     ival = (orte_gpr_replica_itagval_t**)((orte_gpr_replica_globals.srch_ival)->addr);
                     for (k=0; k < (orte_gpr_replica_globals.srch_ival)->size; k++) { /* for each found keyval */
                         if (NULL != ival[k]) {
@@ -134,7 +133,6 @@ int orte_gpr_replica_decrement_value_fn(orte_gpr_addr_mode_t addr_mode,
     orte_gpr_replica_itag_t itag;
     orte_gpr_replica_addr_mode_t tok_mode;
     orte_gpr_replica_itagval_t **ival;
-    bool found;
     int rc, i, j, k, num_found;
 
     /* extract the token address mode */
@@ -162,9 +160,9 @@ int orte_gpr_replica_decrement_value_fn(orte_gpr_addr_mode_t addr_mode,
         if (NULL != cptr[j]) {
             for (i=0; i < cnt; i++) { /* for each provided keyval to be decremented */
                 if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, keyvals[i]->key) &&
-                    ORTE_SUCCESS == orte_gpr_replica_search_container(&found,
+                    ORTE_SUCCESS == orte_gpr_replica_search_container(&num_found,
                                             ORTE_GPR_REPLICA_OR, &itag, 1, cptr[j]) &&
-                    found) {
+                    0 < num_found) {
                     ival = (orte_gpr_replica_itagval_t**)((orte_gpr_replica_globals.srch_ival)->addr);
                     for (k=0; k < (orte_gpr_replica_globals.srch_ival)->size; k++) { /* for each found keyval */
                         if (NULL != ival[k]) {

@@ -99,7 +99,6 @@ struct orte_gpr_replica_t {
     orte_pointer_array_t *segments;  /**< Managed array of pointers to segment objects */
     orte_pointer_array_t *triggers;     /**< Managed array of pointers to triggers */
     ompi_list_t callbacks;          /**< List of callbacks to be processed */
-    ompi_list_t notify_offs;        /**< List of processes with triggers inactive */
 };
 typedef struct orte_gpr_replica_t orte_gpr_replica_t;
 
@@ -176,21 +175,40 @@ typedef struct {
 
 struct orte_gpr_replica_triggers_t {
     ompi_object_t super;                            /**< Make this an object */
+    /* index of this trigger in the triggers array */
+    int index;
+    /* the segment to which this subscription is registered */
+    orte_gpr_replica_segment_t *seg;
+    /* the action that causes a notification message to be sent out */
+    orte_gpr_notify_action_t action;
+    /* to whom and where the notification messages go */
     orte_process_name_t *requestor;                 /**< Name of requesting process */
     orte_gpr_notify_cb_fn_t callback;               /**< Function to be called for notification */
     void *user_tag;                                 /**< User-provided tag for callback function */
-    orte_gpr_notify_id_t local_idtag;               /**< Local ID tag of associated subscription */
+    /* remote idtag associated with this subscription */
     orte_gpr_notify_id_t remote_idtag;              /**< Remote ID tag of subscription */
+    /* describe the data to be returned with the message -
+     * for triggers that are counting themselves (i.e., not monitoring a separate
+     * counter), this also describes the data to be included in the count
+     */
     orte_gpr_replica_addr_mode_t token_addr_mode;   /**< Tokens addressing mode */
     orte_gpr_replica_addr_mode_t key_addr_mode;     /**< Keys addressing mode */
     orte_value_array_t tokentags;                   /**< Array of tokens defining which containers are affected */
     int num_keys;                                   /**< Number of key/values being tracked */
     orte_pointer_array_t *itagvals;                 /**< Keys/values defining which key-value pairs are affected */
-    orte_gpr_notify_action_t action;                /**< Action that causes trigger to act */
-    int trigger;                                    /**< Number of objects that trigger notification */
-    int count;                                      /**< Number of qualifying objects currently in segment */
-    orte_gpr_replica_segment_t *seg;                /**< Pointer to the segment to which this trigger applies */
+    /* store a pointer to each container/itagval that meets this criteria so we
+     * can quickly detect whether or not this subscription should fire whenever
+     * the container/value is affected
+     */
     orte_pointer_array_t *targets;
+    /* for triggers, store a pointer to the counters being monitored. This could
+     * be counters we are using ourselves, or could be counters being run by someone
+     * else. Store the trigger level for counters we are monitoring until they reach
+     * a specified level (as opposed to comparing values in two or more counters).
+     */
+    int num_counters;
+    orte_pointer_array_t *counters;
+    int trigger_level;
 };
 typedef struct orte_gpr_replica_triggers_t orte_gpr_replica_triggers_t;
 
@@ -217,18 +235,6 @@ struct orte_gpr_replica_callbacks_t {
 typedef struct orte_gpr_replica_callbacks_t orte_gpr_replica_callbacks_t;
 
 OBJ_CLASS_DECLARATION(orte_gpr_replica_callbacks_t);
-
-/*
- * List of process names who have notification turned OFF
- */
-struct orte_gpr_replica_notify_off_t {
-    ompi_list_item_t item;
-    orte_gpr_notify_id_t sub_number;
-    orte_process_name_t *proc;
-};
-typedef struct orte_gpr_replica_notify_off_t orte_gpr_replica_notify_off_t;
-
-OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_off_t);
 
 /** List of replicas that hold a stored entry.
  * Each entry can have an arbitrary number of replicas that hold a copy

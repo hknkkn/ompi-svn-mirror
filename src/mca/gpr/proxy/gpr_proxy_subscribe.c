@@ -55,6 +55,12 @@ orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
 	    return ORTE_ERR_BAD_PARAM;
     }
 
+    /* if this has a trigger in it, must specify the trigger condition */
+    if (ORTE_GPR_TRIG_ANY & action && NULL == trig) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
+    }
+    
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
 	    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(orte_gpr_proxy_globals.compound_cmd,
 							                         action, value, trig))) {

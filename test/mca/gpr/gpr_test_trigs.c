@@ -32,7 +32,9 @@
 #include "class/orte_pointer_array.h"
 #include "dps/dps.h"
 #include "runtime/runtime.h"
+#include "util/output.h"
 #include "util/proc_info.h"
+#include "util/sys_info.h"
 
 #include "mca/gpr/base/base.h"
 #include "mca/gpr/replica/api_layer/gpr_replica_api.h"
@@ -51,17 +53,9 @@ static void test_cbfunc(orte_gpr_notify_message_t *notify_msg, void *user_tag);
 int main(int argc, char **argv)
 {
     int rc, num_names, num_found;
-    int32_t i, j, cnt;
-    bool allow_multi_user_threads = false;
-    bool have_hidden_threads = false;
-    char *tmp=NULL, *tmp2=NULL, *names[15], *keys[5];
-    orte_gpr_replica_segment_t *seg=NULL;
-    orte_gpr_replica_itag_t itag[10], itag2, *itaglist;
-    orte_gpr_replica_container_t *cptr=NULL, **cptrs=NULL;
-    orte_gpr_keyval_t *kptr=NULL, *karray[20], **kvals;
-    orte_gpr_replica_itagval_t **ivals=NULL;
-    orte_gpr_value_t **values;
-    orte_gpr_notify_id_t synch, sub;
+    int i, j, cnt;
+    orte_gpr_value_t value, trig;
+    orte_gpr_notify_id_t sub;
     
     test_init("test_gpr_replica_trigs");
 
@@ -76,8 +70,29 @@ int main(int argc, char **argv)
     /* ENSURE THE REPLICA IS ISOLATED */
     setenv("OMPI_MCA_gpr_replica_isolate", "1", 1);
     
-    ompi_init(argc, argv);
+    /* Open up the output streams */
+    if (!ompi_output_init()) {
+        return OMPI_ERROR;
+    }
+                                                                                                                   
+    /* 
+     * If threads are supported - assume that we are using threads - and reset otherwise. 
+     */
+    ompi_set_using_threads(OMPI_HAVE_THREADS);
+                                                                                                                   
+    /* For malloc debugging */
+    ompi_malloc_init();
 
+    /* Ensure the system_info structure is instantiated and initialized */
+    if (ORTE_SUCCESS != (ret = orte_sys_info())) {
+        return ret;
+    }
+
+    /* Ensure the process info structure is instantiated and initialized */
+    if (ORTE_SUCCESS != (ret = orte_proc_info())) {
+        return ret;
+    }
+    
     orte_process_info.seed = true;
 
     /* startup the MCA */
@@ -109,32 +124,22 @@ int main(int argc, char **argv)
         exit (1);
     }
     
-    fprintf(stderr, "get itag list\n");
-    for (i=0; i < 14; i++) {
-        asprintf(&names[i], "dummy%d", i);
-    }
-    names[14] = NULL;
-
-    fprintf(stderr, "register synchro on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_synchro(ORTE_GPR_TOKENS_OR,
-                                    ORTE_GPR_SYNCHRO_MODE_LEVEL,
-                                    "test-segment",
-                                    names, NULL, 5, &synch,
-                                    test_cbfunc, NULL))) {
-        fprintf(test_out, "gpr_test_trigs: synch on seg failed with error %s\n",
-                        ORTE_ERROR_NAME(rc));
-        test_failure("gpr_test_trigs: synch on seg failed");
-        test_finalize();
-        return rc;
-    } else {
-        fprintf(test_out, "gpr_test_trigs: synch on seg registered\n");
-    }
+    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+    value.addr_mode = ORTE_GPR_TOKENS_OR;
+    value.segment = strdup("test-segment");
+    value.num_tokens = 0;
+    value.tokens = NULL;
+    value.cnt = 1;
+    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    value.keyvals[0]->key = strdup("dummy");
+    value.keyvals[0]->type = ORTE_INT16;
+    value.keyvals[0]->value.int16 = 1;
     
     fprintf(stderr, "register subscription on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_TOKENS_OR,
-                                    ORTE_GPR_NOTIFY_ADD_ENTRY,
-                                    "test-segment",
-                                    NULL, names, &sub,
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_NOTIFY_ADD_ENTRY,
+                                    &value,
+                                    NULL,
+                                    &sub,
                                     test_cbfunc, NULL))) {
         fprintf(test_out, "gpr_test_trigs: subscribe on seg failed with error %s\n",
                         ORTE_ERROR_NAME(rc));
