@@ -29,23 +29,12 @@ extern "C" {
      * Globally exported variable
      */
     
-    OMPI_COMP_EXPORT extern const orte_pls_base_component_1_0_0_t 
+    OMPI_COMP_EXPORT extern orte_pls_base_component_1_0_0_t 
         orte_pls_rsh_component;
-    OMPI_COMP_EXPORT extern const orte_pls_base_module_1_0_0_t
+    OMPI_COMP_EXPORT extern orte_pls_base_module_1_0_0_t
         orte_pls_rsh_module;
     OMPI_COMP_EXPORT extern int orte_pls_rsh_param_priorty;
     OMPI_COMP_EXPORT extern int orte_pls_rsh_param_agent;
-
-    /* Component functions */
-
-    const struct orte_pls_base_module_1_0_0_t *
-        orte_pls_rsh_init(bool *allow_multi_user_threads,
-                          bool *have_hidden_threads, int *priority);
-
-    /* Module functions */
-
-    int orte_pls_rsh_launch(orte_jobid_t jobid);
-    int orte_pls_rsh_finalize(void);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

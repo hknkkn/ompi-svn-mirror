@@ -50,9 +50,10 @@ static int param_agent = -1;
 
 
 /*
- * Local function
+ * Local functions
  */
-static int rsh_open(void);
+static int pls_rsh_open(void);
+static struct orte_pls_base_module_1_0_0_t *pls_rsh_init(int *priority);
 
 
 /*
@@ -60,7 +61,7 @@ static int rsh_open(void);
  * and pointers to our public functions in it
  */
 
-const orte_pls_base_component_1_0_0_t mca_pls_rsh_component = {
+orte_pls_base_component_1_0_0_t mca_pls_rsh_component = {
 
     /* First, the mca_component_t struct containing meta information
        about the component itself */
@@ -80,7 +81,7 @@ const orte_pls_base_component_1_0_0_t mca_pls_rsh_component = {
 
         /* Component open and close functions */
 
-        rsh_open,
+        pls_rsh_open,
         NULL
     },
 
@@ -94,11 +95,11 @@ const orte_pls_base_component_1_0_0_t mca_pls_rsh_component = {
 
     /* Initialization / querying functions */
 
-    orte_pls_rsh_init
+    pls_rsh_init
 };
 
 
-static int rsh_open(void)
+static int pls_rsh_open(void)
 {
     /* Use a low priority, but allow other components to be lower */
     
@@ -111,9 +112,7 @@ static int rsh_open(void)
 }
 
 
-const struct orte_pls_base_module_1_0_0_t *
-orte_pls_rsh_init(bool *allow_multi_user_threads,
-                  bool *have_hidden_threads, int *priority)
+static struct orte_pls_base_module_1_0_0_t *pls_rsh_init(int *priority)
 {
     char *agent;
     extern char **environ;
@@ -137,8 +136,6 @@ orte_pls_rsh_init(bool *allow_multi_user_threads,
     }
     free(agent);
 
-    *allow_multi_user_threads = false;
-    *have_hidden_threads = false;
     mca_base_param_lookup_int(param_priority, priority);
 
     return &orte_pls_rsh_module;

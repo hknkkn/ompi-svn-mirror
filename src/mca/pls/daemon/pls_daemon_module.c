@@ -25,19 +25,26 @@
 #include "pls_daemon.h"
 
 
-const orte_pls_base_module_1_0_0_t orte_pls_daemon_module = {
-    orte_pls_daemon_launch,
-    orte_pls_daemon_finalize
+/*
+ * Local functions
+ */
+static int pls_daemon_launch(orte_jobid_t jobid);
+static int pls_daemon_finalize(void);
+
+
+orte_pls_base_module_1_0_0_t orte_pls_daemon_module = {
+    pls_daemon_launch,
+    pls_daemon_finalize
 };
 
 
-int orte_pls_daemon_launch(orte_jobid_t jobid)
+static int pls_daemon_launch(orte_jobid_t jobid)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-int orte_pls_daemon_finalize(void)
+static int pls_daemon_finalize(void)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 
-#include "include/constants.h"
+#include "include/orte_constants.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/pls/base/base.h"
@@ -26,24 +26,25 @@ int orte_pls_base_close(void)
 {
     ompi_list_item_t* item;
 
-    /* Finalize all selected modules */
+    /* Finalize all available modules */
 
     while (NULL != 
            (item = ompi_list_remove_first(&orte_pls_base.pls_available))) {
-        orte_pls_base_available_t* available = (orte_pls_base_available_t*)item;
-        if (NULL != available->module->finalize) {
-            available->module->finalize();
+        orte_pls_base_cmp_t* cmp = (orte_pls_base_cmp_t*) item;
+        ompi_output(orte_pls_base.pls_output,
+                    "orte:base:close: finalizing module %s",
+                    cmp->component->pls_version.mca_component_name);
+        if (NULL != cmp->module->finalize) {
+            cmp->module->finalize();
         }
-        OBJ_RELEASE(available);
+        OBJ_RELEASE(cmp);
     }
 
-    /* Close all remaining available modules (may be one if this is a
-       Open RTE program, or [possibly] multiple if this is ompi_info) */
+    /* Close all remaining open components */
 
     mca_base_components_close(orte_pls_base.pls_output, 
-                              &orte_pls_base.pls_components, NULL);
+                              &orte_pls_base.pls_opened, NULL);
 
-    OBJ_DESTRUCT(&orte_pls_base.pls_available);
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
 

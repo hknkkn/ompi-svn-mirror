@@ -219,13 +219,12 @@
 #include "class/ompi_list.h"
 
 /*
- * PLS interface functions
+ * PLS module functions
  */
 
 /**
  * Launch the indicated jobid 
  */
-
 typedef int (*orte_pls_base_module_launch_fn_t)(orte_jobid_t);
 
 /**
@@ -234,12 +233,8 @@ typedef int (*orte_pls_base_module_launch_fn_t)(orte_jobid_t);
 typedef int (*orte_pls_base_module_finalize_fn_t)(void);
 
 /**
- * Base module structure for the PLS
- *
- * Base module structure for the PLS - presents the required function
- * pointers to the calling interface. 
+ * PLS module version 1.0.0
  */
-
 struct orte_pls_base_module_1_0_0_t {
    orte_pls_base_module_launch_fn_t launch;
    orte_pls_base_module_finalize_fn_t finalize;
@@ -253,32 +248,24 @@ typedef struct orte_pls_base_module_1_0_0_t orte_pls_base_module_t;
 /**
  * PLS initialization function
  *
- * Called by the MCA framework to initialize the component.  Will
- * be called exactly once in the lifetime of the process.
+ * Called by the MCA framework to initialize the component.  Invoked
+ * exactly once per process.
  *
- * @param allow_multi_user_threads (OUT) Whether this component allows
- *                       multiple user threads simultaneously.
- * @param have_hidden_thread (OUT) Whether this component may use any
- *                       hidden (e.g., "progress") threads.
  * @param priority (OUT) Relative priority or ranking use by MCA to
  *                       select a module.
- *
  */
 typedef struct orte_pls_base_module_1_0_0_t* 
-(*orte_pls_base_component_init_fn_t)(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads,
-    int *priority);
+(*orte_pls_base_component_init_fn_t)(int *priority);
 
 /** 
- * PLS component 
+ * PLS component v1.0.0
  */
 struct orte_pls_base_component_1_0_0_t {
     /** component version */
     mca_base_component_t pls_version;
     /** component data */
     mca_base_component_data_1_0_0_t pls_data;
-    /** Function called when component is initialized  */
+    /** Function called when component is initialized */
     orte_pls_base_component_init_fn_t pls_init;
 };
 /** shorten orte_pls_base_component_1_0_0_t declaration */

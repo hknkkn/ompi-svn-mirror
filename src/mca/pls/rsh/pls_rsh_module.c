@@ -25,19 +25,26 @@
 #include "pls_rsh.h"
 
 
-const orte_pls_base_module_1_0_0_t orte_pls_rsh_module = {
-    orte_pls_rsh_launch,
-    orte_pls_rsh_finalize
+/*
+ * Local functions
+ */
+static int rsh_launch(orte_jobid_t jobid);
+static int rsh_finalize(void);
+
+
+orte_pls_base_module_1_0_0_t orte_pls_rsh_module = {
+    rsh_launch,
+    rsh_finalize
 };
 
 
-int orte_pls_rsh_launch(orte_jobid_t jobid)
+static int rsh_launch(orte_jobid_t jobid)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-int orte_pls_rsh_finalize(void)
+static int rsh_finalize(void)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

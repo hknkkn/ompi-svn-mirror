@@ -25,19 +25,26 @@
 #include "pls_fork.h"
 
 
-const orte_pls_base_module_1_0_0_t orte_pls_fork_module = {
-    orte_pls_fork_launch,
-    orte_pls_fork_finalize
+/*
+ * Local functions
+ */
+static int pls_fork_launch(orte_jobid_t jobid);
+static int pls_fork_finalize(void);
+
+
+orte_pls_base_module_1_0_0_t orte_pls_fork_module = {
+    pls_fork_launch,
+    pls_fork_finalize
 };
 
 
-int orte_pls_fork_launch(orte_jobid_t jobid)
+static int pls_fork_launch(orte_jobid_t jobid)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-int orte_pls_fork_finalize(void)
+static int pls_fork_finalize(void)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

@@ -33,21 +33,27 @@
 #include "tm.h"
 
 
-const orte_pls_base_module_1_0_0_t orte_pls_tm_module = {
-    orte_pls_tm_launch,
-    orte_pls_tm_finalize
-};
-
-
 /*
  * Local functions
  */
+static int pls_tm_launch(orte_jobid_t jobid);
+static int pls_tm_finalize(void);
+
 static int do_tm_resolve(char **hostnames, size_t num_hostnames, 
                          tm_node_id *app_tm_node_ids);
 static char* get_tm_hostname(tm_node_id node);
 
 
-int orte_pls_tm_launch(orte_jobid_t jobid)
+/*
+ * Global variable
+ */
+orte_pls_base_module_1_0_0_t orte_pls_tm_module = {
+    pls_tm_launch,
+    pls_tm_finalize
+};
+
+
+static int pls_tm_launch(orte_jobid_t jobid)
 {
     int ret, local_errno;
     orte_app_context_t *app;
@@ -201,7 +207,7 @@ int orte_pls_tm_launch(orte_jobid_t jobid)
 /*
  * There's really nothing to do here
  */
-int orte_pls_tm_finalize(void)
+static int pls_tm_finalize(void)
 {
     return ORTE_SUCCESS;
 }

@@ -17,64 +17,82 @@
 #include "include/orte_constants.h"
 #include "class/ompi_list.h"
 #include "util/output.h"
-#include "util/show_help.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/pls/base/base.h"
 
 
-OBJ_CLASS_INSTANCE(orte_pls_base_available_t,
-                   ompi_list_item_t, NULL, NULL);
+/*
+ * Local functions
+ */
+static orte_pls_base_module_t *select_preferred(char *name);
+static orte_pls_base_module_t *select_any(void);
 
 
 /*
- * Function for selecting all available modules.
+ * Function for selecting one component from all those that are
+ * available.
  */
-int orte_pls_base_select(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads)
+orte_pls_base_module_t* orte_pls_base_select(char *preferred)
+{
+    if (NULL != preferred) {
+        return select_preferred(preferred);
+    } else {
+        return select_any();
+    }
+}
+
+
+static orte_pls_base_module_t *select_preferred(char *name)
 {
     ompi_list_item_t *item;
-    mca_base_component_list_item_t *cli;
-    const orte_pls_base_component_t *component;
-    const orte_pls_base_module_t *module;
-    bool multi, hidden;
-    int priority;
+    orte_pls_base_cmp_t *cmp;
 
-    /* Iterate through all the available components */
+    /* Look for a matching selected name */
 
-    for (item = ompi_list_get_first(&orte_pls_base.pls_components);
-         item != ompi_list_get_end(&orte_pls_base.pls_components);
+    ompi_output(orte_pls_base.pls_output,
+                "orte:base:select: looking for component %s", name);
+    for (item = ompi_list_get_first(&orte_pls_base.pls_available);
+         item != ompi_list_get_end(&orte_pls_base.pls_available);
          item = ompi_list_get_next(item)) {
-        cli = (mca_base_component_list_item_t *) item;
-        component = (orte_pls_base_component_t *) cli->cli_component;
+        cmp = (orte_pls_base_cmp_t *) item;
 
-        /* Call the component's init function and see if it wants to be
-           available */
-
-        module = component->pls_init(&multi, &hidden, &priority);
-
-        /* If we got a non-NULL module back, then the component wants to
-           be available. */
-
-        if (NULL != module) {
-            orte_pls_base_available_t* available = 
-                OBJ_NEW(orte_pls_base_available_t);
-            available->module = module;
-            available->component = component;
-            available->allow_multi_user_threads = multi;
-            available->have_hidden_threads = hidden;
-            if (priority < 0) {
-                priority = 0;
-            } else if (priority > 100) {
-                priority = 100;
-            }
-            available->priority = priority;
-            ompi_list_append(&orte_pls_base.pls_available, &available->super);
+        if (0 == strcmp(name, 
+                        cmp->component->pls_version.mca_component_name)) {
+            ompi_output(orte_pls_base.pls_output,
+                        "orte:base:select: found module for compoent %s", name);
+            return cmp->module;
         }
     }
 
-    return (ompi_list_get_size(&orte_pls_base.pls_available) > 0) ? 
-        ORTE_SUCCESS : ORTE_ERROR;
+    /* Didn't find a matching name */
+
+    ompi_output(orte_pls_base.pls_output,
+                "orte:base:select: did not find module for compoent %s", name);
+    return NULL;
 }
 
+
+static orte_pls_base_module_t *select_any(void)
+{
+    ompi_list_item_t *item;
+    orte_pls_base_cmp_t *cmp;
+
+    /* If the list is empty, return NULL */
+
+    if (ompi_list_is_empty(&orte_pls_base.pls_available) > 0) {
+        ompi_output(orte_pls_base.pls_output,
+                    "orte:base:select: no components available!");
+        return NULL;
+    }
+
+    /* Otherwise, return the first item (it's already sorted in
+       priority order) */
+
+    item = ompi_list_get_first(&orte_pls_base.pls_available);
+    cmp = (orte_pls_base_cmp_t *) item;
+    ompi_output(orte_pls_base.pls_output,
+                "orte:base:select: highest priority component: %s",
+                cmp->component->pls_version.mca_component_name);
+    return cmp->module;
+}

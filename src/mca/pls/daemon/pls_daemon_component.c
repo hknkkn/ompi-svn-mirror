@@ -43,7 +43,8 @@ static int param_priority = -1;
 /*
  * Local function
  */
-static int daemon_open(void);
+static int pls_daemon_open(void);
+static struct orte_pls_base_module_1_0_0_t *pls_daemon_init(int *priority);
 
 
 /*
@@ -51,7 +52,7 @@ static int daemon_open(void);
  * and pointers to our public functions in it
  */
 
-const orte_pls_base_component_1_0_0_t mca_pls_daemon_component = {
+orte_pls_base_component_1_0_0_t mca_pls_daemon_component = {
 
     /* First, the mca_component_t struct containing meta information
        about the component itself */
@@ -71,7 +72,7 @@ const orte_pls_base_component_1_0_0_t mca_pls_daemon_component = {
 
         /* Component open and close functions */
 
-        daemon_open,
+        pls_daemon_open,
         NULL
     },
 
@@ -85,11 +86,11 @@ const orte_pls_base_component_1_0_0_t mca_pls_daemon_component = {
 
     /* Initialization / querying functions */
 
-    orte_pls_daemon_init
+    pls_daemon_init
 };
 
 
-static int daemon_open(void)
+static int pls_daemon_open(void)
 {
     /* Use a low priority, but allow other components to be lower */
     
@@ -100,9 +101,7 @@ static int daemon_open(void)
 }
 
 
-const struct orte_pls_base_module_1_0_0_t *
-orte_pls_daemon_init(bool *allow_multi_user_threads,
-                     bool *have_hidden_threads, int *priority)
+static struct orte_pls_base_module_1_0_0_t *pls_daemon_init(int *priority)
 {
     /* Do we have daemons? */
 
@@ -110,8 +109,6 @@ orte_pls_daemon_init(bool *allow_multi_user_threads,
 
     bool have_daemons = false;
     if (have_daemons) {
-        *allow_multi_user_threads = false;
-        *have_hidden_threads = false;
         mca_base_param_lookup_int(param_priority, priority);
 
         return &orte_pls_daemon_module;

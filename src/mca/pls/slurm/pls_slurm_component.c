@@ -41,9 +41,10 @@ int param_priority = -1;
 
 
 /*
- * Local function
+ * Local functions
  */
-static int slurm_open(void);
+static int pls_slurm_open(void);
+static struct orte_pls_base_module_1_0_0_t *pls_slurm_init(int *priority);
 
 
 /*
@@ -51,7 +52,7 @@ static int slurm_open(void);
  * and pointers to our public functions in it
  */
 
-const orte_pls_base_component_1_0_0_t mca_pls_slurm_component = {
+orte_pls_base_component_1_0_0_t mca_pls_slurm_component = {
 
     /* First, the mca_component_t struct containing meta information
        about the component itself */
@@ -71,7 +72,7 @@ const orte_pls_base_component_1_0_0_t mca_pls_slurm_component = {
 
         /* Component open and close functions */
 
-        slurm_open,
+        pls_slurm_open,
         NULL
     },
 
@@ -85,11 +86,11 @@ const orte_pls_base_component_1_0_0_t mca_pls_slurm_component = {
 
     /* Initialization / querying functions */
 
-    orte_pls_slurm_init
+    pls_slurm_init
 };
 
 
-static int slurm_open(void)
+static int pls_slurm_open(void)
 {
     param_priority = 
         mca_base_param_register_int("pls", "slurm", "priority", NULL, 50);
@@ -98,15 +99,11 @@ static int slurm_open(void)
 }
 
 
-const struct orte_pls_base_module_1_0_0_t *
-orte_pls_slurm_init(bool *allow_multi_user_threads,
-                    bool *have_hidden_threads, int *priority)
+static struct orte_pls_base_module_1_0_0_t *pls_slurm_init(int *priority)
 {
     /* Are we runing under SLURM? */
 
     if (NULL != getenv("SLURM_JOBID")) {
-        *allow_multi_user_threads = false;
-        *have_hidden_threads = false;
         mca_base_param_lookup_int(param_priority, priority);
 
         return &orte_pls_slurm_module;

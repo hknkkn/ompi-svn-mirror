@@ -29,48 +29,54 @@
 extern "C" {
 #endif
 
-/*
- * Internal definitions
- */
-struct orte_pls_base_available_t {
-    ompi_list_item_t super;
-    const orte_pls_base_component_t *component;
-    const orte_pls_base_module_t* module;
+    /**
+     * Struct to hold data globale to the pls framework
+     */
+    typedef struct orte_pls_base_t {
+        int pls_output;
+        ompi_list_t pls_opened;
+        ompi_list_t pls_available;
+    } orte_pls_base_t;
+    
+    /**
+     * Global instance of pls-wide framework data
+     */
+    OMPI_DECLSPEC extern orte_pls_base_t orte_pls_base;
 
-    bool allow_multi_user_threads;
-    bool have_hidden_threads;
-    int priority;
-};
-typedef struct orte_pls_base_available_t orte_pls_base_available_t;
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_pls_base_available_t);
+    /**
+     * pls component/module/priority tuple
+     */
+    struct orte_pls_base_cmp_t {
+        /** Base object */
+        ompi_list_item_t super;
+        /** pls component */
+        orte_pls_base_component_t *component;
+        /** pls module */
+        orte_pls_base_module_t* module;
+        /** This component's priority */
+        int priority;
+    };
+    /** Convenience typedef */
+    typedef struct orte_pls_base_cmp_t orte_pls_base_cmp_t;
+    /** Class declaration */
+    OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_pls_base_cmp_t);
 
+    /*
+     * Global functions for MCA overall collective open and close
+     */
 
-/*
- * Global functions for MCA overall collective open and close
- */
-
-OMPI_DECLSPEC int orte_pls_base_open(void);
-OMPI_DECLSPEC int orte_pls_base_select(bool *allow_multi_user_threads,
-                                       bool *have_hidden_threads);
-OMPI_DECLSPEC int orte_pls_base_close(void);
-OMPI_DECLSPEC int orte_pls_base_launch(orte_jobid_t);
-OMPI_DECLSPEC int orte_pls_base_get_argv(orte_jobid_t jobid, char ***argv);
-
-/*
- * globals that might be needed
- */
-
-typedef struct orte_pls_base_t {
-   int pls_output;
-   ompi_list_t pls_components;
-   ompi_list_t pls_available;
-} orte_pls_base_t;
-
-OMPI_DECLSPEC extern orte_pls_base_t orte_pls_base;
-
-/*
- * external API functions will be documented in the mca/pls/pls.h file
- */
+    /**
+     * Open the pls framework
+     */
+    OMPI_DECLSPEC int orte_pls_base_open(void);
+    /**
+     * Select a pls module
+     */
+    OMPI_DECLSPEC orte_pls_base_module_t *orte_pls_base_select(char *preferred);
+    /**
+     * Close the pls framework
+     */
+    OMPI_DECLSPEC int orte_pls_base_close(void);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

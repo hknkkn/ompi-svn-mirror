@@ -25,19 +25,26 @@
 #include "pls_slurm.h"
 
 
-const orte_pls_base_module_1_0_0_t orte_pls_slurm_module = {
-    orte_pls_slurm_launch,
-    orte_pls_slurm_finalize
+/*
+ * Local functions
+ */
+static int pls_slurm_launch(orte_jobid_t jobid);
+static int pls_slurm_finalize(void);
+
+
+orte_pls_base_module_1_0_0_t orte_pls_slurm_module = {
+    pls_slurm_launch,
+    pls_slurm_finalize
 };
 
 
-int orte_pls_slurm_launch(orte_jobid_t jobid)
+static int pls_slurm_launch(orte_jobid_t jobid)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-int orte_pls_slurm_finalize(void)
+static int pls_slurm_finalize(void)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

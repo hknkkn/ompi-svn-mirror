@@ -43,7 +43,8 @@ static int param_priority = -1;
 /*
  * Local function
  */
-static int fork_open(void);
+static int pls_fork_open(void);
+static struct orte_pls_base_module_1_0_0_t *pls_fork_init(int *priority);
 
 
 /*
@@ -51,7 +52,7 @@ static int fork_open(void);
  * and pointers to our public functions in it
  */
 
-const orte_pls_base_component_1_0_0_t mca_pls_fork_component = {
+orte_pls_base_component_1_0_0_t mca_pls_fork_component = {
 
     /* First, the mca_component_t struct containing meta information
        about the component itself */
@@ -71,7 +72,7 @@ const orte_pls_base_component_1_0_0_t mca_pls_fork_component = {
 
         /* Component open and close functions */
 
-        fork_open,
+        pls_fork_open,
         NULL
     },
 
@@ -84,12 +85,12 @@ const orte_pls_base_component_1_0_0_t mca_pls_fork_component = {
     },
 
     /* Initialization / querying functions */
-
-    orte_pls_fork_init
+    
+    pls_fork_init
 };
 
 
-static int fork_open(void)
+static int pls_fork_open(void)
 {
     param_priority = 
         mca_base_param_register_int("pls", "fork", "priority", NULL, 50);
@@ -98,14 +99,10 @@ static int fork_open(void)
 }
 
 
-const struct orte_pls_base_module_1_0_0_t *
-orte_pls_fork_init(bool *allow_multi_user_threads,
-                   bool *have_hidden_threads, int *priority)
+static struct orte_pls_base_module_1_0_0_t *pls_fork_init(int *priority)
 {
     /* This component can always run */
 
-    *allow_multi_user_threads = false;
-    *have_hidden_threads = false;
     mca_base_param_lookup_int(param_priority, priority);
 
     return &orte_pls_fork_module;
