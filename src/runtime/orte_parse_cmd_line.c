@@ -26,6 +26,7 @@
 
 #include "mca/oob/base/base.h"
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "util/output.h"
 #include "util/cmd_line.h"
@@ -87,22 +88,6 @@ int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
 	   }
     }
 
-    /* copy the universe name into the process_info structure */
-    if (NULL != orte_universe_info.name) {
-	   if (NULL != orte_process_info.my_universe) {
-	       free(orte_process_info.my_universe);
-	       orte_process_info.my_universe = NULL;
-	   }
-	   orte_process_info.my_universe = strdup(orte_universe_info.name);
-    } else {  /* set it to default value */
-	   orte_universe_info.name = strdup("default-universe");
-	   if (NULL != orte_process_info.my_universe) { /* overwrite it */
-	       free(orte_process_info.my_universe);
-	       orte_process_info.my_universe = NULL;
-	   }
-	   orte_process_info.my_universe = strdup(orte_universe_info.name);
-    }
-
     /* and set the appropriate enviro variable */
     setenv("OMPI_universe_name", orte_universe_info.name, 1);
 
@@ -110,7 +95,7 @@ int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
     if (ompi_cmd_line_is_taken(cmd_line, "tmpdir")) {
 	if (NULL == ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0)) {
 	    ompi_output(0, "error retrieving tmpdir name - please report error to bugs@open-mpi.org\n");
-	    return;
+	    return ORTE_ERROR;
 	}
 	if (NULL != orte_process_info.tmpdir_base) { /* overwrite it */
 	    free(orte_process_info.tmpdir_base);
@@ -124,20 +109,15 @@ int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
     if (ompi_cmd_line_is_taken(cmd_line, "nsreplica")) {
 	if (NULL == ompi_cmd_line_get_param(cmd_line, "nsreplica", 0, 0)) {
 	    ompi_output(0, "error retrieving name server replica - please report error to bugs@open-mpi.org");
-	    return;
+	    return ORTE_ERROR;
 	}
 	nsreplica = strdup(ompi_cmd_line_get_param(cmd_line, "nsreplica", 0, 0));
-	if (NULL != orte_universe_info.ns_replica) {
-	    free(orte_universe_info.ns_replica);
-	    orte_universe_info.ns_replica = NULL;
-	}
-	orte_universe_info.ns_replica = strdup(nsreplica);
 	if (NULL == orte_process_info.ns_replica) {
         if (ORTE_SUCCESS != orte_ns.create_process_name(&orte_process_info.ns_replica, 0, 0, 0)) {
             return;
         }
 	}
-	mca_oob_parse_contact_info(orte_universe_info.ns_replica,
+	mca_oob_parse_contact_info(nsreplica,
 				   orte_process_info.ns_replica, NULL);
 	setenv("OMPI_MCA_ns_base_replica", nsreplica, 1);  /* set the ns_replica enviro variable */
     } /* otherwise, leave it alone */
@@ -149,17 +129,12 @@ int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
 	    return;
 	}
 	gprreplica = strdup(ompi_cmd_line_get_param(cmd_line, "gprreplica", 0, 0));
-	if (NULL != orte_universe_info.gpr_replica) {
-	    free(orte_universe_info.gpr_replica);
-	    orte_universe_info.gpr_replica = NULL;
-	}
-	orte_universe_info.gpr_replica = strdup(nsreplica);
 	if (NULL == orte_process_info.gpr_replica) {
         if (ORTE_SUCCESS != orte_ns.create_process_name(&orte_process_info.gpr_replica, 0, 0, 0)) {
             return;
         }
 	}
-	mca_oob_parse_contact_info(orte_universe_info.gpr_replica,
+	mca_oob_parse_contact_info(gprreplica,
 				   orte_process_info.gpr_replica, NULL);
 	setenv("OMPI_MCA_gpr_base_replica", gprreplica, 1);  /* set the gpr_replica enviro variable */
     }  /* otherwise leave it alone */

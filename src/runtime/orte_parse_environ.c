@@ -37,7 +37,7 @@
 
 #include "runtime/runtime.h"
 
-int ompi_rte_parse_environ(void)
+int orte_parse_environ(void)
 {
     int id, rc;
 
@@ -47,12 +47,12 @@ int ompi_rte_parse_environ(void)
 
     /* collect the universe-specific info */
     id = mca_base_param_register_int("seed", NULL, NULL, NULL, 1);
-    mca_base_param_lookup_int(id, &orte_process_info.seed);
+    mca_base_param_lookup_int(id, (int*)&orte_process_info.seed);
 
     id = mca_base_param_register_string("universe", "uri", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &orte_universe_info.seed_uri);
 	if (NULL != orte_universe_info.seed_uri) {  /* overwrite */
-	   if (ORTE_SUCCESS != (rc = orte_rml.set_uri(ompi_universe_info.seed_uri))) {
+	   if (ORTE_SUCCESS != (rc = orte_rml.set_uri(orte_universe_info.seed_uri))) {
             ORTE_ERROR_LOG(rc);
             return rc;
        }
@@ -67,10 +67,10 @@ int ompi_rte_parse_environ(void)
     mca_base_param_lookup_string(id, &orte_universe_info.scope);
 
     id = mca_base_param_register_int("universe", "persistence", NULL, NULL, 1);
-    mca_base_param_lookup_int(id, &orte_universe_info.persistence);
+    mca_base_param_lookup_int(id, (int*)&orte_universe_info.persistence);
 
     id = mca_base_param_register_int("universe", "console", NULL, NULL, 1);
-    mca_base_param_lookup_int(id, &orte_universe_info.console);
+    mca_base_param_lookup_int(id, (int*)&orte_universe_info.console);
 
     id = mca_base_param_register_string("universe", "script", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &orte_universe_info.scriptfile);

@@ -12,7 +12,7 @@
  * 
  * $HEADER$
  *
- * $Id: ompi_universe_setup_file I/O functions $
+ * $Id: orte_universe_setup_file I/O functions $
  * 
  */
 #include "ompi_config.h"
@@ -46,44 +46,42 @@ int ompi_write_universe_setup_file(char *filename)
 	return OMPI_ERROR;
     }
 
-    if (NULL == ompi_universe_info.name) {
+    if (NULL == orte_universe_info.name) {
 	goto CLEANUP;
     }
-    fprintf(fp, "%s\n", ompi_universe_info.name);
+    fprintf(fp, "%s\n", orte_universe_info.name);
 
-    if (NULL == ompi_universe_info.host) {
+    if (NULL == orte_universe_info.host) {
 	goto CLEANUP;
     }
-    fprintf(fp, "%s\n", ompi_universe_info.host);
+    fprintf(fp, "%s\n", orte_universe_info.host);
 
-    if (NULL == ompi_universe_info.uid) {
+    if (NULL == orte_universe_info.uid) {
 	goto CLEANUP;
     }
-    fprintf(fp, "%s\n", ompi_universe_info.uid);
+    fprintf(fp, "%s\n", orte_universe_info.uid);
 
-    fprintf(fp, "%d\n", ompi_universe_info.pid);
-
-    if (ompi_universe_info.persistence) {
+    if (orte_universe_info.persistence) {
 	fprintf(fp, "persistent\n");
     } else {
 	fprintf(fp, "non-persistent\n");
     }
 
-    if (NULL == ompi_universe_info.scope) {
+    if (NULL == orte_universe_info.scope) {
 	goto CLEANUP;
     }
-    fprintf(fp, "%s\n", ompi_universe_info.scope);
+    fprintf(fp, "%s\n", orte_universe_info.scope);
 
-    if (ompi_universe_info.console) {
+    if (orte_universe_info.console) {
 	fprintf(fp, "console\n");
     } else {
 	fprintf(fp, "silent\n");
     }
 
-    if (NULL == ompi_universe_info.seed_contact_info) {
+    if (NULL == orte_universe_info.seed_uri) {
 	goto CLEANUP;
     }
-    fprintf(fp, "%s\n", ompi_universe_info.seed_contact_info);
+    fprintf(fp, "%s\n", orte_universe_info.seed_uri);
     fclose(fp);
 
     return OMPI_SUCCESS;
@@ -106,43 +104,37 @@ int ompi_read_universe_setup_file(char *filename)
 	}
     }
 
-    ompi_universe_info.name = ompi_getline(fp);
-    if (NULL == ompi_universe_info.name) {
+    orte_universe_info.name = ompi_getline(fp);
+    if (NULL == orte_universe_info.name) {
 	goto CLEANUP;
     }
 
-    ompi_universe_info.host = ompi_getline(fp);
-    if (NULL == ompi_universe_info.host) {
+    orte_universe_info.host = ompi_getline(fp);
+    if (NULL == orte_universe_info.host) {
 	goto CLEANUP;
     }
 
-    ompi_universe_info.uid = ompi_getline(fp);
-    if (NULL == ompi_universe_info.uid) {
+    orte_universe_info.uid = ompi_getline(fp);
+    if (NULL == orte_universe_info.uid) {
 	goto CLEANUP;
     }
-
-    input = ompi_getline(fp);
-    if (NULL == input) {
-	goto CLEANUP;
-    }
-    ompi_universe_info.pid = (pid_t)atoi(input);
 
     input = ompi_getline(fp);
     if (NULL == input) {
 	goto CLEANUP;
     }
     if (0 == strncmp(input, "persistent", strlen("persistent"))) {
-	ompi_universe_info.persistence = true;
+	orte_universe_info.persistence = true;
     } else if (0 == strncmp(input, "non-persistent", strlen("non-persistent"))) {
-	ompi_universe_info.persistence = false;
+	orte_universe_info.persistence = false;
     } else {
 	free(input);
 	goto CLEANUP;
     }
     free(input);
 
-    ompi_universe_info.scope = ompi_getline(fp);
-    if (NULL == ompi_universe_info.scope) {
+    orte_universe_info.scope = ompi_getline(fp);
+    if (NULL == orte_universe_info.scope) {
 	goto CLEANUP;
     }
  
@@ -151,17 +143,17 @@ int ompi_read_universe_setup_file(char *filename)
 	goto CLEANUP;
     }
     if (0 == strncmp(input, "silent", strlen("silent"))) {
-	ompi_universe_info.console = false;
+	orte_universe_info.console = false;
     } else if (0 == strncmp(input, "console", strlen("console"))) {
-	ompi_universe_info.console = true;
+	orte_universe_info.console = true;
     } else {
 	free(input);
 	goto CLEANUP;
     }
     free(input);
 
-    ompi_universe_info.seed_contact_info = ompi_getline(fp);
-    if (NULL == ompi_universe_info.seed_contact_info) {
+    orte_universe_info.seed_uri = ompi_getline(fp);
+    if (NULL == orte_universe_info.seed_uri) {
 	goto CLEANUP;
     }
 

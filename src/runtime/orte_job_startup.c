@@ -23,11 +23,13 @@
 
 #include "orte_config.h"
 
+#include "include/orte_schema.h"
 #include "util/output.h"
 
 #include "mca/rml/rml.h"
 #include "mca/ns/ns_types.h"
 #include "mca/gpr/gpr.h"
+#include "mca/soh/soh_types.h"
 #include "mca/errmgr/errmgr.h"
 
 #include "runtime/runtime.h"
@@ -76,6 +78,7 @@ int orte_job_startup(orte_jobid_t jobid)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
+/*
 	for(i=0; i<num_procs; i++) {
         values[i] = OBJ_NEW(orte_gpr_value_t);
         if (NULL == values[i]) {
@@ -84,18 +87,18 @@ int orte_job_startup(orte_jobid_t jobid)
         }
         values[i]->segment = strdup(segment);
         values[i]->cnt = 1;
-        if (ORTE_SUCCESS != (rc = orte_gpr.get_proc_tokens(values[i]->tokens, procs[i]))) {
+        if (ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(values[i]->tokens, procs[i]))) {
             ORTE_ERROR_LOG(rc);
             goto CLEANUP;
         }
-		proc_status = ompi_rte_get_process_status(procs+i);
+		proc_status = orte_soh.get_proc_status(procs+i);
 		proc_status->status_key = OMPI_PROC_RUNNING;
 		proc_status->exit_code = 0;
 		ompi_rte_set_process_status(proc_status, procs+i);
 		free(proc_status);
 	}
     free(procs);
-
+*/
     /* return number of processes started = number of recipients */
     return num_procs;
 

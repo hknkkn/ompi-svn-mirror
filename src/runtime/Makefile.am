@@ -41,9 +41,7 @@ libruntime_la_SOURCES = \
     orte_job_startup.c \
     orte_job_shutdown.c \
     orte_wait_startup_shutdown_msg.c \
-    orte_process_status.c \
     orte_cmd_line_setup.c \
-    orte_vm_status.c \
     orte_universe_exists.c \
     orte_parse_environ.c \
     orte_parse_cmd_line.c \

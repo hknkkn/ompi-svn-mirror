@@ -1,6 +1,22 @@
-#include "include/orte_names.h"
+/*
+ * Copyright (c) 2004-2005 The Trustees of Indiana University.
+ *                         All rights reserved.
+ * Copyright (c) 2004-2005 The Trustees of the University of Tennessee.
+ *                         All rights reserved.
+ * Copyright (c) 2004-2005 High Performance Computing Center Stuttgart, 
+ *                         University of Stuttgart.  All rights reserved.
+ * $COPYRIGHT$
+ * 
+ * Additional copyrights may follow
+ * 
+ * $HEADER$
+ */
+
+#include "orte_config.h"
+
 #include "include/orte_constants.h"
 #include "mca/errmgr/errmgr.h"
+#include "mca/soh/soh_types.h"
 #include "mca/gpr/gpr.h"
 #include "mca/ns/ns.h"
 #include "ras_base_node.h"

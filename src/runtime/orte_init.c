@@ -107,6 +107,7 @@ int orte_debug_flag=0;
 orte_universe_t orte_universe_info = {
     /* .name =                */    NULL,
     /* .host =                */    NULL,
+    /* .uid =                 */    NULL,
     /* .persistence =         */    false,
     /* .scope =               */    NULL,
     /* .console =             */    false,

@@ -30,7 +30,7 @@
 
 #include "runtime/runtime.h"
 
-void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
+int orte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
 {
 
     /* see if I'm the seed */
@@ -46,19 +46,12 @@ void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
 	    fprintf(stderr, "error retrieving seed contact info - please report error to bugs@open-mpi.org\n");
 	    exit(1);
 	}
-	if (NULL != ompi_universe_info.seed_contact_info) {  /* overwrite it */
-	    free(ompi_universe_info.seed_contact_info);
-	    ompi_universe_info.seed_contact_info = NULL;
+	if (NULL != orte_universe_info.seed_uri) {  /* overwrite it */
+	    free(orte_universe_info.seed_uri);
+	    orte_universe_info.seed_uri = NULL;
 	}
-	ompi_universe_info.seed_contact_info = strdup(ompi_cmd_line_get_param(cmd_line, "seedcontact", 0, 0));
-	setenv("OMPI_universe_contact", ompi_universe_info.seed_contact_info, 1);
-    }
-
-    /* see if I'm a probe */
-    if (ompi_cmd_line_is_taken(cmd_line, "probe") &&
-	false == ompi_universe_info.probe) {
-	setenv("OMPI_universe_probe", "1", 1);
-	ompi_universe_info.probe = true;
+	orte_universe_info.seed_uri = strdup(ompi_cmd_line_get_param(cmd_line, "seedcontact", 0, 0));
+	setenv("OMPI_universe_contact", orte_universe_info.seed_uri, 1);
     }
 
     /* see if I'm to be a bootproxy */
@@ -72,25 +65,25 @@ void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
 	    fprintf(stderr, "error retrieving universe scope - please report error to bugs@open-mpi.org\n");
 	    exit(1);
 	}
-	if (NULL != ompi_universe_info.scope) {
-	    free(ompi_universe_info.scope);
-	    ompi_universe_info.scope = NULL;
+	if (NULL != orte_universe_info.scope) {
+	    free(orte_universe_info.scope);
+	    orte_universe_info.scope = NULL;
 	}
-	ompi_universe_info.scope = strdup(ompi_cmd_line_get_param(cmd_line, "scope", 0, 0));
-	setenv("OMPI_universe_scope", ompi_universe_info.scope, 1);
+	orte_universe_info.scope = strdup(ompi_cmd_line_get_param(cmd_line, "scope", 0, 0));
+	setenv("OMPI_universe_scope", orte_universe_info.scope, 1);
     }
 
     /* find out if persistent */
     if (ompi_cmd_line_is_taken(cmd_line, "persistent")) {
 	setenv("OMPI_universe_persistent", "1", 1);
-	ompi_universe_info.persistence = true;
+	orte_universe_info.persistence = true;
     }
 
     /* find out if we desire a console */
     if (ompi_cmd_line_is_taken(cmd_line, "console")) {
 	setenv("OMPI_universe_console", "1", 1);
-	ompi_universe_info.console = true;
-	ompi_universe_info.console_connected = false;
+	orte_universe_info.console = true;
+	orte_universe_info.console_connected = false;
     }
 
     /* find out if script is to be executed */
@@ -99,25 +92,12 @@ void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
 	    fprintf(stderr, "error retrieving script file name - please report error to bugs@open-mpi.org\n");
 	    exit(1);
 	}
-	if (NULL != ompi_universe_info.scriptfile) {
-	    free(ompi_universe_info.scriptfile);
-	    ompi_universe_info.scriptfile = NULL;
+	if (NULL != orte_universe_info.scriptfile) {
+	    free(orte_universe_info.scriptfile);
+	    orte_universe_info.scriptfile = NULL;
 	}
-	ompi_universe_info.scriptfile = strdup(ompi_cmd_line_get_param(cmd_line, "script", 0, 0));
-	setenv("OMPI_universe_script", ompi_universe_info.scriptfile, 1);
+	orte_universe_info.scriptfile = strdup(ompi_cmd_line_get_param(cmd_line, "script", 0, 0));
+	setenv("OMPI_universe_script", orte_universe_info.scriptfile, 1);
     }
 
-    /* Find out if hostfile specified */
-    if (ompi_cmd_line_is_taken(cmd_line, "hostfile")) {
-	if (NULL == ompi_cmd_line_get_param(cmd_line, "hostfile", 0, 0)) {
-	    fprintf(stderr, "error retrieving host file name - please report error to bugs@open-mpi.org\n");
-	    exit(1);
-	}
-	if (NULL != ompi_universe_info.hostfile) {
-	    free(ompi_universe_info.hostfile);
-	    ompi_universe_info.hostfile = NULL;
-	}
-	ompi_universe_info.hostfile = strdup(ompi_cmd_line_get_param(cmd_line, "hostfile", 0, 0));
-	setenv("OMPI_universe_hostfile", ompi_universe_info.hostfile, 1);
-    }
 }

@@ -17,7 +17,7 @@
 #include "ompi_config.h"
 
 #include "include/constants.h"
-#include "include/orte_names.h"
+#include "include/orte_schema.h"
 
 #include "runtime/runtime.h"
 #include "util/output.h"

@@ -27,7 +27,7 @@
 #include <sys/wait.h>
 #endif
 
-#include "runtime/ompi_rte_wait.h"
+#include "runtime/orte_wait.h"
 #include "class/ompi_object.h"
 #include "class/ompi_list.h"
 #include "event/event.h"
@@ -62,7 +62,7 @@ typedef struct pending_pids_item_t pending_pids_item_t;
 struct registered_cb_item_t {
     ompi_list_item_t super;
     pid_t pid;
-    ompi_rte_wait_fn_t callback;
+    orte_wait_fn_t callback;
     void *data;
 };
 typedef struct registered_cb_item_t registered_cb_item_t;
@@ -139,11 +139,11 @@ static registered_cb_item_t* find_waiting_cb(pid_t pid, bool create);
 static void do_waitall(int options);
 static void trigger_callback(registered_cb_item_t *cb, 
                              pending_pids_item_t *pending);
-static int register_callback(pid_t pid, ompi_rte_wait_fn_t callback,
+static int register_callback(pid_t pid, orte_wait_fn_t callback,
                              void *data);
 static void register_sig_event(void);
 static int unregister_callback(pid_t pid);
-void ompi_rte_wait_signal_callback(int fd, short event, void *arg);
+void orte_wait_signal_callback(int fd, short event, void *arg);
 static pid_t internal_waitpid(pid_t pid, int *status, int options);
 #if  OMPI_THREADS_HAVE_DIFFERENT_PIDS
 static void internal_waitpid_callback(int fd, short event, void *arg);
@@ -155,7 +155,7 @@ static void internal_waitpid_callback(int fd, short event, void *arg);
  *
  ********************************************************************/
 int
-ompi_rte_wait_init(void)
+orte_wait_init(void)
 {
     OBJ_CONSTRUCT(&mutex, ompi_mutex_t);
     OBJ_CONSTRUCT(&pending_pids, ompi_list_t);
@@ -167,7 +167,7 @@ ompi_rte_wait_init(void)
 
 
 int
-ompi_rte_wait_finalize(void)
+orte_wait_finalize(void)
 {
     ompi_list_item_t *item;
 
@@ -192,7 +192,7 @@ ompi_rte_wait_finalize(void)
 
 
 pid_t
-ompi_rte_waitpid(pid_t wpid, int *status, int options)
+orte_waitpid(pid_t wpid, int *status, int options)
 {
     pending_pids_item_t *pending = NULL;
     blk_waitpid_data_t *data = NULL;
@@ -299,7 +299,7 @@ ompi_rte_waitpid(pid_t wpid, int *status, int options)
 
 
 int
-ompi_rte_wait_cb(pid_t wpid, ompi_rte_wait_fn_t callback, void *data)
+orte_wait_cb(pid_t wpid, orte_wait_fn_t callback, void *data)
 {
     int ret;
 
@@ -317,7 +317,7 @@ ompi_rte_wait_cb(pid_t wpid, ompi_rte_wait_fn_t callback, void *data)
 
 
 int
-ompi_rte_wait_cb_cancel(pid_t wpid)
+orte_wait_cb_cancel(pid_t wpid)
 {
     int ret;
 
@@ -334,7 +334,7 @@ ompi_rte_wait_cb_cancel(pid_t wpid)
 
 /* callback from the event library whenever a SIGCHLD is received */
 void
-ompi_rte_wait_signal_callback(int fd, short event, void *arg)
+orte_wait_signal_callback(int fd, short event, void *arg)
 {
     struct ompi_event *signal = (struct ompi_event*) arg;
 
@@ -347,7 +347,7 @@ ompi_rte_wait_signal_callback(int fd, short event, void *arg)
 
 
 int
-ompi_rte_wait_cb_disable()
+orte_wait_cb_disable()
 {
     OMPI_THREAD_LOCK(&mutex);
     do_waitall(0);
@@ -359,7 +359,7 @@ ompi_rte_wait_cb_disable()
 
 
 int
-ompi_rte_wait_cb_enable()
+orte_wait_cb_enable()
 {
     OMPI_THREAD_LOCK(&mutex);
     cb_enabled = true;
@@ -493,7 +493,7 @@ trigger_callback(registered_cb_item_t *cb, pending_pids_item_t *pending)
 
 
 static int
-register_callback(pid_t pid, ompi_rte_wait_fn_t callback, void *data)
+register_callback(pid_t pid, orte_wait_fn_t callback, void *data)
 {
     registered_cb_item_t *reg_cb;
     pending_pids_item_t *pending;
@@ -541,7 +541,7 @@ register_sig_event(void)
     ev_reg_complete = true;
 
     ompi_event_set(&handler, SIGCHLD, OMPI_EV_SIGNAL|OMPI_EV_PERSIST,
-                   ompi_rte_wait_signal_callback,
+                   orte_wait_signal_callback,
                    &handler);
 
     ompi_event_add(&handler, NULL);

@@ -96,11 +96,6 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
 		    ORTE_NAME_ARGS(*(orte_process_info.my_name)), (int)jobid);
     }
 
-    /* for each subscription, find all relevant containers and
-     * add their info to a value_t. let the job_startup function
-     * get the list of recipients at the time of sending
-     */
-     
     /* setup tokens and segments for this job */
     if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&segment, jobid))) {
         ORTE_ERROR_LOG(rc);

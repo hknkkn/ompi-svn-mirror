@@ -78,6 +78,7 @@ extern "C" {
     struct orte_universe_t {
         char *name;
         char *host;
+        char *uid;
         bool persistence;
         char *scope;
         bool console;
@@ -177,7 +178,7 @@ OMPI_DECLSPEC    void orte_cmd_line_setup(ompi_cmd_line_t *cmd_line);
      * @param cmd_line Command line to be parsed.
      * @retval None
      */
-OMPI_DECLSPEC    void orte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
 
     /**
      * Parse the rte command line for daemon-specific options
@@ -188,7 +189,7 @@ OMPI_DECLSPEC    void orte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
      * @param cmd_line Command line to be parsed.
      * @retval None
      */
-OMPI_DECLSPEC    void orte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    int orte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line);
 
     /**
      * Check for universe existence
@@ -223,7 +224,7 @@ OMPI_DECLSPEC    int orte_universe_exists(void);
      *
      * @retval None
      */
-OMPI_DECLSPEC    void orte_parse_environ(void);
+OMPI_DECLSPEC    int orte_parse_environ(void);
 
 
     /**
@@ -240,6 +241,9 @@ OMPI_DECLSPEC   int orte_job_shutdown(orte_jobid_t jobid);
      * Complete initialization of the RTE
      */
 OMPI_DECLSPEC   int orte_init_cleanup(bool *allow_user_threads, bool *have_hidden_threads);
+
+
+OMPI_DECLSPEC int ompi_rte_wait_startup_msg(void);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

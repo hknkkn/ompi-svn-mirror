@@ -134,7 +134,7 @@ int orte_session_dir(bool create, char *prfx, char *usr, char *hostid,
     }
 
     if (NULL == univ) { /* see if universe set elsewhere */
-	if (NULL == orte_system_info.name) {  /* error condition */
+	if (NULL == orte_universe_info.name) {  /* error condition */
 	    return OMPI_ERROR;
 	} else {
 	    universe = strdup(orte_universe_info.name);
@@ -316,7 +316,7 @@ int orte_session_dir(bool create, char *prfx, char *usr, char *hostid,
         orte_process_info.universe_session_dir = strdup(fulldirpath);
     }
 
-    if (ompi_rte_debug_flag) {
+    if (orte_debug_flag) {
 	ompi_output(0, "procdir: %s", orte_process_info.proc_session_dir);
 	ompi_output(0, "jobdir: %s", orte_process_info.job_session_dir);
 	ompi_output(0, "unidir: %s", orte_process_info.universe_session_dir);
@@ -357,48 +357,48 @@ orte_session_dir_finalize()
     orte_dir_empty(orte_process_info.top_session_dir);
 
     if (orte_is_empty(orte_process_info.proc_session_dir)) {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: found proc session dir empty - deleting");
 	}
 	rmdir(orte_process_info.proc_session_dir);
     } else {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: proc session dir not empty - leaving");
 	}
 	return OMPI_SUCCESS;
     }
 
     if (orte_is_empty(orte_process_info.job_session_dir)) {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: found job session dir empty - deleting");
 	}
 	rmdir(orte_process_info.job_session_dir);
     } else {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: job session dir not empty - leaving");
 	}
 	return OMPI_SUCCESS;
     }
 
     if (orte_is_empty(orte_process_info.universe_session_dir)) {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: found univ session dir empty - deleting");
 	}
 	rmdir(orte_process_info.universe_session_dir);
     } else {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: univ session dir not empty - leaving");
 	}
 	return OMPI_SUCCESS;
     }
 
     if (orte_is_empty(orte_process_info.top_session_dir)) {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: found top session dir empty - deleting");
 	}
 	rmdir(orte_process_info.top_session_dir);
     } else {
-	if (ompi_rte_debug_flag) {
+	if (orte_debug_flag) {
 	    ompi_output(0, "sess_dir_finalize: top session dir not empty - leaving");
 	}
     }

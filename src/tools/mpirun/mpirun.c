@@ -45,7 +45,7 @@
 #include "mca/oob/base/base.h"
 
 #include "runtime/runtime.h"
-#include "runtime/ompi_rte_wait.h"
+#include "runtime/orte_wait.h"
 
 extern char** environ;
 

@@ -19,9 +19,12 @@
 #include "orte_config.h"
 
 #include "dps/dps.h"
+#include "mca/rml/rml_types.h"
 
 #include "util/output.h"
 #include "util/proc_info.h"
+
+#include "mca/gpr/base/base.h"
 
 int
 orte_gpr_base_decode_startup_msg(int status, orte_process_name_t *peer,
@@ -74,5 +77,6 @@ orte_gpr_base_decode_startup_msg(int status, orte_process_name_t *peer,
  free(segment);
     }
 #endif
+    return ORTE_SUCCESS;
 }
 
