@@ -30,7 +30,7 @@
 #include "mca/ns/ns_types.h"
 
 #include "mca/gpr/replica/gpr_replica.h"
-#include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
+#include "mca/gpr/replica/communications/gpr_replica_comm.h"
 
 #include "gpr_replica_api.h"
 
@@ -95,7 +95,8 @@ int orte_gpr_replica_stop_compound_cmd(void)
 int orte_gpr_replica_exec_compound_cmd(void)
 {
     int rc;
-
+    orte_buffer_t *answer;
+    
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] Executing compound command",
 		    ORTE_NAME_ARGS(*(orte_process_info.my_name)));
@@ -103,7 +104,8 @@ int orte_gpr_replica_exec_compound_cmd(void)
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);
 
-    rc = orte_gpr_replica_process_command_buffer(orte_gpr_replica_globals.compound_cmd, NULL);
+    rc = orte_gpr_replica_process_command_buffer(orte_gpr_replica_globals.compound_cmd,
+                                        NULL, answer);
 
     orte_gpr_replica_globals.compound_cmd_mode = false;
     if (NULL != orte_gpr_replica_globals.compound_cmd) {  /* shouldn't be any way this could be true, but just to be safe... */

@@ -35,7 +35,7 @@ int orte_gpr_replica_cleanup_job(orte_jobid_t jobid)
     
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
     
-    rc = orte_gpr_replica_cleanup_job_fn(seg, jobid);
+    rc = orte_gpr_replica_cleanup_job_fn(jobid);
     
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
     

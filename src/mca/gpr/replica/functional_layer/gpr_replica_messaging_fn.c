@@ -30,13 +30,12 @@
 
 #include "mca/ns/ns.h"
 
-#include "mca/gpr/replica/communications/gpr_replica_comm.h"
-
 #include "gpr_replica_fn.h"
 
 
 int orte_gpr_replica_process_callbacks(void)
 {
+#if 0
     orte_gpr_replica_callbacks_t *cb;
 
     /* aggregate messages for identical recipient - local messages just get called */
@@ -63,6 +62,9 @@ int orte_gpr_replica_process_callbacks(void)
 	OBJ_RELEASE(cb);
     }
     return ORTE_SUCCESS;
+
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
@@ -72,6 +74,7 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
                                     size_t *cnt,
                                     orte_process_name_t **procs)
 {
+#if 0
     orte_gpr_replica_segment_t *seg=NULL, *proc_stat_seg;
     orte_gpr_replica_key_t *keys;
     int num_keys, cmpval;
@@ -109,7 +112,6 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
         return rc;
     }
-#if 0
 	    include_data = false;
 
 	    /* construct the list of recipients and find out if data is desired */
@@ -225,7 +227,7 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
 	}
     }
 #endif
-    return ORTE_SUCCESS;
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 

@@ -27,12 +27,13 @@
 
 #include "gpr_replica_fn.h"
 
-static orte_process_name_t* mca_gpr_replica_find_recipient(ompi_registry_notify_id_t idtag);
+static orte_process_name_t* orte_gpr_replica_find_recipient(orte_gpr_notify_id_t idtag);
 
-static void mca_gpr_replica_dump_load_string(ompi_buffer_t buffer, char *tmp);
+static void orte_gpr_replica_dump_load_string(orte_buffer_t *buffer, char *tmp);
 
-int mca_gpr_replica_dump_nl(ompi_buffer_t buffer)
+int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
 {
+#if 0
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_core_t *reg;
     mca_gpr_replica_key_t *key;
@@ -189,13 +190,14 @@ int mca_gpr_replica_dump_nl(ompi_buffer_t buffer)
 	}
 	ompi_pack_string(buffer, "\n\n");
     }
-
-    return;
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-static orte_process_name_t *mca_gpr_replica_find_recipient(ompi_registry_notify_id_t idtag)
+static orte_process_name_t *orte_gpr_replica_find_recipient(orte_gpr_notify_id_t idtag)
 {
+#if 0
     mca_gpr_replica_notify_request_tracker_t *trackptr;
 
     for (trackptr = (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_first(&mca_gpr_replica_notify_request_tracker);
@@ -205,12 +207,15 @@ static orte_process_name_t *mca_gpr_replica_find_recipient(ompi_registry_notify_
 	    return trackptr->requestor;
 	}
     }
+#endif
     return NULL;
 }
 
 
-static void mca_gpr_replica_dump_load_string(ompi_buffer_t buffer, char *tmp)
+static void orte_gpr_replica_dump_load_string(orte_buffer_t *buffer, char *tmp)
 {
+#if 0
     ompi_pack_string(buffer, tmp);
     free(tmp);
+#endif
 }

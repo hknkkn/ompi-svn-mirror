@@ -28,11 +28,15 @@
 /*
  * A mode of "NONE" or "OVERWRITE" defaults to "XAND" behavior
  */
-bool mca_gpr_replica_check_key_list(ompi_registry_mode_t addr_mode,
-				mca_gpr_replica_key_t num_keys_search, mca_gpr_replica_key_t *keys,
-				mca_gpr_replica_key_t num_keys_entry, mca_gpr_replica_key_t *entry_keys)
+bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
+                    orte_gpr_replica_itag_t num_itags_search,
+                    orte_gpr_replica_itag_t *itags,
+                    orte_gpr_replica_itag_t num_itags_entry,
+                    orte_gpr_replica_itag_t *entry_itags)
 {
-    mca_gpr_replica_key_t *key1, *key2;
+    return false;
+#if 0
+    orte_gpr_replica_key_t *key1, *key2;
     uint num_found;
     bool exclusive, no_match;
     uint i, j;
@@ -42,18 +46,18 @@ bool mca_gpr_replica_check_key_list(ompi_registry_mode_t addr_mode,
 	return true;
     }
 
-    if (OMPI_REGISTRY_NONE == addr_mode ||
-	OMPI_REGISTRY_OVERWRITE == addr_mode) { /* set default behavior for search */
-	addr_mode = OMPI_REGISTRY_XAND;
+    if (ORTE_GPR_NONE == addr_mode ||
+	ORTE_GPR_OVERWRITE == addr_mode) { /* set default behavior for search */
+	addr_mode = ORTE_GPR_XAND;
     }
 
     /* take care of trivial cases that don't require search */
-    if ((OMPI_REGISTRY_XAND & addr_mode) &&
+    if ((ORTE_GPR_XAND & addr_mode) &&
 	(num_keys_search != num_keys_entry)) { /* can't possibly turn out "true" */
 	return false;
     }
 
-    if ((OMPI_REGISTRY_AND & addr_mode) &&
+    if ((ORTE_GPR_AND & addr_mode) &&
 	(num_keys_search > num_keys_entry)) {  /* can't find enough matches */
 	return false;
     }
@@ -67,7 +71,7 @@ bool mca_gpr_replica_check_key_list(ompi_registry_mode_t addr_mode,
 	    if (*key1 == *key2) { /* found a match */
 		num_found++;
 		no_match = false;
-		if (OMPI_REGISTRY_OR & addr_mode) { /* only need one match */
+		if (ORTE_GPR_OR & addr_mode) { /* only need one match */
 		    return true;
 		}
 	    }
@@ -77,7 +81,7 @@ bool mca_gpr_replica_check_key_list(ompi_registry_mode_t addr_mode,
 	}
     }
 
-    if (OMPI_REGISTRY_XAND & addr_mode) {  /* deal with XAND case */
+    if (ORTE_GPR_XAND & addr_mode) {  /* deal with XAND case */
 	if (num_found == num_keys_entry) { /* found all, and nothing more */
 	    return true;
 	} else {  /* found either too many or not enough */
@@ -85,7 +89,7 @@ bool mca_gpr_replica_check_key_list(ompi_registry_mode_t addr_mode,
 	}
     }
 
-    if (OMPI_REGISTRY_XOR & addr_mode) {  /* deal with XOR case */
+    if (ORTE_GPR_XOR & addr_mode) {  /* deal with XOR case */
 	if (num_found > 0 && exclusive) {  /* found at least one and nothing not on list */
 	    return true;
 	} else {
@@ -93,7 +97,7 @@ bool mca_gpr_replica_check_key_list(ompi_registry_mode_t addr_mode,
 	}
     }
 
-    if (OMPI_REGISTRY_AND & addr_mode) {  /* deal with AND case */
+    if (ORTE_GPR_AND & addr_mode) {  /* deal with AND case */
 	if (num_found == num_keys_search) {  /* found all the required keys */
 	    return true;
 	} else {
@@ -103,4 +107,5 @@ bool mca_gpr_replica_check_key_list(ompi_registry_mode_t addr_mode,
 
     /* should be impossible situation, but just to be safe... */
     return false;
+#endif
 }

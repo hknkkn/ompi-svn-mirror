@@ -32,19 +32,21 @@ endif
 
 mcacomponentdir = $(libdir)/openmpi
 mcacomponent_LTLIBRARIES = $(component_install)
-mca_gpr_replica_la_SOURCES =
+mca_gpr_replica_la_SOURCES = gpr_replica.h \
+                             gpr_replica_component.c
+    
 mca_gpr_replica_la_LIBADD = \
-	api_layer/libmca_gpr_replica.la \
-	transition_layer/libmca_gpr_replica.la \
-	functional_layer/libmca_gpr_replica.la \
-	communications/libmca_gpr_replica.la
+	api_layer/libmca_gpr_replica_api.la \
+	transition_layer/libmca_gpr_replica_tl.la \
+	functional_layer/libmca_gpr_replica_fn.la \
+	communications/libmca_gpr_replica_comm.la
 mca_gpr_replica_la_LDFLAGS = -module -avoid-version
 
 noinst_LTLIBRARIES = $(component_noinst)
 libmca_gpr_replica_la_SOURCES =
 libmca_gpr_replica_la_LIBADD = \
-	api_layer/libmca_gpr_replica.la \
-	transition_layer/libmca_gpr_replica.la \
-	functional_layer/libmca_gpr_replica.la \
-	communications/libmca_gpr_replica.la
+	api_layer/libmca_gpr_replica_api.la \
+	transition_layer/libmca_gpr_replica_tl.la \
+	functional_layer/libmca_gpr_replica_fn.la \
+	communications/libmca_gpr_replica_comm.la
 libmca_gpr_replica_la_LDFLAGS = -module -avoid-version

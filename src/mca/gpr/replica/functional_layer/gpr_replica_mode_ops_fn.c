@@ -21,84 +21,58 @@
 /*
  * includes
  */
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include "mca/ns/ns.h"
 
-#include "gpr_replica.h"
-#include "gpr_replica_internals.h"
+#include "gpr_replica_fn.h"
 
 
-void mca_gpr_replica_silent_mode_on(void)
+int orte_gpr_replica_notify_on_fg(orte_process_name_t *proc,
+				  orte_gpr_notify_id_t sub_number)
 {
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_silent_mode = true;
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-}
-
-void mca_gpr_replica_silent_mode_off(void)
-{
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_silent_mode = false;
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-}
-
-void mca_gpr_replica_notify_on(ompi_registry_notify_id_t sub_number)
-{
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_notify_on_nl(ompi_rte_get_self(), sub_number);
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-}
-
-void mca_gpr_replica_notify_on_nl(orte_process_name_t *proc,
-				  ompi_registry_notify_id_t sub_number)
-{
-    mca_gpr_replica_notify_off_t *ptr, *nextptr;
+#if 0
+    orte_gpr_replica_notify_off_t *ptr, *nextptr;
     int cmpval;
 
-    for (ptr = (mca_gpr_replica_notify_off_t*)ompi_list_get_first(&mca_gpr_replica_notify_off_list);
-	 ptr != (mca_gpr_replica_notify_off_t*)ompi_list_get_end(&mca_gpr_replica_notify_off_list);
+    for (ptr = (orte_gpr_replica_notify_off_t*)ompi_list_get_first(&orte_gpr_replica_notify_off_list);
+	 ptr != (orte_gpr_replica_notify_off_t*)ompi_list_get_end(&orte_gpr_replica_notify_off_list);
 	 ) {
-	nextptr = (mca_gpr_replica_notify_off_t*)ompi_list_get_next(ptr);
+	nextptr = (orte_gpr_replica_notify_off_t*)ompi_list_get_next(ptr);
     if (ORTE_SUCCESS != orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, ptr->proc, proc)) {
         return;
     }
     if (0 == cmpval) {
 	    if ((OMPI_REGISTRY_NOTIFY_ID_MAX == sub_number) ||
 		(ptr->sub_number == sub_number)) {
-		ompi_list_remove_item(&mca_gpr_replica_notify_off_list, &ptr->item);
+		ompi_list_remove_item(&orte_gpr_replica_notify_off_list, &ptr->item);
 		OBJ_RELEASE(ptr);
 	    }
 	}
 	ptr = nextptr;
     }
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-void mca_gpr_replica_notify_off(ompi_registry_notify_id_t sub_number)
+int orte_gpr_replica_notify_off_fn(orte_process_name_t *proc,
+				   orte_gpr_notify_id_t sub_number)
 {
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_notify_off_nl(ompi_rte_get_self(), sub_number);
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-}
-
-
-void mca_gpr_replica_notify_off_nl(orte_process_name_t *proc,
-				   ompi_registry_notify_id_t sub_number)
-{
-    mca_gpr_replica_notify_off_t *ptr;
+#if 0
+    orte_gpr_replica_notify_off_t *ptr;
     int cmpval;
 
     /* check to see if this is already on the list - return if so */
-    for (ptr = (mca_gpr_replica_notify_off_t*)ompi_list_get_first(&mca_gpr_replica_notify_off_list);
-	 ptr != (mca_gpr_replica_notify_off_t*)ompi_list_get_end(&mca_gpr_replica_notify_off_list);
-	 ptr = (mca_gpr_replica_notify_off_t*)ompi_list_get_next(ptr)) {
+    for (ptr = (orte_gpr_replica_notify_off_t*)ompi_list_get_first(&orte_gpr_replica_notify_off_list);
+	 ptr != (orte_gpr_replica_notify_off_t*)ompi_list_get_end(&orte_gpr_replica_notify_off_list);
+	 ptr = (orte_gpr_replica_notify_off_t*)ompi_list_get_next(ptr)) {
     if (ORTE_SUCCESS != orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, ptr->proc, proc)) {
         return;
     }
     if (0 == cmpval) {
 	    if (OMPI_REGISTRY_NOTIFY_ID_MAX == sub_number) { /* if wild card, remove all others on list */
-		ompi_list_remove_item(&mca_gpr_replica_notify_off_list, &ptr->item);
+		ompi_list_remove_item(&orte_gpr_replica_notify_off_list, &ptr->item);
 		OBJ_RELEASE(ptr);
 	    } else if (ptr->sub_number == sub_number) {
 		return;
@@ -107,43 +81,37 @@ void mca_gpr_replica_notify_off_nl(orte_process_name_t *proc,
     }
 
     /* either wild card or not already on list - add it */
-    ptr = OBJ_NEW(mca_gpr_replica_notify_off_t);
+    ptr = OBJ_NEW(orte_gpr_replica_notify_off_t);
     ptr->sub_number = sub_number;
     if (ORTE_SUCCESS != orte_name_services.copy_process_name(ptr->proc, proc)) {
         return;
     }
-    ompi_list_append(&mca_gpr_replica_notify_off_list, &ptr->item);
+    ompi_list_append(&orte_gpr_replica_notify_off_list, &ptr->item);
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-void mca_gpr_replica_triggers_active(orte_jobid_t jobid)
+int orte_gpr_replica_triggers_active_fn(orte_jobid_t jobid)
 {
-
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_triggers_active_nl(jobid);
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-}
-
-
-void mca_gpr_replica_triggers_active_nl(orte_jobid_t jobid)
-{
-    mca_gpr_replica_segment_t *seg;
-    mca_gpr_replica_notify_off_t *ptr, *nextptr;
+#if 0
+    orte_gpr_replica_segment_t *seg;
+    orte_gpr_replica_notify_off_t *ptr, *nextptr;
     orte_jobid_t procjobid;
 
-	if (mca_gpr_replica_debug) {
+	if (orte_gpr_replica_debug) {
 		ompi_output(0, "[%d,%d,%d] setting triggers active for job %d",
 					ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
 	}
 
     /* traverse the registry */
     /* enable triggers on segments from this jobid */
-    for (seg = (mca_gpr_replica_segment_t*)ompi_list_get_first(&mca_gpr_replica_head.registry);
-	 seg != (mca_gpr_replica_segment_t*)ompi_list_get_end(&mca_gpr_replica_head.registry);
-	 seg = (mca_gpr_replica_segment_t*)ompi_list_get_next(seg)) {
+    for (seg = (orte_gpr_replica_segment_t*)ompi_list_get_first(&orte_gpr_replica_head.registry);
+	 seg != (orte_gpr_replica_segment_t*)ompi_list_get_end(&orte_gpr_replica_head.registry);
+	 seg = (orte_gpr_replica_segment_t*)ompi_list_get_next(seg)) {
 
 	if (seg->owning_job == jobid) {
-		if (mca_gpr_replica_debug) {
+		if (orte_gpr_replica_debug) {
 			ompi_output(0, "[%d,%d,%d] setting triggers active for segment %s",
 						ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
 		}
@@ -155,80 +123,42 @@ void mca_gpr_replica_triggers_active_nl(orte_jobid_t jobid)
     /* check the list of process names with notification turned off
      * and turn on those from this jobid
      */
-    for (ptr = (mca_gpr_replica_notify_off_t*)ompi_list_get_first(&mca_gpr_replica_notify_off_list);
-	 ptr != (mca_gpr_replica_notify_off_t*)ompi_list_get_end(&mca_gpr_replica_notify_off_list);
+    for (ptr = (orte_gpr_replica_notify_off_t*)ompi_list_get_first(&orte_gpr_replica_notify_off_list);
+	 ptr != (orte_gpr_replica_notify_off_t*)ompi_list_get_end(&orte_gpr_replica_notify_off_list);
 	 ) {
 
-	nextptr = (mca_gpr_replica_notify_off_t*)ompi_list_get_next(ptr);
+	nextptr = (orte_gpr_replica_notify_off_t*)ompi_list_get_next(ptr);
 
     if (ORTE_SUCCESS != orte_name_services.get_jobid(&procjobid, ptr->proc)) {
         return;
     }
 	if (jobid == procjobid) {
-	    ompi_list_remove_item(&mca_gpr_replica_notify_off_list, &ptr->item);
+	    ompi_list_remove_item(&orte_gpr_replica_notify_off_list, &ptr->item);
 	    OBJ_RELEASE(ptr);
 	}
 	ptr = nextptr;
     }
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-void mca_gpr_replica_triggers_inactive(orte_jobid_t jobid)
+int orte_gpr_replica_triggers_inactive_fn(orte_jobid_t jobid)
 {
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_triggers_inactive_nl(jobid);
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-}
-
-
-void mca_gpr_replica_triggers_inactive_nl(orte_jobid_t jobid)
-{
-    mca_gpr_replica_segment_t *seg;
+#if 0
+    orte_gpr_replica_segment_t *seg;
 
     /* traverse the registry */
     /* disable triggers on segments from this jobid */
-    for (seg = (mca_gpr_replica_segment_t*)ompi_list_get_first(&mca_gpr_replica_head.registry);
-	 seg != (mca_gpr_replica_segment_t*)ompi_list_get_end(&mca_gpr_replica_head.registry);
-	 seg = (mca_gpr_replica_segment_t*)ompi_list_get_next(seg)) {
+    for (seg = (orte_gpr_replica_segment_t*)ompi_list_get_first(&orte_gpr_replica_head.registry);
+	 seg != (orte_gpr_replica_segment_t*)ompi_list_get_end(&orte_gpr_replica_head.registry);
+	 seg = (orte_gpr_replica_segment_t*)ompi_list_get_next(seg)) {
 
 	if (seg->owning_job == jobid) {
 	    seg->triggers_active = false;
 	}
     }
-
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-
-int mca_gpr_replica_assign_ownership(char *segment, orte_jobid_t jobid)
-{
-    int rc;
-    mca_gpr_replica_segment_t *seg;
-
-    /* protect against error */
-    if (NULL == segment) {
-	return OMPI_ERROR;
-    }
-
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-
-    /* find the segment */
-    seg = mca_gpr_replica_find_seg(true, segment, jobid);
-    if (NULL == seg) {  /* segment couldn't be found or created */
-        	OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-        	return OMPI_ERROR;
-    }
-
-    rc = mca_gpr_replica_assign_ownership_nl(seg, jobid);
-
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-
-    return rc;
-}
-
-int mca_gpr_replica_assign_ownership_nl(mca_gpr_replica_segment_t *seg, orte_jobid_t jobid)
-{
-
-    seg->owning_job = jobid;
-
-    return OMPI_SUCCESS;
-}

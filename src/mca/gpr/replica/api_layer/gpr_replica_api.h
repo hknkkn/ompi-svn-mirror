@@ -88,7 +88,7 @@ int orte_gpr_replica_index_nb(char *segment,
  */
 int orte_gpr_replica_cleanup_job(orte_jobid_t jobid);
 
-int orte_gpr_replica_cleanup_proc(bool purge, orte_process_name_t *proc);
+int orte_gpr_replica_cleanup_proc(orte_process_name_t *proc);
 
 
 /*
@@ -144,8 +144,6 @@ int orte_gpr_replica_dump(int output_id);
  * Job-related functions
  */
 int orte_gpr_replica_preallocate_segment(char *name, int num_slots);
-
-void orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message);
 
 
 /*

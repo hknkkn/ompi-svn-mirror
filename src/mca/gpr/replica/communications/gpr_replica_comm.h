@@ -60,6 +60,15 @@ void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
  */
 int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
                             orte_process_name_t *sender,
-                            orte_buffer_t *output_buffer)
+                            orte_buffer_t *output_buffer);
+
+/*
+ * Messaging functions
+ */
+int orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message);
+
+int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
+                 orte_gpr_notify_message_t *message);
+
 
 #endif

@@ -23,6 +23,9 @@
  */
 #include "orte_config.h"
 
+#include "util/output.h"
+#include "util/proc_info.h"
+
 #include "gpr_replica.h"
 
 

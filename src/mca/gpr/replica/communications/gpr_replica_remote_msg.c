@@ -25,9 +25,10 @@
 
 #include "gpr_replica_comm.h"
 
-void mca_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
-                 ompi_registry_notify_message_t *message)
+int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
+                 orte_gpr_notify_message_t *message)
 {
+#if 0
     ompi_buffer_t msg;
     mca_gpr_cmd_flag_t command;
     int32_t num_items;
@@ -107,4 +108,5 @@ void mca_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient
     ompi_buffer_free(msg);
 
     OBJ_RELEASE(message);
+#endif
 }

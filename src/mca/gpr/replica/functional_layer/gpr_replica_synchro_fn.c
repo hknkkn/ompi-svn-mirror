@@ -27,15 +27,15 @@
 
 #include "gpr_replica_fn.h"
 
-int mca_gpr_replica_synchro_fn(ompi_registry_synchro_mode_t synchro_mode,
-			       ompi_registry_mode_t addr_mode,
-			       mca_gpr_replica_segment_t *seg,
-			       mca_gpr_replica_key_t *keys,
-			       int num_keys,
-			       int trigger,
-			       ompi_registry_notify_id_t id_tag,
-                    orte_jobid_t jobid)
+int orte_gpr_replica_synchro_fn(orte_gpr_addr_mode_t addr_mode,
+                            orte_gpr_synchro_mode_t synchro_mode,
+                            orte_gpr_replica_segment_t *seg,
+                            orte_gpr_replica_itag_t *token_tags, int num_tokens,
+                            orte_gpr_replica_itag_t *key_tags, int num_keys,
+                            int trigger,
+                            orte_gpr_notify_id_t local_idtag)
 {
+#if 0
     mca_gpr_replica_trigger_list_t *trig;
 
     if (mca_gpr_replica_debug) {
@@ -52,13 +52,14 @@ int mca_gpr_replica_synchro_fn(ompi_registry_synchro_mode_t synchro_mode,
     } else {
 	   return OMPI_ERROR;
     }
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-ompi_registry_notify_id_t
-mca_gpr_replica_cancel_synchro_fn(ompi_registry_notify_id_t synch_number)
+int orte_gpr_replica_cancel_synchro_fn(orte_gpr_notify_id_t synch_number)
 {
-
+#if 0
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr replica: cancel_synchro entered for synch %d",
 		    ORTE_NAME_ARGS(*ompi_rte_get_self()), synch_number);
@@ -66,7 +67,8 @@ mca_gpr_replica_cancel_synchro_fn(ompi_registry_notify_id_t synch_number)
 
     /* find trigger on replica and remove it - return requestor's id_tag */
     return mca_gpr_replica_remove_trigger(synch_number);
-
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 

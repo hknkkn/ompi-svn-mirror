@@ -18,10 +18,13 @@
 
 #include "orte_config.h"
 
+#include "include/orte_constants.h"
+
 #include "gpr_replica_comm.h"
 
-void orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message)
+int orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message)
 {
+#if 0
     orte_gpr_replica_notify_request_tracker_t *ptr;
 
     /* don't deliver messages with zero data - also check for correct cmd */
@@ -46,5 +49,6 @@ void orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message)
        }
   }
   OBJ_RELEASE(message);
-
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }

@@ -21,24 +21,22 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include "mca/ns/ns_types.h"
 
-#include "gpr_replica.h"
-#include "gpr_replica_internals.h"
+#include "gpr_replica_fn.h"
 
-mca_gpr_replica_trigger_list_t*
-mca_gpr_replica_construct_trigger(ompi_registry_synchro_mode_t synchro_mode,
-				  ompi_registry_notify_action_t action,
-				  ompi_registry_mode_t addr_mode,
-				  mca_gpr_replica_segment_t *seg,
-				  mca_gpr_replica_key_t *keys,
-				  int num_keys,
-				  int trigger,
-				  ompi_registry_notify_id_t id_tag,
-                   orte_jobid_t owning_jobid)
+int orte_gpr_replica_construct_trigger(orte_gpr_synchro_mode_t synchro_mode,
+                  orte_gpr_notify_action_t action,
+                   orte_gpr_addr_mode_t addr_mode,
+                orte_gpr_replica_segment_t *seg,
+                   orte_gpr_replica_itag_t *itags,
+                int num_itags,
+                 int trigger,
+                   orte_gpr_notify_id_t id_tag)
 {
+#if 0
     mca_gpr_replica_core_t *reg;
     mca_gpr_replica_trigger_list_t *trig;
     mca_gpr_replica_key_t *key2, *keyptr;
@@ -96,12 +94,14 @@ mca_gpr_replica_construct_trigger(ompi_registry_synchro_mode_t synchro_mode,
 
 
     return trig;
-
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-ompi_registry_notify_id_t
-mca_gpr_replica_remove_trigger(ompi_registry_notify_id_t idtag)
+orte_gpr_notify_id_t
+orte_gpr_replica_remove_trigger(orte_gpr_notify_id_t idtag)
 {
+#if 0
     /* 
      * need to register callback to remove entry on remote notify_id_tracker
      * if remote_idtag != 0
@@ -137,13 +137,16 @@ mca_gpr_replica_remove_trigger(ompi_registry_notify_id_t idtag)
 	}
     }
     return OMPI_REGISTRY_NOTIFY_ID_MAX; /* couldn't find the trigger */
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-ompi_registry_notify_message_t
-*mca_gpr_replica_construct_notify_message(mca_gpr_replica_segment_t *seg,
-					  mca_gpr_replica_trigger_list_t *trig)
+orte_gpr_notify_message_t
+*orte_gpr_replica_construct_notify_message(orte_gpr_replica_segment_t *seg,
+                    orte_gpr_replica_notify_tracker_t *trig)
 {
+#if 0
     ompi_list_t *reg_entries;
     ompi_registry_value_t *reg, *obj;
     ompi_registry_notify_message_t *msg;
@@ -190,12 +193,15 @@ ompi_registry_notify_message_t
     }
 
     return msg;
+#endif
+    return NULL;
 }
 
-bool mca_gpr_replica_process_triggers(mca_gpr_replica_segment_t *seg,
-				      mca_gpr_replica_trigger_list_t *trig,
-				      ompi_registry_notify_message_t *message)
+bool orte_gpr_replica_process_triggers(orte_gpr_replica_segment_t *seg,
+                      orte_gpr_replica_notify_tracker_t *trig,
+                   orte_gpr_notify_message_t *message)
 {
+#if 0
     mca_gpr_replica_notify_request_tracker_t *trackptr;
     bool found;
     mca_gpr_replica_callbacks_t *cb;
@@ -268,12 +274,14 @@ bool mca_gpr_replica_process_triggers(mca_gpr_replica_segment_t *seg,
 
     return false;
 
-
+#endif
+    return false;
 }
 
 
-int mca_gpr_replica_purge_subscriptions(orte_process_name_t *proc)
+int orte_gpr_replica_purge_subscriptions(orte_process_name_t *proc)
 {
+#if 0
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_notify_request_tracker_t *trackptr, *next;
     mca_gpr_replica_trigger_list_t *trig, *next_trig;
@@ -317,19 +325,21 @@ int mca_gpr_replica_purge_subscriptions(orte_process_name_t *proc)
 	}
 	trackptr = next;
     }
-
-    return OMPI_SUCCESS;
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-ompi_registry_notify_id_t
-mca_gpr_replica_enter_notify_request(mca_gpr_replica_segment_t *seg,
-				     ompi_registry_notify_action_t action,
-				     orte_process_name_t *requestor,
-				     ompi_registry_notify_id_t idtag,
-				     ompi_registry_notify_cb_fn_t cb_func,
-				     void *user_tag)
- {
+int
+orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
+                      orte_gpr_replica_segment_t *seg,
+                     orte_gpr_notify_action_t action,
+                   orte_process_name_t *requestor,
+                    orte_gpr_notify_id_t remote_idtag,
+                     orte_gpr_notify_cb_fn_t cb_func,
+                   void *user_tag)
+{
+#if 0
     mca_gpr_replica_notify_request_tracker_t *trackptr;
     mca_gpr_idtag_list_t *ptr_free_id;
 
@@ -356,11 +366,15 @@ mca_gpr_replica_enter_notify_request(mca_gpr_replica_segment_t *seg,
     ompi_list_append(&mca_gpr_replica_notify_request_tracker, &trackptr->item);
 
     return trackptr->local_idtag;
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-ompi_registry_notify_id_t mca_gpr_replica_remove_notify_request(ompi_registry_notify_id_t idtag)
+orte_gpr_notify_id_t
+orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t idtag)
 {
+#if 0
     mca_gpr_replica_notify_request_tracker_t *trackptr;
     mca_gpr_idtag_list_t *ptr_free_id;
     ompi_registry_notify_id_t remote_idtag;
@@ -388,10 +402,13 @@ ompi_registry_notify_id_t mca_gpr_replica_remove_notify_request(ompi_registry_no
     }
     /* error condition if reach here */
     return OMPI_REGISTRY_NOTIFY_ID_MAX;
+#endif
+    return 1;
 }
 
-int mca_gpr_replica_check_synchros(mca_gpr_replica_segment_t *seg)
+int orte_gpr_replica_check_synchros(orte_gpr_replica_segment_t *seg)
 {
+#if 0
     mca_gpr_replica_trigger_list_t *trig;
     ompi_registry_notify_message_t *notify_msg;
     mca_gpr_replica_trigger_list_t* next;
@@ -434,10 +451,13 @@ int mca_gpr_replica_check_synchros(mca_gpr_replica_segment_t *seg)
 	trig = next;
     }
     return OMPI_SUCCESS;
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-void mca_gpr_replica_check_subscriptions(mca_gpr_replica_segment_t *seg, int8_t action_taken)
+int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_t action_taken)
 {
+#if 0
     mca_gpr_replica_trigger_list_t *trig;
     ompi_registry_notify_message_t *notify_msg;
     mca_gpr_replica_trigger_list_t* next;
@@ -474,4 +494,6 @@ void mca_gpr_replica_check_subscriptions(mca_gpr_replica_segment_t *seg, int8_t 
 	}
 	trig = next;
     }
+#endif
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }

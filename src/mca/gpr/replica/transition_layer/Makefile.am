@@ -14,8 +14,8 @@
 
 include $(top_ompi_srcdir)/config/Makefile.options
 
-noinst_LTLIBRARIES = libmca_gpr_replica.la
-libmca_gpr_replica_la_SOURCES = \
+noinst_LTLIBRARIES = libmca_gpr_replica_tl.la
+libmca_gpr_replica_tl_la_SOURCES = \
 	gpr_replica_tl.h \
 	gpr_replica_dict_tl.c \
 	gpr_replica_segment_tl.c

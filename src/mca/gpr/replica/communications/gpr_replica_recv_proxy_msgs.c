@@ -38,6 +38,7 @@
 void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
 			  orte_buffer_t *buffer, int tag, void* cbdata)
 {
+#if 0
     orte_buffer_t *answer;
     size_t buf_size=0;
     int rc;
@@ -78,4 +79,6 @@ void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
 
     /* reissue the non-blocking receive */
     orte_rml.recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_GPR, 0, orte_gpr_replica_recv, NULL);
+#endif
+    return;
 }
