@@ -146,6 +146,9 @@ static void orte_gpr_replica_segment_destructor(orte_gpr_replica_segment_t* seg)
         dptr = (orte_gpr_replica_dict_t**)((seg->dict)->addr);
         for (i=0; i < (seg->dict)->size; i++) {
             if (NULL != dptr[i]) {
+                if (NULL != dptr[i]->entry) {
+                    free(dptr[i]->entry);
+                }
                 free(dptr[i]);
             }
         }
