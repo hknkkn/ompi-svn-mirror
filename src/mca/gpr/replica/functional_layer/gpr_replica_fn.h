@@ -187,24 +187,20 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
 				    int num_itags_entry,
 				    orte_gpr_replica_itag_t *entry_itags);
 
-bool orte_gpr_replica_check_itag_array(orte_gpr_addr_mode_t addr_mode,
-                    orte_value_array_t *itags,
-                    int num_itags_entry,
-                    orte_gpr_replica_itag_t *entry_itags);
-
 int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
                                     orte_gpr_replica_itag_t *src, int num_itags);
 
 /*
  * Trigger Operations
  */
-bool orte_gpr_replica_process_triggers(orte_gpr_replica_segment_t *seg,
-				      orte_gpr_replica_triggers_t *trig,
-				      orte_gpr_notify_message_t *message);
-
 int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
                     orte_gpr_replica_triggers_t *trig);
 
+int orte_gpr_replica_check_trigger(orte_gpr_replica_segment_t *seg,
+                    orte_gpr_replica_triggers_t *trig,
+                    orte_gpr_replica_container_t *cptr,
+                    orte_gpr_replica_itagval_t *iptr,
+                    int8_t action);
 /*
  * Alert Operations
  */
@@ -222,11 +218,7 @@ int
 orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t local_idtag,
                                        orte_gpr_notify_id_t *remote_idtag);
 
-int orte_gpr_replica_register_callback(orte_gpr_replica_segment_t *seg,
-                       orte_gpr_replica_triggers_t *trig,
-                       orte_gpr_replica_container_t *cptr,
-                       orte_gpr_replica_itagval_t *iptr,
-                       int8_t action_taken);
+int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig);
 
 int orte_gpr_replica_process_callbacks(void);
 
@@ -236,12 +228,6 @@ int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_t
 
 int orte_gpr_replica_purge_subscriptions(orte_process_name_t *proc);
 
-/*
- * Proxy interface functions
- */
-orte_gpr_notify_message_t
-*orte_gpr_replica_construct_notify_message(orte_gpr_replica_segment_t *seg,
-                    orte_gpr_replica_triggers_t *trig);
 
 
 #endif

@@ -84,7 +84,7 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
                             /* check to see if that itagval is here */
                             for (k=0; k < (cptr->itagvals)->size; k++) {
                                 if (NULL != iptr[k] && targets[j]->itagval == iptr[k]->itag) {
-                                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_register_callback(seg, trig[i], cptr, iptr[k],
+                                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_trigger(seg, trig[i], cptr, iptr[k],
                                                 ORTE_GPR_REPLICA_ENTRY_DELETED))) {
                                         return rc;
                                     }
@@ -94,7 +94,7 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
                             
                         } else {  /* container itself targeted */
 
-                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_register_callback(seg, trig[i], cptr, NULL,
+                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_trigger(seg, trig[i], cptr, NULL,
                                                 ORTE_GPR_REPLICA_ENTRY_DELETED))) {
                                 return rc;
                             }
