@@ -22,14 +22,21 @@
 
 #include "pls_bproc.h"
 
-extern char **environ;
 
-int
-mca_pls_bproc_spawn_procs(struct mca_pls_base_module_1_0_0_t* me_super,
-                          mca_ns_base_jobid_t jobid)
+int orte_pls_bproc_launch(orte_jobid_t jobid)
 {
-    mca_pcm_bproc_module_t *me = (mca_pcm_bproc_module_t*) me_super;
-
     return ORTE_SUCCESS;
 }
+
+
+int orte_pls_bproc_finalize(void)
+{
+    return ORTE_SUCCESS;
+}
+
+
+orte_pls_base_module_t orte_pls_bproc_module = {
+    orte_pls_bproc_launch,
+    orte_pls_bproc_finalize
+};
 

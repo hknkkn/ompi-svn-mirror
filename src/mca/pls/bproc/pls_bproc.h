@@ -15,13 +15,11 @@
  *
  */
 
-#ifndef MCA_PLS_BPROC_H_
-#define MCA_PLS_BPROC_H_
+#ifndef ORTE_PLS_BPROC_H_
+#define ORTE_PLS_BPROC_H_
 
 #include "ompi_config.h"
-
 #include "mca/pls/base/base.h"
-
 #include <sys/bproc.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -31,23 +29,23 @@ extern "C" {
     /*
      * Module open / close
      */
-    int mca_pls_bproc_component_open(void);
-    int mca_pls_bproc_component_close(void);
+    int orte_pls_bproc_component_open(void);
+    int orte_pls_bproc_component_close(void);
 
     /*
      * Startup / Shutdown
      */
-    struct mca_pls_base_module_1_0_0_t* mca_pls_bproc_init(int *priority, 
-							   bool have_threads,
-							   int constraints);
-    int mca_pls_bproc_finalize(struct mca_pls_base_module_1_0_0_t* me);
+    orte_pls_base_module_t* orte_pls_bproc_init(
+        int *priority, 
+        bool* have_threads,
+        bool* allow_threads);
+
+    int orte_pls_bproc_finalize();
 
     /*
      * Interface
      */
-    int mca_pls_bproc_spawn_procs(struct mca_pls_base_module_1_0_0_t* me,
-                                  mca_ns_base_jobid_t jobid);
-
+    int orte_pls_bproc_launch(orte_jobid_t);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
