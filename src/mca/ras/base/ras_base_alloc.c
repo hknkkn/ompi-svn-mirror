@@ -67,12 +67,14 @@ int orte_ras_base_deallocate(orte_jobid_t jobid)
  * 
  */
 
-static int orte_ras_base_node_compare(orte_ras_base_node_t* n1, orte_ras_base_node_t* n2)
+static int orte_ras_base_node_compare(orte_ras_base_node_t** n1,
+                                      orte_ras_base_node_t** n2)
 {
-    if(n1->node_slots_inuse < n2->node_slots_inuse)
+    if((*n1)->node_slots_inuse < (*n2)->node_slots_inuse) {
         return -1;
-    if(n1->node_slots_inuse > n2->node_slots_inuse)
+    } else if((*n1)->node_slots_inuse > (*n2)->node_slots_inuse) {
         return 1;
+    }
     return 0;
 }
 
