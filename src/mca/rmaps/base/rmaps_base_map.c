@@ -429,7 +429,6 @@ int orte_rmaps_base_set_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
 
     /* insert all values in one call */
     rc = orte_gpr.put(ORTE_GPR_TOKENS_AND, num_procs, values);
-    orte_gpr.dump(0);
 
 cleanup:
     for(i=0; i<num_procs; i++) {
