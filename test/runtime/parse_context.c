@@ -84,11 +84,15 @@ int main(int argc, char **argv)
     }
 
     /* set some MCA parameters in environment */
+    setenv("OMPI_MCA_seed", "0", 1);
+    setenv("OMPI_MCA_ns_replica_uri", "ding-dong", 1);
     if (ORTE_SUCCESS != orte_parse_proc_context(cmd_line, argc, argv)) {
        fprintf(test_out, "parse_proc_context: failed\n");
        exit(1);
     }
     
+    fprintf(test_out, "seed flag %d\n", (int)orte_process_info.seed);
+    fprintf(test_out, "nsreplica %s\n", orte_process_info.ns_replica_uri); 
     /* parse them */
     
     test_finalize();
