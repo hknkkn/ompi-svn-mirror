@@ -619,7 +619,11 @@ int mca_oob_tcp_init(void)
 
     /* get my jobid */
 
-    jobid = orte_process_info.my_name->jobid;
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, 
+                                                orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
 
     /* iterate through the open connections and send an ident message to all peers -
      * note that we initially come up w/out knowing our process name - and are assigned
