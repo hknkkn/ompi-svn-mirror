@@ -380,6 +380,49 @@ extern "C" {
     OMPI_DECLSPEC int mca_base_param_unset(int index);
 
     /**
+     * Get a string suitable for putting in the environment that sets
+     * an MCA parameter to a specific value.
+     *
+     * @param type_name Name of the type containing the parameter.
+     * @param component_name Name of the component containing the parameter.
+     * @param param_name Name of the parameter.
+     * @param svalue If non-NULL, this is the value that the MCA
+     * parameter is set to in the returned environment string.
+     * @param ivalue If svalue is NULL, this is the value that the MCA
+     * parameter is set to in the returned environment string.
+     *
+     * @retval string A string suitable for putenv() or appending to
+     * an environ-style string array.
+     * @retval NULL Upon failure.
+     *
+     * The string that is returned is owned by the caller; if
+     * appropriate, it must be eventually freed by the caller.
+     * WARNING: putenv(3) on some platforms does \em not strdup() the
+     * string that you give to it, and instead uses the string
+     * directly.  So it is \em not safe to do the following:
+     *
+     * \code
+     *   char *e = mca_base_param_environ_string(foo, bar, baz, value, 0);
+     *   putenv(e);
+     *   free(e);
+     * \endcode
+     *
+     * But it \em is safe to do the following (because
+     * ompi_argv_append() copies the string):
+     *
+     * \code
+     *   char *e = mca_base_param_environ_string(foo, bar, baz, value, 0);
+     *   ompi_argv_append(&argc, &my_environ, e);
+     *   free(e);
+     * \endcode
+     */
+    OMPI_DECLSPEC char *mca_base_param_environ_string(const char *type,
+                                                      const char *component,
+                                                      const char *param,
+                                                      char *svalue,
+                                                      int ivalue);
+
+    /**
      * Find the index for an MCA parameter based on its names.
      *
      * @param type_name Name of the type containing the parameter.

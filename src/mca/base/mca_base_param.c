@@ -351,6 +351,68 @@ int mca_base_param_unset(int index)
 
 
 /*
+ * Make a string suitable for the environment, setting an MCA param
+ */
+char *mca_base_param_environ_string(const char *type,
+                                    const char *component,
+                                    const char *param,
+                                    char *svalue, int ivalue)
+{
+    size_t len;
+    int id;
+    char *ret = NULL, *name;
+    mca_base_param_t *array;
+
+    if (NULL == type) {
+        return NULL;
+    }
+
+    id = mca_base_param_find(type, component, param);
+    if (OMPI_ERROR != id) {
+        array = OMPI_VALUE_ARRAY_GET_BASE(&mca_base_params, mca_base_param_t);
+        if (NULL != svalue) {
+            asprintf(&ret, "%s=%s", array[id].mbp_env_var_name, svalue);
+        } else {
+            asprintf(&ret, "%s=%d", array[id].mbp_env_var_name, ivalue);
+        }
+    } else {
+        len = strlen(mca_prefix) + strlen(type) + 16;
+        if (NULL != component) {
+            len += strlen(component);
+        }
+        if (NULL != param) {
+            len += strlen(param);
+        }
+        name = malloc(len);
+        if (NULL == name) {
+            return NULL;
+        }
+        name[0] = '\0';
+        snprintf(name, len, "%s%s", mca_prefix, type);
+        if (NULL != component) {
+            strcat(name, "_");
+            strcat(name, component);
+        }
+        if (NULL != param) {
+            strcat(name, "_");
+            strcat(name, param);
+        }
+
+        if (NULL != svalue) {
+            asprintf(&ret, "%s=%s", name, svalue);
+        } else {
+            asprintf(&ret, "%s=%d", name, ivalue);
+        }
+        free(name);
+    }
+
+    /* All done */
+
+    return ret;
+}
+
+
+/*
  * Find the index for an MCA parameter based on its names.
  */
 int mca_base_param_find(const char *type_name, const char *component_name, 
