@@ -21,7 +21,7 @@
 #include "mca/base/mca_base_param.h"
 #include "util/output.h"
 
-#include "mca/ras/base/base.h"
+#include "mca/orte_ras/base/base.h"
 
 
 /*

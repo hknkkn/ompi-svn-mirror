@@ -14,8 +14,8 @@
 /** @file:
  */
 
-#ifndef MCA_RAS_BASE_H
-#define MCA_RAS_BASE_H
+#ifndef MCA_ORTE_RAS_BASE_H
+#define MCA_ORTE_RAS_BASE_H
 
 /*
  * includes
@@ -26,7 +26,7 @@
 #include "class/ompi_list.h"
 #include "mca/mca.h"
 
-#include "mca/ras/ras.h"
+#include "mca/orte_ras/orte_ras.h"
 
 
 /*

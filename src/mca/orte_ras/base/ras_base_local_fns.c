@@ -20,7 +20,8 @@
 #include "include/orte_constants.h"
 
 #include "mca/mca.h"
-#include "mca/ras/base/base.h"
+
+#include "mca/orte_ras/base/base.h"
 
 
 /*

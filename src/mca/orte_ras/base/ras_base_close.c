@@ -21,7 +21,7 @@
 #include "mca/mca.h"
 #include "mca/base/base.h"
 
-#include "mca/ras/base/base.h"
+#include "mca/orte_ras/base/base.h"
 
 
 int mca_orte_ras_base_close(void)
