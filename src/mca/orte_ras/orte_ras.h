@@ -16,8 +16,8 @@
  * The Open RTE Resource Allocation Subsystem (RAS)
  */
 
-#ifndef MCA_RAS_H
-#define MCA_RAS_H
+#ifndef MCA_ORTE_RAS_H
+#define MCA_ORTE_RAS_H
 
 /*
  * includes
@@ -27,8 +27,9 @@
 #include "include/orte_constants.h"
 
 #include "mca/mca.h"
+#include "mca/ns/ns_types.h"
 
-#include "ras_types.h"
+#include "orte_ras_types.h"
 
 
 /*
@@ -42,7 +43,7 @@
  * new_cellid = ompi_name_server.create_cellid()
  * @endcode
  */
-typedef int (*orte_ras_base_module_allocate_fn_t)(orte_jobid_t jobid);
+typedef int (*mca_orte_ras_base_module_allocate_fn_t)(orte_jobid_t jobid);
 
 /**
  * Deallocate resources from a job
@@ -51,7 +52,7 @@ typedef int (*orte_ras_base_module_allocate_fn_t)(orte_jobid_t jobid);
  * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
  * @endcode
  */
-typedef int (*orte_ras_base_module_deallocate_fn_t)(orte_jobid_t jobid);
+typedef int (*mca_orte_ras_base_module_deallocate_fn_t)(orte_jobid_t jobid);
 
 
 /*
@@ -95,11 +96,11 @@ typedef mca_orte_ras_base_component_1_0_0_t mca_orte_ras_base_component_t;
 /*
  * Macro for use in components that are of type ns v1.0.0
  */
-#define ORTE_MCA_RAS_BASE_VERSION_1_0_0 \
+#define MCA_ORTE_RAS_BASE_VERSION_1_0_0 \
   /* ras v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
-  /* ns v1.0 */ \
-  "ras", 1, 0, 0
+  /* ras v1.0 */ \
+  "orte_ras", 1, 0, 0
 
 /* Global structure for accessing RAS functions
  */
