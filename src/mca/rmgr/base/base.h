@@ -48,15 +48,19 @@ OMPI_DECLSPEC int orte_rmgr_base_select(bool *allow_multi_user_threads,
 			                               bool *have_hidden_threads);
 OMPI_DECLSPEC int orte_rmgr_base_close(void);
 
+OMPI_DECLSPEC int orte_rmgr_base_get_app_context(
+    orte_jobid_t jobid,
+    orte_app_context_t*** app_context,
+    size_t* num_context);
+
 OMPI_DECLSPEC int orte_rmgr_base_put_app_context(
     orte_jobid_t jobid,
     orte_app_context_t** app_context,
     size_t num_context);
 
-OMPI_DECLSPEC int orte_rmgr_base_get_app_context(
-    orte_jobid_t jobid,
-    orte_app_context_t*** app_context,
-    size_t* num_context);
+OMPI_DECLSPEC int orte_rmgr_base_get_proc_slots(
+    orte_jobid_t jobid, 
+    size_t* num_slots);
 
 /*
  * Base functions that are common to all implementations - can be overridden
