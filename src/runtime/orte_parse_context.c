@@ -71,6 +71,9 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                                 ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
                                 return ORTE_ERR_BAD_PARAM;
                             }
+                            if (j > 0 && NULL != context_tbl[i].dest) {
+                                free(context_tbl[i].dest);
+                            }
                             *((char**)context_tbl[i].dest) = strdup(tmp);
                             if (NULL == *((char**)context_tbl[i].dest)) {
                                 ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
@@ -119,8 +122,7 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                         return rc;
                     }
                     if (NULL != tmp) {
-                        *((char**)(context_tbl[i].dest)) = strdup(tmp);
-                        free(tmp);
+                        *((char**)(context_tbl[i].dest)) = tmp;
                         tmp = NULL;
                     }
                     break;
