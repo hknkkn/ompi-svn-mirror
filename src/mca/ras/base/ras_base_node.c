@@ -76,7 +76,7 @@ int orte_ras_base_node_query(ompi_list_t* nodes)
         for(k=0; k<value->cnt; k++) {
             orte_gpr_keyval_t* keyval = value->keyvals[k];
             if(strcmp(keyval->key, ORTE_NODE_NAME_KEY) == 0) {
-                node->node_name = strdup(keyval->key);
+                node->node_name = strdup(keyval->value.strptr);
                 continue;
             }
             if(strcmp(keyval->key, ORTE_NODE_STATE_KEY) == 0) {
