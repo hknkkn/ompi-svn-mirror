@@ -306,7 +306,7 @@ int orte_gpr_replica_add_values(orte_gpr_notify_data_t **data,
                     ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
-                value = &((*data)->values[(*data)->cnt+1]);
+                value = &((*data)->values[(*data)->cnt]);
                 ((*data)->cnt)++;
             }
 
@@ -350,7 +350,7 @@ MOVEON:
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
                 (*value)->cnt = n;
-                kptr = &((*value)->keyvals[n-cnt]);
+                kptr = &((*value)->keyvals[n-cnt-1]);
             } else {
                 (*value)->keyvals = (orte_gpr_keyval_t**)malloc(cnt * sizeof(orte_gpr_keyval_t*));
                 if (NULL == (*value)->keyvals) {
