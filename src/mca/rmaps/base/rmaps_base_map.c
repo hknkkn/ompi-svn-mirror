@@ -333,6 +333,169 @@ cleanup:
 }
 
 /**
+ *  Query the process mapping for a specified node from the registry.
+ */
+
+int orte_rmaps_base_get_node_map(
+    orte_cellid_t cellid, 
+    orte_jobid_t jobid, 
+    const char* hostname,
+    ompi_list_t* mapping_list)
+{
+    orte_app_context_t** app_context = NULL;
+    orte_rmaps_base_map_t** mapping = NULL;
+    size_t i, num_context = 0;
+    char* segment = NULL;
+    char* jobid_str = NULL;
+    orte_gpr_value_t** values;
+    int32_t v, num_values;
+    int rc;
+    char* keys[] = {
+        ORTE_PROC_RANK_KEY,
+        ORTE_PROC_NAME_KEY,
+        ORTE_PROC_APP_CONTEXT_KEY,
+        ORTE_NODE_NAME_KEY,
+        NULL
+    };
+
+    /* query the application context */
+    if(ORTE_SUCCESS != (rc = orte_rmgr_base_get_app_context(jobid, &app_context, &num_context))) {
+        return rc;
+    }
+    if(NULL == (mapping = malloc(sizeof(orte_rmaps_base_map_t*) * num_context))) {
+        rc = ORTE_ERR_OUT_OF_RESOURCE;
+        goto cleanup;
+    }
+
+    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_str, jobid))) {
+        goto cleanup;
+    }
+
+    for(i=0; i<num_context; i++) {
+        orte_rmaps_base_map_t* map = OBJ_NEW(orte_rmaps_base_map_t);
+        orte_app_context_t* app = app_context[i];
+        OBJ_RETAIN(app);
+        map->app = app;
+        map->procs = malloc(sizeof(orte_rmaps_base_proc_t*) * app->num_procs);
+        if(NULL == map->procs) {
+            OBJ_RELEASE(map);
+            rc = ORTE_ERR_OUT_OF_RESOURCE;
+            goto cleanup;
+        }
+        map->num_procs = 0;
+        mapping[i] = map;
+    }
+    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid_str);
+
+    /* query the process list from the registry */
+    rc = orte_gpr.get(
+        ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_OR,
+        segment,
+        NULL,
+        keys,
+        &num_values,
+        &values);
+    if(ORTE_SUCCESS != rc)
+        goto cleanup;
+
+    /* sort the response */
+    qsort(values, num_values, sizeof(orte_gpr_value_t*), 
+        (int (*)(const void*,const void*))orte_rmaps_value_compare);
+
+    /* build the proc list */
+    for(v=0; v<num_values; v++) {
+        orte_gpr_value_t* value = values[v];
+        orte_rmaps_base_map_t* map = NULL;
+        orte_rmaps_base_proc_t* proc;
+        char* node_name = NULL;
+        int32_t kv;
+
+        proc = OBJ_NEW(orte_rmaps_base_proc_t);
+        if(NULL == proc) {
+            rc = ORTE_ERR_OUT_OF_RESOURCE;
+            goto cleanup;
+        }
+    
+        for(kv = 0; kv<value->cnt; kv++) {
+            orte_gpr_keyval_t* keyval = value->keyvals[kv];
+            if(strcmp(keyval->key, ORTE_PROC_RANK_KEY) == 0) {
+                proc->proc_rank = keyval->value.i32;
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_PROC_NAME_KEY) == 0) {
+                proc->proc_name  = keyval->value.proc;
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_PROC_APP_CONTEXT_KEY) == 0) {
+                int32_t app_index = keyval->value.i32;
+                if(app_index >= (int32_t)num_context) {
+                    ompi_output(0, "orte_rmaps_base_get_map: invalid context\n");
+                    rc = ORTE_ERR_BAD_PARAM;
+                    goto cleanup;
+                }
+                map = mapping[app_index];
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_NODE_NAME_KEY) == 0) {
+                node_name = keyval->value.strptr;
+                continue;
+            }
+        }
+        /* skip this entry? */
+        if(NULL == map || 
+           proc->proc_name.cellid != cellid || 
+           strcmp(hostname,node_name)) {
+            OBJ_RELEASE(proc);
+            continue;
+        }
+        map->procs[map->num_procs++] = proc;
+        proc->proc_node = orte_rmaps_lookup_node(&map->nodes, node_name, proc); 
+    }
+
+    /* return mapping for the entries that have procs on this node */
+    for(i=0; i<num_context; i++) {
+        orte_rmaps_base_map_t* map = mapping[i];
+        if(map->num_procs) {
+            ompi_list_append(mapping_list, &map->super);
+        } else {
+            OBJ_RELEASE(map);
+        }
+    }
+
+    /* release all app context - note the reference count was bumped 
+     * if saved in the map
+    */
+    for(i=0; i<num_context; i++) {
+        OBJ_RELEASE(app_context[i]);
+    }
+    free(segment);
+    free(jobid_str);
+    free(app_context);
+    free(mapping);
+    return ORTE_SUCCESS;
+
+cleanup:
+    if(NULL != segment)
+        free(segment);
+    if(NULL != jobid_str)
+        free(jobid_str);
+    if(NULL != app_context) {
+        for(i=0; i<num_context; i++) {
+            OBJ_RELEASE(app_context[i]);
+        }
+        free(app_context);
+    }
+    if(NULL != mapping) {
+        for(i=0; i<num_context; i++) {
+            if(NULL != mapping[i]) 
+                OBJ_RELEASE(mapping[i]);
+        }
+        free(mapping);
+    }
+    return rc;
+}
+
+/**
  * Set the process mapping in the registry.
  */
 

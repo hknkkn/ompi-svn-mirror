@@ -91,6 +91,7 @@ OBJ_CLASS_DECLARATION(orte_rmaps_base_map_t);
 
 int orte_rmaps_base_get_map(orte_jobid_t, ompi_list_t* mapping);
 int orte_rmaps_base_set_map(orte_jobid_t, ompi_list_t* mapping);
+int orte_rmaps_base_get_node_map(orte_cellid_t, orte_jobid_t, const char*, ompi_list_t* mapping);
 
 
 #if defined(c_plusplus) || defined(__cplusplus)
