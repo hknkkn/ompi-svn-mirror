@@ -273,11 +273,12 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
         case ORTE_BYTE_OBJECT:
  
             dbyteptr = (orte_byte_object_t*)dst;
+            sptr = src; /* iterate from start of buffer */
             for(i=0; i<num_vals; i++) {
                 if(*mem_left < sizeof(uint32_t)) {
                     return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
                 }
-                d32 = (uint32_t*)src;
+                d32 = (uint32_t*)sptr;
                 dbyteptr->size = (size_t)ntohl(*d32);
                 d32++;
                 sptr = (void*)d32;

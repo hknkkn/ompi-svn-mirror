@@ -207,7 +207,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 *d32 = htonl(len);
                 d32++;
                 dstr = (char *) d32;
-                memcpy(dstr, str, len);
+                memcpy(dstr, str[i], len);
                 d32 = (uint32_t *)(dstr + len);
                 *num_bytes += len + sizeof(uint32_t);
             }
