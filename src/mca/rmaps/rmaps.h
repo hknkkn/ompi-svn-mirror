@@ -68,8 +68,7 @@ typedef orte_rmaps_base_module_1_0_0_t orte_rmaps_base_module_t;
 
 typedef orte_rmaps_base_module_t* (*orte_rmaps_base_component_init_fn_t)(
     bool *allow_multi_user_threads,
-    bool *have_hidden_threads,
-    int *priority);
+    bool *have_hidden_threads);
 
  
 /*

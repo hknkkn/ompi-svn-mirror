@@ -13,8 +13,9 @@
  */
 
 
-#include "ompi_config.h"
-#include "include/constants.h"
+#include "orte_config.h"
+#include "include/orte_constants.h"
+#include "util/output.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/pls/base/base.h"
@@ -31,27 +32,29 @@
 /*
  * Global variables
  */
-int mca_pls_base_output = 0;
-ompi_list_t mca_pls_base_components_available;
-mca_pls_base_module_t ompi_pls = {
-    NULL
-};  /* holds selected module's function pointers */
+orte_pls_base_t orte_pls_base;
 
 /**
  * Function for finding and opening either all MCA modules, or the one
  * that was specifically requested via a MCA parameter.
  */
-int mca_pls_base_open(void)
+int orte_pls_base_open(void)
 {
     int ret;
 
     /* Open up all available components */
-    if (OMPI_SUCCESS != 
-        (ret = mca_base_components_open("pls", 0, mca_pls_base_static_components, 
-                                      &mca_pls_base_components_available))) {
+    if (ORTE_SUCCESS != 
+        (ret = mca_base_components_open("pls", 0, mca_pls_base_static_components,
+                                        &orte_pls_base.pls_components))) {
         return ret;
     }
+    OBJ_CONSTRUCT(&orte_pls_base.pls_selected, ompi_list_item_t);
 
-    /* All done */
-    return OMPI_SUCCESS;
+    /* setup output for debug messages */
+    if (!ompi_output_init) {  /* can't open output */
+        return ORTE_ERR_NOT_AVAILABLE;
+    }
+    orte_pls_base.pls_output = ompi_output_open(NULL);
+    return ORTE_SUCCESS;
 }
+

@@ -35,7 +35,6 @@ int orte_rmaps_base_select(bool *allow_multi_user_threads,
     orte_rmaps_base_component_t *component;
     orte_rmaps_base_module_t *module;
     bool multi, hidden;
-    int priority;
 
     /* Iterate through all the available components */
 
@@ -48,7 +47,7 @@ int orte_rmaps_base_select(bool *allow_multi_user_threads,
         /* Call the component's init function and see if it wants to be
          * selected 
          */
-        module = component->rmaps_init(&multi, &hidden, &priority);
+        module = component->rmaps_init(&multi, &hidden);
 
         /* If we got a non-NULL module back, then the component wants to
          * be selected.  So save its multi/hidden values and save the

@@ -15,10 +15,7 @@
 /**
  * @file
  *
- * Resource Discovery & Allocation Subsystem (RDAS)
- *
- * The RDAS is responsible for discovering the resources available to the universe, and
- * for allocating them to the requesting job.
+ * The Open RTE Process Launch Subsystem
  *
  */
 
@@ -27,20 +24,40 @@
 
 #include "ompi_config.h"
 #include "mca/mca.h"
+#include "mca/ns/ns_types.h"
 #include "class/ompi_list.h"
 
 /*
- * Define mapper algorithm options
+ * PLS interface functions
  */
- typedef uint8_t mca_pls_base_mapper_t;
- 
- #define ORTE_PROCESS_MAPPER_ROUND_ROBIN    (mca_pls_base_mapper_t)  1
- #define ORTE_PROCESS_MAPPER_SINGLE_VALUE   (mca_pls_base_mapper_t)  2
- 
- 
-/*
- * MCA component management functions
+
+/**
+ * Launch the indicated jobid 
  */
+
+typedef int (*orte_pls_base_module_launch_fn_t)(orte_jobid_t);
+
+/**
+ * Cleanup all resources held by the module
+ */
+typedef int (*orte_pls_base_module_finalize_fn_t)(void);
+
+/**
+ * Base module structure for the PLS
+ *
+ * Base module structure for the PLS - presents the required function
+ * pointers to the calling interface. 
+ */
+
+struct orte_pls_base_module_1_0_0_t {
+   orte_pls_base_module_launch_fn_t launch;
+   orte_pls_base_module_finalize_fn_t finalize;
+};
+
+/** shorten orte_pls_base_module_1_0_0_t declaration */
+typedef struct orte_pls_base_module_1_0_0_t orte_pls_base_module_1_0_0_t;
+/** shorten orte_pls_base_module_t declaration */
+typedef struct orte_pls_base_module_1_0_0_t orte_pls_base_module_t;
 
 /**
  * PLS initialization function
@@ -57,58 +74,26 @@
  *                       select a module.
  *
  */
-typedef struct mca_pls_base_module_1_0_0_t* 
-(*mca_pls_base_component_init_fn_t)(bool have_threads,
-                                    int *priority);
-
-typedef int (*mca_pls_base_component_finalize_fn_t)(void);
-
+typedef struct orte_pls_base_module_1_0_0_t* 
+(*orte_pls_base_component_init_fn_t)(
+    bool *allow_multi_user_threads,
+    bool *have_hidden_threads);
 
 /** 
- * PLS module version and interface functions
- *
- * \note the first two entries have type names that are a bit
- *  misleading.  The plan is to rename the mca_base_module_*
- * types in the future.
+ * PLS component 
  */
-struct mca_pls_base_component_1_0_0_t {
-  /** component version */
-  mca_base_component_t pls_version;
-  /** component data */
-  mca_base_component_data_1_0_0_t pls_data;
-  /** Function called when component is initialized  */
-  mca_pls_base_component_init_fn_t pls_init;
-  /** Function called when component is finalized */
-  mca_pls_base_component_finalize_fn_t pls_finalize;
+struct orte_pls_base_component_1_0_0_t {
+    /** component version */
+    mca_base_component_t pls_version;
+    /** component data */
+    mca_base_component_data_1_0_0_t pls_data;
+    /** Function called when component is initialized  */
+    orte_pls_base_component_init_fn_t pls_init;
 };
-/** shorten mca_pls_base_component_1_0_0_t declaration */
-typedef struct mca_pls_base_component_1_0_0_t mca_pls_base_component_1_0_0_t;
-/** shorten mca_pls_base_component_t declaration */
-typedef mca_pls_base_component_1_0_0_t mca_pls_base_component_t;
-
-
-/*
- * PLS interface functions
- */
-
-/*
- * dummy function for compiling
- */
-typedef int (*mca_pls_dummy_fn_t)(void);
-
-/**
- * Base module structure for the PLS
- *
- * Base module structure for the PLS - presents the required function
- * pointers to the calling interface. 
- */
-struct mca_pls_base_module_1_0_0_t {
-   mca_pls_dummy_fn_t dummy;
-};
-/** shorten mca_pls_base_module_1_0_0_t declaration */
-typedef struct mca_pls_base_module_1_0_0_t mca_pls_base_module_1_0_0_t;
-/** shorten mca_pls_base_module_t declaration */
-typedef struct mca_pls_base_module_1_0_0_t mca_pls_base_module_t;
+/** shorten orte_pls_base_component_1_0_0_t declaration */
+typedef struct orte_pls_base_component_1_0_0_t orte_pls_base_component_1_0_0_t;
+/** shorten orte_pls_base_component_t declaration */
+typedef orte_pls_base_component_1_0_0_t orte_pls_base_component_t;
 
 
 /**

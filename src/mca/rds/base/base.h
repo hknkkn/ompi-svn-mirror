@@ -14,8 +14,8 @@
 /** @file:
  */
 
-#ifndef ORTE_MCA_RDS_BASE_H
-#define ORTE_MCA_RDS_BASE_H
+#ifndef ORTE_RDS_BASE_H
+#define ORTE_RDS_BASE_H
 
 /*
  * includes
@@ -54,11 +54,7 @@ OMPI_DECLSPEC    int orte_rds_base_open(void);
 OMPI_DECLSPEC    int orte_rds_base_select(bool *allow_multi_user_threads,
 			                              bool *have_hidden_threads);
 OMPI_DECLSPEC    int orte_rds_base_close(void);
-
-    /*
-     * Base functions that are common to all implementations - can be overridden
-     */
-int orte_rds_base_query_not_available(void);
+OMPI_DECLSPEC    int orte_rds_base_query(void);
 
 /*
  * globals that might be needed

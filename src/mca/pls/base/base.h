@@ -25,32 +25,43 @@
 #include "mca/pls/pls.h"
 
 
-/*
- * Global functions for MCA overall collective open and close
- */
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
 
-OMPI_DECLSPEC    int mca_pls_base_open(void);
-OMPI_DECLSPEC    int mca_pls_base_select(bool *allow_multi_user_threads,
-			                            bool *have_hidden_threads);
-OMPI_DECLSPEC    int mca_pls_base_close(void);
+/*
+ * Internal definitions
+ */
+struct orte_pls_base_selected_t {
+    ompi_list_item_t super;
+    orte_pls_base_component_t *component;
+    orte_pls_base_module_t* module;
+};
+typedef struct orte_pls_base_selected_t orte_pls_base_selected_t;
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_pls_base_selected_t);
+                                                                                                               
+                                                                                                               
+/*
+ * Global functions for MCA overall collective open and close
+ */
 
-    /*
-     * Base functions that are common to all implementations - can be overridden
-     */
-
+OMPI_DECLSPEC int orte_pls_base_open(void);
+OMPI_DECLSPEC int orte_pls_base_select(bool *allow_multi_user_threads,
+			                           bool *have_hidden_threads);
+OMPI_DECLSPEC int orte_pls_base_close(void);
+OMPI_DECLSPEC int orte_pls_base_launch(orte_jobid_t);
 
 /*
  * globals that might be needed
  */
 
-OMPI_DECLSPEC extern int mca_pls_base_output;
-OMPI_DECLSPEC extern mca_pls_base_module_t orte_pls;  /* holds selected module's function pointers */
-OMPI_DECLSPEC extern bool mca_pls_base_selected;
-OMPI_DECLSPEC extern ompi_list_t mca_pls_base_components_available;
-OMPI_DECLSPEC extern mca_pls_base_component_t mca_pls_base_selected_component;
+typedef struct orte_pls_base_t {
+   int pls_output;
+   ompi_list_t pls_components;
+   ompi_list_t pls_selected;
+} orte_pls_base_t;
+
+OMPI_DECLSPEC extern orte_pls_base_t orte_pls_base;
 
 /*
  * external API functions will be documented in the mca/pls/pls.h file

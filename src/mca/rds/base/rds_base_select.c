@@ -24,8 +24,7 @@
 
 
 /**
- * Function for selecting one component from all those that are
- * available.
+ * Function for selecting all available modules.
  */
 int orte_rds_base_select(bool *allow_multi_user_threads, 
                        bool *have_hidden_threads)
@@ -35,7 +34,6 @@ int orte_rds_base_select(bool *allow_multi_user_threads,
     orte_rds_base_component_t *component;
     orte_rds_base_module_t *module;
     bool multi, hidden;
-    int priority;
 
     /* Iterate through all the available components */
   
@@ -48,7 +46,7 @@ int orte_rds_base_select(bool *allow_multi_user_threads,
         /* Call the component's init function and see if it wants to be
          * selected
          */
-        module = component->rds_init(&multi, &hidden, &priority);
+        module = component->rds_init(&multi, &hidden);
 
         /* If we got a non-NULL module back, then the component wants to
          * be selected.   

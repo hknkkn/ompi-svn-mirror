@@ -28,6 +28,7 @@ headers = \
 libmca_pls_base_la_SOURCES = \
     $(headers) \
 	pls_base_close.c \
+	pls_base_launch.c \
 	pls_base_open.c \
 	pls_base_select.c
 

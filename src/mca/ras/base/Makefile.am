@@ -29,6 +29,7 @@ headers = \
 
 libmca_ras_base_la_SOURCES = \
         $(headers) \
+        ras_base_alloc.c \
         ras_base_close.c \
         ras_base_select.c \
         ras_base_open.c
