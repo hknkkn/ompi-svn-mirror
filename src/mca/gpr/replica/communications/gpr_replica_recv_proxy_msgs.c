@@ -36,7 +36,7 @@
  */
 
 void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
-			  orte_buffer_t *buffer, int tag, void* cbdata)
+			  orte_buffer_t *buffer, orte_rml_tag_t tag, void* cbdata)
 {
 #if 0
     orte_buffer_t *answer;

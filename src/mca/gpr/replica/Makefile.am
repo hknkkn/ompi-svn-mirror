@@ -43,7 +43,8 @@ mca_gpr_replica_la_LIBADD = \
 mca_gpr_replica_la_LDFLAGS = -module -avoid-version
 
 noinst_LTLIBRARIES = $(component_noinst)
-libmca_gpr_replica_la_SOURCES =
+libmca_gpr_replica_la_SOURCES = gpr_replica.h \
+                                gpr_replica_component.c
 libmca_gpr_replica_la_LIBADD = \
 	api_layer/libmca_gpr_replica_api.la \
 	transition_layer/libmca_gpr_replica_tl.la \

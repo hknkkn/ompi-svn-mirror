@@ -24,11 +24,30 @@
 #include "orte_config.h"
 
 #include "include/orte_constants.h"
-
+#include "class/orte_pointer_array.h"
 
 #include "gpr_replica_api.h"
 
 int orte_gpr_replica_preallocate_segment(char *name, int num_slots)
 {
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    int rc;
+    orte_gpr_replica_segment_t *seg=NULL;
+
+    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
+
+    /* find the segment */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, name))) {
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+        return rc;
+    }
+
+    if (0 < (seg->containers)->size) {  /* segment already exists! */
+        return ORTE_ERR_BAD_PARAM;
+    }
+    
+    rc = orte_pointer_array_init(&(seg->containers), num_slots,
+                                            orte_gpr_replica_globals.max_size,
+                                            orte_gpr_replica_globals.block_size);
+                                            
+    return rc;
 }

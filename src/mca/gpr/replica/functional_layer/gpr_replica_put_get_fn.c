@@ -38,7 +38,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 {
 #if 0
     orte_gpr_replica_core_t *entry_ptr;
-    orte_gpr_mode_t put_mode;
+    bool overwrite;
     orte_gpr_replica_trigger_list_t *trig;
     int return_code;
     bool found;
@@ -49,10 +49,16 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 		    ORTE_NAME_ARGS(*(orte_process_info.my_name)), seg->name);
     }
 
+    /* initialize action */
+    *action_taken = 0;
+    
     /* ignore addressing mode - all tokens are used
      * only overwrite permission mode flag has any affect
      */
-    put_mode = addr_mode & ORTE_GPR_OVERWRITE;
+    overwrite = false;
+    if (addr_mode & ORTE_GPR_OVERWRITE) {
+        overwrite = true;
+    }
 
     /* find the specified container */
     found = false;
@@ -88,48 +94,31 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
             }
             kptr++;
         }
+        *action_taken = ORTE_GPR_ENTRY_ADDED;
     } else {  /* otherwise, see if entry already exists in container */
-        iptr = (orte_gpr_replica_itagval_t*)((cptr->itagvals)->addr);
-        for (i=0; i < (cptr->itagvals)->size; i++) {
-            if (NULL != iptr) {
+        kptr = keyvals;
+        for (i=0; i < cnt; i++) {
+            if (orte_gpr_replica_search_container(&iptr, cptr, kptr)) {
+                /* this key already exists - overwrite, if permission given
+                 * else error
+                 */
+                 if (overwrite) {
+                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(iptr, kptr))) {
+                        return rc;
+                    }
+                 } else {
+                    return ORTE_ERROR;
+                 }
+                 *action_taken = *action_taken | ORTE_GPR_ENTRY_UPDATED;
+            } else { /* new key - add to container */
+                if (ORTE_SUCCESS != (rc = orte_gpr_replica_store_keyval(seg, cptr, &kptr))) {
+                    return rc;
+                }
+                *action_taken = *action_taken | ORTE_GPR_ENTRY_ADDED;
             }
+            kptr++;
         }
     }
-
-    for (entry_ptr = (orte_gpr_replica_core_t*)ompi_list_get_first(&seg->registry_entries);
-	   entry_ptr != (orte_gpr_replica_core_t*)ompi_list_get_end(&seg->registry_entries);
-	 entry_ptr = (orte_gpr_replica_core_t*)ompi_list_get_next(entry_ptr)) {
-	if (orte_gpr_replica_check_key_list(put_mode, num_keys, keys,
-				       entry_ptr->num_keys, entry_ptr->keys)) {
-	    /* found existing entry - overwrite if mode set, else error */
-	    if (put_mode) {  /* overwrite enabled */
-		free(entry_ptr->object);
-		entry_ptr->object = NULL;
-		entry_ptr->object_size = size;
-		entry_ptr->object = (orte_gpr_object_t)malloc(size);
-		memcpy(entry_ptr->object, object, size);
-		return_code = ORTE_SUCCESS;
-		*action_taken = MCA_GPR_REPLICA_OBJECT_UPDATED;
-		goto CLEANUP;
-	    } else {
-		return_code = ORTE_ERROR;
-		goto CLEANUP;
-	    }
-	}
-    }
-
-    /* no existing entry - create new one */
-    entry_ptr = OBJ_NEW(orte_gpr_replica_core_t);
-    entry_ptr->keys = (orte_gpr_replica_key_t*)malloc(num_keys*sizeof(orte_gpr_replica_key_t));
-    memcpy(entry_ptr->keys, keys, num_keys*sizeof(orte_gpr_replica_key_t));
-    entry_ptr->num_keys = num_keys;
-    entry_ptr->object_size = size;
-    entry_ptr->object = (orte_gpr_object_t*)malloc(size);
-    memcpy(entry_ptr->object, object, size);
-    ompi_list_append(&seg->registry_entries, &entry_ptr->item);
-
-    *action_taken = MCA_GPR_REPLICA_OBJECT_ADDED;
-    return_code = ORTE_SUCCESS;
 
     /* update trigger list */
     for (trig = (orte_gpr_replica_trigger_list_t*)ompi_list_get_first(&seg->triggers);

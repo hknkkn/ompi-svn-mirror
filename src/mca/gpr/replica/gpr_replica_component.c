@@ -26,13 +26,17 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 
+#include "mca/rml/rml.h"
+
 #include "gpr_replica.h"
+#include "mca/gpr/replica/api_layer/gpr_replica_api.h"
+#include "mca/gpr/replica/communications/gpr_replica_comm.h"
 
 
 /*
  * Struct of function pointers that need to be initialized
  */
-ORTE_COMP_EXPORT mca_gpr_base_component_t mca_gpr_replica_component = {
+OMPI_COMP_EXPORT mca_gpr_base_component_t mca_gpr_replica_component = {
     {
 	MCA_GPR_BASE_VERSION_1_0_0,
 
@@ -53,7 +57,7 @@ ORTE_COMP_EXPORT mca_gpr_base_component_t mca_gpr_replica_component = {
 /*
  * setup the function pointers for the module
  */
-static orte_gpr_base_module_t orte_gpr_replica = {
+static orte_gpr_base_module_t orte_gpr_replica_module = {
     orte_gpr_replica_get,
     orte_gpr_replica_put,
     orte_gpr_replica_delete_entries,
@@ -124,11 +128,6 @@ static void orte_gpr_replica_segment_construct(orte_gpr_replica_segment_t* seg)
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_replica_segment_destructor(orte_gpr_replica_segment_t* seg)
 {
-    orte_gpr_replica_core_t *reg;
-    orte_gpr_replica_trigger_list_t *tr;
-    orte_gpr_replica_keytable_t *kt;
-    orte_gpr_replica_keylist_t *kl;
-
     if (NULL != seg->name) {
         free(seg->name);
     }
@@ -174,6 +173,7 @@ static void orte_gpr_replica_container_construct(orte_gpr_replica_container_t* r
 static void orte_gpr_replica_container_destructor(orte_gpr_replica_container_t* reg)
 {
     orte_gpr_replica_itagval_t *ptr;
+    int i;
 
     if (NULL != reg->itags) {
          free(reg->itags);
@@ -184,10 +184,10 @@ static void orte_gpr_replica_container_destructor(orte_gpr_replica_container_t* 
     }
 
     if (NULL != reg->itagvals) {
-        ptr = (orte_gpr_itagval_t*)((reg->itagvals)->addr);
-        for (i=0; i < reg->itagvals.size; i++) {
-            if (NULL != *ptr) {
-                OBJ_RELEASE(*ptr);
+        ptr = (orte_gpr_replica_itagval_t*)((reg->itagvals)->addr);
+        for (i=0; i < (reg->itagvals)->size; i++) {
+            if (NULL != ptr) {
+                OBJ_RELEASE(ptr);
             }
             ptr++;
         }
@@ -210,14 +210,14 @@ static void orte_gpr_replica_itagval_construct(orte_gpr_replica_itagval_t* ptr)
 {
     ptr->itag = ORTE_GPR_REPLICA_ITAG_MAX;
     ptr->type = ORTE_NULL;
-    ptr->type.value.strptr = NULL;
+    (ptr->value).strptr = NULL;
 }
 
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_replica_itagval_destructor(orte_gpr_replica_itagval_t* ptr)
 {
     if (ORTE_BYTE_OBJECT == ptr->type) {
-        free(ptr->value.byteobject.bytes);
+        free(((ptr->value).byteobject).bytes);
     }
 }
 
@@ -380,11 +380,11 @@ int orte_gpr_replica_open(void)
     
     id = mca_base_param_register_int("gpr", "replica", "maxsize", NULL,
                                      ORTE_GPR_REPLICA_MAX_SIZE);
-    mca_base_param_lookup_int(id, &orte_gpr_replica_globals.max_size);
+    mca_base_param_lookup_int(id, (int*)&orte_gpr_replica_globals.max_size);
 
     id = mca_base_param_register_int("gpr", "replica", "blocksize", NULL,
                                      ORTE_GPR_REPLICA_BLOCK_SIZE);
-    mca_base_param_lookup_int(id, &orte_gpr_replica_globals.block_size);
+    mca_base_param_lookup_int(id, (int*)&orte_gpr_replica_globals.block_size);
 
     return ORTE_SUCCESS;
 }
@@ -458,19 +458,20 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
 	OBJ_CONSTRUCT(&orte_gpr_replica.notify_offs, ompi_list_t);
 
  	/* issue the non-blocking receive */ 
-	rc = orte_rml.recv_buffer_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_GPR, 0, orte_gpr_replica_recv, NULL);
+	rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
+                orte_gpr_replica_recv, NULL);
 	if(rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) { 
 	    return NULL;
 	}
 
-	if (orte_gpr_replica_debug) {
+	if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "nb receive setup");
 	}
 
 	/* Return the module */
 
 	initialized = true;
-	return &orte_gpr_replica;
+	return &orte_gpr_replica_module;
     } else {
 	return NULL;
     }
@@ -481,12 +482,13 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
  */
 int orte_gpr_replica_finalize(void)
 {
+    int i;
     orte_gpr_replica_segment_t* seg;
     orte_gpr_replica_notify_tracker_t* trig;
     orte_gpr_replica_callbacks_t* cb;
     orte_gpr_replica_notify_off_t* no;
     
-    if (orte_gpr_replica_debug) {
+    if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "finalizing gpr replica");
     }
 
@@ -524,6 +526,6 @@ int orte_gpr_replica_finalize(void)
     
     /* All done */
 
-	orte_rml.recv_cancel(MCA_OOB_NAME_ANY, MCA_OOB_TAG_GPR);
+	orte_rml.recv_cancel(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR);
     return ORTE_SUCCESS;
 }

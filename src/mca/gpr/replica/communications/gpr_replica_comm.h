@@ -30,6 +30,7 @@
 #include "threads/condition.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/rml/rml_types.h"
 
 #include "mca/gpr/replica/gpr_replica.h"
 #include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
@@ -45,7 +46,7 @@
  * Proxy msg receiver
  */
 void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
-                           orte_buffer_t *buffer, int tag, void* cbdata);
+                           orte_buffer_t *buffer, orte_rml_tag_t tag, void* cbdata);
 
 /*
  * Remote notification transmitter
