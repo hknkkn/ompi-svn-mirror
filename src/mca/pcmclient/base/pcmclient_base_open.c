@@ -33,7 +33,11 @@
  * Global variables
  */
 int mca_pcmclient_base_output = 0;
-mca_pcmclient_base_module_t mca_pcmclient;
+mca_pcmclient_base_module_t mca_pcmclient = {
+	NULL,
+	NULL,
+	NULL
+};
 ompi_list_t mca_pcmclient_base_components_available;
 mca_pcmclient_base_component_t mca_pcmclient_base_selected_component;
 
