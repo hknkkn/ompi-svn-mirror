@@ -12,8 +12,8 @@
  * $HEADER$
  */
 
-#ifndef ORTE_PLS_PBS_EXPORT_H
-#define ORTE_PLS_PBS_EXPORT_H
+#ifndef ORTE_PLS_TM_EXPORT_H
+#define ORTE_PLS_TM_EXPORT_H
 
 #include "ompi_config.h"
 
@@ -30,23 +30,23 @@ extern "C" {
      */
     
     OMPI_COMP_EXPORT extern const orte_pls_base_component_1_0_0_t 
-        orte_pls_pbs_component;
+        orte_pls_tm_component;
     OMPI_COMP_EXPORT extern const orte_pls_base_module_1_0_0_t
-        orte_pls_pbs_module;
-    OMPI_COMP_EXPORT extern int orte_pls_pbs_param_priorty;
+        orte_pls_tm_module;
+    OMPI_COMP_EXPORT extern int orte_pls_tm_param_priorty;
 
     /* Component functions */
 
     const struct orte_pls_base_module_1_0_0_t *
-        orte_pls_pbs_init(bool *allow_multi_user_threads,
+        orte_pls_tm_init(bool *allow_multi_user_threads,
                           bool *have_hidden_threads, int *priority);
 
     /* Module functions */
 
-    int orte_pls_pbs_launch(orte_jobid_t jobid);
-    int orte_pls_pbs_finalize(void);
+    int orte_pls_tm_launch(orte_jobid_t jobid);
+    int orte_pls_tm_finalize(void);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
-#endif /* ORTE_PLS_PBS_EXPORT_H */
+#endif /* ORTE_PLS_TM_EXPORT_H */

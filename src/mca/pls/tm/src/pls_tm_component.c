@@ -22,16 +22,16 @@
 
 #include "include/orte_constants.h"
 #include "mca/pls/pls.h"
-#include "pls_pbs.h"
-#include "mca/pls/pbs/pls-pbs-version.h"
+#include "pls_tm.h"
+#include "mca/pls/tm/pls-tm-version.h"
 #include "mca/base/mca_base_param.h"
 
 
 /*
- * Public string showing the pls ompi_pbs component version number
+ * Public string showing the pls ompi_tm component version number
  */
-const char *mca_pls_pbs_component_version_string =
-  "Open MPI pbs pls MCA component version " MCA_pls_pbs_VERSION;
+const char *mca_pls_tm_component_version_string =
+  "Open MPI tm pls MCA component version " MCA_pls_tm_VERSION;
 
 
 /*
@@ -43,7 +43,7 @@ int param_priority = -1;
 /*
  * Local function
  */
-static int pbs_open(void);
+static int tm_open(void);
 
 
 /*
@@ -51,7 +51,7 @@ static int pbs_open(void);
  * and pointers to our public functions in it
  */
 
-const orte_pls_base_component_1_0_0_t mca_pls_pbs_component = {
+const orte_pls_base_component_1_0_0_t mca_pls_tm_component = {
 
     /* First, the mca_component_t struct containing meta information
        about the component itself */
@@ -64,14 +64,14 @@ const orte_pls_base_component_1_0_0_t mca_pls_pbs_component = {
 
         /* Component name and version */
 
-        "pbs",
-        MCA_pls_pbs_MAJOR_VERSION,
-        MCA_pls_pbs_MINOR_VERSION,
-        MCA_pls_pbs_RELEASE_VERSION,
+        "tm",
+        MCA_pls_tm_MAJOR_VERSION,
+        MCA_pls_tm_MINOR_VERSION,
+        MCA_pls_tm_RELEASE_VERSION,
 
         /* Component open and close functions */
 
-        pbs_open,
+        tm_open,
         NULL
     },
 
@@ -85,32 +85,32 @@ const orte_pls_base_component_1_0_0_t mca_pls_pbs_component = {
 
     /* Initialization / querying functions */
 
-    orte_pls_pbs_init
+    orte_pls_tm_init
 };
 
 
-static int pbs_open(void)
+static int tm_open(void)
 {
     param_priority = 
-        mca_base_param_register_int("pls", "pbs", "priority", NULL, 50);
+        mca_base_param_register_int("pls", "tm", "priority", NULL, 50);
 
     return ORTE_SUCCESS;
 }
 
 
 const struct orte_pls_base_module_1_0_0_t *
-orte_pls_pbs_init(bool *allow_multi_user_threads,
+orte_pls_tm_init(bool *allow_multi_user_threads,
                   bool *have_hidden_threads, int *priority)
 {
-    /* Are we running under a PBS job? */
+    /* Are we running under a TM job? */
 
-    if (NULL != getenv("PBS_ENVIRONMENT") &&
-        NULL != getenv("PBS_JOBID")) {
+    if (NULL != getenv("TM_ENVIRONMENT") &&
+        NULL != getenv("TM_JOBID")) {
         *allow_multi_user_threads = false;
         *have_hidden_threads = false;
         mca_base_param_lookup_int(param_priority, priority);
 
-        return &orte_pls_pbs_module;
+        return &orte_pls_tm_module;
     }
 
     /* Sadly, no */

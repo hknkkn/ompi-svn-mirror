@@ -22,22 +22,22 @@
 
 #include "include/orte_constants.h"
 #include "mca/pls/pls.h"
-#include "pls_pbs.h"
+#include "pls_tm.h"
 
 
-const orte_pls_base_module_1_0_0_t orte_pls_pbs_module = {
-    orte_pls_pbs_launch,
-    orte_pls_pbs_finalize
+const orte_pls_base_module_1_0_0_t orte_pls_tm_module = {
+    orte_pls_tm_launch,
+    orte_pls_tm_finalize
 };
 
 
-int orte_pls_pbs_launch(orte_jobid_t jobid)
+int orte_pls_tm_launch(orte_jobid_t jobid)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
-int orte_pls_pbs_finalize(void)
+int orte_pls_tm_finalize(void)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

@@ -16,30 +16,29 @@
 
 include $(top_ompi_srcdir)/config/Makefile.options
 
-EXTRA_DIST = VERSION
+SUBDIRS = src
 
-sources = \
-        pls_pbs.h \
-        pls_pbs_component.c \
-        pls_pbs_module.c
+EXTRA_DIST = VERSION
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
 # (for static builds).
 
-if OMPI_BUILD_pls_pbs_DSO
+if OMPI_BUILD_pls_tm_DSO
 component_noinst =
-component_install = mca_pls_pbs.la
+component_install = mca_pls_tm.la
 else
-component_noinst = libmca_pls_pbs.la
+component_noinst = libmca_pls_tm.la
 component_install =
 endif
 
 mcacomponentdir = $(libdir)/openmpi
 mcacomponent_LTLIBRARIES = $(component_install)
-mca_pls_pbs_la_SOURCES = $(sources)
-mca_pls_pbs_la_LDFLAGS = -module -avoid-version
+mca_pls_tm_la_SOURCES =
+mca_pls_tm_la_LIBADD = src/libmca_pls_tm.la
+mca_pls_tm_la_LDFLAGS = -module -avoid-version
 
 noinst_LTLIBRARIES = $(component_noinst)
-libmca_pls_pbs_la_SOURCES =$(sources)
-libmca_pls_pbs_la_LDFLAGS = -module -avoid-version
+libmca_pls_tm_la_SOURCES =
+libmca_pls_tm_la_LIBADD = src/libmca_pls_tm.la
+libmca_pls_tm_la_LDFLAGS = -module -avoid-version
