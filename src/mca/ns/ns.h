@@ -259,7 +259,7 @@ typedef int (*orte_ns_base_module_free_name_fn_t)(orte_process_name_t **name);
  * name-string = ompi_name_server.get_proc_name_string(&name)
  * @endcode
  */
-typedef int (*orte_ns_base_module_get_proc_name_string_fn_t)(char *name_string,
+typedef int (*orte_ns_base_module_get_proc_name_string_fn_t)(char **name_string,
                                                              const orte_process_name_t* name);
 
 /**
@@ -281,7 +281,7 @@ typedef int (*orte_ns_base_module_get_proc_name_string_fn_t)(char *name_string,
  * vpid-string = ompi_name_server.get_vpid_string(&name)
  * @endcode
  */
-typedef int (*orte_ns_base_module_get_vpid_string_fn_t)(char *vpid_string, const orte_process_name_t* name);
+typedef int (*orte_ns_base_module_get_vpid_string_fn_t)(char **vpid_string, const orte_process_name_t* name);
 
 /**
  * Convert vpid to character string
@@ -299,7 +299,7 @@ typedef int (*orte_ns_base_module_get_vpid_string_fn_t)(char *vpid_string, const
  * vpid-string = ompi_name_server.convert_vpid_to_string(vpid);
  * @endcode
  */
- typedef int (*orte_ns_base_module_convert_vpid_to_string_fn_t)(char *vpid_string, const orte_vpid_t vpid);
+ typedef int (*orte_ns_base_module_convert_vpid_to_string_fn_t)(char **vpid_string, const orte_vpid_t vpid);
  
  /**
   * Convert a string to a vpid.
@@ -336,7 +336,7 @@ typedef int (*orte_ns_base_module_convert_string_to_vpid_fn_t)(orte_vpid_t *vpid
  * jobid-string = ompi_name_server.get_jobid_string(&name)
  * @endcode
  */
-typedef int (*orte_ns_base_module_get_jobid_string_fn_t)(char *jobid_string, const orte_process_name_t* name);
+typedef int (*orte_ns_base_module_get_jobid_string_fn_t)(char **jobid_string, const orte_process_name_t* name);
 
 /**
  * Convert jobid to character string
@@ -355,7 +355,7 @@ typedef int (*orte_ns_base_module_get_jobid_string_fn_t)(char *jobid_string, con
  * jobid-string = ompi_name_server.convert_jobid_to_string(jobid);
  * @endcode
  */
-typedef int (*orte_ns_base_module_convert_jobid_to_string_fn_t)(char *jobid_string, const orte_jobid_t jobid);
+typedef int (*orte_ns_base_module_convert_jobid_to_string_fn_t)(char **jobid_string, const orte_jobid_t jobid);
 
 /**
  * Convert a string to a jobid
@@ -393,7 +393,7 @@ typedef int (*orte_ns_base_module_convert_string_to_jobid_fn_t)(orte_jobid_t *jo
  * cellid-string = ompi_name_server.get_cellid_string(&name)
  * @endcode
  */
-typedef int (*orte_ns_base_module_get_cellid_string_fn_t)(char *cellid_string, const orte_process_name_t* name);
+typedef int (*orte_ns_base_module_get_cellid_string_fn_t)(char **cellid_string, const orte_process_name_t* name);
 
 /**
  * Convert cellid to character string
@@ -411,7 +411,7 @@ typedef int (*orte_ns_base_module_get_cellid_string_fn_t)(char *cellid_string, c
  * cellid-string = ompi_name_server.convert_cellid_to_string(cellid);
  * @endcode
  */
- typedef int (*orte_ns_base_module_convert_cellid_to_string_fn_t)(char *cellid_string, const orte_cellid_t cellid);
+ typedef int (*orte_ns_base_module_convert_cellid_to_string_fn_t)(char **cellid_string, const orte_cellid_t cellid);
  
  /**
   * Convert a string to a cellid.

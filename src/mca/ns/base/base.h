@@ -97,26 +97,26 @@ OMPI_DECLSPEC    int orte_ns_base_copy_process_name(orte_process_name_t **dest,
 OMPI_DECLSPEC    int orte_ns_base_convert_string_to_process_name(orte_process_name_t **name,
                                              const char* name_string);
 
-OMPI_DECLSPEC    int orte_ns_base_get_proc_name_string(char *name_string,
+OMPI_DECLSPEC    int orte_ns_base_get_proc_name_string(char **name_string,
                                    const orte_process_name_t* name);
 
-OMPI_DECLSPEC    int orte_ns_base_get_vpid_string(char *vpid_string, const orte_process_name_t* name);
+OMPI_DECLSPEC    int orte_ns_base_get_vpid_string(char **vpid_string, const orte_process_name_t* name);
 
-OMPI_DECLSPEC    int orte_ns_base_convert_vpid_to_string(char *vpid_string, const orte_vpid_t vpid);
+OMPI_DECLSPEC    int orte_ns_base_convert_vpid_to_string(char **vpid_string, const orte_vpid_t vpid);
 
 OMPI_DECLSPEC    int orte_ns_base_convert_string_to_vpid(orte_vpid_t *vpid, const char* vpidstring);
 
-OMPI_DECLSPEC    int orte_ns_base_get_jobid_string(char *jobid_string, const orte_process_name_t* name);
+OMPI_DECLSPEC    int orte_ns_base_get_jobid_string(char **jobid_string, const orte_process_name_t* name);
 
-OMPI_DECLSPEC    int orte_ns_base_convert_jobid_to_string(char *jobid_string, const orte_jobid_t jobid);
+OMPI_DECLSPEC    int orte_ns_base_convert_jobid_to_string(char **jobid_string, const orte_jobid_t jobid);
 
 OMPI_DECLSPEC    int orte_ns_base_convert_string_to_jobid(orte_jobid_t *jobid, const char* jobidstring);
 
-OMPI_DECLSPEC    int orte_ns_base_get_cellid_string(char *cellid_string, const orte_process_name_t* name);
+OMPI_DECLSPEC    int orte_ns_base_get_cellid_string(char **cellid_string, const orte_process_name_t* name);
 
 OMPI_DECLSPEC    int orte_ns_base_convert_string_to_cellid(orte_cellid_t *cellid, const char *cellidstring);
 
-OMPI_DECLSPEC    int orte_ns_base_convert_cellid_to_string(char *cellid_string, const orte_cellid_t cellid);
+OMPI_DECLSPEC    int orte_ns_base_convert_cellid_to_string(char **cellid_string, const orte_cellid_t cellid);
 
 OMPI_DECLSPEC    int orte_ns_base_get_vpid(orte_vpid_t *vpid, const orte_process_name_t* name);
 
