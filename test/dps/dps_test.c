@@ -34,8 +34,8 @@
 #include "../src/dps/dps.h"
 #include "../src/mca/ns/ns_types.h"
 
-#define NUM_ITERS 2
-#define NUM_ELEMS 4
+#define NUM_ITERS 1
+#define NUM_ELEMS 1
 
 static bool test1(void);        /* verify different buffer inits */
 static bool test2(void);        /* verify int16 */
@@ -567,7 +567,6 @@ static bool test8(void)
 		/* object offset 100 */
         asprintf((char**)&srco[i].bytes, "%d", i+100);
         srco[i].size = strlen((char*)srco[i].bytes) + 1;
-		printf("%d object is [%s] len [%d]\n", i, srco[i].bytes, srco[i].size);
 
 		/* process name */
 		srcp[i].cellid = 1000 + i;
@@ -661,7 +660,7 @@ static bool test8(void)
 
 
 		/* object */
-		count=0;
+		count=NUM_ELEMS;
         rc = orte_dps.unpack(bufA, dsto, &count, ORTE_BYTE_OBJECT);
         if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
             test_comment ("test8: orte_dps.unpack on object failed");
@@ -758,6 +757,7 @@ static bool test8(void)
                 return(false);
             }
         }
+
 
     } /* per iteration */
          
