@@ -80,7 +80,9 @@ orte_soh_base_module_t orte_soh = {
 
 	/* soh query */
 	orte_soh_base_get_proc_soh_not_available,
+    orte_soh_base_set_proc_soh_not_available,
 	orte_soh_base_get_node_soh_not_available,
+    orte_soh_base_set_node_soh_not_available,
 
 	/* soh coms */
 	orte_soh_base_module_send_monitor_request_not_available,

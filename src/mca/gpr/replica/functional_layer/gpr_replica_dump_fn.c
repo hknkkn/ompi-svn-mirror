@@ -351,7 +351,7 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
             break;
             
         case ORTE_PROC_STATE:
-            asprintf(&tmp, "\t\tData type: ORTE_PROC_STATE\tValue: %d\n", (int)iptr->value.proc_status);
+            asprintf(&tmp, "\t\tData type: ORTE_PROC_STATE\tValue: %d\n", (int)iptr->value.proc_state);
             break;
             
         case ORTE_EXIT_CODE:

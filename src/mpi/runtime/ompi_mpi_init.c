@@ -81,7 +81,6 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     bool allow_multi_user_threads;
     bool have_hidden_threads;
     ompi_proc_t** procs;
-    orte_status_key_t my_status;
     size_t nprocs;
     char *error = NULL;
     char *jobid_string;

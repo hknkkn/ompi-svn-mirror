@@ -52,7 +52,6 @@
 int ompi_mpi_finalize(void)
 {
     int ret;
-    orte_status_key_t my_status;
     int my_rank;
     orte_jobid_t my_jobid;
 

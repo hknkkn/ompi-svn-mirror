@@ -230,7 +230,7 @@ typedef int (*orte_gpr_base_module_get_startup_msg_fn_t)(orte_jobid_t jobid,
  * message for each segment, and then passes that message to the appropriate
  * callback function as if it came directly from the registry.
  */
-typedef void (*orte_gpr_base_module_decode_startup_msg_fn_t)(
+typedef int (*orte_gpr_base_module_decode_startup_msg_fn_t)(
                                     int status, orte_process_name_t *peer,
                                     orte_buffer_t* msg, orte_rml_tag_t tag,
                                     void *cbdata);

@@ -141,15 +141,27 @@
 /*
  * Query the state-of-health of a process
  */
-typedef int (*orte_soh_base_module_get_proc_soh_fn_t)(orte_status_key_t *status,
-                                                     orte_process_name_t *proc);
+typedef int (*orte_soh_base_module_get_proc_soh_fn_t)(orte_proc_state_t *state,
+                                                      int *status,
+                                                      orte_process_name_t *proc);
+
+/*
+ * Set the state-of-health of a process
+ */
+typedef int (*orte_soh_base_module_set_proc_soh_fn_t)(orte_process_name_t *proc,
+                                            orte_proc_state_t state, int status);
 
 /*
  * Query SOH of a node 
  * (guess)
  */
-typedef int (*orte_soh_base_module_get_node_soh_fn_t)(orte_node_state_t *status,
-                                                     orte_process_name_t *node);
+typedef int (*orte_soh_base_module_get_node_soh_fn_t)(orte_node_state_t *state,
+                                                      orte_cellid_t cell,
+                                                      char *nodename);
+
+typedef int (*orte_soh_base_module_set_node_soh_fn_t)(orte_cellid_t cell,
+                                                      char *nodename,
+                                                      orte_node_state_t state);
 
 /*
  * 4. Communication functions between clients of the SOH and between master and slave SOH peers
@@ -243,7 +255,9 @@ struct orte_soh_base_module_1_0_0_t {
 
 	/* soh query */
     orte_soh_base_module_get_proc_soh_fn_t      get_proc_soh;
+    orte_soh_base_module_set_proc_soh_fn_t      set_proc_soh;
     orte_soh_base_module_get_node_soh_fn_t      get_node_soh;
+    orte_soh_base_module_set_node_soh_fn_t      set_node_soh;
 
 	/* soh communications */
     orte_soh_base_module_send_monitor_request_fn_t     send_monitor_request_soh;

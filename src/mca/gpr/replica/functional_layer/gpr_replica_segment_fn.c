@@ -276,7 +276,7 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             break;
             
         case ORTE_PROC_STATE:
-            dest->proc_status = src->proc_status;
+            dest->proc_state = src->proc_state;
             break;
             
         case ORTE_EXIT_CODE:

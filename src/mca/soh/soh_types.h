@@ -27,17 +27,17 @@ typedef int8_t orte_exit_code_t;
 #define ORTE_PROC_EXIT_CODE_ABNORMAL    0x01
 
 /*
- * Process status keys
+ * Process state codes
  */
 
-typedef int8_t orte_status_key_t;
+typedef int8_t orte_proc_state_t;
 
-#define ORTE_PROC_STATUS_RUNNING        0x00
-#define ORTE_PROC_STATUS_FINALIZING     0x01
-#define ORTE_PROC_STATUS_INIT           0x02
-#define ORTE_PROC_STATUS_TERMINATING    0x03
-#define ORTE_PROC_STATUS_STARTING       0x04
-#define ORTE_PROC_STATUS_LAUNCHING      0x05
+#define ORTE_PROC_STATE_RUNNING        0x00
+#define ORTE_PROC_STATE_FINALIZING     0x01
+#define ORTE_PROC_STATE_INIT           0x02
+#define ORTE_PROC_STATE_TERMINATING    0x03
+#define ORTE_PROC_STATE_STARTING       0x04
+#define ORTE_PROC_STATE_LAUNCHING      0x05
 
 
 /**

@@ -15,8 +15,8 @@
 /**
  * @file
  *
- * Parse command line options for the Open MPI Run Time Environment. This program MUST be called before
- * any call to ompi_rte_init_stage1 and/or ompi_rte_init_stage2 !!!
+ * Parse command line options for the Open Run Time Environment. This program MUST be called before
+ * any call to orte_init, but after orte_parse_environ to ensure that variables are correctly set !!!
  *
  */
 #include "orte_config.h"
@@ -24,7 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mca/oob/base/base.h"
+#include "mca/base/mca_base_param.h"
+
+#include "mca/rml/rml.h"
 #include "mca/ns/ns.h"
 #include "mca/errmgr/errmgr.h"
 
@@ -38,20 +40,38 @@
 int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
 {
     char *universe=NULL, *nsreplica=NULL, *gprreplica=NULL, *tmp=NULL;
-
+    int rc, id;
 
     /* get universe name and store it, if user specified it */
-    /* otherwise, stick with default name */
+    /* otherwise, stick with what was obtained from parse_environ */
 
     if (ompi_cmd_line_is_taken(cmd_line, "universe") ||
 	    ompi_cmd_line_is_taken(cmd_line, "u")) {
 	   if (NULL == ompi_cmd_line_get_param(cmd_line, "universe", 0, 0)) {
-            orte_errmgr.log("Failed to retrieve specified universe name from cmd line",
-                            __FILE__, __LINE__);
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
             return ORTE_ERR_BAD_PARAM;
         }
         universe = strdup(ompi_cmd_line_get_param(cmd_line, "universe", 0, 0));
+        if (NULL == universe) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        
+        /* clean out any pre-existing names - we will rebuild as specified */
+        if (NULL != orte_universe_info.name) {
+            free(orte_universe_info.name);
+            orte_universe_info.name = NULL;
+         }
+         if (NULL != orte_universe_info.host) {
+             free(orte_universe_info.host);
+             orte_universe_info.host = NULL;
+         }
+         if (NULL != orte_universe_info.uid) {
+              free(orte_universe_info.uid);
+              orte_universe_info.uid = NULL;
+         }
 
+        /* rebuild and set the appropriate MCA parameters */
 
 	   if (NULL != (tmp = strchr(universe, ':'))) { /* name contains remote host */
 	       /* get the host name, and the universe name separated */
@@ -59,83 +79,154 @@ int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
 	       *tmp = '\0';
 	       tmp++;
 	       orte_universe_info.name = strdup(tmp);
+            if (NULL == orte_universe_info.name) {
+                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                return ORTE_ERR_OUT_OF_RESOURCE;
+            }
 	       if (NULL != (tmp = strchr(universe, '@'))) {  /* remote name includes remote uid */
-		      *tmp = '\0';
-		      tmp++;
-		      if (NULL != orte_universe_info.host) {  /* overwrite it */
-		          free(orte_universe_info.host);
-		          orte_universe_info.host = NULL;
-		      }
-		      orte_universe_info.host = strdup(tmp);
-		      if (NULL != orte_universe_info.uid) {
-		          free(orte_universe_info.uid);
-		          orte_universe_info.uid = NULL;
-		      }
-		      orte_universe_info.uid = strdup(universe);
+                *tmp = '\0';
+                tmp++;
+                orte_universe_info.host = strdup(tmp);
+                if (NULL == orte_universe_info.host) {
+                    ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                orte_universe_info.uid = strdup(universe);
+                if (NULL == orte_universe_info.uid) {
+                    ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                if (0 > (id = mca_base_param_register_string("universe", "host", "uid", NULL, NULL))) {
+                    ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                    return ORTE_ERR_BAD_PARAM;
+                }
+                if (ORTE_SUCCESS != (rc = mca_base_param_lookup_string(id, &orte_universe_info.uid))) {
+                    ORTE_ERROR_LOG(rc);
+                    return rc;
+                }
 	       } else {  /* no remote id - just remote host */
-		      if (NULL != orte_universe_info.host) {
-		          free(orte_universe_info.host);
-		          orte_universe_info.host = NULL;
-		      }
 		      orte_universe_info.host = strdup(universe);
+              if (NULL == orte_universe_info.host) {
+                  ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                  return ORTE_ERR_OUT_OF_RESOURCE;
+              }
 	       }
+            if (0 > (id = mca_base_param_register_string("universe", "host", NULL, NULL, NULL))) {
+                ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                return ORTE_ERR_BAD_PARAM;
+            }
+            if (ORTE_SUCCESS != (rc = mca_base_param_set_string(id, orte_universe_info.name))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+            }
 	   } else { /* no remote host - just universe name provided */
-	       if (NULL != orte_universe_info.name) {
-		      free(orte_universe_info.name);
-		      orte_universe_info.name = NULL;
-	       }
 	       orte_universe_info.name = strdup(universe);
+           if (NULL == orte_universe_info.name) {
+               ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+               return ORTE_ERR_OUT_OF_RESOURCE;
+           }
 	   }
+        if (0 > (id = mca_base_param_register_string("universe", "name", NULL, NULL, "default-universe"))) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
+        }
+        if (ORTE_SUCCESS != (rc = mca_base_param_set_string(id, orte_universe_info.name))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
     }
-
-    /* and set the appropriate enviro variable */
-    setenv("OMPI_universe_name", orte_universe_info.name, 1);
 
     /* get the temporary directory name for the session directory, if provided on command line */
     if (ompi_cmd_line_is_taken(cmd_line, "tmpdir")) {
-	if (NULL == ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0)) {
-	    ompi_output(0, "error retrieving tmpdir name - please report error to bugs@open-mpi.org\n");
-	    return ORTE_ERROR;
-	}
-	if (NULL != orte_process_info.tmpdir_base) { /* overwrite it */
-	    free(orte_process_info.tmpdir_base);
-	    orte_process_info.tmpdir_base = NULL;
-	}
-	orte_process_info.tmpdir_base = strdup(ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0));
-	setenv("OMPI_tmpdir_base", orte_process_info.tmpdir_base, 1);
-    } /* otherwise, leave it alone */
-
-    /* see if name server replica provided */
-    if (ompi_cmd_line_is_taken(cmd_line, "nsreplica")) {
-	if (NULL == ompi_cmd_line_get_param(cmd_line, "nsreplica", 0, 0)) {
-	    ompi_output(0, "error retrieving name server replica - please report error to bugs@open-mpi.org");
-	    return ORTE_ERROR;
-	}
-	nsreplica = strdup(ompi_cmd_line_get_param(cmd_line, "nsreplica", 0, 0));
-	if (NULL == orte_process_info.ns_replica) {
-        if (ORTE_SUCCESS != orte_ns.create_process_name(&orte_process_info.ns_replica, 0, 0, 0)) {
-            return;
+        	if (NULL == ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0)) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+        	    return ORTE_ERR_BAD_PARAM;
+        	}
+        	if (NULL != orte_process_info.tmpdir_base) { /* overwrite it */
+        	    free(orte_process_info.tmpdir_base);
+        	    orte_process_info.tmpdir_base = NULL;
+        	}
+        	orte_process_info.tmpdir_base = strdup(ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0));
+        if (NULL == orte_process_info.tmpdir_base) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
         }
-	}
-	mca_oob_parse_contact_info(nsreplica,
-				   orte_process_info.ns_replica, NULL);
-	setenv("OMPI_MCA_ns_base_replica", nsreplica, 1);  /* set the ns_replica enviro variable */
+        /* set the corresponding MCA parameter */
+        if (0 > (id = mca_base_param_register_string("tmpdir", "base", NULL, NULL, "/tmp"))) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
+        }
+        if (ORTE_SUCCESS != (rc = mca_base_param_set_string(id, orte_process_info.tmpdir_base))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
     } /* otherwise, leave it alone */
 
-    /* see if GPR replica provided */
+    /* see if GPR replica provided on command line */
     if (ompi_cmd_line_is_taken(cmd_line, "gprreplica")) {
-	if (NULL == ompi_cmd_line_get_param(cmd_line, "gprreplica", 0, 0)) {
-	    ompi_output(0, "error retrieving GPR replica - please report error to bugs@open-mpi.org");
-	    return;
-	}
-	gprreplica = strdup(ompi_cmd_line_get_param(cmd_line, "gprreplica", 0, 0));
-	if (NULL == orte_process_info.gpr_replica) {
-        if (ORTE_SUCCESS != orte_ns.create_process_name(&orte_process_info.gpr_replica, 0, 0, 0)) {
-            return;
+           if (NULL == ompi_cmd_line_get_param(cmd_line, "gprreplica", 0, 0)) {
+               ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+               return ORTE_ERR_BAD_PARAM;
+         }
+          gprreplica = strdup(ompi_cmd_line_get_param(cmd_line, "gprreplica", 0, 0));
+          if (NULL == gprreplica) {
+              ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+              return ORTE_ERR_OUT_OF_RESOURCE;
+          }
+          if (NULL == orte_process_info.gpr_replica) {
+              if (ORTE_SUCCESS != (rc =
+                    orte_ns.create_process_name(&orte_process_info.gpr_replica, 0, 0, 0))) {
+                  ORTE_ERROR_LOG(rc);
+                  return rc;
+              }
+           }
+            if (ORTE_SUCCESS != (rc = orte_rml.parse_uris(gprreplica,
+                          orte_process_info.gpr_replica, NULL))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+         }
+        if (0 > (id = mca_base_param_register_string("gpr", "replica", "uri", NULL, NULL))) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
         }
-	}
-	mca_oob_parse_contact_info(gprreplica,
-				   orte_process_info.gpr_replica, NULL);
-	setenv("OMPI_MCA_gpr_base_replica", gprreplica, 1);  /* set the gpr_replica enviro variable */
-    }  /* otherwise leave it alone */
+        if (ORTE_SUCCESS != (rc = mca_base_param_set_string(id, orte_process_info.ns_replica_uri))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+     }  /* otherwise leave it alone */
+
+    /* see if name services replica provided on command line */
+    if (ompi_cmd_line_is_taken(cmd_line, "nsreplica")) {
+        	if (NULL == ompi_cmd_line_get_param(cmd_line, "nsreplica", 0, 0)) {
+        	    ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
+        	}
+        	nsreplica = strdup(ompi_cmd_line_get_param(cmd_line, "nsreplica", 0, 0));
+         if (NULL == nsreplica) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+         }
+        	if (NULL == orte_process_info.ns_replica) {
+            if (ORTE_SUCCESS != (rc =
+                    orte_ns.create_process_name(&orte_process_info.ns_replica, 0, 0, 0))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+            }
+        	}
+        	if (ORTE_SUCCESS != (rc = orte_rml.parse_uris(nsreplica,
+        				   orte_process_info.ns_replica, NULL))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+         }
+        if (0 > (id = mca_base_param_register_string("ns", "replica", "uri", NULL, NULL))) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
+        }
+        if (ORTE_SUCCESS != (rc = mca_base_param_set_string(id, orte_process_info.ns_replica_uri))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+    } /* otherwise, leave it alone */
+    
+    return ORTE_SUCCESS;
 }

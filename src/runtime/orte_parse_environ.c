@@ -46,11 +46,23 @@ int orte_parse_environ(void)
     orte_proc_info();
 
     /* collect the universe-specific info */
-    id = mca_base_param_register_int("seed", NULL, NULL, NULL, 1);
-    mca_base_param_lookup_int(id, (int*)&orte_process_info.seed);
+    if (0 > (id = mca_base_param_register_int("seed", NULL, NULL, NULL, 1))) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+        return ORTE_ERR_BAD_PARAM;
+    }
+    if (ORTE_SUCCESS != (rc = mca_base_param_lookup_int(id, (int*)&orte_process_info.seed))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
 
-    id = mca_base_param_register_string("universe", "uri", NULL, NULL, NULL);
-    mca_base_param_lookup_string(id, &orte_universe_info.seed_uri);
+    if (0 > (id = mca_base_param_register_string("universe", "uri", NULL, NULL, NULL))) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+        return ORTE_ERR_BAD_PARAM;
+    }
+    if (ORTE_SUCCESS != (rc = mca_base_param_lookup_string(id, &orte_universe_info.seed_uri))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
 	if (NULL != orte_universe_info.seed_uri) {  /* overwrite */
 	   if (ORTE_SUCCESS != (rc = orte_rml.set_uri(orte_universe_info.seed_uri))) {
             ORTE_ERROR_LOG(rc);
@@ -79,8 +91,10 @@ int orte_parse_environ(void)
     mca_base_param_lookup_string(id, &orte_universe_info.name);
 
     id = mca_base_param_register_string("universe", "host", NULL, NULL, NULL);
-    mca_base_param_lookup_string(id, &orte_universe_info.name);
+    mca_base_param_lookup_string(id, &orte_universe_info.host);
 
+    id = mca_base_param_register_string("universe", "host", "uid", NULL, NULL);
+    mca_base_param_lookup_string(id, &orte_universe_info.uid);
 
     /* collect the process-specific info */
     id = mca_base_param_register_string("tmpdir", "base", NULL, NULL, "/tmp");

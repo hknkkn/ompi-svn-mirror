@@ -49,20 +49,21 @@ int mca_oob_xcast(
     int rc;
     int tag = MCA_OOB_TAG_XCAST;
     int cmpval;
-    orte_status_key_t status;
+    int status;
+    orte_proc_state_t state;
 
     /* check to see if I am the root process name */
     cmpval = orte_ns.compare(ORTE_NS_CMP_ALL, root, orte_process_info.my_name);
     if(NULL != root && 0 == cmpval) {
         for(i=0; i<num_peers; i++) {
             /* check status of peer to ensure they are alive */
-            if (ORTE_SUCCESS != (rc = orte_soh.get_proc_soh(&status, peers+i))) {
+            if (ORTE_SUCCESS != (rc = orte_soh.get_proc_soh(&state, &status, peers+i))) {
                 ORTE_ERROR_LOG(rc);
                 return rc;
             }
-            if (ORTE_PROC_STATUS_RUNNING == status ||
-                ORTE_PROC_STATUS_STARTING == status ||
-                ORTE_PROC_STATUS_FINALIZING == status) {
+            if (ORTE_PROC_STATE_RUNNING == state ||
+                ORTE_PROC_STATE_STARTING == state ||
+                ORTE_PROC_STATE_FINALIZING == state) {
                 if (ORTE_SUCCESS != (rc = mca_oob_send_packed(peers+i, buffer, tag, 0))) {
                     ORTE_ERROR_LOG(rc);
                     return rc;

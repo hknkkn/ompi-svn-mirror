@@ -86,10 +86,21 @@ OMPI_DECLSPEC int orte_soh_base_module_master_finalise_not_available (void);
  * 3. query soh functions 
  * 
  */
-OMPI_DECLSPEC    int orte_soh_base_get_proc_soh_not_available(orte_status_key_t *status,
-                                                             orte_process_name_t *proc);
-OMPI_DECLSPEC    int orte_soh_base_get_node_soh_not_available(orte_status_key_t *status,
-                                                             orte_process_name_t *node);
+OMPI_DECLSPEC    int orte_soh_base_get_proc_soh_not_available(orte_proc_state_t *state,
+                                                              int *status,
+                                                              orte_process_name_t *proc);
+                                                              
+OMPI_DECLSPEC    int orte_soh_base_set_proc_soh_not_available(orte_process_name_t *proc,
+                                             orte_proc_state_t state,
+                                             int status);
+
+OMPI_DECLSPEC    int orte_soh_base_get_node_soh_not_available(orte_node_state_t *state,
+                                                      orte_cellid_t cell,
+                                                      char *nodename);
+
+OMPI_DECLSPEC    int orte_soh_base_set_node_soh_not_available(orte_cellid_t cell,
+                                                    char *nodename,
+                                                    orte_node_state_t state);
 
 /* 
  * 4. communication soh functions 

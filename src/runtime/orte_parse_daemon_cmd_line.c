@@ -21,6 +21,8 @@
 
 #include <string.h>
 
+#include "mca/base/mca_base_param.h"
+
 #include "mca/ns/base/base.h"
 
 #include "util/output.h"
@@ -28,30 +30,40 @@
 #include "util/sys_info.h"
 #include "util/proc_info.h"
 
+#include "mca/errmgr/errmgr.h"
+
 #include "runtime/runtime.h"
 
 int orte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
 {
-
+    int id, rc;
+    
     /* see if I'm the seed */
     if (ompi_cmd_line_is_taken(cmd_line, "seed") &&
-	false == orte_process_info.seed) {
-	orte_process_info.seed = true;
-	setenv("OMPI_universe_seed", "1", 1);
+	    false == orte_process_info.seed) {
+	    orte_process_info.seed = true;
+        if (0 > (id = mca_base_param_register_int("seed", NULL, NULL, NULL, 1))) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            return ORTE_ERR_BAD_PARAM;
+        }
+        if (ORTE_SUCCESS != (rc = mca_base_param_set_int(id, (int)orte_process_info.seed))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
     }
 
     /* see if seed contact info is provided */
-    if (ompi_cmd_line_is_taken(cmd_line, "seedcontact")) {
-	if (NULL == ompi_cmd_line_get_param(cmd_line, "seedcontact", 0, 0)) {
-	    fprintf(stderr, "error retrieving seed contact info - please report error to bugs@open-mpi.org\n");
-	    exit(1);
-	}
-	if (NULL != orte_universe_info.seed_uri) {  /* overwrite it */
-	    free(orte_universe_info.seed_uri);
-	    orte_universe_info.seed_uri = NULL;
-	}
-	orte_universe_info.seed_uri = strdup(ompi_cmd_line_get_param(cmd_line, "seedcontact", 0, 0));
-	setenv("OMPI_universe_contact", orte_universe_info.seed_uri, 1);
+    if (ompi_cmd_line_is_taken(cmd_line, "universe_uri")) {
+        	if (NULL == ompi_cmd_line_get_param(cmd_line, "universe_uri", 0, 0)) {
+        	    ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+             return ORTE_ERR_BAD_PARAM;
+            }
+        	if (NULL != orte_universe_info.seed_uri) {  /* overwrite it */
+        	    free(orte_universe_info.seed_uri);
+        	    orte_universe_info.seed_uri = NULL;
+        	}
+        	orte_universe_info.seed_uri = strdup(ompi_cmd_line_get_param(cmd_line, "universe_uri", 0, 0));
+        	setenv("OMPI_universe_contact", orte_universe_info.seed_uri, 1);
     }
 
     /* see if I'm to be a bootproxy */

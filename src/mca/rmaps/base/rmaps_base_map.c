@@ -410,9 +410,9 @@ int orte_rmaps_base_set_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
             keyvals[3]->type = ORTE_INT32;
             keyvals[3]->value.i32 = map->app->idx;
 
-            keyvals[4]->key = strdup(ORTE_PROC_STATUS_KEY);
+            keyvals[4]->key = strdup(ORTE_PROC_STATE_KEY);
             keyvals[4]->type = ORTE_PROC_STATE;
-            keyvals[4]->value.proc_status = ORTE_PROC_STATUS_INIT;
+            keyvals[4]->value.proc_state = ORTE_PROC_STATE_INIT;
 
             value->keyvals = keyvals;
             if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&value->segment,jobid))) {
