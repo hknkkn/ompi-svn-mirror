@@ -211,6 +211,7 @@ static int orte_rds_hostfile_query(void)
 
     rc = orte_rds_hostfile_parse(mca_rds_hostfile_component.path, &existing, &updates);
     if(ORTE_SUCCESS != rc && ORTE_ERR_NOT_FOUND != rc) {
+        rc = ORTE_SUCCESS;
         goto cleanup;
     }
     rc = orte_ras_base_node_insert(&updates);
