@@ -96,24 +96,28 @@ mca_ptl_gm_component_open(void)
     OBJ_CONSTRUCT (&mca_ptl_gm_component.gm_send_req, ompi_list_t);
 
     /* register GM component parameters */
-    mca_ptl_gm_module.super.ptl_first_frag_size =
-        mca_ptl_gm_param_register_int ("first_frag_size", 
-                                       ((PTL_GM_FIRST_FRAG_SIZE) - 64));
-    mca_ptl_gm_module.super.ptl_min_frag_size =
-        mca_ptl_gm_param_register_int ("min_frag_size", 1<<16);
-    mca_ptl_gm_module.super.ptl_max_frag_size =
-        mca_ptl_gm_param_register_int ("max_frag_size", 256 * 1024);
-    /* Parameters setting the message limits. */
     mca_ptl_gm_component.gm_port_name =
         mca_ptl_gm_param_register_string( "port_name", "OMPI_GM" );
     mca_ptl_gm_component.gm_max_port_number =
         mca_ptl_gm_param_register_int ("max_ports_number", 16 );
     mca_ptl_gm_component.gm_max_boards_number =
         mca_ptl_gm_param_register_int ("max_boards_number", 4 );
-    mca_ptl_gm_component.gm_max_rdma_frag_size =
-        mca_ptl_gm_param_register_int ("max_rdma_frag_size", 512 * 1024);
     mca_ptl_gm_component.gm_max_ptl_modules = 
 	mca_ptl_gm_param_register_int( "max_ptl_modules", 1 );
+
+    mca_ptl_gm_component.gm_segment_size = 
+        mca_ptl_gm_param_register_int( "segment_size", 16 * 1024 ); /* 16K by default */
+    mca_ptl_gm_module.super.ptl_first_frag_size =
+        mca_ptl_gm_param_register_int ("first_frag_size", mca_ptl_gm_component.gm_segment_size - sizeof(mca_ptl_base_rendezvous_header_t) );
+    mca_ptl_gm_module.super.ptl_min_frag_size =
+        mca_ptl_gm_param_register_int ("min_frag_size", 1<<16);
+    mca_ptl_gm_module.super.ptl_max_frag_size =
+        mca_ptl_gm_param_register_int ("max_frag_size", 256 * 1024 * 1024);
+    /* Parameters setting the message limits. */
+    mca_ptl_gm_component.gm_eager_limit = 
+        mca_ptl_gm_param_register_int( "eager_limit", 2 * mca_ptl_gm_component.gm_segment_size );
+    mca_ptl_gm_component.gm_rdma_frag_size =
+        mca_ptl_gm_param_register_int ("rdma_frag_size", 512 * 1024);
     
     mca_ptl_gm_component.gm_free_list_num =
         mca_ptl_gm_param_register_int ("free_list_num", 256);
@@ -312,7 +316,7 @@ mca_ptl_gm_init_sendrecv (mca_ptl_gm_module_t * ptl)
      * as they should be allocated with a special GM function.
      */
     ompi_free_list_init( &(ptl->gm_send_dma_frags),
-                         GM_BUF_SIZE,
+                         mca_ptl_gm_component.gm_segment_size,
                          OBJ_CLASS (ompi_list_item_t),
                          0,  /* do not allocate any items I'll provide them */
                          0,  /* maximum number of list allocated elements will be zero */
@@ -324,7 +328,7 @@ mca_ptl_gm_init_sendrecv (mca_ptl_gm_module_t * ptl)
     ptl->gm_send_fragments = sfragment;
     /* allocate the registered memory */
     ptl->gm_send_dma_memory = gm_dma_malloc( ptl->gm_port,
-                                             (GM_BUF_SIZE * ptl->num_send_tokens) + GM_PAGE_LEN );
+                                             (mca_ptl_gm_component.gm_segment_size * ptl->num_send_tokens) + GM_PAGE_LEN );
     if( NULL == ptl->gm_send_dma_memory ) {
 	ompi_output( 0, "unable to allocate registered memory\n" );
 	return OMPI_ERR_OUT_OF_RESOURCE;
@@ -333,7 +337,8 @@ mca_ptl_gm_init_sendrecv (mca_ptl_gm_module_t * ptl)
 	sfragment->send_buf = NULL;
 	OMPI_FREE_LIST_RETURN( &(ptl->gm_send_frags), (ompi_list_item_t *)sfragment );
 	OMPI_FREE_LIST_RETURN( &(ptl->gm_send_dma_frags),
-                               (ompi_list_item_t *)((char*)ptl->gm_send_dma_memory + i * GM_BUF_SIZE) );
+                               (ompi_list_item_t *)((char*)ptl->gm_send_dma_memory +
+						    i * mca_ptl_gm_component.gm_segment_size) );
 	sfragment++;
     }
 
@@ -363,19 +368,25 @@ mca_ptl_gm_init_sendrecv (mca_ptl_gm_module_t * ptl)
 
     /*allocate the registered memory */
     ptl->gm_recv_dma_memory =
-	gm_dma_malloc( ptl->gm_port, (GM_BUF_SIZE * ptl->num_recv_tokens) + GM_PAGE_LEN );
+	gm_dma_malloc( ptl->gm_port, (mca_ptl_gm_component.gm_segment_size * ptl->num_recv_tokens) + GM_PAGE_LEN );
     if( NULL == ptl->gm_recv_dma_memory ) {
 	ompi_output( 0, "unable to allocate registered memory for receive\n" );
 	return OMPI_ERR_OUT_OF_RESOURCE;
     }
 
-    for( i = 0; i < ptl->num_recv_tokens; i++ ) {
+    for( i = 0; i < 2; i++ ) {
 	OMPI_FREE_LIST_RETURN( &(ptl->gm_recv_frags_free), (ompi_list_item_t *)free_rfragment );
 	free_rfragment++;
 
-	gm_provide_receive_buffer( ptl->gm_port, (char*)ptl->gm_recv_dma_memory + i * GM_BUF_SIZE,
+	gm_provide_receive_buffer( ptl->gm_port, (char*)ptl->gm_recv_dma_memory + i * mca_ptl_gm_component.gm_segment_size,
+				   GM_SIZE, GM_HIGH_PRIORITY );
+    }
+    for( i = 2; i < ptl->num_recv_tokens; i++ ) {
+	OMPI_FREE_LIST_RETURN( &(ptl->gm_recv_frags_free), (ompi_list_item_t *)free_rfragment );
+	free_rfragment++;
+
+	gm_provide_receive_buffer( ptl->gm_port, (char*)ptl->gm_recv_dma_memory + i * mca_ptl_gm_component.gm_segment_size,
 				   GM_SIZE, GM_LOW_PRIORITY );
-	DO_DEBUG(printf( "%3d : gm register GM receive buffer %p\n", i, (void*)ptl->gm_recv_dma_memory ) );
     }
 
     OBJ_CONSTRUCT( &(ptl->gm_pending_acks), ompi_list_t );
@@ -391,14 +402,17 @@ mca_ptl_gm_init( mca_ptl_gm_component_t * gm )
     uint32_t save_counter;
 
     /* let's try to find if GM is available */
-    if( GM_SUCCESS != gm_init() )
+    if( GM_SUCCESS != gm_init() ) {
+        ompi_output( 0, "[%s:%d] error in initializing the gm library\n", __FILE__, __LINE__ );
 	return OMPI_ERR_OUT_OF_RESOURCE;
-
+    }
     /* First discover all available boards. For each board we will create a unique PTL */
     mca_ptl_gm_component.gm_ptl_modules = calloc( mca_ptl_gm_component.gm_max_ptl_modules,
 						  sizeof (mca_ptl_gm_module_t *));
-    if (NULL == mca_ptl_gm_component.gm_ptl_modules)
+    if (NULL == mca_ptl_gm_component.gm_ptl_modules) {
+        ompi_output( 0, "[%s:%d] error in initializing the gm PTL's.\n", __FILE__, __LINE__ );
         return OMPI_ERR_OUT_OF_RESOURCE;
+    }
 
     mca_ptl_gm_component.gm_num_ptl_modules = 
 	mca_ptl_gm_discover_boards( mca_ptl_gm_component.gm_ptl_modules,
@@ -460,8 +474,8 @@ mca_ptl_gm_component_init (int *num_ptl_modules,
 #endif  /* OMPI_HAVE_POSIX_THREADS */
 
     if (OMPI_SUCCESS != mca_ptl_gm_init (&mca_ptl_gm_component)) {
-        ompi_output( 0, "[%s:%d] error in initializing gm state and PTL's.\n",
-                     __FILE__, __LINE__ );
+        ompi_output( 0, "[%s:%d] error in initializing gm state and PTL's. (%d PTL's)\n",
+                     __FILE__, __LINE__, mca_ptl_gm_component.gm_num_ptl_modules );
         return NULL;
     }
 
@@ -479,7 +493,6 @@ mca_ptl_gm_component_init (int *num_ptl_modules,
     memcpy (ptls, mca_ptl_gm_component.gm_ptl_modules,
             mca_ptl_gm_component.gm_num_ptl_modules * sizeof(mca_ptl_gm_module_t *));
     *num_ptl_modules = mca_ptl_gm_component.gm_num_ptl_modules;
-
     return ptls;
 }
 
@@ -493,6 +506,15 @@ mca_ptl_gm_component_control (int param, void *value, size_t size)
     return OMPI_SUCCESS;
 }
 
+char* gm_get_local_buffer( void )
+{
+    return malloc( sizeof(char) * mca_ptl_gm_component.gm_segment_size );
+}
+
+void gm_release_local_buffer( char* ptr )
+{
+    free(ptr);
+}
 
 /*
  *  GM module progress.
