@@ -80,11 +80,11 @@ int orte_restart(orte_process_name_t *name, const char* uri)
         ORTE_ERROR_LOG(rc);
 	return rc;
     }
-    if (ORTE_SUCCESS != (rc = orte_rml_base_close())) {
+    if (ORTE_SUCCESS != (rc = orte_ns_base_close())) {
         ORTE_ERROR_LOG(rc);
 	return rc;
     }
-    if (ORTE_SUCCESS != (rc = orte_ns_base_close())) {
+    if (ORTE_SUCCESS != (rc = orte_rml_base_close())) {
         ORTE_ERROR_LOG(rc);
 	return rc;
     }
