@@ -189,3 +189,10 @@ ompi_list_splice(ompi_list_t *thislist, ompi_list_item_t *pos,
     }
 }
 
+
+void ompi_list_sort(ompi_list_t* list, ompi_list_item_compare_fn_t compare)
+{
+}
+
+                                                                                                            
+
