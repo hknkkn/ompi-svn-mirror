@@ -145,9 +145,9 @@ static int ompi_event_pipe_signalled;
 bool ompi_event_progress_thread(void)
 {
 #if OMPI_HAVE_THREADS
-    return ompi_thread_self_compare(&ompi_event_thread);
+    return ompi_using_threads() ? ompi_thread_self_compare(&ompi_event_thread) : true;
 #else
-    return false;
+    return true;
 #endif
 }
 
@@ -192,6 +192,9 @@ static int ompi_timeout_next(struct timeval *tv)
 } 
 #endif
 
+
+#if OMPI_HAVE_THREADS
+
 /* run loop for dispatch thread */
 static void* ompi_event_run(ompi_object_t* arg)
 {
@@ -206,17 +209,15 @@ static void* ompi_event_run(ompi_object_t* arg)
 }
 
 
-#if OMPI_HAVE_THREADS
 static void ompi_event_pipe_handler(int sd, short flags, void* user)
 {
     unsigned char byte;
-    if(read(sd, &byte, 1) != 1) {
+    if(read(sd, &byte, 1) < 0) {
         ompi_output(0, "ompi_event_pipe: read failed with: errno=%d\n", errno);
         ompi_event_del(&ompi_event_pipe_event);
     }
 }
 #endif
-
 
 int
 ompi_event_init(void)

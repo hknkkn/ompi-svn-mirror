@@ -138,8 +138,8 @@ struct ompi_eventop {
 	int (*dispatch)(void *, struct timeval *);
 };
 
-#define OMPI_TIMEOUT_DEFAULT	{10, 0}
-#define OMPI_EVLOOP_ONCE		0x01
+#define OMPI_TIMEOUT_DEFAULT	{1, 0}
+#define OMPI_EVLOOP_ONCE	0x01
 #define OMPI_EVLOOP_NONBLOCK	0x02
 
 
