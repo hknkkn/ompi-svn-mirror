@@ -18,6 +18,7 @@
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
 #include "mca/rml/base/base.h"
+#include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
 #include "rml_oob.h"
 
