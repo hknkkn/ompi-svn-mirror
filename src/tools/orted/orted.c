@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
     /*
      * Intialize the Open RTE
      */
-    if (ORTE_SUCCESS != (ret = orte_init(cmd_line, argc, argv))) {
+    if (ORTE_SUCCESS != (ret = orte_init())) {
         fprintf(stderr, "orted: failed to init rte\n");
         return ret;
     }

@@ -127,8 +127,7 @@ main(int argc, char *argv[])
 
 
     /* Intialize our Open RTE environment */
-    OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
-    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
+    if (ORTE_SUCCESS != (rc = orte_init())) {
         ompi_show_help("help-mpirun.txt", "mpirun:init-failure", true,
                        "orte_init()", rc);
         return rc;

@@ -22,6 +22,7 @@
 #include "include/orte_constants.h"
 #include "runtime/runtime.h"
 #include "util/daemon_init.h"
+#include "util/univ_info.h"
 #include "mca/pls/pls.h"
 #include "mca/pls/base/base.h"
 #include "orted.h"
