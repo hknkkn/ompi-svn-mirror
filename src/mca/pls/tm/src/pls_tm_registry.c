@@ -60,9 +60,10 @@ int orte_pls_tm_put_tid(const orte_process_name_t* name,
     
     value.keyvals = keyvals;
     value.cnt = 2;
+    value.addr_mode = ORTE_GPR_OVERWRITE;
     values[0] = &value;
     
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
+    rc = orte_gpr.put(1, values);
     free(value.segment);
     for(i=0; i<value.num_tokens; i++) {
         free(value.tokens[i]);

@@ -248,7 +248,7 @@ static int pls_tm_launch(orte_jobid_t jobid)
             }
 
             ret = ORTE_SUCCESS;
-            proc_states[count].state = ORTE_PROC_STATE_LAUNCHING;
+            proc_states[count].state = ORTE_PROC_STATE_LAUNCHED;
             proc_states[count].tid = tids[count];
             continue;
 
