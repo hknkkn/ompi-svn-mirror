@@ -46,6 +46,7 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
     orte_app_context_t **app_context;
+    orte_gpr_subscription_t **subs;
 
     switch(type) {
 
@@ -60,7 +61,6 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             return num_vals;
             
         case ORTE_NOTIFY_ACTION:
-        case ORTE_SYNCHRO_MODE:
         case ORTE_GPR_ADDR_MODE:
         case ORTE_GPR_CMD:
         case ORTE_INT16:
@@ -156,6 +156,29 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             }
             return mem_req;
 
+        case ORTE_GPR_SUBSCRIPTION:
+            mem_req = 0;
+            subs = (orte_gpr_subscription_t**) src;
+            for (i=0; i<num_vals; i++) {
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(subs[i]->addr_mode)), 1,
+                                ORTE_GPR_ADDR_MODE);
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(subs[i]->segment)), 1, ORTE_STRING);
+                mem_req += sizeof(int32_t); /* number of tokens */
+                mem_req += orte_dps_memory_required(
+                                (void*)(subs[i]->tokens), subs[i]->num_tokens,
+                                ORTE_STRING);
+                mem_req += sizeof(int32_t); /* number of keys */
+                mem_req += orte_dps_memory_required(
+                                (void*)(subs[i]->keys), subs[i]->num_keys,
+                                ORTE_STRING);
+                /* don't store the cb_func and user_tag pointers, so
+                 * don't reserve memory for them
+                 */
+            }
+            return mem_req;
+            
         default:
             return 0;  /* unrecognized type */
     }

@@ -174,13 +174,14 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
     bool *bool_src;
     uint8_t *bool_dst;
     uint8_t *dbyte;
-    char ** str;
-    char * dstr;
+    char **str;
+    char *dstr;
     orte_process_name_t *dn, *sn;
     orte_byte_object_t *sbyteptr;
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
 	orte_app_context_t **app_context;
+    orte_gpr_subscription_t **subs;
 
     /* initialize the number of bytes */
     *num_bytes = 0;
@@ -201,7 +202,6 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             break;
         
         case ORTE_NOTIFY_ACTION:
-        case ORTE_SYNCHRO_MODE:
         case ORTE_GPR_ADDR_MODE:
         case ORTE_GPR_CMD:
         case ORTE_INT16:
@@ -469,6 +469,68 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             }
             break;
 
+        case ORTE_GPR_SUBSCRIPTION:
+            /* array of pointers to subscription objects - need to pack the objects */
+            subs = (orte_gpr_subscription_t**) src;
+            for (i=0; i<num_vals; i++) {
+                /* pack the address mode */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(subs[i]->addr_mode)), 1, ORTE_GPR_ADDR_MODE, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+                
+                /* pack the segment name */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(subs[i]->segment)), 1, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+
+                /* pack the number of tokens so we can read it for unpacking */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(subs[i]->num_tokens)), 1, ORTE_INT32, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+
+                /* pack the tokens */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)((subs[i]->tokens)), subs[i]->num_tokens, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+
+                /* pack the number of keys so we can read it for unpacking */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(subs[i]->num_keys)), 1, ORTE_INT32, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+
+                /* pack the keys */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)((subs[i]->keys)), subs[i]->num_keys, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+                
+                /* skip the pointers for cb_func and user_tag */
+           }
+            break;
+            
         case ORTE_NULL:
             break;
 

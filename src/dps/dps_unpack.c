@@ -160,6 +160,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     uint32_t len;
     char *str, *sstr;
     void *sptr;
+    orte_gpr_subscription_t **subs;
 
     /* defaults */
     rc = ORTE_SUCCESS;
@@ -184,7 +185,6 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             break;
             
         case ORTE_NOTIFY_ACTION:
-        case ORTE_SYNCHRO_MODE:
         case ORTE_GPR_ADDR_MODE:
         case ORTE_GPR_CMD:
         case ORTE_INT16:
@@ -542,6 +542,91 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             }
             break;
 
+        case ORTE_GPR_SUBSCRIPTION:
+        
+            /* unpack into array of subscription objects */
+            subs = (orte_gpr_subscription_t**) dst;
+            for (i=0; i < num_vals; i++) {
+                /* create the subscription object */
+                subs[i] = OBJ_NEW(orte_gpr_subscription_t);
+                if (NULL == subs[i]) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+
+                /* unpack the address mode */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(subs[i]->addr_mode),
+                            src, 1, ORTE_GPR_ADDR_MODE, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+                
+                /* unpack the segment name */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(subs[i]->segment),
+                            src, 1, ORTE_STRING, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                /* get the number of tokens */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(subs[i]->num_tokens),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                /* allocate the required space for the char * pointers */
+                subs[i]->tokens = (char **)malloc(subs[i]->num_tokens * sizeof(char*));
+                if (NULL == subs[i]->tokens) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+
+                /* unpack the tokens */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(subs[i]->tokens,
+                            src, subs[i]->num_tokens, ORTE_STRING, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                /* get the number of keys */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(subs[i]->num_keys),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                /* allocate the required space for the char * pointers */
+                subs[i]->keys = (char **)malloc(subs[i]->num_keys * sizeof(char*));
+                if (NULL == subs[i]->keys) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+
+                /* unpack the keys */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(subs[i]->keys,
+                            src, subs[i]->num_keys, ORTE_STRING, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                /* the pointer fields for cb_func and user_tag were NOT packed
+                 * so ignore them here as well
+                 */
+            }
+            /* must return here for composite unpacks that change mem_left directly */
+            return ORTE_SUCCESS;
+            break;
+            
         case ORTE_NULL:
             break;
 
