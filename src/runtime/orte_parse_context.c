@@ -34,6 +34,8 @@
 #include "runtime/orte_context_value_tbl.h"
 #include "runtime/runtime.h"
 
+static int orte_parse_context_setup_cmd(ompi_cmd_line_t *cmd_line,
+                                        orte_context_value_names_t *context_tbl);
 
 int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t *cmd_line,
                        int argc, char **argv)
@@ -41,15 +43,21 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
     char *tmp;
     int i, id, rc;
     
-    for (i=0; NULL != context_tbl[i].name.prime; i++) {
+    if (ORTE_SUCCESS != (rc = orte_parse_context_setup_cmd(cmd_line, context_tbl))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = ompi_cmd_line_parse(cmd_line, true, argc, argv))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
+    for (i=0; NULL != context_tbl[i].name.prime ||
+              NULL != context_tbl[i].cmd_line_name; i++) {
         /* if command_line option supported and the option is present
          * on command line, then get value from there
          */
         if (NULL != cmd_line && NULL != context_tbl[i].cmd_line_name &&
-            ORTE_SUCCESS == ompi_cmd_line_make_opt3(cmd_line, '\0',
-                            context_tbl[i].cmd_line_name, context_tbl[i].cmd_line_name,
-                            context_tbl[i].num_params, NULL) &&
-            ORTE_SUCCESS == ompi_cmd_line_parse(cmd_line, true, argc, argv) &&
             ompi_cmd_line_is_taken(cmd_line, context_tbl[i].cmd_line_name)) {
 
             if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, 0, 0))) {
@@ -121,5 +129,24 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
         }
     }
     
+    return ORTE_SUCCESS;
+}
+
+static int orte_parse_context_setup_cmd(ompi_cmd_line_t *cmd_line,
+                                        orte_context_value_names_t *context_tbl)
+{
+    int i, rc;
+    
+    for (i=0; NULL != context_tbl[i].name.prime ||
+              NULL != context_tbl[i].cmd_line_name; i++) {
+        if (NULL != context_tbl[i].cmd_line_name) {
+            if (ORTE_SUCCESS != (rc = ompi_cmd_line_make_opt3(cmd_line, '\0',
+                            context_tbl[i].cmd_line_name, context_tbl[i].cmd_line_name,
+                            context_tbl[i].num_params, NULL))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+            }
+        }
+    }
     return ORTE_SUCCESS;
 }

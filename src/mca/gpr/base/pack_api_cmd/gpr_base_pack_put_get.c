@@ -27,6 +27,8 @@
 #include "include/orte_types.h"
 #include "dps/dps.h"
 
+#include "mca/errmgr/errmgr.h"
+
 #include "mca/gpr/base/base.h"
 
 int orte_gpr_base_pack_put(orte_buffer_t *cmd,
@@ -34,10 +36,18 @@ int orte_gpr_base_pack_put(orte_buffer_t *cmd,
                 int cnt, orte_gpr_value_t **values)
 {
     orte_gpr_cmd_flag_t command;
-    int rc;
+    int rc, i;
 
     command = ORTE_GPR_PUT_CMD;
 
+    /* need to check for errors - must have at least one token! */
+    for (i=0; i < cnt; i++) {
+        if (NULL == values[i]->tokens) {
+           ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+           return ORTE_ERR_BAD_PARAM;
+        }
+    }
+    
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_CMD))) {
 	   return rc;
     }

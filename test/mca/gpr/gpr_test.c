@@ -26,7 +26,7 @@
 #include <string.h>
 
 #include "include/orte_constants.h"
-#include "include/orte_names.h"
+#include "include/orte_schema.h"
 
 #include "support.h"
 
@@ -46,15 +46,10 @@ static FILE *test_out=NULL;
 
 static char *cmd_str="diff ./test_gpr_replica_out ./test_gpr_replica_out_std";
 
-static void test_cbfunc(orte_gpr_notify_message_t *notify_msg, void *user_tag);
-
-
 int main(int argc, char **argv)
 {
     int rc, num_names, num_found;
     int32_t i, j, cnt;
-    bool allow_multi_user_threads = false;
-    bool have_hidden_threads = false;
     char *tmp=NULL, *tmp2=NULL, *names[15], *keys[5];
     orte_gpr_replica_segment_t *seg=NULL;
     orte_gpr_replica_itag_t itag[10], itag2, *itaglist;
@@ -97,8 +92,7 @@ int main(int argc, char **argv)
         exit (1);
     }
     
-    if (ORTE_SUCCESS == orte_gpr_base_select(&allow_multi_user_threads, 
-                       &have_hidden_threads)) {
+    if (ORTE_SUCCESS == orte_gpr_base_select()) {
         fprintf(test_out, "GPR replica selected\n");
     } else {
         fprintf(test_out, "GPR replica could not be selected\n");
@@ -192,6 +186,7 @@ int main(int argc, char **argv)
         asprintf(&names[i], "dummy%d", i);
     }
     names[14] = NULL;
+    num_names = 0;
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itaglist, seg,
                                                 names, &num_names))) {
         fprintf(test_out, "gpr_test: get itag list failed with error code %s\n",
@@ -505,6 +500,7 @@ int main(int argc, char **argv)
             return rc;
         }
     }
+    OBJ_RELEASE(val);
     
     orte_gpr_replica_dump(0);
     
@@ -566,6 +562,27 @@ int main(int argc, char **argv)
     } else {
         fprintf(test_out, "gpr_test: release segment passed\n");
     }
+    
+    fprintf(stderr, "put with no tokens generates error\n");
+    val = OBJ_NEW(orte_gpr_value_t);
+    val->cnt = 1;
+    val->segment = strdup("test-put-segment");
+    val->num_tokens = 0;
+    val->tokens = NULL;
+    val->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    val->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    (val->keyvals[0])->key = strdup("stupid-value-next-one");
+    (val->keyvals[0])->type = ORTE_STRING;
+    (val->keyvals[0])->value.strptr = strdup("try-string-value");
+    if (ORTE_SUCCESS == (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
+                                    1, &val))) {
+            fprintf(test_out, "gpr_test: put with no tokens failed to generate error\n");
+            test_failure("gpr_test: put with no tokens failed to generate error");
+            test_finalize();
+    } else {
+        fprintf(test_out, "gpr_test: put with no tokens generated correct error\n");
+    }
+    OBJ_RELEASE(val);
     
     fclose( test_out );
 /*    result = system( cmd_str );

@@ -26,6 +26,7 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 #include "mca/ns/ns_types.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "gpr_replica_api.h"
 
@@ -64,6 +65,12 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
         }
     
         /* convert tokens to array of itags */
+        /* first, protect against errors - must be at least one token! */
+        if (NULL == val->tokens) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+            return ORTE_ERR_BAD_PARAM;
+        }
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg,
                                             val->tokens, &(val->num_tokens)))) {
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
