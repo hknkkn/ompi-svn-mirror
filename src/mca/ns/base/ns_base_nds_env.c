@@ -17,6 +17,7 @@
 #include "orte_config.h"
 #include "include/orte_constants.h"
 #include "util/proc_info.h"
+#include "util/environ.h"
 #include "mca/base/mca_base_param.h"
 #include "mca/ns/ns.h"
 #include "mca/errmgr/errmgr.h"
@@ -102,7 +103,9 @@ int orte_ns_nds_env_get(void)
 }
 
 
-int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
+int orte_ns_nds_env_put(const orte_process_name_t* name, 
+                        orte_vpid_t vpid_start, size_t num_procs,
+                        char ***env)
 {
     char* param;
     char* cellid;
@@ -110,7 +113,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
     char* vpid;
     char* value;
     int rc;
-    
+
     if(ORTE_SUCCESS != (rc = orte_ns.get_cellid_string(&cellid, name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
@@ -129,7 +132,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    setenv(param,"env",true);
+    ompi_setenv(param, "env", true, env);
     free(param);
 
     /* not a seed */
@@ -137,7 +140,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    unsetenv(param);
+    ompi_unsetenv(param, env);
     free(param);
 
     /* setup the name */
@@ -145,7 +148,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    setenv(param,cellid,true);
+    ompi_setenv(param, cellid, true, env);
     free(param);
     free(cellid);
 
@@ -153,7 +156,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    setenv(param,jobid,true);
+    ompi_setenv(param, jobid, true, env);
     free(param);
     free(jobid);
 
@@ -161,7 +164,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    setenv(param,vpid,true);
+    ompi_setenv(param, vpid, true, env);
     free(param);
     free(vpid);
 
@@ -170,7 +173,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    setenv(param,value,true);
+    ompi_setenv(param, value, true, env);
     free(param);
     free(value);
 
@@ -179,7 +182,7 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    setenv(param,value,true);
+    ompi_setenv(param, value, true, env);
     free(param);
     free(value);
     return ORTE_SUCCESS;

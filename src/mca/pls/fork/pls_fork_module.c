@@ -30,6 +30,7 @@
 #include "util/argv.h"
 #include "util/output.h"
 #include "util/sys_info.h"
+#include "util/environ.h"
 #include "runtime/orte_wait.h"
 #include "mca/errmgr/errmgr.h"
 #include "mca/iof/iof.h"
@@ -116,6 +117,7 @@ static int orte_pls_fork_proc(
     if(pid == 0) {
         char* param;
         char* uri;
+        char **new_env, **environ_copy;
 
         /* set working directory */
         if(chdir(context->cwd) != 0) {
@@ -123,7 +125,9 @@ static int orte_pls_fork_proc(
         }
 
         /* push name into environment */
-        orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range);
+        environ_copy = ompi_argv_copy(environ);
+        orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range, 
+                            &environ_copy);
 
         /* setup ns contact info */
         if(NULL != orte_process_info.ns_replica_uri) {
@@ -160,8 +164,9 @@ static int orte_pls_fork_proc(
         }
 
         /* execute application */
-        ompi_argv_insert(&context->env, 0, environ);
-        execve(context->app, context->argv, context->env);
+        new_env = ompi_environ_merge(context->env, environ_copy);
+        ompi_argv_free(environ_copy);
+        execve(context->app, context->argv, new_env);
         ompi_output(0, "orte_pls_fork: execv failed with errno=%d\n", errno);
         exit(-1);
 
