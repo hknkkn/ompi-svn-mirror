@@ -38,7 +38,6 @@ orte_universe_t orte_universe_info = {
     /* .name =                */    NULL,
     /* .host =                */    NULL,
     /* .uid =                 */    NULL,
-    /* .bootproxy =           */    false,
     /* .persistence =         */    false,
     /* .scope =               */    NULL,
     /* .console =             */    false,
@@ -63,9 +62,6 @@ int orte_univ_info(void)
 
     /* uid is not set via parameter, but is determined elsewhere */
     
-    id = mca_base_param_register_int("orte", "bootproxy", NULL, NULL, (int)false);
-    mca_base_param_lookup_int(id, &(orte_universe_info.bootproxy));
-
     id = mca_base_param_register_int("universe", "persistence", NULL, NULL, (int)false);
     mca_base_param_lookup_int(id, &(orte_universe_info.persistence));
 

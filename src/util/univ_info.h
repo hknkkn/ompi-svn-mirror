@@ -44,7 +44,6 @@ extern "C" {
         char *name;
         char *host;
         char *uid;
-        int  bootproxy;
         bool persistence;
         char *scope;
         bool console;

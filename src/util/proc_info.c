@@ -61,11 +61,15 @@ int orte_proc_info(void)
     id = mca_base_param_register_int("seed", NULL, NULL, NULL, (int)false);
     mca_base_param_lookup_int(id, &(orte_process_info.seed));
 
-    id = mca_base_param_register_string("gpr", "replica", "uri", NULL, NULL);
-    mca_base_param_lookup_string(id, &(orte_process_info.gpr_replica_uri));
+    if (NULL == orte_process_info.gpr_replica_uri) {
+        id = mca_base_param_register_string("gpr", "replica", "uri", NULL, NULL);
+        mca_base_param_lookup_string(id, &(orte_process_info.gpr_replica_uri));
+    }
 
-    id = mca_base_param_register_string("ns", "replica", "uri", NULL, NULL);
-    mca_base_param_lookup_string(id, &(orte_process_info.ns_replica_uri));
+    if (NULL == orte_process_info.ns_replica_uri) {
+        id = mca_base_param_register_string("ns", "replica", "uri", NULL, NULL);
+        mca_base_param_lookup_string(id, &(orte_process_info.ns_replica_uri));
+    }
 
     id = mca_base_param_register_string("tmpdir", "base", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &(orte_process_info.tmpdir_base));
