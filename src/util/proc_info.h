@@ -86,7 +86,7 @@ typedef struct orte_proc_info_t orte_proc_info_t;
  * which will be initialized to \c false, but should be set to \c true
  * before calling \c orte_rte_info() if the caller is a seed daemon.
  */
-ORTE_DECLSPEC extern orte_proc_info_t orte_process_info;
+OMPI_DECLSPEC extern orte_proc_info_t orte_process_info;
 
 
 /**
@@ -103,7 +103,7 @@ ORTE_DECLSPEC extern orte_proc_info_t orte_process_info;
  * @retval OMPI_ERROR Failed to initialize one or more fields.
  */
 
-ORTE_DECLSPEC int orte_proc_info(void);
+OMPI_DECLSPEC int orte_proc_info(void);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

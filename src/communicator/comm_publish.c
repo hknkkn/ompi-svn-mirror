@@ -122,7 +122,7 @@ char* ompi_comm_namelookup ( char *service_name )
     }
     if ( 0 < cnt && NULL != keyvals ) {  /* should be only one, if any */
         stmp = strdup(keyvals->value.strptr);
-        free(keyvals);
+        OBJ_RELEASE(keyvals);
     }
 
     return (stmp);
@@ -142,6 +142,6 @@ int ompi_comm_nameunpublish ( char *service_name )
     token[1] = NULL;
     
     return orte_gpr.delete_entries(ORTE_GPR_AND,
-                                        "ompi_name_publish",
+                                        OMPI_NAMESPACE_SEGMENT,
                                         token, NULL); 
 }

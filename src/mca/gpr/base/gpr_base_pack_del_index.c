@@ -71,9 +71,8 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
     } else {
         ptr = tokens;
         n = 0;
-        while (NULL != *ptr) {
+        while (NULL != ptr[n]) {
     	       n++;
-    	       ptr++;
         }
     }
 
@@ -87,9 +86,8 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
     } else {
         ptr = keys;
         n = 0;
-        while (NULL != *ptr) {
+        while (NULL != ptr[n]) {
             n++;
-            ptr++;
         }
     }
 

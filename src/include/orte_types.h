@@ -56,6 +56,9 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_EXIT_CODE           (orte_data_type_t)   28 /**< process exit code */
 #define    ORTE_BYTE_OBJECT         (orte_data_type_t)   29 /**< byte object structure */
 #define    ORTE_KEYVAL              (orte_data_type_t)   30 /**< registry key-value pair */
+#define    ORTE_NOTIFY_ACTION       (orte_data_type_t)   31 /**< registry notify action */
+#define    ORTE_SYNCHRO_MODE        (orte_data_type_t)   32 /**< registry synchro mode */
+#define    ORTE_GPR_CMD             (orte_data_type_t)   33 /**< registry command */
 
 typedef struct {
     size_t size;

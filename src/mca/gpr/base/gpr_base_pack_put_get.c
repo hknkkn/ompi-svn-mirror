@@ -52,9 +52,8 @@ int orte_gpr_base_pack_put(orte_buffer_t *cmd,
     n = 0;
     if (NULL != tokens) {
         ptr = tokens;
-        while (NULL != *ptr) {
+        while (NULL != ptr[n]) {
 	        n++;
-	        ptr++;
         }
     }
 
@@ -93,9 +92,8 @@ int orte_gpr_base_pack_get(orte_buffer_t *cmd,
     n = 0;
     if (NULL != tokens) {
         ptr = tokens;
-        while (NULL != *ptr) {
+        while (NULL != ptr[n]) {
            n++;
-           ptr++;
         }
     }
 
@@ -107,9 +105,8 @@ int orte_gpr_base_pack_get(orte_buffer_t *cmd,
     n = 0;
     if (NULL != keys) {
         ptr = keys;
-        while (NULL != *ptr) {
+        while (NULL != ptr[n]) {
            n++;
-           ptr++;
         }
     }
 

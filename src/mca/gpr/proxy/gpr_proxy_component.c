@@ -26,8 +26,11 @@
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
 #include "dps/dps.h"
+#include "util/output.h"
+#include "util/proc_info.h"
 
 #include "mca/ns/ns.h"
+#include "mca/rml/rml.h"
 
 #include "gpr_proxy.h"
 
@@ -58,41 +61,41 @@ OMPI_COMP_EXPORT mca_gpr_base_component_t orte_gpr_proxy_component = {
  */
 static orte_gpr_base_module_t orte_gpr_proxy = {
    /* BLOCKING OPERATIONS */
-    orte_gpr_proxy_module_get_fn_t get,
-    orte_gpr_proxy_module_put_fn_t put,
-    orte_gpr_proxy_module_delete_entries_fn_t delete_entries,
-    orte_gpr_proxy_module_delete_segment_fn_t delete_segment,
+    orte_gpr_proxy_get,
+    orte_gpr_proxy_put,
+    orte_gpr_proxy_delete_entries,
+    orte_gpr_proxy_delete_segment,
     /* NON-BLOCKING OPERATIONS */
-    orte_gpr_proxy_module_get_nb_fn_t get_nb,
-    orte_gpr_proxy_module_put_nb_fn_t put_nb,
-    orte_gpr_proxy_module_delete_entries_nb_fn_t delete_entries_nb,
-    orte_gpr_proxy_module_delete_segment_nb_fn_t delete_segment_nb,
+    orte_gpr_proxy_get_nb,
+    orte_gpr_proxy_put_nb,
+    orte_gpr_proxy_delete_entries_nb,
+    orte_gpr_proxy_delete_segment_nb,
     /* SUBSCRIBE OPERATIONS */
-    orte_gpr_proxy_module_subscribe_fn_t subscribe,
-    orte_gpr_proxy_module_unsubscribe_fn_t unsubscribe,
+    orte_gpr_proxy_subscribe,
+    orte_gpr_proxy_unsubscribe,
     /* SYNCHRO OPERATIONS */
-    orte_gpr_proxy_module_synchro_fn_t synchro,
-    orte_gpr_proxy_module_cancel_synchro_fn_t cancel_synchro,
+    orte_gpr_proxy_synchro,
+    orte_gpr_proxy_cancel_synchro,
     /* COMPOUND COMMANDS */
-    orte_gpr_proxy_module_begin_compound_cmd_fn_t begin_compound_cmd,
-    orte_gpr_proxy_module_stop_compound_cmd_fn_t stop_compound_cmd,
-    orte_gpr_proxy_module_exec_compound_cmd_fn_t exec_compound_cmd,
+    orte_gpr_proxy_begin_compound_cmd,
+    orte_gpr_proxy_stop_compound_cmd,
+    orte_gpr_proxy_exec_compound_cmd,
     /* DUMP/INDEX */
-    orte_gpr_proxy_module_dump_fn_t dump,
-    orte_gpr_proxy_module_index_fn_t index,
+    orte_gpr_proxy_dump,
+    orte_gpr_proxy_index,
     /* MODE OPERATIONS */
-    orte_gpr_proxy_module_notify_on_fn_t notify_on,
-    orte_gpr_proxy_module_notify_off_fn_t notify_off,
-    orte_gpr_proxy_module_triggers_active_fn_t triggers_active,
-    orte_gpr_proxy_module_triggers_inactive_fn_t triggers_inactive,
+    orte_gpr_proxy_notify_on,
+    orte_gpr_proxy_notify_off,
+    orte_gpr_proxy_triggers_active,
+    orte_gpr_proxy_triggers_inactive,
     /* MESSAGING OPERATIONS */
-    orte_gpr_proxy_module_get_startup_msg_fn_t get_startup_msg,
-    orte_gpr_proxy_module_deliver_notify_msg_fn_t deliver_notify_msg,
+    orte_gpr_proxy_get_startup_msg,
+    orte_gpr_proxy_deliver_notify_msg,
     /* CLEANUP OPERATIONS */
-    orte_gpr_proxy_module_cleanup_job_fn_t cleanup_job,
-    orte_gpr_proxy_module_cleanup_proc_fn_t cleanup_process,
+    orte_gpr_proxy_cleanup_job,
+    orte_gpr_proxy_cleanup_proc,
     /* TEST INTERFACE */
-    orte_gpr_proxy_module_test_internals_fn_t test_internals
+    orte_gpr_proxy_test_internals
 };
 
 
@@ -111,7 +114,7 @@ ompi_list_t orte_gpr_proxy_free_notify_id_tags;
 int orte_gpr_proxy_debug;
 ompi_mutex_t orte_gpr_proxy_mutex;
 bool orte_gpr_proxy_compound_cmd_mode;
-orte_buffer_t orte_gpr_proxy_compound_cmd;
+orte_buffer_t *orte_gpr_proxy_compound_cmd;
 ompi_mutex_t orte_gpr_proxy_wait_for_compound_mutex;
 ompi_condition_t orte_gpr_proxy_compound_cmd_condition;
 int orte_gpr_proxy_compound_cmd_waiting;
@@ -123,10 +126,10 @@ static void orte_gpr_proxy_notify_request_tracker_construct(orte_gpr_proxy_notif
 {
     req->callback = NULL;
     req->user_tag = NULL;
-    req->local_idtag = ORTE_REGISTRY_NOTIFY_ID_MAX;
-    req->remote_idtag = ORTE_REGISTRY_NOTIFY_ID_MAX;
+    req->local_idtag = ORTE_GPR_NOTIFY_ID_MAX;
+    req->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
     req->segment = NULL;
-    req->action = ORTE_REGISTRY_NOTIFY_NONE;
+    req->action = 0;
 }
 
 /* destructor - used to free any resources held by instance */
@@ -176,7 +179,7 @@ orte_gpr_base_module_t* orte_gpr_proxy_init(bool *allow_multi_user_threads, bool
 
     /* If we are NOT to host a replica, then we want to be selected, so do all
        the setup and return the module */
-    if (NULL != ompi_process_info.gpr_replica) {
+    if (NULL != orte_process_info.gpr_replica) {
 
 	if (orte_gpr_proxy_debug) {
 	    ompi_output(0, "gpr_proxy_init: proxy selected");
@@ -205,7 +208,7 @@ orte_gpr_base_module_t* orte_gpr_proxy_init(bool *allow_multi_user_threads, bool
 	orte_gpr_proxy_compound_cmd = NULL;
 
 	/* define the replica for us to use - get it from process_info */
-    if (ORTE_SUCCESS != orte_name_services.copy_process_name(orte_gpr_my_replica, ompi_process_info.gpr_replica)) {
+    if (ORTE_SUCCESS != orte_ns.copy_process_name(&orte_gpr_my_replica, orte_process_info.gpr_replica)) {
         return NULL;
     }
     
@@ -222,7 +225,7 @@ orte_gpr_base_module_t* orte_gpr_proxy_init(bool *allow_multi_user_threads, bool
 	orte_gpr_proxy_silent_mode = false;
 
 	/* issue the non-blocking receive */
-	rc = mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY, 0, orte_gpr_proxy_notify_recv, NULL);
+	rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY, 0, orte_gpr_proxy_notify_recv, NULL);
 	if(rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) {
 	    return NULL;
 	}
@@ -251,7 +254,7 @@ int orte_gpr_proxy_finalize(void)
     }
 
     /* All done */
-    mca_oob_recv_cancel(MCA_OOB_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY);
+    orte_rml.recv_cancel(ORTE_RML_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY);
     return ORTE_SUCCESS;
 }
 
@@ -260,94 +263,145 @@ int orte_gpr_proxy_finalize(void)
  */
 
 void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
-			       orte_buffer_t buffer, int tag,
+			       orte_buffer_t *buffer, orte_rml_tag_t tag,
 			       void* cbdata)
 {
-    char **tokptr;
     orte_gpr_cmd_flag_t command;
-    uint32_t num_items;
-    uint32_t i;
     orte_gpr_notify_id_t id_tag;
-    orte_gpr_value_t *regval;
     orte_gpr_notify_message_t *message;
     bool found;
     orte_gpr_proxy_notify_request_tracker_t *trackptr;
+    size_t n;
+    int rc;
+    uint32_t cnt;
+    orte_data_type_t type;
 
     if (orte_gpr_proxy_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr proxy: received trigger message",
-				ORTE_NAME_ARGS(*ompi_rte_get_self()));
+				ORTE_NAME_ARGS(*(orte_process_info.my_name)));
     }
 
     message = OBJ_NEW(orte_gpr_notify_message_t);
 
-    if ((ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, 1, MCA_GPR_OOB_PACK_CMD)) ||
-	(MCA_GPR_NOTIFY_CMD != command)) {
-	goto RETURN_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+        }
+        goto RETURN_ERROR;
     }
 
-    if (0 > (rc = orte_dps.unpack_string(buffer, &message->segment)) {
-	goto RETURN_ERROR;
+	if (ORTE_GPR_NOTIFY_CMD != command) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: communication failure",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+        }
+	   goto RETURN_ERROR;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &i, 1, ORTE_INT32)) {
-	goto RETURN_ERROR;
+    n = 1;
+    if (0 > (rc = orte_dps.unpack(buffer, message->segment, &n, ORTE_STRING))) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+        }
+	    goto RETURN_ERROR;
     }
-    message->owning_job = (orte_jobid_t)i;
 
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &i, 1, ORTE_INT32)) {
-	goto RETURN_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &id_tag, &n, ORTE_GPR_PACK_NOTIFY_ID))) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+        }
+	   goto RETURN_ERROR;
     }
-	id_tag = (orte_gpr_notify_id_t)i;
 	
-    if (orte_gpr_proxy_debug) {
-	ompi_output(0, "[%d,%d,%d] trigger from segment %s id %d",
-				ORTE_NAME_ARGS(*ompi_rte_get_self()), message->segment, (int)id_tag);
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->cnt), &n, ORTE_UINT32))) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+        }
+    goto RETURN_ERROR;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &message->trig_action, 1, MCA_GPR_OOB_PACK_ACTION)) {
-	goto RETURN_ERROR;
+    message->values = (orte_gpr_value_t**)malloc(cnt*sizeof(orte_gpr_value_t*));
+    if (NULL == message->values) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: malloc failure",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+        }
+        goto RETURN_ERROR;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, message->values, &(message->cnt), ORTE_KEYVAL))) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+               ORTE_NAME_ARGS((*orte_process_info.my_name)), rc);
+        }
+    goto RETURN_ERROR;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &message->trig_synchro, 1, MCA_GPR_OOB_PACK_SYNCHRO_MODE)) {
-	goto RETURN_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->cmd), &n, ORTE_GPR_PACK_CMD))) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+        }
+    goto RETURN_ERROR;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &num_items, 1, ORTE_INT32)) {
-	goto RETURN_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.peek(buffer, &type, &n))) {
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+        }
+           goto RETURN_ERROR;
     }
 
-    for (i=0; i < num_items; i++) {
-	regval = OBJ_NEW(orte_gpr_value_t);
-	if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &regval->object_size, 1, MCA_GPR_OOB_PACK_OBJECT_SIZE)) {
-	    OBJ_RELEASE(regval);
-	    goto RETURN_ERROR;
-	}
-	if((regval->object = malloc(regval->object_size)) == NULL) {
-	    OBJ_RELEASE(regval);
-	    goto RETURN_ERROR;
-	}
-	if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, regval->object, regval->object_size, ORTE_BYTE)) {
-	    OBJ_RELEASE(regval);
-	    goto RETURN_ERROR;
-	}
-	ompi_list_append(&message->data, &regval->item);
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &message->num_tokens, 1, ORTE_INT32)) {
-	goto RETURN_ERROR;
-    }
-
-    if(message->num_tokens > 0) {
-        message->tokens = (char**)malloc(message->num_tokens*sizeof(char*));
-        for (i=0, tokptr=message->tokens; i < message->num_tokens; i++, tokptr++) {
-	    if ((rc = orte_dps.unpack_string(buffer, tokptr) < 0) {
-		goto RETURN_ERROR;
-	    }
+    n = 1;
+    if (ORTE_NOTIFY_ACTION == type) {
+        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.trig_action), &n, ORTE_NOTIFY_ACTION))) {
+            if (orte_gpr_proxy_debug) {
+                ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+            }
+    	        goto RETURN_ERROR;
+        }
+    } else if (ORTE_SYNCHRO_MODE == message->cmd) {
+        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.trig_synchro), &n, ORTE_SYNCHRO_MODE))) {
+            if (orte_gpr_proxy_debug) {
+                ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+            }
+    	        goto RETURN_ERROR;
+        }
+    } else if (ORTE_EXIT_CODE == type) {
+        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.exit_code), &n, ORTE_EXIT_CODE))) {
+            if (orte_gpr_proxy_debug) {
+                ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+            }
+            goto RETURN_ERROR;
+        }
+    } else if (ORTE_GPR_CMD == type) {
+        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.cmd_return), &n, ORTE_INT32))) {
+            if (orte_gpr_proxy_debug) {
+                ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
+                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+            }
+            goto RETURN_ERROR;
         }
     } else {
-        message->tokens = NULL;
+        if (orte_gpr_proxy_debug) {
+            ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: comm failure",
+               ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+        }
+            goto RETURN_ERROR;
     }
-
+    
     OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
 
     /* find the request corresponding to this notify */
@@ -367,9 +421,9 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
 
     if (!found) {  /* didn't find request */
-        	ompi_output(0, "[%d,%d,%d] Proxy notification error - received request not found",
-                        ORTE_NAME_ARGS(*ompi_rte_get_self()));
-        	return;
+        	ompi_output(0, "[%d,%d,%d] Proxy notification error - received notify request not found",
+                        ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+        	goto RETURN_ERROR;
     }
 
     /* process request */
@@ -381,7 +435,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     OBJ_RELEASE(message);
 
     /* reissue non-blocking receive */
-    mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY, 0, orte_gpr_proxy_notify_recv, NULL);
+    orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY, 0, orte_gpr_proxy_notify_recv, NULL);
 
 }
 

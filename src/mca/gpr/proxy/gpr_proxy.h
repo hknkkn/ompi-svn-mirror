@@ -69,7 +69,7 @@ extern ompi_list_t orte_gpr_proxy_free_notify_id_tags;
 extern int orte_gpr_proxy_debug;
 extern ompi_mutex_t orte_gpr_proxy_mutex;
 extern bool orte_gpr_proxy_compound_cmd_mode;
-extern orte_buffer_t orte_gpr_proxy_compound_cmd;
+extern orte_buffer_t *orte_gpr_proxy_compound_cmd;
 extern ompi_mutex_t orte_gpr_proxy_wait_for_compound_mutex;
 extern ompi_condition_t orte_gpr_proxy_compound_cmd_condition;
 extern int orte_gpr_proxy_compound_cmd_waiting;
@@ -81,8 +81,8 @@ int orte_gpr_proxy_begin_compound_cmd(void);
 
 int orte_gpr_proxy_stop_compound_cmd(void);
 
-ompi_list_t* orte_gpr_proxy_exec_compound_cmd(void);
-
+int orte_gpr_proxy_exec_compound_cmd(void);
+    
 /*
  * Mode operations
  */
@@ -105,14 +105,14 @@ int orte_gpr_proxy_delete_segment_nb(char *segment,
 int orte_gpr_proxy_delete_entries(orte_gpr_addr_mode_t mode,
 			    char *segment, char **tokens, char **keys);
 
-int orte_gpr_base_module_delete_entries_nb(
+int orte_gpr_proxy_delete_entries_nb(
                             orte_gpr_addr_mode_t addr_mode,
                             char *segment, char **tokens, char **keys,
                             orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
                             
 int orte_gpr_proxy_index(char *segment, size_t *cnt, char **index);
 
-int orte_gpr_base_module_index_nb(char *segment,
+int orte_gpr_proxy_index_nb(char *segment,
                         orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
 
 
@@ -130,7 +130,7 @@ int orte_gpr_proxy_cleanup_proc(bool purge, orte_process_name_t *proc);
 int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
 		  char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals);
 
-int orte_gpr_base_module_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
+int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
                       char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
                       
@@ -138,7 +138,7 @@ int orte_gpr_proxy_get(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
                                 size_t *cnt, orte_gpr_keyval_t **keyvals);
 
-int orte_gpr_base_module_get_nb(orte_gpr_addr_mode_t addr_mode,
+int orte_gpr_proxy_get_nb(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
                                 orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
 
@@ -199,7 +199,7 @@ int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
  * Functions that interface to the replica
  */
 void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
-			       orte_buffer_t buffer, orte_rml_tag_t tag,
+			       orte_buffer_t *buffer, orte_rml_tag_t tag,
 			       void* cbdata);
 
 

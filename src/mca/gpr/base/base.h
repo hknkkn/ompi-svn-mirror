@@ -86,10 +86,10 @@ extern "C" {
 /* CAUTION - any changes here must also change corresponding
  * typedefs in gpr_types.h
  */
-#define ORTE_GPR_PACK_CMD                ORTE_UINT16
-#define ORTE_GPR_PACK_ACTION             ORTE_UINT16
+#define ORTE_GPR_PACK_CMD                ORTE_GPR_CMD
+#define ORTE_GPR_PACK_ACTION             ORTE_NOTIFY_ACTION
 #define ORTE_GPR_PACK_ADDR_MODE          ORTE_UINT16
-#define ORTE_GPR_PACK_SYNCHRO_MODE       ORTE_UINT16
+#define ORTE_GPR_PACK_SYNCHRO_MODE       ORTE_SYNCHRO_MODE
 #define ORTE_GPR_PACK_NOTIFY_ID          ORTE_UINT32
 
 

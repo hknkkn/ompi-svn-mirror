@@ -127,22 +127,20 @@ void ompi_attr_create_predefined_callback(
     if (0 == msg->cnt) {  /* no data returned */
         attr_universe_size = ompi_comm_size(MPI_COMM_WORLD);
     } else {
-       for (i=0; i < msg->cnt; i++) {
-            value = msg->values;
-            if (0 < (*value)->cnt) {  /* make sure some data was returned here */
-                keyval = (*value)->keyvals;
-                for (j=0; j < (*value)->cnt; j++) {
-                    if (0 == strncmp((*keyval)->key, "num_cpus", strlen("num_cpus"))) {
+        value = msg->values;
+        for (i=0; i < msg->cnt; i++) {
+            if (0 < value[i]->cnt) {  /* make sure some data was returned here */
+                keyval = value[i]->keyvals;
+                for (j=0; j < value[i]->cnt; j++) {
+                    if (0 == strncmp(keyval[j]->key, "num_cpus", strlen("num_cpus"))) {
                         /* Process slot count */
-                        attr_universe_size += (*keyval)->value.i16;
+                        attr_universe_size += keyval[j]->value.i16;
                     }
-                    OBJ_RELEASE(*keyval);
-                    keyval++;
+                    OBJ_RELEASE(keyval[j]);
                 }
             }
-            OBJ_RELEASE(*value);
-            value++;
-       }
+            OBJ_RELEASE(value[i]);
+        }
     }
     OBJ_RELEASE(msg);
 

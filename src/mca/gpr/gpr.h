@@ -109,13 +109,6 @@ typedef int (*orte_gpr_base_module_stop_compound_cmd_fn_t)(void);
  */
 typedef int (*orte_gpr_base_module_exec_compound_cmd_fn_t)(void);
 
-/*
- * Execute the compound command (NON-BLOCKING)
- * A non-blocking version of execute compound command
- */
-typedef int (*orte_gpr_base_module_exec_compound_cmd_nb_fn_t)(
-                            orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
-
 /* Turn off subscriptions for this process
  * Temporarily turn off subscriptions for this process on the registry. Until restored,
  * the specified subscription will be ignored - no message will be sent. Providing a

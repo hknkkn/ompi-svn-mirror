@@ -72,7 +72,7 @@ struct orte_sys_info_t {
 };
 typedef struct orte_sys_info_t orte_sys_info_t;
 
-ORTE_DECLSPEC extern orte_sys_info_t orte_system_info;
+OMPI_DECLSPEC extern orte_sys_info_t orte_system_info;
 
 
 /**
@@ -88,7 +88,7 @@ ORTE_DECLSPEC extern orte_sys_info_t orte_system_info;
  * @retval ORTE_SUCCESS If values are successfully determined.
  * @retval ORTE_ERROR If the system does not provide the requested information.
  */
-ORTE_DECLSPEC int orte_sys_info(void);
+OMPI_DECLSPEC int orte_sys_info(void);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
