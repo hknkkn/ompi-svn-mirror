@@ -51,7 +51,7 @@ int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
 	    return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, subscriptions, cnt, ORTE_GPR_SUBSCRIPTIONS))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, subscriptions, num_subs, ORTE_GPR_SUBSCRIPTION))) {
         ORTE_ERROR_LOG(rc);
 	    return rc;
     }
