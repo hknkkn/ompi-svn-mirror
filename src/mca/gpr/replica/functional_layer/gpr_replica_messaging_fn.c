@@ -369,7 +369,7 @@ MOVEON:
                 return ORTE_ERR_OUT_OF_RESOURCE;
             }
             (*data_values)->cnt = n;
-            kptr = &((*data_values)->keyvals[n-cnt-1]);
+            kptr = &((*data_values)->keyvals[n-cnt]);
         } else {
             (*data_values)->keyvals = (orte_gpr_keyval_t**)malloc(values[i]->cnt * sizeof(orte_gpr_keyval_t*));
             if (NULL == (*data_values)->keyvals) {
