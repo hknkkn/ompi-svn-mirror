@@ -37,7 +37,7 @@ void orte_errmgr_base_log(int error_code, char *filename, int line)
                         ORTE_NAME_ARGS(orte_process_info.my_name),
                         ORTE_ERROR_NAME(error_code), filename, line);
     }
-    orte_errmgr_base_error_detected(error_code);
+    /* orte_errmgr_base_error_detected(error_code); */
 }
 
 void orte_errmgr_base_proc_aborted(orte_process_name_t *proc)
