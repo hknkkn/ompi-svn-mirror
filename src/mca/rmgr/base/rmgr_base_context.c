@@ -56,7 +56,12 @@ int orte_rmgr_base_put_app_context(
     asprintf(&(value->segment), "%s-%s", ORTE_JOB_SEGMENT, jobid_string);
     
     value->num_tokens = 1;
-    value->tokens[0] = strdup("global");
+    if(NULL == (value->tokens = (char**)malloc(sizeof(char*)*2))) {
+        OBJ_RELEASE(value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    value->tokens[0] = strdup(ORTE_JOB_GLOBALS);
+    value->tokens[1] = NULL;
 
     value->cnt = num_context;
     value->keyvals = (orte_gpr_keyval_t**)malloc(num_context * sizeof(orte_gpr_keyval_t*));
@@ -129,7 +134,7 @@ int orte_rmgr_base_get_app_context(
 
     /* create the job segment on the registry */
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid_string);
-    tokens[0] = "global";
+    tokens[0] = strdup(ORTE_JOB_GLOBALS);
     tokens[1] = NULL;
 
     keys[0] = ORTE_APP_CONTEXT_KEY;
