@@ -54,6 +54,7 @@ ORTE_DECLSPEC int orte_ras_base_select(bool *allow_multi_user_threads,
 ORTE_DECLSPEC int orte_ras_base_close(void);
 ORTE_DECLSPEC int orte_ras_base_allocate(orte_jobid_t job);
 ORTE_DECLSPEC int orte_ras_base_deallocate(orte_jobid_t job);
+ORTE_DECLSPEC int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes);
 
 /*
  * globals that might be needed
@@ -64,6 +65,7 @@ typedef struct orte_ras_base_t {
     int ras_output;
     ompi_list_t ras_components;
     ompi_list_t ras_selected;
+    size_t ras_num_nodes;
 } orte_ras_base_t;
  
 ORTE_DECLSPEC extern orte_ras_base_t orte_ras_base;

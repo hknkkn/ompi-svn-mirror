@@ -20,7 +20,7 @@
 #include "ras_lsf_bproc.h"
 
 
-static int orte_ras_lsf_bproc_allocate(orte_jobid_t *jobid)
+static int orte_ras_lsf_bproc_allocate(orte_jobid_t jobid)
 {
     return ORTE_SUCCESS;
 }
