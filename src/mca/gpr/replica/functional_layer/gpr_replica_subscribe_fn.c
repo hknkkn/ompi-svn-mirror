@@ -94,7 +94,7 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action, int num_subs,
 
         if (NULL != subscriptions[i]->tokens && 0 < subscriptions[i]->num_tokens) {
             num_tokens = subscriptions[i]->num_tokens; /* indicates non-NULL terminated list */
-            if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&tokentags, seg,
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&tokentags, data->seg,
                                     subscriptions[i]->tokens, &num_tokens))) {
                 ORTE_ERROR_LOG(rc);
                 return rc;
@@ -114,7 +114,7 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action, int num_subs,
         
         if (NULL != subscriptions[i]->keys && 0 < subscriptions[i]->num_keys) {
             num_keys = subscriptions[i]->num_keys; /* indicates non-NULL terminated list */
-            if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&keytags, seg,
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&keytags, data->seg,
                                     subscriptions[i]->keys, &num_keys))) {
                 ORTE_ERROR_LOG(rc);
                 return rc;
