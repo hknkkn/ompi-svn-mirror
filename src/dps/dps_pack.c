@@ -59,7 +59,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     orte_jobid_t *dj, *sj;
     orte_cellid_t *dc, *sc;
     orte_node_state_t *node_state_src, *node_state_dest;
-    orte_process_status_t *proc_status_src, *proc_status_dest;
+    orte_status_key_t *proc_status_src, *proc_status_dest;
     orte_exit_code_t *exit_code_src, *exit_code_dest;
     orte_byte_object_t *sbyteptr, *dbyteptr;
     
@@ -282,10 +282,10 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
             dest = (void *)node_state_dest;
             break;
 
-        case ORTE_PROCESS_STATUS:
-            proc_status_src = (orte_process_status_t *) src;
-            proc_status_dest = (orte_process_status_t *) dest;
-            tst = sizeof(orte_process_status_t);
+        case ORTE_STATUS_KEY:
+            proc_status_src = (orte_status_key_t *) src;
+            proc_status_dest = (orte_status_key_t *) dest;
+            tst = sizeof(orte_status_key_t);
             for (i=0; i<num_vals; i++) {
                 if (1 == tst) {  /* single byte field */
                     *proc_status_dest = *proc_status_src;

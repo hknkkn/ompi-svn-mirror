@@ -26,14 +26,13 @@
 #include "mca/oob/oob_types.h"
 
 static ompi_mutex_t ompi_port_lock;
-static int port_id=ORTE_OOB_TAG_START_LIST;
 
 int ompi_open_port(char *port_name)
 {
     ompi_proc_t **myproc=NULL;
     char *name=NULL;
     size_t size=0;
-    int lport_id=-1;
+    orte_rml_tag_t lport_id=0;
     int rc;
     
     /*
@@ -48,7 +47,9 @@ int ompi_open_port(char *port_name)
     }
 
     OMPI_THREAD_LOCK(&ompi_port_lock);
-    lport_id = port_id++;
+    if (ORTE_SUCCESS != (rc = orte_name_services.assign_rml_tag(&lport_id, NULL))) {
+        return rc;
+    }
     OMPI_THREAD_UNLOCK(&ompi_port_lock);
 
     sprintf (port_name, "%s:%d", name, lport_id);
@@ -96,7 +97,7 @@ int ompi_comm_namepublish ( char *service_name, char *port_name )
     keyval.value.strptr = strdup(port_name);
     
     return orte_registry.put(ORTE_REGISTRY_AND | ORTE_REGISTRY_OVERWRITE,
-                             "ompi_name_publish",
+                             ORTE_NAMESPACE_SEGMENT,
                              token, 1, &keyval);
 }
 
@@ -114,13 +115,13 @@ char* ompi_comm_namelookup ( char *service_name )
     key[0] = strdup("port_name");
     key[1] = NULL;
     
-    ret = orte_registry.get(ORTE_REGISTRY_AND, "ompi_name_publish",
+    ret = orte_registry.get(ORTE_REGISTRY_AND, ORTE_NAMESPACE_SEGMENT,
                             token, key, &cnt, keyvals);
     if (ORTE_SUCCESS != ret) {
         return NULL;
     }
-    if ( 0 < cnt && NULL != keyvals ) {
-        stmp = strdup(keyval->value.strptr);
+    if ( 0 < cnt && NULL != keyvals ) {  /* should be only one, if any */
+        stmp = strdup(keyvals->value.strptr);
         free(keyvals);
     }
 

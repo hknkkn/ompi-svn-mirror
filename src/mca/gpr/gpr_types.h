@@ -96,29 +96,6 @@ typedef uint16_t orte_registry_synchro_mode_t;
 
 typedef uint16_t orte_gpr_cmd_flag_t;
 
-/** Return value for notify requests
- */
-typedef struct {
-    ompi_object_t super;                         /**< Make this an object */
-    char *segment;                               /**< Name of originating segment */
-    orte_gpr_cmd_flag_t cmd;                     /**< command that generated the notify msg */
-    int32_t cnt;                                 /**< Number of keyval strucs returned */
-    orte_registry_keyval_t *keyvals;             /**< Array of keyval structures */
-    union {
-        orte_registry_notify_action_t trig_action;   /**< If subscription, action that triggered message */
-        orte_registry_synchro_mode_t trig_synchro;   /**< If synchro, action that triggered message */
-        orte_exit_code_t status_code;                /**< status code of command that was executed */
-    } flag;
-    uint32_t num_tokens;                         /**< Number of tokens used to recover data in list */
-    char **tokens;                               /**< List of tokens used to recover data in list */
-} orte_registry_notify_message_t;
-
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_registry_notify_message_t);
-
-/** Notify callback function */
-typedef void (*orte_registry_notify_cb_fn_t)(orte_registry_notify_message_t *notify_msg, void *user_tag);
-
-
 
 /** Define the addressing mode bit-masks for registry operations.
  */
@@ -164,10 +141,30 @@ typedef struct {
         orte_process_name_t proc;
         orte_jobid_t jobid;
         orte_node_state_t node_state;
-        orte_process_status_t proc_status;
+        orte_status_key_t proc_status;
         orte_exit_code_t exit_code;
     } value;
 } orte_registry_keyval_t;
+
+
+/** Return value for notify requests
+ */
+typedef struct {
+    ompi_object_t super;                         /**< Make this an object */
+    char *segment;                               /**< Name of originating segment */
+    ompi_list_t *data;
+    orte_gpr_cmd_flag_t cmd;                     /**< command that generated the notify msg */
+    union {
+        orte_registry_notify_action_t trig_action;   /**< If subscription, action that triggered message */
+        orte_registry_synchro_mode_t trig_synchro;   /**< If synchro, action that triggered message */
+        orte_exit_code_t status_code;                /**< status code of command that was executed */
+    } flag;
+} orte_registry_notify_message_t;
+
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_registry_notify_message_t);
+
+/** Notify callback function */
+typedef void (*orte_registry_notify_cb_fn_t)(orte_registry_notify_message_t *notify_msg, void *user_tag);
 
 
 /** Return value structure for registry requests.
@@ -180,7 +177,10 @@ typedef struct {
  */
 typedef struct orte_registry_value_t {
     ompi_list_item_t item;                    /**< Allows this item to be placed on a list */
-    orte_registry_keyval_t keyval;       /**< keyvalue pair */
+    uint32_t cnt;                                 /**< Number of keyval strucs returned */
+    orte_registry_keyval_t *keyvals;             /**< Array of keyval structures */
+    uint32_t num_tokens;                         /**< Number of tokens used to recover data */
+    char **tokens;                               /**< List of tokens used to recover data */
 } orte_registry_value_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_registry_value_t);

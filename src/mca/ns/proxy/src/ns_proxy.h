@@ -30,7 +30,7 @@ extern "C" {
 
 struct orte_ns_proxy_tagitem_t {
     ompi_list_item_t item;  /**< Allows this item to be placed on a list */
-    orte_oob_tag_t tag;  /**< OOB tag */
+    orte_rml_tag_t tag;  /**< OOB tag */
     char *name;      /**< Name associated with tag */
 };
 typedef struct orte_ns_proxy_tagitem_t orte_ns_proxy_tagitem_t;
@@ -70,7 +70,7 @@ int orte_ns_proxy_create_jobid(orte_jobid_t *jobid);
 int orte_ns_proxy_reserve_range(orte_jobid_t job, orte_vpid_t range,
                                 orte_vpid_t *startvpid);
 
-int orte_ns_proxy_assign_oob_tag(orte_oob_tag_t *tag, char *name);
+int orte_ns_proxy_assign_rml_tag(orte_rml_tag_t *tag, char *name);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

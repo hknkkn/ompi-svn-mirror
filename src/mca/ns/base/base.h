@@ -128,18 +128,6 @@ OMPI_DECLSPEC    int orte_ns_base_compare(int *cmp, orte_ns_cmp_bitmask_t fields
 			const orte_process_name_t* name1,
 			const orte_process_name_t* name2);
 
-OMPI_DECLSPEC    int orte_ns_base_pack_name(void *dest, void *src);
-
-OMPI_DECLSPEC    int orte_ns_base_unpack_name(void *dest, void *src);
-
-OMPI_DECLSPEC    int orte_ns_base_pack_cellid(void *dest, void *src);
-
-OMPI_DECLSPEC    int orte_ns_base_unpack_cellid(void *dest, void *src);
-
-OMPI_DECLSPEC    int orte_ns_base_pack_jobid(void *dest, void *src);
-
-OMPI_DECLSPEC    int orte_ns_base_unpack_jobid(void *dest, void *src);
-
 OMPI_DECLSPEC    int orte_ns_base_free_name(orte_process_name_t **name);
 
 OMPI_DECLSPEC    int orte_ns_base_create_cellid_not_available(orte_cellid_t *cellid);
@@ -154,7 +142,7 @@ OMPI_DECLSPEC    int orte_ns_base_derive_vpid(orte_vpid_t *vpid,
                                              orte_vpid_t base_vpid,
                                              int offset);
 
-OMPI_DECLSPEC    int orte_ns_base_assign_oob_tag_not_available(orte_oob_tag_t *tag, char *name);
+OMPI_DECLSPEC    int orte_ns_base_assign_rml_tag_not_available(orte_rml_tag_t *tag, char *name);
 
 
 /*

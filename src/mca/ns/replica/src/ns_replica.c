@@ -105,37 +105,43 @@ int orte_ns_replica_reserve_range(orte_jobid_t job, orte_vpid_t range, orte_vpid
     return ORTE_ERR_BAD_PARAM;
 }
 
-int orte_ns_replica_assign_oob_tag(orte_oob_tag_t *tag,
+int orte_ns_replica_assign_rml_tag(orte_rml_tag_t *tag,
                                    char *name)
 {
     orte_ns_replica_tagitem_t *tagitem;
     
     OMPI_THREAD_LOCK(&orte_ns_replica_mutex);
 
-    /* see if this name is already in list - if so, return tag */
-    for (tagitem = (orte_ns_replica_tagitem_t*)ompi_list_get_first(&orte_ns_replica_taglist);
-         tagitem != (orte_ns_replica_tagitem_t*)ompi_list_get_end(&orte_ns_replica_taglist);
-         tagitem = (orte_ns_replica_tagitem_t*)ompi_list_get_next(tagitem)) {
-        if (0 == strcmp(name, tagitem->name)) { /* found name on list */
-            *tag = tagitem->tag;
-            return ORTE_SUCCESS;
+    if (NULL != name) {
+        /* see if this name is already in list - if so, return tag */
+        for (tagitem = (orte_ns_replica_tagitem_t*)ompi_list_get_first(&orte_ns_replica_taglist);
+             tagitem != (orte_ns_replica_tagitem_t*)ompi_list_get_end(&orte_ns_replica_taglist);
+             tagitem = (orte_ns_replica_tagitem_t*)ompi_list_get_next(tagitem)) {
+            if (tagitem->name != NULL && 0 == strcmp(name, tagitem->name)) { /* found name on list */
+                *tag = tagitem->tag;
+                return ORTE_SUCCESS;
+            }
         }
     }
-         
-    /* not in list, so allocate next tag
+      
+    /* not in list or not provided, so allocate next tag
      * first check to see if one available - else error
      */
-    if (ORTE_OOB_TAG_MAX < orte_ns_replica_next_oob_tag) {
+    if (ORTE_RML_TAG_MAX < orte_ns_replica_next_rml_tag) {
         /* okay, one available - assign it */
         tagitem = OBJ_NEW(orte_ns_replica_tagitem_t);
         if (NULL == tagitem) { /* out of memory */
-            *tag = ORTE_OOB_TAG_MAX;
+            *tag = ORTE_RML_TAG_MAX;
             OMPI_THREAD_UNLOCK(&orte_ns_replica_mutex);
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
-        tagitem->tag = orte_ns_replica_next_oob_tag;
-        tagitem->name = strdup(name);
-        orte_ns_replica_next_oob_tag++;
+        tagitem->tag = orte_ns_replica_next_rml_tag;
+        if (NULL != name) {  /* provided - can look it up later */
+            tagitem->name = strdup(name);
+        } else {
+            tagitem->name = NULL;
+        }
+        orte_ns_replica_next_rml_tag++;
         ompi_list_append(&orte_ns_replica_taglist, &tagitem->item);
     
         *tag = tagitem->tag;
@@ -144,7 +150,7 @@ int orte_ns_replica_assign_oob_tag(orte_oob_tag_t *tag,
     }
     
     /* no tag available */
-    *tag = ORTE_OOB_TAG_MAX;
+    *tag = ORTE_RML_TAG_MAX;
     OMPI_THREAD_UNLOCK(&orte_ns_replica_mutex);
     return ORTE_ERR_OUT_OF_RESOURCE;
 

@@ -21,7 +21,8 @@
 #include "include/orte_constants.h"
 #include "threads/mutex.h"
 #include "class/ompi_list.h"
-#include "mca/oob/oob.h"
+#include "util/bufpack.h"
+#include "mca/oob/oob_types.h"
 #include "mca/ns/base/base.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -43,7 +44,7 @@ OBJ_CLASS_DECLARATION(orte_ns_replica_name_tracker_t);
 
 struct orte_ns_replica_tagitem_t {
     ompi_list_item_t item;  /**< Allows this item to be placed on a list */
-    orte_oob_tag_t tag;  /**< OOB tag */
+    orte_rml_tag_t tag;  /**< OOB tag */
     char *name;      /**< Name associated with tag */
 };
 typedef struct orte_ns_replica_tagitem_t orte_ns_replica_tagitem_t;
@@ -56,7 +57,7 @@ OBJ_CLASS_DECLARATION(orte_ns_replica_tagitem_t);
 extern orte_cellid_t orte_ns_replica_next_cellid;
 extern orte_jobid_t orte_ns_replica_next_jobid;
 extern ompi_list_t orte_ns_replica_name_tracker;
-extern orte_oob_tag_t orte_ns_replica_next_oob_tag;
+extern orte_rml_tag_t orte_ns_replica_next_rml_tag;
 extern ompi_list_t orte_ns_replica_taglist;
 extern int orte_ns_replica_debug;
 extern ompi_mutex_t orte_ns_replica_mutex;
@@ -100,9 +101,9 @@ int orte_ns_replica_reserve_range(orte_jobid_t job,
                                   orte_vpid_t *startvpid);
 
 /*
- * Implementation of assign oob tag
+ * Implementation of assign rml tag
  */
-int orte_ns_replica_assign_oob_tag(orte_oob_tag_t *tag,
+int orte_ns_replica_assign_rml_tag(orte_rml_tag_t *tag,
                                    char *name);
 
 

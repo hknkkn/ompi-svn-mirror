@@ -198,16 +198,17 @@ static void mca_base_modex_registry_callback(
     ompi_list_item_t* item;
     ompi_proc_t** new_procs = NULL;
     size_t new_proc_count = 0;
+    uint32_t i;
+    orte_registry_keyval_t *keyval;
 
-    if(ompi_list_get_size(&msg->data)) {
-        new_procs = malloc(sizeof(ompi_proc_t*) * ompi_list_get_size(&msg->data));
+    if(0 < msg->cnt) {
+        new_procs = malloc(sizeof(ompi_proc_t*) * msg->cnt);
     }
 
     /* process the callback */
-    while((item = ompi_list_remove_first(&msg->data)) != NULL) {
+    keyval = msg->keyvals;
+    for (i=0; i < msg->cnt; i++) {
                                                                                                           
-        orte_registry_value_t* value = (orte_registry_value_t*)item;
-        ompi_buffer_t buffer;
         ompi_proc_t* proc;
         char* component_name_version;
         orte_process_name_t proc_name;
@@ -218,15 +219,10 @@ static void mca_base_modex_registry_callback(
         int32_t bsize;
         bool isnew = false;
  
-	/* transfer ownership of registry object to buffer and unpack */
-        ompi_buffer_init_preallocated(&buffer, value->object, value->object_size);
-        value->object = NULL;
-        value->object_size = 0;
-        OBJ_RELEASE(value);
-
         /*
          * Lookup the process.
          */
+         
         ompi_unpack(buffer, &proc_name, 1, OMPI_NAME);
         proc = ompi_proc_find_and_add(&proc_name, &isnew);
 
@@ -405,7 +401,7 @@ int mca_base_modex_send(
     if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, &mca_oob_name_self))) {
         return rc;
     }
-    asprintf(&segment, "%s-%s", OMPI_RTE_MODEX_SEGMENT, jobidstring);
+    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
 
     asprintf(&keyval.key, "%s-%s-%d-%d", 
         source_component->mca_type_name,

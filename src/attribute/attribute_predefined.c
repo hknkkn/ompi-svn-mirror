@@ -67,7 +67,8 @@ int ompi_attr_create_predefined(void)
      ret = orte_registry.subscribe(
          ORTE_REGISTRY_OR,
 	     ORTE_REGISTRY_NOTIFY_ON_STARTUP|ORTE_REGISTRY_NOTIFY_INCLUDE_STARTUP_DATA,
-         OMPI_RTE_VM_STATUS_SEGMENT,
+         ORTE_NODE_STATUS_SEGMENT,
+         NULL,
          NULL,
          &rc,
          ompi_attr_create_predefined_callback,
@@ -85,9 +86,10 @@ void ompi_attr_create_predefined_callback(
 	void *cbdata)
 {
     int err;
+    uint32_t i;
     ompi_list_item_t *item;
-    orte_registry_value_t *reg_value;
-    ompi_rte_vm_status_t *vm_stat;
+    orte_registry_keyval_t *keyval;
+    orte_registry_value_t *value;
     orte_jobid_t job;
 
     /* Set some default values */
@@ -96,6 +98,9 @@ void ompi_attr_create_predefined_callback(
         return;
     }
 
+    /* Per conversation between Jeff, Edgar, and Ralph - this needs
+     * to be fixed to properly determine the appnum
+     */
     attr_appnum = (int)job;
     
     /* Query the registry to find out how many CPUs there will be.
@@ -120,22 +125,21 @@ void ompi_attr_create_predefined_callback(
      */
 
     attr_universe_size = 0;
-    if (0 == ompi_list_get_size(&msg->data)) {
+    if (0 == ompi_list_get_size(msg->data)) {  /* no data returned */
         attr_universe_size = ompi_comm_size(MPI_COMM_WORLD);
     } else {
-        for (item = ompi_list_remove_first(&msg->data);
-             NULL != item;
-             item = ompi_list_remove_first(&msg->data)) {
-            reg_value = (orte_registry_value_t *) item;
-            vm_stat = ompi_rte_unpack_vm_status(reg_value); 
-            
-            /* Process slot count */
-            attr_universe_size += vm_stat->num_cpus;
-            
-            /* Discard the rest */
-            free(vm_stat);
-            OBJ_RELEASE(item);
-        }
+       while (NULL != (item = ompi_list_remove_first(msg->data))) {
+            value = (orte_registry_value_t*)item;
+            keyval = value->keyvals;
+            for (i=0; i < value->cnt; i++) {
+                if (0 == strncmp(keyval->key, "num_cpus", strlen("num_cpus"))) {
+                    /* Process slot count */
+                    attr_universe_size += keyval->value.i16;
+                }
+                keyval++;
+            }
+            OBJ_RELEASE(value);
+       }
     }
     OBJ_RELEASE(msg);
 

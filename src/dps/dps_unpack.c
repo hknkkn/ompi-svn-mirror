@@ -50,7 +50,7 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
     uint16_t * s16;
     uint32_t * s32;
     orte_node_state_t *node_state_src, *node_state_dest;
-    orte_process_status_t *proc_status_src, *proc_status_dest;
+    orte_status_key_t *proc_status_src, *proc_status_dest;
     orte_exit_code_t *exit_code_src, *exit_code_dest;
     char * str;
     char * dstr;
@@ -165,13 +165,13 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
             dest = (void*) node_state_dest;
             break;
 
-        case ORTE_PROCESS_STATUS:
-            tst = sizeof(orte_process_status_t);
-            proc_status_dest = (orte_process_status_t *) malloc(tst);
+        case ORTE_STATUS_KEY:
+            tst = sizeof(orte_status_key_t);
+            proc_status_dest = (orte_status_key_t *) malloc(tst);
             if (NULL == proc_status_dest) {
                 return ORTE_ERR_OUT_OF_RESOURCE;
             }
-            proc_status_src = (orte_process_status_t *) src;
+            proc_status_src = (orte_status_key_t *) src;
             if (1 == tst) {  /* single byte field */
                 *proc_status_dest = *proc_status_src;
             } else if (2 == tst) {  /* two byte field */
@@ -226,15 +226,12 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
             break;
             
         case ORTE_JOBID:
-            orte_name_services.unpack_jobid(dest, src);
             break;
         
         case ORTE_CELLID:
-            orte_name_services.unpack_cellid(dest, src);
             break;
             
         case ORTE_NAME:
-            orte_name_services.unpack_name(dest, src);
             break;
         
         case ORTE_STRING:

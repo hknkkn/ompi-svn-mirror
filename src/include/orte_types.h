@@ -51,9 +51,10 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_JOBID               (orte_data_type_t)   24 /**< a jobid */
 #define    ORTE_CELLID              (orte_data_type_t)   25 /**< a cellid */
 #define    ORTE_NODE_STATE          (orte_data_type_t)   26 /**< node status flag */
-#define    ORTE_PROCESS_STATUS      (orte_data_type_t)   27 /**< process status key */
+#define    ORTE_STATUS_KEY          (orte_data_type_t)   27 /**< process/resource status key */
 #define    ORTE_EXIT_CODE           (orte_data_type_t)   28 /**< process exit code */
 #define    ORTE_BYTE_OBJECT         (orte_data_type_t)   29 /**< byte object structure */
+#define    ORTE_KEYVAL              (orte_data_type_t)   30 /**< registry key-value pair */
 
 typedef struct {
     size_t size;
@@ -63,15 +64,6 @@ typedef struct {
 typedef int8_t orte_exit_code_t;
 typedef int8_t orte_status_key_t;
 typedef int8_t orte_node_state_t;
-
-struct orte_process_status_t {
-     int32_t rank;
-     int32_t local_pid;
-     char *nodename;
-     orte_status_key_t status_key;
-     orte_exit_code_t exit_code;
-};
-typedef struct orte_process_status_t orte_process_status_t;
 
 
 #endif  /* ORTE_TYPES_H */

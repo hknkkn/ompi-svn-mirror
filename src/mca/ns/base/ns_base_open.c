@@ -63,14 +63,8 @@ mca_ns_base_module_t orte_name_services = {
     orte_ns_base_get_jobid,
     orte_ns_base_get_cellid,
     orte_ns_base_compare,
-    orte_ns_base_pack_name,
-    orte_ns_base_unpack_name,
-    orte_ns_base_pack_cellid,
-    orte_ns_base_unpack_cellid,
-    orte_ns_base_pack_jobid,
-    orte_ns_base_unpack_jobid,
     orte_ns_base_derive_vpid,
-    orte_ns_base_assign_oob_tag_not_available
+    orte_ns_base_assign_rml_tag_not_available
 };
 bool mca_ns_base_selected = false;
 ompi_list_t mca_ns_base_components_available;

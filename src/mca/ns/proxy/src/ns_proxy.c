@@ -17,6 +17,7 @@
 
 #include "orte_config.h"
 #include "include/orte_constants.h"
+#include "include/orte_types.h"
 #include "mca/mca.h"
 #include "util/bufpack.h"
 #include "mca/oob/base/base.h"
@@ -174,7 +175,7 @@ int orte_ns_proxy_reserve_range(orte_jobid_t job, orte_vpid_t range, orte_vpid_t
 }
 
 
-int orte_ns_proxy_assign_oob_tag(orte_oob_tag_t *tag,
+int orte_ns_proxy_assign_rml_tag(orte_rml_tag_t *tag,
                                  char *name)
 {
     ompi_buffer_t cmd;
@@ -185,23 +186,24 @@ int orte_ns_proxy_assign_oob_tag(orte_oob_tag_t *tag,
 
     OMPI_THREAD_LOCK(&orte_ns_proxy_mutex);
 
-    /* first, check to see if name is already on local list
-     * if so, return tag
-     */
-    for (tagitem = (orte_ns_proxy_tagitem_t*)ompi_list_get_first(&orte_ns_proxy_taglist);
-         tagitem != (orte_ns_proxy_tagitem_t*)ompi_list_get_end(&orte_ns_proxy_taglist);
-         tagitem = (orte_ns_proxy_tagitem_t*)ompi_list_get_next(tagitem)) {
-        if (0 == strcmp(name, tagitem->name)) { /* found name on list */
-           *tag = tagitem->tag;
-           return ORTE_SUCCESS;
+    if (NULL != name) {
+        /* first, check to see if name is already on local list
+         * if so, return tag
+         */
+        for (tagitem = (orte_ns_proxy_tagitem_t*)ompi_list_get_first(&orte_ns_proxy_taglist);
+             tagitem != (orte_ns_proxy_tagitem_t*)ompi_list_get_end(&orte_ns_proxy_taglist);
+             tagitem = (orte_ns_proxy_tagitem_t*)ompi_list_get_next(tagitem)) {
+            if (0 == strcmp(name, tagitem->name)) { /* found name on list */
+               *tag = tagitem->tag;
+               return ORTE_SUCCESS;
+            }
         }
-    }
-         
+    }   
     /* okay, not on local list - so go get one from tag server */
     command = ORTE_NS_ASSIGN_OOB_TAG_CMD;
     recv_tag = MCA_OOB_TAG_NS;
 
-    *tag = ORTE_OOB_TAG_MAX;  /* set the default error value */
+    *tag = ORTE_RML_TAG_MAX;  /* set the default error value */
     
     if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
         return ORTE_ERR_OUT_OF_RESOURCE;
@@ -211,8 +213,14 @@ int orte_ns_proxy_assign_oob_tag(orte_oob_tag_t *tag,
         return ORTE_ERR_PACK_FAILURE;
     }
 
-    if (0 > ompi_pack_string(cmd, (void*)name)) {
-        return ORTE_ERR_PACK_FAILURE;
+    if (NULL != name) {
+        if (0 > ompi_pack_string(cmd, (void*)name)) {
+            return ORTE_ERR_PACK_FAILURE;
+        }
+    } else {
+        if (0 > ompi_pack_string(cmd, "NULL")) {
+            return ORTE_ERR_PACK_FAILURE;
+        }
     }
     
     if (0 > mca_oob_send_packed(orte_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
@@ -239,12 +247,16 @@ int orte_ns_proxy_assign_oob_tag(orte_oob_tag_t *tag,
     /* add the new tag to the local list so we don't have to get it again */
     tagitem = OBJ_NEW(orte_ns_proxy_tagitem_t);
     if (NULL == tagitem) { /* out of memory */
-        *tag = ORTE_OOB_TAG_MAX;
+        *tag = ORTE_RML_TAG_MAX;
         OMPI_THREAD_UNLOCK(&orte_ns_proxy_mutex);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     tagitem->tag = *tag;
-    tagitem->name = strdup(name);
+    if (NULL != name) {
+        tagitem->name = strdup(name);
+    } else {
+        tagitem->name = NULL;
+    }
     ompi_list_append(&orte_ns_proxy_taglist, &tagitem->item);
     
     OMPI_THREAD_UNLOCK(&orte_ns_proxy_mutex);

@@ -60,8 +60,8 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             return (size_t)(num_vals * sizeof(orte_node_state_t));
             break;
             
-        case ORTE_PROCESS_STATUS:
-            return (size_t)(num_vals * sizeof(orte_process_status_t));
+        case ORTE_STATUS_KEY:
+            return (size_t)(num_vals * sizeof(orte_status_key_t));
             break;
             
         case ORTE_EXIT_CODE:

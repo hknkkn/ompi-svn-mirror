@@ -28,6 +28,7 @@
 #include "orte_config.h"
 
 #include "include/orte_constants.h"
+#include "include/orte_types.h"
 
 #include "threads/mutex.h"
 #include "util/proc_info.h"
@@ -88,14 +89,8 @@ static mca_ns_base_module_t orte_ns_replica = {
     orte_ns_base_get_jobid,
     orte_ns_base_get_cellid,
     orte_ns_base_compare,
-    orte_ns_base_pack_name,
-    orte_ns_base_unpack_name,
-    orte_ns_base_pack_cellid,
-    orte_ns_base_unpack_cellid,
-    orte_ns_base_pack_jobid,
-    orte_ns_base_unpack_jobid,
     orte_ns_base_derive_vpid,
-    orte_ns_replica_assign_oob_tag
+    orte_ns_replica_assign_rml_tag
 };
 
 /*
@@ -126,7 +121,7 @@ OBJ_CLASS_INSTANCE(
 /* constructor - used to initialize state of taglist instance */
 static void orte_ns_replica_tagitem_construct(orte_ns_replica_tagitem_t* tagitem)
 {
-    tagitem->tag = ORTE_OOB_TAG_MAX;
+    tagitem->tag = ORTE_RML_TAG_MAX;
     tagitem->name = NULL;
 }
 
@@ -151,7 +146,7 @@ OBJ_CLASS_INSTANCE(
 orte_cellid_t orte_ns_replica_next_cellid;
 orte_jobid_t orte_ns_replica_next_jobid;
 ompi_list_t orte_ns_replica_name_tracker;
-orte_oob_tag_t orte_ns_replica_next_oob_tag;
+orte_rml_tag_t orte_ns_replica_next_rml_tag;
 ompi_list_t orte_ns_replica_taglist;
 int orte_ns_replica_debug;
 ompi_mutex_t orte_ns_replica_mutex;
@@ -208,7 +203,7 @@ mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool 
       /* initialize the taglist */
 
       OBJ_CONSTRUCT(&orte_ns_replica_taglist, ompi_list_t);
-      orte_ns_replica_next_oob_tag = ORTE_OOB_TAG_START_LIST;
+      orte_ns_replica_next_rml_tag = ORTE_OOB_TAG_START_LIST;
 
     /* setup the thread lock */
     OBJ_CONSTRUCT(&orte_ns_replica_mutex, ompi_mutex_t);
@@ -275,7 +270,7 @@ void orte_ns_replica_recv(int status, orte_process_name_t* sender,
     orte_jobid_t job;
     orte_vpid_t startvpid, range;
     char *tagname;
-    orte_oob_tag_t oob_tag;
+    orte_rml_tag_t oob_tag;
     int32_t return_code=ORTE_SUCCESS;
 
     if (ORTE_SUCCESS != ompi_unpack(buffer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD)) {
@@ -353,9 +348,15 @@ void orte_ns_replica_recv(int status, orte_process_name_t* sender,
          goto RETURN_ERROR;
       }
 
-      if (ORTE_SUCCESS != (return_code = orte_ns_replica_assign_oob_tag(&oob_tag, tagname))) {
-            goto RETURN_ERROR;
-      }
+       if (0 == strncmp(tagname, "NULL", 4)) {
+            if (ORTE_SUCCESS != (return_code = orte_ns_replica_assign_rml_tag(&oob_tag, NULL))) {
+                goto RETURN_ERROR;
+            }
+       } else {
+            if (ORTE_SUCCESS != (return_code = orte_ns_replica_assign_rml_tag(&oob_tag, tagname))) {
+                goto RETURN_ERROR;
+            }
+       }
        
       if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
          goto RETURN_ERROR;

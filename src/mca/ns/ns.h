@@ -514,131 +514,11 @@ typedef int (*orte_ns_base_module_compare_fn_t)(int *cmp, orte_ns_cmp_bitmask_t 
                                                 const orte_process_name_t* name2);
 
 /*
- * Pack a name structure for transmission and/or registry storage
- * Given a source location and the number of contiguous names stored there,
- * this function packs those names into the given destination, converting
- * each name into network byte order.
- *
- * @param dest A void* pointing to the starting location for the destination
- * memory. Note that this memory MUST be preallocated and adequately sized.
- * @param src A void* pointing to the starting location of the source data.
- * @param n The number of names to be packed.
- *
- * @retval OMPI_SUCCESS Indicates that the names were successfully packed.
- *
- * @code
- * status_code = ompi_name_server.pack_name(&dest, &src, n);
- * @endcode
- *
- */
-typedef int (*orte_ns_base_module_pack_name_fn_t)(void *dest, void *src);
-
-/*
- * Unpack a name structure
- * Given a source location and the number of contiguous names stored there,
- * this function unpacks those names into the given destination, converting
- * each name from network byte order to the host environment.
- *
- * @param dest A void* pointing to the starting location for the destination
- * memory. Note that this memory MUST be preallocated and adequately sized.
- * @param src A void* pointing to the starting location of the source data.
- * @param n The number of names to be unpacked.
- *
- * @retval OMPI_SUCCESS Indicates that the names were successfully unpacked.
- *
- * @code
- * status_code = ompi_name_server.unpack_name(&dest, &src, n);
- * @endcode
- *
- */
-typedef int (*orte_ns_base_module_unpack_name_fn_t)(void *dest, void *src);
-
-/*
- * Pack a cellid for transmission and/or registry storage
- * Given a source location and the number of contiguous cellids stored there,
- * this function packs those values into the given destination, converting
- * each value into network byte order.
- *
- * @param dest A void* pointing to the starting location for the destination
- * memory. Note that this memory MUST be preallocated and adequately sized.
- * @param src A void* pointing to the starting location of the source data.
- * @param n The number of cellids to be packed.
- *
- * @retval OMPI_SUCCESS Indicates that the cellids were successfully packed.
- *
- * @code
- * status_code = ompi_name_server.pack_cellid(&dest, &src, n);
- * @endcode
- *
- */
-typedef int (*orte_ns_base_module_pack_cellid_fn_t)(void *dest, void *src);
-
-/*
- * Unpack a cellid
- * Given a source location and the number of contiguous cellids stored there,
- * this function unpacks those values into the given destination, converting
- * each jobid from network byte order to the host environment.
- *
- * @param dest A void* pointing to the starting location for the destination
- * memory. Note that this memory MUST be preallocated and adequately sized.
- * @param src A void* pointing to the starting location of the source data.
- * @param n The number of cellids to be unpacked.
- *
- * @retval OMPI_SUCCESS Indicates that the jobids were successfully unpacked.
- *
- * @code
- * status_code = ompi_name_server.unpack_cellid(&dest, &src, n);
- * @endcode
- *
- */
-typedef int (*orte_ns_base_module_unpack_cellid_fn_t)(void *dest, void *src);
-
-
-
-/*
- * Pack a jobid for transmission and/or registry storage
- * Given a source location and the number of contiguous jobids stored there,
- * this function packs those values into the given destination, converting
- * each value into network byte order.
- *
- * @param dest A void* pointing to the starting location for the destination
- * memory. Note that this memory MUST be preallocated and adequately sized.
- * @param src A void* pointing to the starting location of the source data.
- * @param n The number of jobids to be packed.
- *
- * @retval OMPI_SUCCESS Indicates that the jobids were successfully packed.
- *
- * @code
- * status_code = ompi_name_server.pack_jobid(&dest, &src, n);
- * @endcode
- *
- */
-typedef int (*orte_ns_base_module_pack_jobid_fn_t)(void *dest, void *src);
-
-/*
- * Unpack a jobid
- * Given a source location and the number of contiguous jobids stored there,
- * this function unpacks those values into the given destination, converting
- * each jobid from network byte order to the host environment.
- *
- * @param dest A void* pointing to the starting location for the destination
- * memory. Note that this memory MUST be preallocated and adequately sized.
- * @param src A void* pointing to the starting location of the source data.
- * @param n The number of jobids to be unpacked.
- *
- * @retval OMPI_SUCCESS Indicates that the jobids were successfully unpacked.
- *
- * @code
- * status_code = ompi_name_server.unpack_jobid(&dest, &src, n);
- * @endcode
- *
- */
-typedef int (*orte_ns_base_module_unpack_jobid_fn_t)(void *dest, void *src);
-
-/*
  * Allocate a tag
+ * If name is NULL, tag server provides next unique tag but cannot look
+ * that number up again for anyone else.
  */
-typedef int (*orte_ns_base_module_assign_oob_tag_fn_t)(orte_oob_tag_t *tag,
+typedef int (*orte_ns_base_module_assign_rml_tag_fn_t)(orte_rml_tag_t *tag,
                                                    char *name);
 
 /*
@@ -667,14 +547,8 @@ struct mca_ns_base_module_1_0_0_t {
     orte_ns_base_module_get_jobid_fn_t get_jobid;
     orte_ns_base_module_get_cellid_fn_t get_cellid;
     orte_ns_base_module_compare_fn_t compare;
-    orte_ns_base_module_pack_name_fn_t pack_name;
-    orte_ns_base_module_unpack_name_fn_t unpack_name;
-    orte_ns_base_module_pack_cellid_fn_t pack_cellid;
-    orte_ns_base_module_unpack_cellid_fn_t unpack_cellid;
-    orte_ns_base_module_pack_jobid_fn_t pack_jobid;
-    orte_ns_base_module_unpack_jobid_fn_t unpack_jobid;
     orte_ns_base_module_derive_vpid_fn_t derive_vpid;
-    orte_ns_base_module_assign_oob_tag_fn_t assign_oob_tag;
+    orte_ns_base_module_assign_rml_tag_fn_t assign_rml_tag;
 };
 
 typedef struct mca_ns_base_module_1_0_0_t mca_ns_base_module_1_0_0_t;

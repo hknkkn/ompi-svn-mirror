@@ -63,9 +63,9 @@ orte_ns_base_get_vpid_range_not_available(orte_jobid_t job,
 }
 
 int
-orte_ns_base_assign_oob_tag_not_available(orte_oob_tag_t *tag, char *name)
+orte_ns_base_assign_rml_tag_not_available(orte_rml_tag_t *tag, char *name)
 {
-    *tag = ORTE_OOB_TAG_MAX;
+    *tag = ORTE_RML_TAG_MAX;
     return ORTE_ERR_UNREACH;
 }
 
@@ -474,71 +474,6 @@ int orte_ns_base_compare(int *cmp, orte_ns_cmp_bitmask_t fields,
      * return that fact
      */
     *cmp = 0;
-    return ORTE_SUCCESS;
-}
-
-
-int orte_ns_base_pack_name(void *dest, void *src)
-{
-    orte_process_name_t *dn, *sn;
-
-
-    return ORTE_SUCCESS;
-}
-
-
-int orte_ns_base_unpack_name(void *dest, void *src)
-{
-
-    dn = (orte_process_name_t*) dest;
-    sn = (orte_process_name_t*) src;
-
-	dn->cellid = ntohl(sn->cellid);
-	dn->jobid = ntohl(sn->jobid);
-	dn->vpid = ntohl(sn->vpid);
-
-    return ORTE_SUCCESS;
-}
-
-
-int orte_ns_base_pack_cellid(void *dest, void *src)
-{
-
-
-    return ORTE_SUCCESS;
-}
-
-
-int orte_ns_base_unpack_cellid(void *dest, void *src)
-{
-    orte_cellid_t *dj, *sj;
-
-    dj = (orte_cellid_t*) dest;
-    sj = (orte_cellid_t*) src;
-
-    *dj = ntohl(*sj);
-
-    return ORTE_SUCCESS;
-}
-
-
-int orte_ns_base_pack_jobid(void *dest, void *src)
-{
-
-
-    return ORTE_SUCCESS;
-}
-
-
-int orte_ns_base_unpack_jobid(void *dest, void *src)
-{
-    orte_jobid_t *dj, *sj;
-
-    dj = (orte_jobid_t*) dest;
-    sj = (orte_jobid_t*) src;
-
-	*dj = ntohl(*sj);
-
     return ORTE_SUCCESS;
 }
 

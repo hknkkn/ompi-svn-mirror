@@ -27,29 +27,25 @@
  * Other constants
  */
 
-typedef uint32_t orte_oob_tag_t;
+typedef uint32_t orte_rml_tag_t;
 
-#define ORTE_OOB_TAG_MAX UINT32_MAX
+#define ORTE_RML_TAG_MAX UINT32_MAX
 
-/**
- * Receive from any tag.
- */
-#define MCA_OOB_TAG_ANY 0
 /**
  * Service tags
  */
-#define MCA_OOB_TAG_NS           (orte_oob_tag_t)   1
-#define MCA_OOB_TAG_GPR          (orte_oob_tag_t)   2
-#define MCA_OOB_TAG_GPR_NOTIFY   (orte_oob_tag_t)   3
-#define MCA_OOB_TAG_RTE          (orte_oob_tag_t)   4
-#define MCA_OOB_TAG_EXEC         (orte_oob_tag_t)   5
-#define MCA_OOB_TAG_DAEMON       (orte_oob_tag_t)   6
-#define MCA_OOB_TAG_STDIO        (orte_oob_tag_t)   7
-#define MCA_OOB_TAG_SCHED        (orte_oob_tag_t)   8
-#define MCA_OOB_TAG_PCM_KILL     (orte_oob_tag_t)   9
-#define MCA_OOB_TAG_XCAST        (orte_oob_tag_t)  10
-#define MCA_OOB_TAG_PCM_KILL_ACK (orte_oob_tag_t)  11
-#define ORTE_OOB_TAG_START_LIST  (orte_oob_tag_t) 100  /* starting point for tag server assignments */
+#define MCA_OOB_TAG_NS           (orte_rml_tag_t)   1
+#define MCA_OOB_TAG_GPR          (orte_rml_tag_t)   2
+#define MCA_OOB_TAG_GPR_NOTIFY   (orte_rml_tag_t)   3
+#define MCA_OOB_TAG_RTE          (orte_rml_tag_t)   4
+#define MCA_OOB_TAG_EXEC         (orte_rml_tag_t)   5
+#define MCA_OOB_TAG_DAEMON       (orte_rml_tag_t)   6
+#define MCA_OOB_TAG_STDIO        (orte_rml_tag_t)   7
+#define MCA_OOB_TAG_SCHED        (orte_rml_tag_t)   8
+#define MCA_OOB_TAG_PCM_KILL     (orte_rml_tag_t)   9
+#define MCA_OOB_TAG_XCAST        (orte_rml_tag_t)  10
+#define MCA_OOB_TAG_PCM_KILL_ACK (orte_rml_tag_t)  11
+#define ORTE_OOB_TAG_START_LIST  (orte_rml_tag_t) 100  /* starting point for tag server assignments */
 
 /**
  * The wildcard for receives from any peer.

@@ -83,14 +83,8 @@ static mca_ns_base_module_t orte_ns_proxy = {
     orte_ns_base_get_jobid,
     orte_ns_base_get_cellid,
     orte_ns_base_compare,
-    orte_ns_base_pack_name,
-    orte_ns_base_unpack_name,
-    orte_ns_base_pack_cellid,
-    orte_ns_base_unpack_cellid,
-    orte_ns_base_pack_jobid,
-    orte_ns_base_unpack_jobid,
     orte_ns_base_derive_vpid,
-    orte_ns_proxy_assign_oob_tag
+    orte_ns_proxy_assign_rml_tag
 };
 
 /*
@@ -101,7 +95,7 @@ static bool initialized = false;
 /* constructor - used to initialize state of taglist instance */
 static void orte_ns_proxy_tagitem_construct(orte_ns_proxy_tagitem_t* tagitem)
 {
-    tagitem->tag = ORTE_OOB_TAG_MAX;
+    tagitem->tag = ORTE_RML_TAG_MAX;
     tagitem->name = NULL;
 }
 
