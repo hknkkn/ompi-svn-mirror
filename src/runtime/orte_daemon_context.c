@@ -36,7 +36,7 @@ orte_context_value_names_t orte_daemon_context_tbl[] = {
     {{"gpr", "replica", "uri"}, "gprreplica", 1, ORTE_STRING, (void*)&(orte_process_info.gpr_replica_uri), NULL},
     {{"ns", "replica", "uri"}, "nsreplica", 1, ORTE_STRING, (void*)&(orte_process_info.ns_replica_uri), NULL},
     {{"ns", "nds", "name"}, "name", 1, ORTE_NAME, (void*)&(orte_process_info.my_name), NULL},
-    {{NULL, NULL, NULL}, NULL, ORTE_NULL, NULL} /* SIGNIFIES END OF ARRAY */
+    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL} /* SIGNIFIES END OF ARRAY */
 };
 
 int orte_parse_daemon_context(ompi_cmd_line_t *cmd_line, int argc, char **argv)
