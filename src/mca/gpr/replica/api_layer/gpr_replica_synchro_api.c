@@ -78,6 +78,7 @@ orte_gpr_replica_synchro(orte_gpr_addr_mode_t addr_mode,
     }
 
     /* convert tokens to itags */
+    num_tokens = 0;  /* indicates NULL-terminated set of strings */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags,
                          seg, tokens, &num_tokens))) {
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
@@ -85,6 +86,7 @@ orte_gpr_replica_synchro(orte_gpr_addr_mode_t addr_mode,
     }
 
     /* convert keys to itags */
+    num_keys = 0;  /* indicates NULL-terminated set of strings */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&key_itags,
                          seg, keys, &num_keys))) {
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);

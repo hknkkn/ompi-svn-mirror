@@ -82,6 +82,7 @@ orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
     }
 
     /* convert tokens to itags */
+    num_tokens = 0;  /* indicates NULL-terminated set of strings */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags,
                          seg, tokens, &num_tokens))) {
         ORTE_ERROR_LOG(rc);
@@ -90,6 +91,7 @@ orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
     }
 
     /* convert keys to itags */
+    num_keys = 0;  /* indicates NULL-terminated set of strings */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&key_itags,
                          seg, keys, &num_keys))) {
         ORTE_ERROR_LOG(rc);

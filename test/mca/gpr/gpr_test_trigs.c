@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "include/orte_constants.h"
-#include "include/orte_names.h"
 
 #include "support.h"
 
@@ -96,8 +95,7 @@ int main(int argc, char **argv)
         exit (1);
     }
     
-    if (ORTE_SUCCESS == orte_gpr_base_select(&allow_multi_user_threads, 
-                       &have_hidden_threads)) {
+    if (ORTE_SUCCESS == orte_gpr_base_select()) {
         fprintf(test_out, "GPR replica selected\n");
     } else {
         fprintf(test_out, "GPR replica could not be selected\n");
@@ -118,11 +116,11 @@ int main(int argc, char **argv)
     names[14] = NULL;
 
     fprintf(stderr, "register synchro on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_synchro(ORTE_GPR_XAND,
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_synchro(ORTE_GPR_TOKENS_OR,
                                     ORTE_GPR_SYNCHRO_MODE_LEVEL,
                                     "test-segment",
-                                    NULL, NULL, 5, &synch,
-                                    gpr_test_trig_cb_fn, NULL))) {
+                                    names, NULL, 5, &synch,
+                                    test_cbfunc, NULL))) {
         fprintf(test_out, "gpr_test_trigs: synch on seg failed with error %s\n",
                         ORTE_ERROR_NAME(rc));
         test_failure("gpr_test_trigs: synch on seg failed");
@@ -133,11 +131,11 @@ int main(int argc, char **argv)
     }
     
     fprintf(stderr, "register subscription on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_XAND,
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_TOKENS_OR,
                                     ORTE_GPR_NOTIFY_ADD_ENTRY,
                                     "test-segment",
-                                    NULL, NULL, 5, &sub,
-                                    gpr_test_trig_cb_fn, NULL))) {
+                                    NULL, names, &sub,
+                                    test_cbfunc, NULL))) {
         fprintf(test_out, "gpr_test_trigs: subscribe on seg failed with error %s\n",
                         ORTE_ERROR_NAME(rc));
         test_failure("gpr_test_trigs: subscribe on seg failed");
@@ -230,7 +228,7 @@ int main(int argc, char **argv)
     return(0);
 }
 
-void gpr_test_trig_cb_fn(orte_gpr_notify_message_t *msg, void *tag)
+void test_cbfunc(orte_gpr_notify_message_t *msg, void *tag)
 {
     fprintf(test_out, "TRIGGER FIRED AND RECEIVED\n");
     

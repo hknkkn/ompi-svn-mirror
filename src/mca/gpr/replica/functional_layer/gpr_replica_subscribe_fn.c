@@ -37,7 +37,7 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_notify_id_t local_idtag)
 {
     orte_gpr_replica_triggers_t *trig;
-    int i;
+    int i, rc;
 
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr replica: subscribe entered: segment %s",
@@ -51,26 +51,36 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
     }
     
     trig->token_addr_mode = 0x004f & addr_mode;
-    trig->key_addr_mode = ((0x4f00 & addr_mode) >> 8) & 0x004f;
-
-    if (num_tokens != orte_value_array_set_size(&(trig->tokentags), num_tokens)) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        return ORTE_ERR_OUT_OF_RESOURCE;
+    if (0x00 == trig->token_addr_mode) {  /* default token address mode to AND */
+        trig->token_addr_mode = ORTE_GPR_REPLICA_AND;
     }
-    for (i=0; i < num_tokens; i++) {
-        ORTE_VALUE_ARRAY_SET_ITEM(&(trig->tokentags), orte_gpr_replica_itag_t,
-                                        i, tokentags[i]);
+    trig->key_addr_mode = ((0x4f00 & addr_mode) >> 8) & 0x004f;
+    if (0x00 == trig->key_addr_mode) {  /* default key address mode to OR */
+        trig->key_addr_mode = ORTE_GPR_REPLICA_OR;
+    }
+
+    if (NULL != tokentags && 0 < num_tokens) {
+        if (ORTE_SUCCESS != (rc = orte_value_array_set_size(&(trig->tokentags), (size_t)num_tokens))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+        for (i=0; i < num_tokens; i++) {
+            ORTE_VALUE_ARRAY_SET_ITEM(&(trig->tokentags), orte_gpr_replica_itag_t,
+                                            i, tokentags[i]);
+        }
     }
     
-    if (num_keys != orte_value_array_set_size(&(trig->keytags), num_keys)) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        return ORTE_ERR_OUT_OF_RESOURCE;
+    if (NULL != keytags && 0 < num_keys) {
+        if (ORTE_SUCCESS != (rc = orte_value_array_set_size(&(trig->keytags), (size_t)num_keys))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+        for (i=0; i < num_keys; i++) {
+            ORTE_VALUE_ARRAY_SET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t,
+                                            i, keytags[i]);
+        }
     }
-    for (i=0; i < num_keys; i++) {
-        ORTE_VALUE_ARRAY_SET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t,
-                                        i, keytags[i]);
-    }
-
+    
     /* need to check the existing data to flag those that fit the new subscription */
     return orte_gpr_replica_init_trigger(seg, trig);
 
