@@ -51,7 +51,7 @@ int orte_pls_base_set_proc_pid(const orte_process_name_t* name, pid_t pid)
     }
 
     kv_pid.value.ui32 = pid;
-    kv_state.value.proc_state = ORTE_PROC_STATE_LAUNCHING;
+    kv_state.value.proc_state = ORTE_PROC_STATE_LAUNCHED;
     keyvals[0] = &kv_pid;
     keyvals[1] = &kv_state;
     
