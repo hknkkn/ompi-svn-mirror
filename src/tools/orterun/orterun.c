@@ -53,11 +53,6 @@ struct ompi_event int_handler;
 struct ompi_event exit_handler;
 orte_jobid_t jobid = ORTE_JOBID_MAX;
 
-/* enable orterun to block until app completes */
-ompi_condition_t orterun_cond;
-ompi_mutex_t orterun_lock;
-bool orterun_complete = false;
-
 
 static void
 exit_callback(int fd, short event, void *arg)
@@ -198,29 +193,13 @@ main(int argc, char *argv[], char* env[])
         return 1;
     }
 
-
-    /* setup to block until app completes */
-    OBJ_CONSTRUCT(&orterun_lock, ompi_mutex_t);
-    OBJ_CONSTRUCT(&orterun_cond, ompi_condition_t);
-
     /* spawn it */
     rc = orte_rmgr.spawn(apps, 1, &jobid, NULL);
     if(ORTE_SUCCESS != rc) {
         ompi_output(0, "orterun: spawn failed with errno=%d\n", rc);
-    } else {
-#if 0
-        /* block until completion */
-        OMPI_THREAD_LOCK(&orterun_lock);
-        while(orterun_complete == false) {
-            ompi_condition_wait(&orterun_cond, &orterun_lock);
-        }
-        OMPI_THREAD_UNLOCK(&orterun_lock);
-#endif
-        orte_finalize();
     }
 
-    OBJ_DESTRUCT(&orterun_lock);
-    OBJ_DESTRUCT(&orterun_cond);
+    orte_finalize();
     OBJ_DESTRUCT(&app);
     OBJ_DESTRUCT(&cmd_line);
     return rc;
