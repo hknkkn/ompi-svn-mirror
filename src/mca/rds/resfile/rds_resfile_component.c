@@ -26,9 +26,7 @@
 
 static int orte_rds_resfile_open(void);
 static int orte_rds_resfile_close(void);
-static orte_rds_base_module_t* orte_rds_resfile_init(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+static orte_rds_base_module_t* orte_rds_resfile_init(void);
 
 
 orte_rds_resfile_component_t mca_rds_resfile_component = {
@@ -103,11 +101,8 @@ static int orte_rds_resfile_open(void)
 }
 
 
-static orte_rds_base_module_t* 
-orte_rds_resfile_init(bool *allow_multi_user_threads, bool *have_hidden_threads)
+static orte_rds_base_module_t *orte_rds_resfile_init(void)
 {
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = false;
     return &orte_rds_resfile_module;
 }
 

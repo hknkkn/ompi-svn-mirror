@@ -44,8 +44,7 @@ extern "C" {
  * function definitions
  */
 OMPI_DECLSPEC int orte_rmgr_base_open(void);
-OMPI_DECLSPEC int orte_rmgr_base_select(bool *allow_multi_user_threads,
-			                               bool *have_hidden_threads);
+OMPI_DECLSPEC int orte_rmgr_base_select(void);
 OMPI_DECLSPEC int orte_rmgr_base_close(void);
 
 OMPI_DECLSPEC int orte_rmgr_base_get_app_context(

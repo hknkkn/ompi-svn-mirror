@@ -30,14 +30,12 @@ OBJ_CLASS_INSTANCE(orte_rds_base_selected_t,
 /**
  * Function for selecting all available modules.
  */
-int orte_rds_base_select(bool *allow_multi_user_threads, 
-                       bool *have_hidden_threads)
+int orte_rds_base_select(void)
 {
     ompi_list_item_t *item;
     mca_base_component_list_item_t *cli;
     orte_rds_base_component_t *component;
     orte_rds_base_module_t *module;
-    bool multi, hidden;
 
     /* Iterate through all the available components */
   
@@ -50,7 +48,7 @@ int orte_rds_base_select(bool *allow_multi_user_threads,
         /* Call the component's init function and see if it wants to be
          * selected
          */
-        module = component->rds_init(&multi, &hidden);
+        module = component->rds_init();
 
         /* If we got a non-NULL module back, then the component wants to
          * be selected.   

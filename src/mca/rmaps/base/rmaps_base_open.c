@@ -60,7 +60,7 @@ int orte_rmaps_base_open(void)
     int param, priority, value;
     orte_rmaps_base_cmp_t *cmp;
 
-    /* Open a debugging output */
+    /* Debugging / verbose output */
 
     param = mca_base_param_register_int("rmaps", "base", "verbose", NULL, 0);
     mca_base_param_lookup_int(param, &value);
@@ -80,6 +80,7 @@ int orte_rmaps_base_open(void)
 
     /* Query all the opened components and see if they want to run */
 
+    OBJ_CONSTRUCT(&orte_rmaps_base.rmaps_available, ompi_list_t);
     for (item = ompi_list_get_first(&orte_rmaps_base.rmaps_opened); 
          ompi_list_get_end(&orte_rmaps_base.rmaps_opened) != item; 
          item = ompi_list_get_next(item)) {

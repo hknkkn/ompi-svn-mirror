@@ -15,9 +15,10 @@
  *
  * The Open RTE Resource Manager (RMGR) Subsystem
  * 
- * The resource manager (RMGR) subsystem serves as the central switchyard for all
- * resource management activities, including resource discovery, resource allocation,
- * process mapping, and process launch. 
+ * The resource manager (RMGR) subsystem serves as the central
+ * switchyard for all resource management activities, including
+ * resource discovery, resource allocation, process mapping, and
+ * process launch.
  */
 
 #ifndef ORTE_RMGR_H
@@ -35,7 +36,6 @@
 #include "mca/ns/ns_types.h"
 
 #include "rmgr_types.h"
-
 
 /*
  * Component functions - all MUST be provided!
@@ -153,9 +153,7 @@ typedef orte_rmgr_base_module_1_0_0_t orte_rmgr_base_module_t;
  */
 
 typedef orte_rmgr_base_module_t* (*orte_rmgr_base_component_init_fn_t)(
-    int *priority,
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+    int *priority);
 
  
 /*
@@ -172,8 +170,8 @@ typedef orte_rmgr_base_component_1_0_0_t orte_rmgr_base_component_t;
 
 
 
-/*
- * Macro for use in components that are of type ns v1.0.0
+/**
+ * Macro for use in components that are of type rmgr v1.0.0
  */
 #define ORTE_RMGR_BASE_VERSION_1_0_0 \
   /* rmgr v1.0 is chained to MCA v1.0 */ \
@@ -181,7 +179,8 @@ typedef orte_rmgr_base_component_1_0_0_t orte_rmgr_base_component_t;
   /* rmgr v1.0 */ \
   "rmgr", 1, 0, 0
 
-/* Global structure for accessing RAS functions
+/**
+ * Global structure for accessing RAS functions
  */
 OMPI_DECLSPEC extern orte_rmgr_base_module_t orte_rmgr;  /* holds selected module's function pointers */
 

@@ -48,20 +48,30 @@ orte_rds_base_t orte_rds_base;
  */
 int orte_rds_base_open(void)
 {
-  /* Open up all available components */
+    int param, value;
 
-  if (ORTE_SUCCESS != 
-      mca_base_components_open("rds", 0, mca_rds_base_static_components, 
-                               &orte_rds_base.rds_components)) {
-    return ORTE_ERROR;
-  }
-  OBJ_CONSTRUCT(&orte_rds_base.rds_selected, ompi_list_t);
+    /* Debugging / verbose output */
 
-  /* setup output for debug messages */
-  if (!ompi_output_init) {  /* can't open output */
-      return ORTE_ERR_NOT_AVAILABLE;
-  }
-  orte_rds_base.rds_output = ompi_output_open(NULL);
-  return ORTE_SUCCESS;
+    orte_rds_base.rds_output = ompi_output_open(NULL);
+    param = mca_base_param_register_int("rds", "base", "verbose", NULL, 0);
+    mca_base_param_lookup_int(param, &value);
+    if (value != 0) {
+        orte_rds_base.rds_output = ompi_output_open(NULL);
+    } else {
+        orte_rds_base.rds_output = -1;
+    }
+
+    /* Open up all available components */
+
+    if (ORTE_SUCCESS != 
+        mca_base_components_open("rds", 0, mca_rds_base_static_components, 
+                                 &orte_rds_base.rds_components)) {
+        return ORTE_ERROR;
+    }
+    OBJ_CONSTRUCT(&orte_rds_base.rds_selected, ompi_list_t);
+
+    /* All done */
+
+    return ORTE_SUCCESS;
 }
 

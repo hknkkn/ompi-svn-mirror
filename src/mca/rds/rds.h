@@ -120,19 +120,20 @@
 
 /**
  * Query/update a resource
- * The query function requests that the component read its associated information
- * and store/update it on the ORTE_RESOURCE_SEGMENT of the registry. It must be
- * emphasized that this function has to support multiple calls in case the user
- * updates an input file or data source while the ORTE system is in operation - the
- * function should
- * not assume that the registry is currently empty. The registry design accommodates
- * this need by providing an "overwrite" capability that allows the user to permit
- * updating of existing info if it exists, while still adding the info to the registry
- * if prior info does not exist.
+ * The query function requests that the component read its associated
+ * information and store/update it on the ORTE_RESOURCE_SEGMENT of the
+ * registry. It must be emphasized that this function has to support
+ * multiple calls in case the user updates an input file or data
+ * source while the ORTE system is in operation - the function should
+ * not assume that the registry is currently empty. The registry
+ * design accommodates this need by providing an "overwrite"
+ * capability that allows the user to permit updating of existing info
+ * if it exists, while still adding the info to the registry if prior
+ * info does not exist.
  * 
- * Requests to update the resource information will be manually provided. The RDS
- * is NOT responsible for detecting changes in input information and automatically
- * updating itself.
+ * Requests to update the resource information will be manually
+ * provided. The RDS is NOT responsible for detecting changes in input
+ * information and automatically updating itself.
  *
  * @code
  * return_value = orte_rmgr.query();
@@ -161,9 +162,7 @@ typedef orte_rds_base_module_1_0_0_t orte_rds_base_module_t;
  * RDS Component
  */
 
-typedef orte_rds_base_module_t* (*orte_rds_base_component_init_fn_t)(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+typedef orte_rds_base_module_t* (*orte_rds_base_component_init_fn_t)(void);
 
  
 /*
@@ -180,12 +179,12 @@ typedef orte_rds_base_component_1_0_0_t orte_rds_base_component_t;
 
 
 /*
- * Macro for use in components that are of type ns v1.0.0
+ * Macro for use in components that are of type rda v1.0.0
  */
 #define ORTE_RDS_BASE_VERSION_1_0_0 \
-  /* ras v1.0 is chained to MCA v1.0 */ \
+  /* rds v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
-  /* ras v1.0 */ \
+  /* rds v1.0 */ \
   "rds", 1, 0, 0
 
 #endif

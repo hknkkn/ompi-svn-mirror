@@ -103,8 +103,6 @@ OBJ_CLASS_INSTANCE(
            orte_app_context_destructor); /* destructor */
 
 
-
-
 /**
  * Function for finding and opening either all MCA components, or the one
  * that was specifically requested via a MCA parameter.
@@ -112,18 +110,29 @@ OBJ_CLASS_INSTANCE(
 
 int orte_rmgr_base_open(void)
 {
+    int param, value;
+
+    /* Debugging / verbose output */
+
+    orte_rmgr_base.rmgr_output = ompi_output_open(NULL);
+    param = mca_base_param_register_int("rmgr", "base", "verbose", NULL, 0);
+    mca_base_param_lookup_int(param, &value);
+    if (value != 0) {
+        orte_rmgr_base.rmgr_output = ompi_output_open(NULL);
+    } else {
+        orte_rmgr_base.rmgr_output = -1;
+    }
+
     /* Open up all available components */
+
     if (ORTE_SUCCESS != 
         mca_base_components_open("rmgr", 0, mca_rmgr_base_static_components, 
                                  &orte_rmgr_base.rmgr_components)) {
         return ORTE_ERROR;
     }
 
-    /* setup output for debug messages */
-    if (!ompi_output_init) {  /* can't open output */
-        return ORTE_ERR_NOT_AVAILABLE;
-    }
-    orte_rmgr_base.rmgr_output = ompi_output_open(NULL);
+    /* All done */
+
     return ORTE_SUCCESS;
 }
 

@@ -11,7 +11,6 @@
 // 
 // $HEADER$
 //
-/** @file **/
 
 #include "ompi_config.h"
 

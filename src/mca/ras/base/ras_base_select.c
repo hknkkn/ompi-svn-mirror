@@ -12,7 +12,6 @@
  * $HEADER$
  */
 
-
 #include "orte_config.h"
 
 #include "include/orte_constants.h"
@@ -35,28 +34,29 @@ OBJ_CLASS_INSTANCE(
 /**
  * Function to select all available components.
  */
-int orte_ras_base_select(bool *allow_multi_user_threads, 
-                       bool *have_hidden_threads)
+int orte_ras_base_select(void)
 {
     ompi_list_item_t *item;
     mca_base_component_list_item_t *cli;
     orte_ras_base_component_t *component;
     orte_ras_base_module_t *module;
-    bool multi, hidden;
 
     /* Iterate through all the available components */
+
     for (item = ompi_list_get_first(&orte_ras_base.ras_components);
          item != ompi_list_get_end(&orte_ras_base.ras_components);
          item = ompi_list_get_next(item)) {
         cli = (mca_base_component_list_item_t *) item;
         component = (orte_ras_base_component_t *) cli->cli_component;
 
-        /* Call the component's init function and see if it wants to be selected */
-        module = component->ras_init(&multi, &hidden);
+        /* Call the component's init function and see if it wants to
+           be selected */
 
-        /* If we got a non-NULL module back, then the component wants to
-         * be selected 
-        */
+        module = component->ras_init();
+
+        /* If we got a non-NULL module back, then the component wants
+           to be selected */
+
         if (NULL != module) {
             orte_ras_base_selected_t* selected = OBJ_NEW(orte_ras_base_selected_t);
             selected->module = module;
@@ -64,6 +64,8 @@ int orte_ras_base_select(bool *allow_multi_user_threads,
             ompi_list_append(&orte_ras_base.ras_selected, &selected->super);
         } 
     }
-    return (ompi_list_get_size(&orte_ras_base.ras_selected) > 0) ? ORTE_SUCCESS : ORTE_ERROR;
+
+    return ompi_list_is_empty(&orte_ras_base.ras_selected) ? 
+        ORTE_ERROR: ORTE_SUCCESS;
 }
 

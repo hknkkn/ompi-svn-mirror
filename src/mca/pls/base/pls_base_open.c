@@ -58,7 +58,7 @@ int orte_pls_base_open(void)
     int param, priority, value;
     orte_pls_base_cmp_t *cmp;
 
-    /* Open a debugging output */
+    /* Debugging / verbose output */
 
     param = mca_base_param_register_int("pls", "base", "verbose", NULL, 0);
     mca_base_param_lookup_int(param, &value);
@@ -78,6 +78,7 @@ int orte_pls_base_open(void)
 
     /* Query all the opened components and see if they want to run */
 
+    OBJ_CONSTRUCT(&orte_pls_base.pls_available, ompi_list_t);
     for (item = ompi_list_get_first(&orte_pls_base.pls_opened); 
          ompi_list_get_end(&orte_pls_base.pls_opened) != item; 
          item = ompi_list_get_next(item)) {

@@ -26,9 +26,7 @@
 
 static int orte_rds_hostfile_open(void);
 static int orte_rds_hostfile_close(void);
-static orte_rds_base_module_t* orte_rds_hostfile_init(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+static orte_rds_base_module_t* orte_rds_hostfile_init(void);
 
 
 orte_rds_hostfile_component_t mca_rds_hostfile_component = {
@@ -74,7 +72,8 @@ static  int orte_rds_hostfile_param_register_int(
     mca_base_param_lookup_int(id,&param_value);
     return param_value;
 }
-                                                                                                                                                                       
+
+
 static char* orte_rds_hostfile_param_register_string(
     const char* param_name,
     const char* default_value)
@@ -96,11 +95,8 @@ static int orte_rds_hostfile_open(void)
 }
 
 
-static orte_rds_base_module_t* 
-orte_rds_hostfile_init(bool *allow_multi_user_threads, bool *have_hidden_threads)
+static orte_rds_base_module_t *orte_rds_hostfile_init(void)
 {
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = false;
     return &orte_rds_hostfile_module;
 }
 

@@ -61,30 +61,17 @@
  * service - that each process uses to "discover" its official
  * name. Each PLS MUST:
  * 
- * - set the environmental parameter OMPI_MCA_PLS_LAUNCHER to indicate
- * the launcher used to spawn the process.
+ * - set the MCA parameter "pls_base_nds" to indicate the which name
+ * discoverty service should be used on the remote side to discover
+ * the process' name.  The contents of the MCA parameter should be one
+ * of the string names in the PLSNDS (currently, this is hard-coded in
+ * plsnds_open_close.c -- see below -- but someday it will likely turn
+ * into another framework/set of components).
  *
- * <JMS>
- * Should this really be the "pls_launcher" MCA parameter?
- *
- * What should it contain, the component name (i.e., a string
- * exactly maching the component.mca_component_name field?)?  If so,
- * why doesn't the pls framework (or the rmgr) do this?  Seems kinda
- * odd to make every component do exactly the same thing when the RMGR
- * assumedly has this information...?
- * </JMS>
- * 
  * - have a corresponding entry in the orte_plsnds table (defined in
- * src/plsnds/plsnds_open_close.c) that identifies the launcher and
- * its associated function for obtaining the process name
+ * src/plsnds/plsnds_open_close.c) that identifies the NDS its
+ * associated function for obtaining the process name.
  *
- * <JMS>
- * you mean hard-code this in plsnds_open_close.c?  Kinda defeats
- * the point of a component system.  Can we have a registration
- * function, instead?  Or can you just key off the component name
- * automatically?
- * </JMS>
- * 
  * - where necessary, provide a function in the orte_plsnds directory
  * that can define the process name from whatever info that
  * corresponding launcher provided
@@ -111,15 +98,11 @@
  * As part of the launch procedure, PLS components must provide the
  * following capabilities:
  * 
- * - set the OMPI_MCA_PLS_LAUNCHER environmental parameter indicating
- * which launcher was used. This information is subsequently used by
- * the name discovery service to determine a process' official name,
- * as described above.
+ * - set the "pls_base_nds" MCA parameter indicating which NDS is to
+ * be used. This information is subsequently used by the name
+ * discovery service to determine a process' official name, as
+ * described above.
  *
- * <JMS>
- * See above.
- * </JMS>
- * 
  * - setup I/O forwarding for all processes (where possible). Some
  * environments will, of course, not support this capability or will
  * provide it natively. Those respective PLS components should behave
@@ -128,11 +111,8 @@
  * subsystem.
  *
  * <JMS>
- * Setup I/O forwarding to where?  This process (i.e., the one
- * invoking module.launch())?  What about when daemons do the
- * launching?  Is it required to use the iof framework, or can we use
- * something else?  Is it required to separate the stdin/out/err for
- * each process in the job, or can it be amalgomated?
+ * Since I/O forwarding is still under develpoment, this is not yet
+ * well-defined.
  * </JMS>
  * 
  * - pass context info to each process. The argv and enviro arrays are
@@ -142,13 +122,6 @@
  * information from the registry and pass the context along to each
  * process.
  *
- * <JMS>
- * What code is invoked on the launched-process's side to do this
- * stuff?  Is there a "client side" to the PLS (analogous to the old
- * pcmclient)?  Without that, I'm not sure how to pass the context
- * info to each process in all cases.
- * </JMS>
- * 
  * - utilize scalable launch methods (where possible). In environments
  * that allow it, PLS components should utilize methods that support
  * scalable launch of applications involving large numbers of
@@ -182,24 +155,8 @@
  * - if it is NOT an ORTE process, then registration will not take
  * place. In this case, the ability to subsequently monitor the
  * progress/state-of-health of the process and/or provide other
- * services will be limited. The PLS has no further responsibilities
+ * services *may* be limited. The PLS has no further responsibilities
  * for such processes.
- *
- * <JMS>
- * Why not?  Some PLS's may still have information about non-ORTE
- * jobs (e.g., daemon), and therefore may still have positive control
- * over a) actively killing the proceses/job, or b) knowing when the
- * processes/job dies.  I think there's really 2 distinctions and 3
- * possibilities here:
- *
- * 1. ORTE job, which means we always have positive control over the job
- * after it launches.
- *
- * 2. Non-ORTE job, but in some cases we do have positive control
- * after launch.
- *
- * 3. Non-ORTE job, and we have no control over it after launch.
- * </JMS>
  * 
  * Once the PLS has completed launch of the application, it notifies
  * the state-of-health (SOH) monitor that a jobid has been launched
@@ -207,6 +164,16 @@
  * responsibility to determine the level of monitoring that can be
  * provided, and to notify the rest of the ORTE system of process
  * failures/problems.
+ *
+ * <JMS>
+ * Still to be defined:
+ *
+ * - Need to add a "kill process" module API function
+ *
+ * - If a PLS fails during a job launch, it should call the errmanager
+ * which will tell it what to do (abort, kill all those already
+ * launched and abort, continue, etc.).
+ * </JMS>
  */
 
 #ifndef ORTE_MCA_PLS_H
@@ -219,7 +186,7 @@
 #include "class/ompi_list.h"
 
 /*
- * PLS module functions
+ * pls module functions
  */
 
 /**
@@ -233,7 +200,7 @@ typedef int (*orte_pls_base_module_launch_fn_t)(orte_jobid_t);
 typedef int (*orte_pls_base_module_finalize_fn_t)(void);
 
 /**
- * PLS module version 1.0.0
+ * pls module version 1.0.0
  */
 struct orte_pls_base_module_1_0_0_t {
    orte_pls_base_module_launch_fn_t launch;
@@ -246,7 +213,7 @@ typedef struct orte_pls_base_module_1_0_0_t orte_pls_base_module_1_0_0_t;
 typedef struct orte_pls_base_module_1_0_0_t orte_pls_base_module_t;
 
 /**
- * PLS initialization function
+ * pls initialization function
  *
  * Called by the MCA framework to initialize the component.  Invoked
  * exactly once per process.
@@ -258,7 +225,7 @@ typedef struct orte_pls_base_module_1_0_0_t*
 (*orte_pls_base_component_init_fn_t)(int *priority);
 
 /** 
- * PLS component v1.0.0
+ * pls component v1.0.0
  */
 struct orte_pls_base_component_1_0_0_t {
     /** component version */
@@ -268,14 +235,14 @@ struct orte_pls_base_component_1_0_0_t {
     /** Function called when component is initialized */
     orte_pls_base_component_init_fn_t pls_init;
 };
-/** shorten orte_pls_base_component_1_0_0_t declaration */
+/** Convenience typedef */
 typedef struct orte_pls_base_component_1_0_0_t orte_pls_base_component_1_0_0_t;
-/** shorten orte_pls_base_component_t declaration */
+/** Convenience typedef */
 typedef orte_pls_base_component_1_0_0_t orte_pls_base_component_t;
 
 
 /**
- * Macro for use in modules that are of type pml v1.0.0
+ * Macro for use in modules that are of type pls v1.0.0
  */
 #define ORTE_PLS_BASE_VERSION_1_0_0 \
   /* pls v1.0 is chained to MCA v1.0 */ \

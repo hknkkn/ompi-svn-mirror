@@ -28,10 +28,7 @@
 
 static int orte_rmgr_urm_open(void);
 static int orte_rmgr_urm_close(void);
-static orte_rmgr_base_module_t* orte_rmgr_urm_init(
-    int* priority, 
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+static orte_rmgr_base_module_t* orte_rmgr_urm_init(int *priority);
 
 
 orte_rmgr_urm_component_t mca_rmgr_urm_component = {
@@ -74,84 +71,78 @@ static int orte_rmgr_urm_open(void)
     /**
      * Open Resource Discovery Subsystem (RDS)
      */
-    if((rc = orte_rds_base_open()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_rds_base_open())) {
         return rc;
+    }
 
     /**
      * Open Resource Allocation Subsystem (RAS)
      */
-    if((rc = orte_ras_base_open()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_ras_base_open())) {
         return rc;
+    }
 
     /**
      * Open Resource Mapping Subsystem (RMAPS)
      */
-    if((rc = orte_rmaps_base_open()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_rmaps_base_open())) {
         return rc;
+    }
 
     /**
      * Open Process Launch Subsystem (PLS)
      */
-    if((rc = orte_pls_base_open()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_pls_base_open())) {
         return rc;
+    }
 
     return ORTE_SUCCESS;
 }
 
 
-static orte_rmgr_base_module_t* 
-orte_rmgr_urm_init(int* priority, bool *allow_multi_user_threads, bool *have_hidden_threads)
+static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
 {
-    bool multi;
-    bool have;
     int rc;
+    orte_rmaps_base_module_t *rmaps;
+    orte_pls_base_module_t *pls;
 
     *priority = 1;
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = false;
 
     /**
      * Select RDS components.
      */
-    if((rc = orte_rds_base_select(&multi, &have)) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_rds_base_select())) {
         return NULL;
-
-    *allow_multi_user_threads &= multi;
-    *have_hidden_threads |= have;
+    }
 
     /**
      * Select RAS components.
      */
-    if((rc = orte_ras_base_select(&multi, &have)) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_ras_base_select())) {
         return NULL;
-
-    *allow_multi_user_threads &= multi;
-    *have_hidden_threads |= have;
+    }
 
     /**
      * Select RMAPS components.
      */
-    if((rc = orte_rmaps_base_select(&multi, &have)) != ORTE_SUCCESS)
+    if (NULL == (rmaps = orte_rmaps_base_select(NULL))) {
         return NULL;
-
-    *allow_multi_user_threads &= multi;
-    *have_hidden_threads |= have;
+    }
 
     /**
      * Select PLS components.
      */
-    if((rc = orte_pls_base_select(&multi,&have)) != ORTE_SUCCESS)
+    if (NULL == (pls = orte_pls_base_select(NULL))) {
         return NULL;
+    }
 
-    *allow_multi_user_threads &= multi;
-    *have_hidden_threads |= have;
     return &orte_rmgr_urm_module;
 }
+
 
 /**
  *  Close all subsystems.
  */
-
 static int orte_rmgr_urm_close(void)
 {
     int rc;
@@ -159,28 +150,30 @@ static int orte_rmgr_urm_close(void)
     /**
      * Close Process Launch Subsystem (PLS)
      */
-    if((rc = orte_pls_base_close()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_pls_base_close())) {
         return rc;
+    }
 
     /**
      * Close Resource Mapping Subsystem (RMAPS)
      */
-    if((rc = orte_rmaps_base_close()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_rmaps_base_close())) {
         return rc;
+    }
 
     /**
      * Close Resource Allocation Subsystem (RAS)
      */
-    if((rc = orte_ras_base_close()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_ras_base_close())) {
         return rc;
+    }
 
     /**
      * Close Resource Discovery Subsystem (RDS)
      */
-    if((rc = orte_rds_base_close()) != ORTE_SUCCESS)
+    if (ORTE_SUCCESS != (rc = orte_rds_base_close())) {
         return rc;
+    }
 
     return ORTE_SUCCESS;
 }
-
-

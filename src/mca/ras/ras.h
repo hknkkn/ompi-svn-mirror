@@ -155,10 +155,6 @@
 #ifndef ORTE_MCA_RAS_H
 #define ORTE_MCA_RAS_H
 
-/*
- * includes
- */
-
 #include "orte_config.h"
 #include "include/orte_constants.h"
 
@@ -168,63 +164,69 @@
 
 
 /*
- * Component functions - all MUST be provided!
+ * ras module functions
  */
 
 /**
  * Allocate resources to a job.
- * 
  */
 typedef int (*orte_ras_base_module_allocate_fn_t)(orte_jobid_t jobid);
 
 /**
  * Deallocate resources from a job
- *
  */
 typedef int (*orte_ras_base_module_deallocate_fn_t)(orte_jobid_t jobid);
 
 /**
- * Deallocate module resources.
+ * Cleanup module resources.
  */
-
 typedef int (*orte_ras_base_module_finalize_fn_t)(void);
 
-/*
- * Ver 1.0.0
+/**
+ * ras module version 1.0.0
  */
 struct orte_ras_base_module_1_0_0_t {
+    /** Allocation function pointer */
     orte_ras_base_module_allocate_fn_t allocate;
+    /** Deallocation function pointer */
     orte_ras_base_module_deallocate_fn_t deallocate;
+    /** Finalization function pointer */
     orte_ras_base_module_finalize_fn_t finalize;
 };
-
+/** Convenience typedef */
 typedef struct orte_ras_base_module_1_0_0_t orte_ras_base_module_1_0_0_t;
+/** Convenience typedef */
 typedef orte_ras_base_module_1_0_0_t orte_ras_base_module_t;
 
 /*
- * RAS Component
+ * ras component
  */
 
-typedef orte_ras_base_module_t* (*orte_ras_base_component_init_fn_t)(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+/**
+ * Component init / selection
+ */
+typedef orte_ras_base_module_t* (*orte_ras_base_component_init_fn_t)(void);
 
  
-/*
- * the standard component data structure
+/**
+ * ras component version 1.0.0
  */
-
 struct orte_ras_base_component_1_0_0_t {
+    /** Base MCA structure */
     mca_base_component_t ras_version;
+    /** Base MCA data */
     mca_base_component_data_1_0_0_t ras_data;
+    /** Initialization / selection function pointer */
     orte_ras_base_component_init_fn_t ras_init;
 };
+/** Convenience typedef */
 typedef struct orte_ras_base_component_1_0_0_t orte_ras_base_component_1_0_0_t;
+/** Convenience typedef */
 typedef orte_ras_base_component_1_0_0_t orte_ras_base_component_t;
 
 
-/*
- * Macro for use in components that are of type ns v1.0.0
+/**
+ * Macro for use in components that are of type ras v1.0.0
  */
 #define ORTE_RAS_BASE_VERSION_1_0_0 \
   /* ras v1.0 is chained to MCA v1.0 */ \

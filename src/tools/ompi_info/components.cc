@@ -171,7 +171,7 @@ void ompi_info::open_components()
   component_map["rds"] = &orte_rds_base.rds_components;
 
   orte_rmaps_base_open();
-  component_map["rmaps"] = &orte_rmaps_base.rmaps_components;
+  component_map["rmaps"] = &orte_rmaps_base.rmaps_opened;
 
   orte_rmgr_base_open();
   component_map["rmgr"] = &orte_rmgr_base.rmgr_components;
@@ -180,7 +180,7 @@ void ompi_info::open_components()
   component_map["rml"] = &orte_rml_base.rml_components;
 
   orte_pls_base_open();
-  component_map["pls"] = &orte_pls_base.pls_components;
+  component_map["pls"] = &orte_pls_base.pls_opened;
 
   mca_soh_base_open();
   component_map["soh"] = &mca_soh_base_components_available;

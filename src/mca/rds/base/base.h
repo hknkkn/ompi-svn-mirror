@@ -50,11 +50,10 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_rds_base_selected_t);
 /*
  * function definitions
  */
-OMPI_DECLSPEC    int orte_rds_base_open(void);
-OMPI_DECLSPEC    int orte_rds_base_select(bool *allow_multi_user_threads,
-			                              bool *have_hidden_threads);
-OMPI_DECLSPEC    int orte_rds_base_close(void);
-OMPI_DECLSPEC    int orte_rds_base_query(void);
+OMPI_DECLSPEC int orte_rds_base_open(void);
+OMPI_DECLSPEC int orte_rds_base_select(void);
+OMPI_DECLSPEC int orte_rds_base_close(void);
+OMPI_DECLSPEC int orte_rds_base_query(void);
 
 /*
  * globals that might be needed

@@ -43,21 +43,30 @@ orte_ras_base_t orte_ras_base;
  */
 int orte_ras_base_open(void)
 {
-  /* Open up all available components */
+    int param, value;
 
-  if (ORTE_SUCCESS != 
-      mca_base_components_open("ras", 0, mca_ras_base_static_components, 
-                               &orte_ras_base.ras_components)) {
-    return ORTE_ERROR;
-  }
-  OBJ_CONSTRUCT(&orte_ras_base.ras_selected, ompi_list_t);
+    /* Debugging / verbose output */
 
-  /* setup output for debug messages */
-  if (!ompi_output_init) {  /* can't open output */
-      return ORTE_ERR_NOT_AVAILABLE;
-  }
+    orte_ras_base.ras_output = ompi_output_open(NULL);
+    param = mca_base_param_register_int("ras", "base", "verbose", NULL, 0);
+    mca_base_param_lookup_int(param, &value);
+    if (value != 0) {
+        orte_ras_base.ras_output = ompi_output_open(NULL);
+    } else {
+        orte_ras_base.ras_output = -1;
+    }
 
-  orte_ras_base.ras_output = ompi_output_open(NULL);
-  return ORTE_SUCCESS;
+    /* Open up all available components */
+
+    if (ORTE_SUCCESS != 
+        mca_base_components_open("ras", 0, mca_ras_base_static_components, 
+                                 &orte_ras_base.ras_components)) {
+        return ORTE_ERROR;
+    }
+    OBJ_CONSTRUCT(&orte_ras_base.ras_selected, ompi_list_t);
+
+    /* All done */
+
+    return ORTE_SUCCESS;
 }
 

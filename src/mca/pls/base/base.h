@@ -33,8 +33,11 @@ extern "C" {
      * Struct to hold data globale to the pls framework
      */
     typedef struct orte_pls_base_t {
+        /** Verbose/debug output stream */
         int pls_output;
+        /** List of opened components */
         ompi_list_t pls_opened;
+        /** Sorted list of available components (highest priority first) */
         ompi_list_t pls_available;
     } orte_pls_base_t;
     

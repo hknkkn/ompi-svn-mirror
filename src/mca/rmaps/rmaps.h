@@ -45,7 +45,7 @@
 
 
 /*
- * RMAPS module functions
+ * rmaps module functions
  */
 
 /**
@@ -59,7 +59,7 @@ typedef int (*orte_rmaps_base_module_map_fn_t)(orte_jobid_t job);
 typedef int (*orte_rmaps_base_module_finalize_fn_t)(void);
 
 /*
- * RMAPS module version 1.0.0
+ * rmaps module version 1.0.0
  */
 struct orte_rmaps_base_module_1_0_0_t {
     /** Maping function pointer */
@@ -67,19 +67,14 @@ struct orte_rmaps_base_module_1_0_0_t {
     /** Finalization function pointer */
     orte_rmaps_base_module_finalize_fn_t finalize;
 };
-
-/**
- * Convenience typedef
- */
+/** Convenience typedef */
 typedef struct orte_rmaps_base_module_1_0_0_t orte_rmaps_base_module_1_0_0_t;
-/**
- * Convenience typedef
- */
+/** Convenience typedef */
 typedef orte_rmaps_base_module_1_0_0_t orte_rmaps_base_module_t;
 
 
 /*
- * RMAPS Component
+ * rmaps component
  */
 
 /**
@@ -90,7 +85,7 @@ typedef orte_rmaps_base_module_t* (*orte_rmaps_base_component_init_fn_t)(
 
  
 /**
- * RMAPS component version 1.0.0
+ * rmaps component version 1.0.0
  */
 struct orte_rmaps_base_component_1_0_0_t {
     /** Base MCA structure */
@@ -100,17 +95,13 @@ struct orte_rmaps_base_component_1_0_0_t {
     /** Initialization / selection function pointer */
     orte_rmaps_base_component_init_fn_t rmaps_init;
 };
-/**
- * Convenience typedef
- */
+/** Convenience typedef */
 typedef struct orte_rmaps_base_component_1_0_0_t orte_rmaps_base_component_1_0_0_t;
-/**
- * Convenience typedef
- */
+/** Convenience typedef */
 typedef orte_rmaps_base_component_1_0_0_t orte_rmaps_base_component_t;
 
 
-/*
+/**
  * Macro for use in components that are of type rmaps v1.0.0
  */
 #define ORTE_RMAPS_BASE_VERSION_1_0_0 \

@@ -33,16 +33,16 @@ static int orte_rmgr_urm_create(
     size_t num_context,
     orte_jobid_t* jobid);
 
+static int orte_rmgr_urm_map(
+    orte_jobid_t jobid);
+
+static int orte_rmgr_urm_launch(
+    orte_jobid_t jobid);
+
 static int orte_rmgr_urm_spawn(
     orte_app_context_t** app_context,
     size_t num_context,
     orte_jobid_t* jobid);
-
-
-static int orte_rmgr_urm_finalize(void)
-{
-    return OMPI_SUCCESS;
-}
 
 
 orte_rmgr_base_module_t orte_rmgr_urm_module = {
@@ -50,10 +50,10 @@ orte_rmgr_base_module_t orte_rmgr_urm_module = {
     orte_rmgr_urm_create,
     orte_ras_base_allocate,
     orte_ras_base_deallocate,
-    orte_rmaps_base_map,
-    orte_pls_base_launch,
+    orte_rmgr_urm_map,
+    orte_rmgr_urm_launch,
     orte_rmgr_urm_spawn,
-    orte_rmgr_urm_finalize
+    NULL, /* finalize */
 };
 
 
@@ -69,14 +69,30 @@ static int orte_rmgr_urm_create(
     int rc;
 
     /* allocate a jobid  */
-    if(ORTE_SUCCESS != (rc = orte_ns.create_jobid(jobid)))
+    if (ORTE_SUCCESS != (rc = orte_ns.create_jobid(jobid))) {
         return rc;
+    }
 
     /* create and initialize job segment */
-    if(ORTE_SUCCESS != (rc = orte_rmgr_base_put_app_context(*jobid, app_context, num_context)))
+    if (ORTE_SUCCESS != 
+        (rc = orte_rmgr_base_put_app_context(*jobid, app_context, 
+                                             num_context))) {
         return rc;
+    }
 
     return ORTE_SUCCESS;
+}
+
+
+static int orte_rmgr_urm_map(orte_jobid_t jobid)
+{
+    return mca_rmgr_urm_component.urm_rmaps->map(jobid);
+}
+
+
+static int orte_rmgr_urm_launch(orte_jobid_t jobid)
+{
+    return mca_rmgr_urm_component.urm_pls->launch(jobid);
 }
 
 
@@ -90,14 +106,20 @@ static int orte_rmgr_urm_spawn(
     orte_jobid_t* jobid)
 {
     int rc;
-    if(ORTE_SUCCESS != (rc = orte_rmgr_urm_create(app_context,num_context,jobid)))
+
+    if (ORTE_SUCCESS != 
+        (rc = orte_rmgr_urm_create(app_context,num_context,jobid))) {
         return rc;
-    if(ORTE_SUCCESS != (rc = orte_ras_base_allocate(*jobid)))
+    }
+    if (ORTE_SUCCESS != (rc = orte_ras_base_allocate(*jobid))) {
         return rc;
-    if(ORTE_SUCCESS != (rc = orte_rmaps_base_map(*jobid)))
+    }
+    if (ORTE_SUCCESS != (rc = orte_rmgr_urm_map(*jobid))) {
         return rc;
-    if(ORTE_SUCCESS != (rc = orte_pls_base_launch(*jobid)))
+    }
+    if (ORTE_SUCCESS != (rc = orte_rmgr_urm_launch(*jobid))) {
         return rc;
+    }
     return ORTE_SUCCESS;
 }
 

@@ -20,23 +20,30 @@
 #define ORTE_RMGR_URM_H
 
 #include "mca/rmgr/rmgr.h"
+
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
 
+    /**
+     * URM component structure -- add some stuff beyond what is in the
+     * normal rmgr component.
+     */
+    struct orte_rmgr_urm_component_t {
+        /** Base rmgr component */
+        orte_rmgr_base_component_t super;
+        /** Selected rmaps module */
+        orte_rmaps_base_module_t *urm_rmaps;
+        /** Selected pls module */
+        orte_pls_base_module_t *urm_pls;
+    };
+    /** Convenience typedef */
+    typedef struct orte_rmgr_urm_component_t orte_rmgr_urm_component_t;
 
-/**
- * RMGR Component 
- */
-struct orte_rmgr_urm_component_t {
-    orte_rmgr_base_component_t super;
-    int urm_debug;
-};
-typedef struct orte_rmgr_urm_component_t orte_rmgr_urm_component_t;
-
-OMPI_COMP_EXPORT extern orte_rmgr_urm_component_t mca_rmgr_urm_component;
-OMPI_COMP_EXPORT extern orte_rmgr_base_module_t orte_rmgr_urm_module;
-
+    /** Global URM component */
+    OMPI_COMP_EXPORT extern orte_rmgr_urm_component_t mca_rmgr_urm_component;
+    /** Global URM module */
+    OMPI_COMP_EXPORT extern orte_rmgr_base_module_t orte_rmgr_urm_module;
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
