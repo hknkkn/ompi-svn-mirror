@@ -21,25 +21,14 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include "mca/ns/ns_types.h"
 
-#include "gpr_replica.h"
-#include "gpr_replica_internals.h"
+#include "gpr_replica_fn.h"
 
 
-void mca_gpr_replica_cleanup_job(orte_jobid_t jobid)
-{
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_cleanup_job_nl(jobid);
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-    
-    mca_gpr_replica_process_callbacks();
-}
-
-
-void mca_gpr_replica_cleanup_job_nl(orte_jobid_t jobid)
+int mca_gpr_replica_cleanup_job_fn(orte_jobid_t jobid)
 {
     mca_gpr_replica_segment_t *seg, *next_seg;
     mca_gpr_replica_trigger_list_t *trig, *next_trig;
@@ -71,17 +60,7 @@ void mca_gpr_replica_cleanup_job_nl(orte_jobid_t jobid)
 }
 
 
-void mca_gpr_replica_cleanup_proc(bool purge, orte_process_name_t *proc)
-{
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-    mca_gpr_replica_cleanup_proc_nl(purge, proc);
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-
-    mca_gpr_replica_process_callbacks();
-}
-
-
-void mca_gpr_replica_cleanup_proc_nl(bool purge, orte_process_name_t *proc)
+int mca_gpr_replica_cleanup_proc_fn(bool purge, orte_process_name_t *proc)
 {
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_trigger_list_t *trig;

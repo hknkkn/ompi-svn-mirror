@@ -1,4 +1,3 @@
-# -*- shell-script -*-
 #
 # Copyright (c) 2004-2005 The Trustees of Indiana University.
 #                         All rights reserved.
@@ -13,10 +12,17 @@
 # $HEADER$
 #
 
-# Specific to this module
+include $(top_ompi_srcdir)/config/Makefile.options
 
-PARAM_INIT_FILE = \
-	api_layer/gpr_replica_del_index.c \
-	transition_layer/gpr_replica_segment_ops.c \
-	functional_layer/gpr_replica_operations.c
-PARAM_CONFIG_FILES="Makefile api_layer/Makefile translation_layer/Makefile functional_layer/Makefile"
+noinst_LTLIBRARIES = libmca_gpr_replica.la
+libmca_gpr_replica_la_SOURCES = \
+	gpr_replica_fn.h \
+	gpr_replica_alerts_fn.c \
+	gpr_replica_cleanup_fn.c \
+	gpr_replica_del_index_fn.c \
+	gpr_replica_dict_fn.c \
+	gpr_replica_dump_fn.c \
+	gpr_replica_segment_fn.c \
+	gpr_replica_subscribe_fn.c \
+	gpr_replica_synchro_fn.c \
+	gpr_replica_trig_ops_fn.c

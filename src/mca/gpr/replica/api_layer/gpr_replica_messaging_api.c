@@ -16,9 +16,9 @@
 /** @file 
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
-#include "gpr_replica.h"
+#include "gpr_replica_api.h"
 
 
 void mca_gpr_replica_deliver_notify_msg(ompi_registry_notify_action_t state,

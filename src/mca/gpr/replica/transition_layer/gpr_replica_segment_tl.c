@@ -23,11 +23,7 @@
 
 #include "orte_config.h"
 
-#include "mca/ns/ns_types.h"
-
-#include "gpr_replica.h"
-#include "gpr_replica_internals.h"
-
+#include "gpr_replica_tl.h"
 
 orte_gpr_replica_segment_t *orte_gpr_replica_find_seg(bool create, char *segment)
 {
@@ -64,16 +60,4 @@ orte_gpr_replica_segment_t *orte_gpr_replica_find_seg(bool create, char *segment
     }
     seg->itag = rc;
     return seg;
-}
-
-int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg)
-{
-    int rc;
-    
-    if (0 > (rc = orte_pointer_array_set_item(orte_gpr_replica.segments, seg->itag, NULL))) {
-        return rc;
-    }
-    OBJ_RELEASE(seg);
-    
-    return ORTE_SUCCESS;
 }
