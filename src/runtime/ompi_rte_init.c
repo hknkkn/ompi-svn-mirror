@@ -153,11 +153,6 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
     /*
      * Internal startup
      */
-    if (OMPI_SUCCESS != (ret = ompi_rte_internal_init_spawn())) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in ompi_rte_internal_init_spawn\n");
-	return ret;
-    }
     if (OMPI_SUCCESS != (ret = ompi_rte_wait_init())) {
 	/* JMS show_help */
 	printf("show_help: ompi_rte_init failed in ompi_rte_wait_init\n");
