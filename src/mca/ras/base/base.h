@@ -22,9 +22,7 @@
  */
 #include "orte_config.h"
 #include "include/orte_constants.h"
-
 #include "class/ompi_list.h"
-
 #include "mca/ras/ras.h"
 
 
@@ -45,17 +43,17 @@ struct orte_ras_base_selected_t {
     orte_ras_base_module_t* module;
 };
 typedef struct orte_ras_base_selected_t orte_ras_base_selected_t;
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_ras_base_selected_t);
+ORTE_DECLSPEC OBJ_CLASS_DECLARATION(orte_ras_base_selected_t);
 
 /*
  * function definitions
  */
-OMPI_DECLSPEC int orte_ras_base_open(void);
-OMPI_DECLSPEC int orte_ras_base_select(bool *allow_multi_user_threads,
-			                           bool *have_hidden_threads);
-OMPI_DECLSPEC int orte_ras_base_close(void);
-OMPI_DECLSPEC int orte_ras_base_allocate(orte_jobid_t);
-OMPI_DECLSPEC int orte_ras_base_deallocate(orte_jobid_t);
+ORTE_DECLSPEC int orte_ras_base_open(void);
+ORTE_DECLSPEC int orte_ras_base_select(bool *allow_multi_user_threads,
+                                       bool *have_hidden_threads);
+ORTE_DECLSPEC int orte_ras_base_close(void);
+ORTE_DECLSPEC int orte_ras_base_allocate(orte_jobid_t);
+ORTE_DECLSPEC int orte_ras_base_deallocate(orte_jobid_t);
 
 /*
  * globals that might be needed
@@ -68,7 +66,7 @@ typedef struct orte_ras_base_t {
     ompi_list_t ras_selected;
 } orte_ras_base_t;
  
-OMPI_DECLSPEC extern orte_ras_base_t orte_ras_base;
+ORTE_DECLSPEC extern orte_ras_base_t orte_ras_base;
 
 
 /*
