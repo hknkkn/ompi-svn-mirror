@@ -58,7 +58,7 @@ int orte_ras_base_node_query(ompi_list_t* nodes)
     
     /* query all node entries */
     rc = orte_gpr.get(
-        ORTE_GPR_TOKENS_OR,
+        ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_OR,
         ORTE_NODE_SEGMENT,
         NULL,
         NULL,
@@ -131,7 +131,7 @@ int orte_ras_base_node_query_alloc(ompi_list_t* nodes, orte_jobid_t jobid)
 
     /* query selected node entries */
     rc = orte_gpr.get(
-        ORTE_GPR_TOKENS_OR,
+        ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_OR,
         ORTE_NODE_SEGMENT,
         NULL,
         keys,

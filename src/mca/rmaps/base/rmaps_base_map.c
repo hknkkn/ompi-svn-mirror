@@ -231,7 +231,7 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
 
     /* query the process list from the registry */
     rc = orte_gpr.get(
-        ORTE_GPR_TOKENS_OR,
+        ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_OR,
         segment,
         NULL,
         keys,
