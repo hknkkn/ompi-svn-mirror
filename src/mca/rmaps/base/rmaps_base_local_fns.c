@@ -21,14 +21,14 @@
 
 #include "mca/ns/ns_types.h"
 
-#include "mca/orte_rmaps/base/base.h"
+#include "mca/rmaps/base/base.h"
 
 
 /*
  * "not available" functions
  */
 int
-mca_orte_rmaps_base_query_not_available(orte_jobid_t job)
+orte_mca_rmaps_base_query_not_available(orte_jobid_t job)
 {
     return ORTE_ERR_UNREACH;
 }

@@ -19,20 +19,20 @@
 
 #include "include/orte_constants.h"
 
-#include "mca/orte_ras/base/base.h"
+#include "mca/ras/base/base.h"
 
 
 /*
  * "not available" functions
  */
 int
-mca_orte_ras_base_allocate_not_available(void)
+orte_mca_ras_base_allocate_not_available(void)
 {
     return ORTE_ERR_UNREACH;
 }
 
 int
-mca_orte_ras_base_deallocate_not_available(void)
+orte_mca_ras_base_deallocate_not_available(void)
 {
     return ORTE_ERR_UNREACH;
 }

@@ -20,30 +20,30 @@
 #include "mca/mca.h"
 #include "mca/base/base.h"
 
-#include "mca/orte_rds/base/base.h"
+#include "mca/rds/base/base.h"
 
 
 /**
  * Function for selecting one component from all those that are
  * available.
  */
-int mca_orte_rds_base_select(bool *allow_multi_user_threads, 
+int orte_mca_rds_base_select(bool *allow_multi_user_threads, 
                        bool *have_hidden_threads)
 {
   ompi_list_item_t *item;
   mca_base_component_list_item_t *cli;
-  mca_orte_rds_base_component_t *component, *best_component = NULL;
-  mca_orte_rds_base_module_t *module, *best_module = NULL;
+  orte_mca_rds_base_component_t *component, *best_component = NULL;
+  orte_mca_rds_base_module_t *module, *best_module = NULL;
   bool multi, hidden;
   int priority, best_priority = -1;
 
   /* Iterate through all the available components */
 
-  for (item = ompi_list_get_first(&mca_orte_rds_base_components_available);
-       item != ompi_list_get_end(&mca_orte_rds_base_components_available);
+  for (item = ompi_list_get_first(&orte_mca_rds_base_components_available);
+       item != ompi_list_get_end(&orte_mca_rds_base_components_available);
        item = ompi_list_get_next(item)) {
     cli = (mca_base_component_list_item_t *) item;
-    component = (mca_orte_rds_base_component_t *) cli->cli_component;
+    component = (orte_mca_rds_base_component_t *) cli->cli_component;
 
     /* Call the component's init function and see if it wants to be
        selected */
@@ -94,8 +94,8 @@ int mca_orte_rds_base_select(bool *allow_multi_user_threads,
      usage */
 
   orte_rds = *best_module;
-  mca_orte_rds_base_selected_component = *best_component;
-  mca_orte_rds_base_selected = true;
+  orte_mca_rds_base_selected_component = *best_component;
+  orte_mca_rds_base_selected = true;
 
   /* all done */
 

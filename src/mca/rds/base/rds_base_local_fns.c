@@ -19,14 +19,14 @@
 
 #include "include/orte_constants.h"
 
-#include "mca/orte_rds/base/base.h"
+#include "mca/rds/base/base.h"
 
 
 /*
  * "not available" functions
  */
 int
-mca_orte_rds_base_query_not_available(void)
+orte_mca_rds_base_query_not_available(void)
 {
     return ORTE_ERR_UNREACH;
 }
