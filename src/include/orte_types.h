@@ -75,19 +75,31 @@ typedef struct {
     uint8_t *bytes;
 } orte_byte_object_t;
 
-                                                                                            
+
+/**
+ * Information about a specific application to be launched in the RTE.
+ */
 typedef struct {
+    /** Parent object */
     ompi_object_t super;
-    int32_t idx;          /* unique index when multiple apps per job */ 
+    /** Unique index when multiple apps per job */
+    int32_t idx;
+    /** Application name; usually same as argv[0] */
     char   *app;
+    /** Number of copies of this process that are to be launched */
     int32_t num_procs;
+    /** Length of the argv array, not including final NULL entry */
     int32_t argc;
+    /** Standard argv-style array, including a final NULL pointer */
     char  **argv;
+    /** Length of the env array */
     int32_t num_env;
+    /** Standard environ-style array, including a final NULL pointer */
     char  **env;
+    /** String for the current working directory */
     char   *cwd;
 } orte_app_context_t;
-                                                                                                
+
 
 OBJ_CLASS_DECLARATION(orte_app_context_t);
 
