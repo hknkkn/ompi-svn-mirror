@@ -28,18 +28,18 @@ static void orte_iof_base_frag_construct(orte_iof_base_frag_t* frag)
 {
     frag->frag_owner = NULL;
     frag->frag_len = 0;
-    frag->frag_iov[0].iov_base = &frag->frag_hdr;
+    frag->frag_iov[0].iov_base = (void*)&frag->frag_hdr;
     frag->frag_iov[0].iov_len = sizeof(frag->frag_hdr);
-    frag->frag_iov[1].iov_base = frag->frag_data;
+    frag->frag_iov[1].iov_base = (void*)frag->frag_data;
     frag->frag_iov[1].iov_len = sizeof(frag->frag_data);
 }
 
 
 static void orte_iof_base_frag_destruct(orte_iof_base_frag_t* frag)
 {
-    frag->frag_iov[0].iov_base = &frag->frag_hdr;
+    frag->frag_iov[0].iov_base = (void*)&frag->frag_hdr;
     frag->frag_iov[0].iov_len = sizeof(frag->frag_hdr);
-    frag->frag_iov[1].iov_base = frag->frag_data;
+    frag->frag_iov[1].iov_base = (void*)frag->frag_data;
     frag->frag_iov[1].iov_len = sizeof(frag->frag_data);
 }
 
