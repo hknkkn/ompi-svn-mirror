@@ -1204,7 +1204,6 @@ AC_CONFIG_FILES([
     src/mpi/runtime/Makefile
 
     src/tools/Makefile
-    src/tools/bootproxy/Makefile
     src/tools/console/Makefile
     src/tools/mpirun/Makefile
     src/tools/ompi_info/Makefile
