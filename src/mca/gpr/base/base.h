@@ -108,7 +108,7 @@ extern "C" {
     OMPI_DECLSPEC int orte_gpr_base_unpack_delete_object(orte_buffer_t *buffer);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_index(orte_buffer_t *cmd, char *segment);
-    OMPI_DECLSPEC int orte_gpr_base_unpack_index(orte_buffer_t *cmd, ompi_list_t *return_list);
+    OMPI_DECLSPEC int orte_gpr_base_unpack_index(orte_buffer_t *cmd, size_t *cnt, char **index);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_cleanup(orte_buffer_t *cmd, orte_jobid_t jobid);
 
