@@ -357,7 +357,7 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                     } else if (0 == num_keys) {  /* tokens were provided, wildcard keys */
                         if (orte_gpr_replica_check_itag_list(data[j]->token_addr_mode,
                             num_tokens,
-                            ORTE_VALUE_ARRAY_GET_BASE(&(data[m]->tokentags), orte_gpr_replica_itag_t),
+                            ORTE_VALUE_ARRAY_GET_BASE(&(data[j]->tokentags), orte_gpr_replica_itag_t),
                             cptr->num_itags, cptr->itags)) {  /* see if this container matches criteria */
                             if (ORTE_SUCCESS != (rc =
                                     orte_gpr_replica_process_action(action, trigs[i], data[j], cptr, num_iptrs, iptr, rep_iptr))) {
@@ -369,7 +369,7 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                     } else if (0 == num_tokens) {  /* keys provided, wildcard tokens */
                         if (orte_gpr_replica_check_itag_list(data[j]->key_addr_mode,
                             num_keys,
-                            ORTE_VALUE_ARRAY_GET_BASE(&(data[m]->keytags), orte_gpr_replica_itag_t),
+                            ORTE_VALUE_ARRAY_GET_BASE(&(data[j]->keytags), orte_gpr_replica_itag_t),
                             num_iptrs, itags)) {  /* see if these keys match criteria */
                             if (ORTE_SUCCESS != (rc =
                                     orte_gpr_replica_process_action(action, trigs[i], data[j], cptr, num_iptrs, iptr, rep_iptr))) {
@@ -380,11 +380,11 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                     } else {  /* both specified */
                         if (orte_gpr_replica_check_itag_list(data[j]->token_addr_mode,
                             num_tokens,
-                            ORTE_VALUE_ARRAY_GET_BASE(&(data[m]->tokentags), orte_gpr_replica_itag_t),
+                            ORTE_VALUE_ARRAY_GET_BASE(&(data[j]->tokentags), orte_gpr_replica_itag_t),
                             cptr->num_itags, cptr->itags)) {  /* see if this container matches criteria */
                             if (orte_gpr_replica_check_itag_list(data[j]->key_addr_mode,
                                 num_keys,
-                                ORTE_VALUE_ARRAY_GET_BASE(&(data[m]->keytags), orte_gpr_replica_itag_t),
+                                ORTE_VALUE_ARRAY_GET_BASE(&(data[j]->keytags), orte_gpr_replica_itag_t),
                                 num_iptrs, itags)) {  /* see if these keys match criteria */
                                 if (ORTE_SUCCESS != (rc =
                                         orte_gpr_replica_process_action(action, trigs[i], data[j], cptr, num_iptrs, iptr, rep_iptr))) {
