@@ -64,9 +64,19 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
 }
 
 
-int orte_gpr_replica_update_keyval(orte_gpr_replica_itagval_t *iptr,
+int orte_gpr_replica_update_keyval(orte_gpr_replica_segment_t *seg,
+                                   orte_gpr_replica_itagval_t *iptr,
                                    orte_gpr_keyval_t *kptr)
 {
+    int rc;
+    orte_gpr_replica_itag_t itag;
+    
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&itag,
+                                            seg, kptr->key))) {
+        return rc;
+    }
+    
+    iptr->itag = itag;
     iptr->type = kptr->type;
     
     return orte_gpr_replica_xfer_payload(&(iptr->value), &(kptr->value), iptr->type);
@@ -155,9 +165,30 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
 
 
 bool orte_gpr_replica_search_container(orte_gpr_replica_itagval_t **iptr,
+                                       orte_gpr_replica_segment_t *seg,
                                        orte_gpr_replica_container_t *cptr,
                                        orte_gpr_keyval_t *kptr)
 {
+    orte_gpr_replica_itagval_t **ptr;
+    orte_gpr_replica_itag_t itag;
+    int i;
+    
+    if (ORTE_SUCCESS != orte_gpr_replica_dict_lookup(&itag, seg, kptr->key)) {
+        /* if the key isn't in the dictionary, then the keyval can't
+         * possibly be in the container
+         */
+        return false;
+    }
+    
+    ptr = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
+    for (i=0; i < (cptr->itagvals)->size; i++) {
+        if (NULL != ptr[i] && itag == ptr[i]->itag) { /* found it! */
+            *iptr = ptr[i];  /* send back the ptr to the itagval */
+            return true;
+        }
+    }
+    
+    /* didn't find it, so return false */
     return false;
 }
 

@@ -52,9 +52,12 @@ int main(int argc, char **argv)
     int rc, i;
     bool allow_multi_user_threads = false;
     bool have_hidden_threads = false;
-    char *tmp, *tmp2;
-    orte_gpr_replica_segment_t *seg;
+    char *tmp=NULL, *tmp2=NULL;
+    orte_gpr_replica_segment_t *seg=NULL;
     orte_gpr_replica_itag_t itag[10], itag2;
+    orte_gpr_replica_container_t *cptr=NULL;
+    orte_gpr_keyval_t *kptr=NULL;
+    orte_gpr_replica_itagval_t **ivals=NULL, *ivaltst=NULL;
     
     test_init("test_gpr_replica");
 
@@ -163,7 +166,81 @@ int main(int argc, char **argv)
         free(tmp);
     }
     
+    fprintf(stderr, "creating container\n");
+    cptr = OBJ_NEW(orte_gpr_replica_container_t);
 
+    fprintf(stderr, "add keyval\n");
+    kptr = OBJ_NEW(orte_gpr_keyval_t);
+    kptr->key = strdup("stupid-value");
+    kptr->type = ORTE_INT16;
+    kptr->value.i16 = 21;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &kptr)) ||
+        NULL != kptr) {
+        fprintf(test_out, "gpr_test: add keyval failed with error code %d\n", rc);
+        test_failure("gpr_test: add keyval failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: add keyval passed\n");
+    }
+    
+    ivals = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
+    if (NULL != ivals[0]) {
+        fprintf(stderr, "ival[0] %d %d %d\n", ivals[0]->itag,
+                    ivals[0]->type, ivals[0]->value.i16);
+    }
+    
+    kptr = OBJ_NEW(orte_gpr_keyval_t);
+    kptr->key = strdup("second-value");
+    kptr->type = ORTE_STRING;
+    kptr->value.strptr = strdup("try-string-value");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, ivals[0], kptr))) {
+        fprintf(test_out, "gpr_test: update keyval failed with error code %d\n", rc);
+        test_failure("gpr_test: update keyval failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: update keyval passed\n");
+    }
+    
+    if (NULL != ivals[0]) {
+        fprintf(stderr, "ival[0] %d %d %s\n", ivals[0]->itag,
+                    ivals[0]->type, ivals[0]->value.strptr);
+    }
+
+
+    fprintf(stderr, "search container\n");
+    free(kptr->key);
+    kptr->key = strdup("second-value");
+    orte_gpr_replica_create_itag(&itag2, seg, kptr->key);
+    if (!orte_gpr_replica_search_container(&ivaltst, seg, cptr, kptr)) {
+        fprintf(test_out, "gpr_test: search container failed\n");
+        test_failure("gpr_test: search container failed");
+        test_finalize();
+        return -1;
+    } else {
+        fprintf(test_out, "gpr_test: search container passed\n");
+    }
+    
+    if (NULL != ivaltst) {
+        fprintf(stderr, "itag2 %d ivaltst %d %d %s\n", itag2, ivaltst->itag,
+                    ivaltst->type, ivaltst->value.strptr);
+    } else {
+        fprintf(stderr, "ivaltst was NULL\n");
+    }
+    
+
+    fprintf(stderr, "releasing segment\n");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(seg))) {
+        fprintf(test_out, "gpr_test: release segment failed with error code %d\n", rc);
+        test_failure("gpr_test: release segment failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: release segment passed\n");
+    }
+    
+    
     fclose( test_out );
 /*    result = system( cmd_str );
     if( result == 0 ) {

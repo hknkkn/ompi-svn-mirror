@@ -98,12 +98,12 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     } else {  /* otherwise, see if entry already exists in container */
         kptr = keyvals;
         for (i=0; i < cnt; i++) {
-            if (orte_gpr_replica_search_container(&iptr, cptr, kptr)) {
+            if (orte_gpr_replica_search_container(&iptr, seg, cptr, kptr)) {
                 /* this key already exists - overwrite, if permission given
                  * else error
                  */
                  if (overwrite) {
-                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(iptr, kptr))) {
+                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, iptr, kptr))) {
                         return rc;
                     }
                  } else {
