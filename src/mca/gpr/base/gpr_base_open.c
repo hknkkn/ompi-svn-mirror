@@ -185,7 +185,7 @@ int orte_gpr_base_open(void)
   /* Open up all available components */
 
   if (OMPI_SUCCESS != 
-      mca_base_components_open("orte_gpr", 0, mca_gpr_base_static_components, 
+      mca_base_components_open("gpr", 0, mca_gpr_base_static_components, 
                             &orte_gpr_base_components_available)) {
     return ORTE_ERROR;
   }

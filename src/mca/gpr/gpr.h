@@ -800,13 +800,13 @@ typedef mca_gpr_base_component_1_0_0_t mca_gpr_base_component_t;
 #endif
 
 /*
- * Macro for use in modules that are of type coll v1.0.0
+ * Macro for use in modules that are of type gpr v1.0.0
  */
 #define MCA_GPR_BASE_VERSION_1_0_0		\
     /* gpr v1.0 is chained to MCA v1.0 */	\
     MCA_BASE_VERSION_1_0_0,			\
 	/* gpr v1.0 */				\
-	"orte_gpr", 1, 0, 0
+	"gpr", 1, 0, 0
 
 /*
  * global module that holds function pointers
