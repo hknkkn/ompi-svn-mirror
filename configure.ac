@@ -539,7 +539,7 @@ OMPI_SETUP_F90
 
 ompi_show_title "Header file tests"
 
-AC_CHECK_HEADERS([alloca.h aio.h arpa/inet.h dirent.h dlfcn.h \
+AC_CHECK_HEADERS([alloca.h aio.h arpa/inet.h dirent.h dlfcn.h execinfo.h \
     sys/fcntl.h inttypes.h libgen.h net/if.h netdb.h netinet/in.h netinet/tcp.h \
     sys/stat.h poll.h pthread.h pwd.h sched.h stdint.h strings.h stropts.h \
     sys/types.h sys/ipc.h sys/mman.h sys/resource.h sys/select.h sys/socket.h \
