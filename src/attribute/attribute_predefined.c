@@ -84,8 +84,8 @@ int ompi_attr_create_predefined(void)
     }
     sub.tokens = NULL; /* wildcard - look at all containers */
     sub.num_tokens = 0;
-    sub.num_keys = 1;
-    sub.keys = (char**)malloc(sizeof(char*));
+    sub.num_keys = 2;
+    sub.keys = (char**)malloc(2*sizeof(char*));
     if (NULL == sub.keys) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         OBJ_DESTRUCT(&sub);
@@ -93,6 +93,12 @@ int ompi_attr_create_predefined(void)
     }
     sub.keys[0] = strdup(ORTE_NODE_SLOTS_KEY);
     if (NULL == sub.keys[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&sub);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    sub.keys[1] = strdup(ORTE_JOB_SLOTS_KEY);
+    if (NULL == sub.keys[1]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
@@ -219,9 +225,13 @@ void ompi_attr_create_predefined_callback(
             if (0 < value[i]->cnt) {  /* make sure some data was returned here */
                 keyval = value[i]->keyvals;
                 for (j=0; j < value[i]->cnt; j++) {
-                    if (ORTE_UINT32 == keyval[j]->type) { /* make sure we don't get confused */
-                        /* Process slot count */
-                        attr_universe_size += keyval[j]->value.ui32;
+                    if (0 == strcmp(keyval[j]->key, ORTE_JOB_SLOTS_KEY)) { /* number of procs in this job */
+                        orte_process_info.num_procs = keyval[j]->value.ui32;
+                    } else if (0 == strcmp(keyval[j]->key, ORTE_NODE_SLOTS_KEY)) {
+                        if (ORTE_UINT32 == keyval[j]->type) { /* make sure we don't get confused */
+                            /* Process slot count */
+                            attr_universe_size += keyval[j]->value.ui32;
+                        }
                     }
                 }
             }
