@@ -482,12 +482,6 @@ int orte_ns_base_pack_name(void *dest, void *src)
 {
     orte_process_name_t *dn, *sn;
 
-    dn = (orte_process_name_t*) dest;
-    sn = (orte_process_name_t*) src;
-
-	dn->cellid = htonl(sn->cellid);
-	dn->jobid = htonl(sn->jobid);
-	dn->vpid = htonl(sn->vpid);
 
     return ORTE_SUCCESS;
 }
@@ -495,7 +489,6 @@ int orte_ns_base_pack_name(void *dest, void *src)
 
 int orte_ns_base_unpack_name(void *dest, void *src)
 {
-    orte_process_name_t *dn, *sn;
 
     dn = (orte_process_name_t*) dest;
     sn = (orte_process_name_t*) src;
@@ -510,12 +503,7 @@ int orte_ns_base_unpack_name(void *dest, void *src)
 
 int orte_ns_base_pack_cellid(void *dest, void *src)
 {
-    orte_cellid_t *dj, *sj;
 
-    dj = (orte_cellid_t*) dest;
-    sj = (orte_cellid_t*) src;
-
-    *dj = htonl(*sj);
 
     return ORTE_SUCCESS;
 }
@@ -536,12 +524,7 @@ int orte_ns_base_unpack_cellid(void *dest, void *src)
 
 int orte_ns_base_pack_jobid(void *dest, void *src)
 {
-    orte_jobid_t *dj, *sj;
 
-    dj = (orte_jobid_t*) dest;
-    sj = (orte_jobid_t*) src;
-
-	*dj = htonl(*sj);
 
     return ORTE_SUCCESS;
 }
