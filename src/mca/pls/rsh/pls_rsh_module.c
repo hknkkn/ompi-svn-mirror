@@ -201,7 +201,6 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
 
             orte_process_name_t* name;
             char* name_string;
-            char* cmd_string;
             int fd = open("/dev/null", O_RDWR);
 
             /* setup process name */
@@ -216,6 +215,12 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
                 exit(-1);
             }
             argv[proc_name_index] = name_string;
+
+            /* debug output */
+            if(mca_pls_rsh_component.debug) {
+                char* cmd = ompi_argv_join(argv, ' ');  
+                ompi_output(0, "orte_pls_rsh: %s\n", cmd);
+            }
 
             /* setup stdin/stdout/stderr */
             dup2(fd, 0);
