@@ -89,6 +89,27 @@ int orte_ns_nds_env_get(void)
 
 int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
 {
+    char* param;
+
+    asprintf(&param, "OMPI_MCA_ns_nds_cellid=%u", name->cellid);
+    putenv(param);
+    free(param);
+
+    asprintf(&param, "OMPI_MCA_ns_nds_jobid=%u", name->jobid);
+    putenv(param);
+    free(param);
+
+    asprintf(&param, "OMPI_MCA_ns_nds_vpid=%u", name->vpid);
+    putenv(param);
+    free(param);
+
+    asprintf(&param, "OMPI_MCA_ns_nds_vpid_start=%u", vpid_start);
+    putenv(param);
+    free(param);
+
+    asprintf(&param, "OMPI_MCA_ns_nds_num_procs=%u", num_procs);
+    putenv(param);
+    free(param);
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
