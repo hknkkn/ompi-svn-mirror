@@ -154,3 +154,8 @@ cleanup:
 }
 
 
+int orte_rmgr_base_get_proc_slots(orte_jobid_t jobid, size_t* proc_slots)
+{
+    return ORTE_ERROR;
+}
+
