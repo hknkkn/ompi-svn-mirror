@@ -106,9 +106,10 @@ orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t local_idtag,
 int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
                                   orte_gpr_replica_triggers_t *trig)
 {
-    int i, rc;
+    int i, j, rc;
     int num_keys, num_tokens;
     orte_gpr_replica_container_t **cptr;
+    orte_gpr_replica_itagval_t **iptr;
     
     num_tokens = orte_value_array_get_size(&(trig->tokentags));
     num_keys = orte_value_array_get_size(&(trig->keytags));
@@ -127,8 +128,8 @@ int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
     if (0 == num_keys) {
         cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
         for (i=0; i < (seg->containers)->size; i++) {
-            if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(trig->addr_mode,
-                                                    num_tokens, &(trig->tokentags),
+            if (NULL != cptr[i] && orte_gpr_replica_check_itag_array(trig->addr_mode,
+                                                    &(trig->tokentags),
                                                     cptr[i]->num_itags, cptr[i]->itags)) {  /* got this container */
                 if (ORTE_SUCCESS != (rc = orte_gpr_replica_trig_op_add_target(trig, cptr[i], NULL))) {
                     return rc;
@@ -144,11 +145,16 @@ int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
     if (0 == num_tokens) {
         cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
         for (i=0; i < (seg->containers)->size; i++) {
-            if (NULL != cptr[i] && orte_gpr_replica_check_itag_list(trig->addr_mode,
-                                                    num_keys, &(trig->keytags),
-                                                    cptr[i]->num_itags, cptr[i]->itags)) {  /* got this container */
-                if (ORTE_SUCCESS != (rc = orte_gpr_replica_trig_op_add_target(trig, cptr[i], NULL))) {
-                    return rc;
+            if (NULL != cptr[i]) {  /* for every container */
+                iptr = (orte_gpr_replica_itagval_t**)((cptr[i]->itagvals)->addr);
+                for (j=0; j < (cptr[i]->itagvals)->size; j++) {
+                    if (NULL != iptr[j] && orte_gpr_replica_check_itag_array(ORTE_GPR_OR,
+                                                    &(trig->keytags),
+                                                    1, &(iptr[j]->itag))) {  /* got this value */
+                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_trig_op_add_target(trig, cptr[i], iptr[j]))) {
+                            return rc;
+                        }
+                    }
                 }
             }
         }
@@ -158,7 +164,24 @@ int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
     /* if both tokens and keys specified, then this applies to specific containers
      * and itagvals - find them and add to the target list
      */
-    
+    cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
+    for (i=0; i < (seg->containers)->size; i++) {
+        if (NULL != cptr[i] && orte_gpr_replica_check_itag_array(trig->addr_mode,
+                                                &(trig->tokentags),
+                                                cptr[i]->num_itags, cptr[i]->itags)) {  /* got this container */
+             iptr = (orte_gpr_replica_itagval_t**)((cptr[i]->itagvals)->addr);
+             for (j=0; j < (cptr[i]->itagvals)->size; j++) {
+                 if (NULL != iptr[j] && orte_gpr_replica_check_itag_array(ORTE_GPR_OR,
+                                                 &(trig->keytags),
+                                                 1, &(iptr[j]->itag))) {  /* got this value */
+                     if (ORTE_SUCCESS != (rc = orte_gpr_replica_trig_op_add_target(trig, cptr[i], iptr[j]))) {
+                         return rc;
+                     }
+                 }
+            }
+        }
+    }
+
     return ORTE_SUCCESS;     
 }
 

@@ -29,7 +29,8 @@ headers = \
 	ompi_proc_table.h \
 	ompi_value_array.h \
 	ompi_rb_tree.h \
-	orte_pointer_array.h
+	orte_pointer_array.h \
+        orte_value_array.h
 
 liblfc_la_SOURCES = \
 	$(headers) \
@@ -43,7 +44,7 @@ liblfc_la_SOURCES = \
 	ompi_value_array.c \
 	ompi_rb_tree.c \
 	orte_pointer_array.c \
-    orte_value_array.c 
+        orte_value_array.c
 
 # Conditionally install the header files
 

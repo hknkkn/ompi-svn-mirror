@@ -182,10 +182,15 @@ bool orte_gpr_replica_search_container(int *num_found,
  */
  
 bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
-				    orte_gpr_replica_itag_t num_itags_search,
+				    int num_itags_search,
 				    orte_gpr_replica_itag_t *itags,
-				    orte_gpr_replica_itag_t num_itags_entry,
+				    int num_itags_entry,
 				    orte_gpr_replica_itag_t *entry_itags);
+
+bool orte_gpr_replica_check_itag_array(orte_gpr_addr_mode_t addr_mode,
+                    orte_value_array_t *itags,
+                    int num_itags_entry,
+                    orte_gpr_replica_itag_t *entry_itags);
 
 int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
                                     orte_gpr_replica_itag_t *src, int num_itags);
