@@ -31,6 +31,7 @@ extern "C" {
 struct orte_ras_host_component_t {
     orte_ras_base_component_t super;
     int debug;
+    int priority;
 };
 typedef struct orte_ras_host_component_t orte_ras_host_component_t;
 

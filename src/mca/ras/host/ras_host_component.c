@@ -26,7 +26,7 @@
 
 static int orte_ras_host_open(void);
 static int orte_ras_host_close(void);
-static orte_ras_base_module_t* orte_ras_host_init(void);
+static orte_ras_base_module_t* orte_ras_host_init(int*);
 
 
 orte_ras_host_component_t mca_ras_host_component = {
@@ -91,13 +91,14 @@ static char* orte_ras_host_param_register_string(
 static int orte_ras_host_open(void)
 {
     mca_ras_host_component.debug = orte_ras_host_param_register_int("debug",1);
+    mca_ras_host_component.priority = orte_ras_host_param_register_int("priority",1);
     return ORTE_SUCCESS;
 }
 
 
-static orte_ras_base_module_t *orte_ras_host_init(void)
+static orte_ras_base_module_t *orte_ras_host_init(int* priority)
 {
-    /* we are ALWAYS available */
+    *priority = mca_ras_host_component.priority;
     return &orte_ras_host_module;
 }
 
