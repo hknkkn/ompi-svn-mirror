@@ -76,13 +76,14 @@ int orte_pls_tm_put_tid(const orte_process_name_t* name,
 /**
  * Retreive all process tids for the specified job.
  */
+#include <unistd.h>
 int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids, 
                          orte_process_name_t **names, size_t* size)
 {
     char *segment = NULL;
     char *keys[3];
     orte_gpr_value_t** values = NULL;
-    int i, num_values = 0;
+    int i, j, num_values = 0;
     int rc;
 
     /* Zero out in case of error */
@@ -121,15 +122,21 @@ int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids,
 
     if (num_values > 0) {
         *tids = malloc(sizeof(tm_task_id) * num_values);
-        *names = malloc(sizeof(orte_process_name_t *) * num_values);
+        *names = malloc(sizeof(orte_process_name_t) * num_values);
         if (NULL == *tids || NULL == *names) {
             rc = ORTE_ERR_OUT_OF_RESOURCE;
             ORTE_ERROR_LOG(rc);
             goto cleanup;
         }
         for (i = 0; i < num_values; ++i) {
-            (*tids)[i] = values[i]->keyvals[0]->value.ui32;
-            (*names)[i] = values[i]->keyvals[1]->value.proc;
+            for (j = 0; j < values[i]->cnt; ++j) {
+                if (0 == strcmp(values[i]->keyvals[j]->key, TID_KEY)) {
+                    (*tids)[i] = values[i]->keyvals[j]->value.ui32;
+                } else if (0 == strcmp(values[i]->keyvals[j]->key, 
+                                       ORTE_PROC_NAME_KEY)) {
+                    (*names)[i] = values[i]->keyvals[j]->value.proc;
+                }
+            }
         }
         *size = num_values;
     }

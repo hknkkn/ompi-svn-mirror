@@ -285,7 +285,7 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
                 goto loop_error;
             }
             ompi_output(orte_pls_base.pls_output,
-                        "pls:tm:launch:child: launch successful; posting to registry");
+                        "pls:tm:launch:child: launch successful (tid %d); posting to registry", task_ids[num_spawned]);
 
             /* Write this proc's TID to the registry (so that we can
                kill it if we need to) */

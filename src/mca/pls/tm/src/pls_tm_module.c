@@ -24,6 +24,8 @@
 #include <unistd.h>
 #endif
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
@@ -130,6 +132,19 @@ static int pls_tm_terminate_job(orte_jobid_t jobid)
     size_t size;
     int ret;
 
+    /* If we have a child, that child is potentially sitting inside
+       tm_poll(), and we won't be able to tm_init().  Sigh.  So kill
+       the child.  */
+
+    if (child_pid > 0) {
+        ompi_output(orte_pls_base.pls_output,
+                    "pls:tm:terminate_job: killing tm shephard");
+        kill(child_pid, SIGKILL);
+        waitpid(child_pid, NULL, 0);
+        child_pid = -1;
+        sleep(1);
+    }
+
     /* Open up our connection to tm.  Note that we may be called from
        launch, above, in which case we don't need to tm_init */
 
@@ -138,7 +153,9 @@ static int pls_tm_terminate_job(orte_jobid_t jobid)
     if (!orte_pls_tm_connected) {
         ret = tm_init(NULL, &tm_root);
         if (TM_SUCCESS != ret) {
-            return ORTE_ERR_RESOURCE_BUSY;
+            ret = ORTE_ERR_RESOURCE_BUSY;
+            ORTE_ERROR_LOG(ret);
+            return ret;
         }
     }
 
