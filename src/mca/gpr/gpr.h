@@ -376,7 +376,9 @@ typedef int (*mca_gpr_base_module_put_nb_fn_t)(orte_registry_addr_mode_t addr_mo
  * @endcode
  */
 typedef int (*mca_gpr_base_module_get_fn_t)(orte_registry_addr_mode_t addr_mode,
-						     char *segment, char **tokens, ompi_list_t *keyval_list);
+                                char *segment, char **tokens, char **keys,
+                                int32_t *cnt,
+                                orte_registry_keyval_t *keyvals);
 
 /*
  * Get data from the registry (NON-BLOCKING)
@@ -384,8 +386,8 @@ typedef int (*mca_gpr_base_module_get_fn_t)(orte_registry_addr_mode_t addr_mode,
  * notify message format.
  */
 typedef int (*mca_gpr_base_module_get_nb_fn_t)(orte_registry_addr_mode_t addr_mode,
-                             char *segment, char **tokens,
-                             orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
+                                char *segment, char **tokens, char **keys,
+                                orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
 
 
 /*
@@ -414,17 +416,17 @@ typedef int (*mca_gpr_base_module_get_nb_fn_t)(orte_registry_addr_mode_t addr_mo
  * status_code = orte_registry.delete_object(mode, segment, tokens);
  * @endcode
  */
-typedef int (*mca_gpr_base_module_delete_object_fn_t)(orte_registry_addr_mode_t addr_mode,
-						      char *segment, char **tokens);
+typedef int (*mca_gpr_base_module_delete_entries_fn_t)(orte_registry_addr_mode_t addr_mode,
+						      char *segment, char **tokens, char **keys);
 
 /*
  * Delete an object from the registry (NON-BLOCKING)
  * A non-blocking version of delete object. Result of the command is returned
  * to the callback function in the notify msg format.
  */
-typedef int (*mca_gpr_base_module_delete_object_nb_fn_t)(
+typedef int (*mca_gpr_base_module_delete_entries_nb_fn_t)(
                             orte_registry_addr_mode_t addr_mode,
-                            char *segment, char **tokens,
+                            char *segment, char **tokens, char **keys,
                             orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
 /*
  * Obtain an index of a specified dictionary (BLOCKING)
@@ -507,7 +509,7 @@ typedef ompi_list_t* (*mca_gpr_base_module_index_nb_fn_t)(char *segment,
  */
 typedef int (*mca_gpr_base_module_subscribe_fn_t)(orte_registry_addr_mode_t addr_mode,
                             orte_registry_notify_action_t action,
-                            char *segment, char **tokens,
+                            char *segment, char **tokens, char **keys,
                             orte_registry_notify_id_t *sub_number,
                             orte_registry_notify_cb_fn_t cb_func, void *user_tag);
 
@@ -680,12 +682,12 @@ struct mca_gpr_base_module_1_0_0_t {
    /* BLOCKING OPERATIONS */
     mca_gpr_base_module_get_fn_t get;
     mca_gpr_base_module_put_fn_t put;
-    mca_gpr_base_module_delete_object_fn_t delete_object;
+    mca_gpr_base_module_delete_entries_fn_t delete_entries;
     mca_gpr_base_module_delete_segment_fn_t delete_segment;
     /* NON-BLOCKING OPERATIONS */
     mca_gpr_base_module_get_nb_fn_t get_nb;
     mca_gpr_base_module_put_nb_fn_t put_nb;
-    mca_gpr_base_module_delete_object_nb_fn_t delete_object_nb;
+    mca_gpr_base_module_delete_entries_nb_fn_t delete_entries_nb;
     mca_gpr_base_module_delete_segment_nb_fn_t delete_segment_nb;
     /* SUBSCRIBE OPERATIONS */
     mca_gpr_base_module_subscribe_fn_t subscribe;

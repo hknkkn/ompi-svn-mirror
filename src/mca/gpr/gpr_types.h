@@ -35,7 +35,6 @@
 /** Define the notification actions for the subscription system - can be OR'd
  * to create multiple actions
  */
-#define ORTE_REGISTRY_NOTIFY_NONE                   (uint16_t)0x0000   /**< Null case */
 #define ORTE_REGISTRY_NOTIFY_MODIFICATION           (uint16_t)0x0001   /**< Notifies subscriber when object modified */
 #define ORTE_REGISTRY_NOTIFY_ADD_SUBSCRIBER         (uint16_t)0x0002   /**< Notifies subscriber when another subscriber added */
 #define ORTE_REGISTRY_NOTIFY_DELETE_ENTRY           (uint16_t)0x0004   /**< Notifies subscriber when object deleted */
@@ -56,7 +55,6 @@ typedef uint32_t orte_registry_notify_id_t;
 /*
  * Define synchro mode flags - can be OR'd to create multiple actions
  */
-#define ORTE_REGISTRY_SYNCHRO_MODE_NONE        (uint16_t)0x0000   /**< No synchronization */
 #define ORTE_REGISTRY_SYNCHRO_MODE_ASCENDING   (uint16_t)0x0001   /**< Notify when trigger is reached, ascending mode */
 #define ORTE_REGISTRY_SYNCHRO_MODE_DESCENDING  (uint16_t)0x0002   /**< Notify when trigger is reached, descending mode */
 #define ORTE_REGISTRY_SYNCHRO_MODE_LEVEL       (uint16_t)0x0004   /**< Notify when trigger is reached, regardless of direction */
@@ -104,7 +102,8 @@ typedef struct {
     ompi_object_t super;                         /**< Make this an object */
     char *segment;                               /**< Name of originating segment */
     orte_gpr_cmd_flag_t cmd;                     /**< command that generated the notify msg */
-    ompi_list_t data;                            /**< List of orte_registry_value_t data items */
+    int32_t cnt;                                 /**< Number of keyval strucs returned */
+    orte_registry_keyval_t *keyvals;             /**< Array of keyval structures */
     union {
         orte_registry_notify_action_t trig_action;   /**< If subscription, action that triggered message */
         orte_registry_synchro_mode_t trig_synchro;   /**< If synchro, action that triggered message */
@@ -123,7 +122,6 @@ typedef void (*orte_registry_notify_cb_fn_t)(orte_registry_notify_message_t *not
 
 /** Define the addressing mode bit-masks for registry operations.
  */
-#define ORTE_REGISTRY_NONE       (uint16_t)0x0000   /**< None */
 #define ORTE_REGISTRY_OVERWRITE  (uint16_t)0x0001   /**< Overwrite Permission */
 #define ORTE_REGISTRY_AND        (uint16_t)0x0002   /**< AND tokens together for search results */
 #define ORTE_REGISTRY_OR         (uint16_t)0x0004   /**< OR tokens for search results */
@@ -148,7 +146,7 @@ typedef uint16_t orte_registry_addr_mode_t;
   */
 typedef struct {
     char *key;
-    orte_data_type_t stored_type;
+    orte_data_type_t type;
     union {
         char *strptr;
         uint8_t ui8;

@@ -61,16 +61,18 @@ static int attr_impi_host_color = 0;
 
 int ompi_attr_create_predefined(void)
 {
-    ompi_registry_notify_id_t rc;
+    orte_registry_notify_id_t rc;
+    int ret;
 
-     rc = ompi_registry.subscribe(
-         OMPI_REGISTRY_OR,
-	     OMPI_REGISTRY_NOTIFY_ON_STARTUP|OMPI_REGISTRY_NOTIFY_INCLUDE_STARTUP_DATA,
+     ret = orte_registry.subscribe(
+         ORTE_REGISTRY_OR,
+	     ORTE_REGISTRY_NOTIFY_ON_STARTUP|ORTE_REGISTRY_NOTIFY_INCLUDE_STARTUP_DATA,
          OMPI_RTE_VM_STATUS_SEGMENT,
          NULL,
+         &rc,
          ompi_attr_create_predefined_callback,
          NULL);
-     if(rc == OMPI_REGISTRY_NOTIFY_ID_MAX) {
+     if(ORTE_SUCCESS != ret) {
          ompi_output(0, "ompi_attr_create_predefined: subscribe failed");
          return OMPI_ERROR;
      }
@@ -79,12 +81,12 @@ int ompi_attr_create_predefined(void)
 
 
 void ompi_attr_create_predefined_callback(
-	ompi_registry_notify_message_t *msg,
+	orte_registry_notify_message_t *msg,
 	void *cbdata)
 {
     int err;
     ompi_list_item_t *item;
-    ompi_registry_value_t *reg_value;
+    orte_registry_value_t *reg_value;
     ompi_rte_vm_status_t *vm_stat;
     orte_jobid_t job;
 
@@ -124,7 +126,7 @@ void ompi_attr_create_predefined_callback(
         for (item = ompi_list_remove_first(&msg->data);
              NULL != item;
              item = ompi_list_remove_first(&msg->data)) {
-            reg_value = (ompi_registry_value_t *) item;
+            reg_value = (orte_registry_value_t *) item;
             vm_stat = ompi_rte_unpack_vm_status(reg_value); 
             
             /* Process slot count */

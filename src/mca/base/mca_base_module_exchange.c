@@ -192,7 +192,7 @@ static mca_base_modex_module_t* mca_base_modex_create_module(
  */
 
 static void mca_base_modex_registry_callback(
-    ompi_registry_notify_message_t* msg,
+    orte_registry_notify_message_t* msg,
     void* cbdata)
 {
     ompi_list_item_t* item;
@@ -206,7 +206,7 @@ static void mca_base_modex_registry_callback(
     /* process the callback */
     while((item = ompi_list_remove_first(&msg->data)) != NULL) {
                                                                                                           
-        ompi_registry_value_t* value = (ompi_registry_value_t*)item;
+        orte_registry_value_t* value = (orte_registry_value_t*)item;
         ompi_buffer_t buffer;
         ompi_proc_t* proc;
         char* component_name_version;
@@ -339,20 +339,22 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, name))) {
         return rc;
     }
-    asprintf(&segment, "%s-%s", OMPI_RTE_MODEX_SEGMENT, jobidstring);
-    rctag = ompi_registry.subscribe(
-        	OMPI_REGISTRY_OR,
-        	OMPI_REGISTRY_NOTIFY_ADD_ENTRY|OMPI_REGISTRY_NOTIFY_DELETE_ENTRY|
-        	OMPI_REGISTRY_NOTIFY_MODIFICATION|
-		OMPI_REGISTRY_NOTIFY_ON_STARTUP|OMPI_REGISTRY_NOTIFY_INCLUDE_STARTUP_DATA|
-		OMPI_REGISTRY_NOTIFY_PRE_EXISTING,
+    asprintf(&segment, "%s-%s", ORTE_MODEX_SEGMENT, jobidstring);
+    rc = orte_registry.subscribe(
+        	ORTE_REGISTRY_OR,
+        	ORTE_REGISTRY_NOTIFY_ADD_ENTRY|ORTE_REGISTRY_NOTIFY_DELETE_ENTRY|
+        	ORTE_REGISTRY_NOTIFY_MODIFICATION|
+		ORTE_REGISTRY_NOTIFY_ON_STARTUP|ORTE_REGISTRY_NOTIFY_INCLUDE_STARTUP_DATA|
+		ORTE_REGISTRY_NOTIFY_PRE_EXISTING,
         	segment,
         	NULL,
+         NULL,
+         &rctag,
         	mca_base_modex_registry_callback,
         	NULL);
-    if(rctag == OMPI_REGISTRY_NOTIFY_ID_MAX) {
+    if(ORTE_SUCCESS != rc) {
         ompi_output(0, "mca_base_modex_exchange: "
-		    "ompi_registry.subscribe failed with return code %d\n", (int)rctag);
+		    "ompi_registry.subscribe failed with return code %d\n", rc);
 	free(segment);
 	return OMPI_ERROR;
     }
@@ -382,41 +384,43 @@ int mca_base_modex_send(
 {
     char *segment;
     char *component_name_version;
-    char *keys[3], *jobidstring;
-    ompi_buffer_t buffer;
+    char *tokens[2], *jobidstring;
+    orte_registry_keyval_t keyval;
+    orte_byte_object_t *bytedata;
     void* bptr;
-    int bsize;
+    size_t bsize;
     int rc;
 
-    asprintf(&component_name_version, "%s-%s-%d-%d", 
-        source_component->mca_type_name,
-        source_component->mca_component_name,
-        source_component->mca_component_major_version,
-        source_component->mca_component_minor_version);
-
-    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string(keys[0], ompi_rte_get_self()))) {
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string(tokens[0], ompi_rte_get_self()))) {
         return rc;
     }
-    keys[1] = component_name_version;
-    keys[2] = NULL;
+    
+    tokens[1] = NULL;
 
-    ompi_buffer_init(&buffer, 0);
-    ompi_pack(buffer, ompi_rte_get_self(), 1, OMPI_NAME);
-    ompi_pack_string(buffer, component_name_version);
-    ompi_pack(buffer, &size, 1, OMPI_INT32);
-    ompi_pack(buffer, (void*)data, size, OMPI_BYTE);
-    ompi_buffer_get(buffer, &bptr, &bsize);
-
+    bytedata = (orte_byte_object_t*)malloc(sizeof(orte_byte_object_t));
+    bytedata->size = size;
+    bytedata->bytes = (void *)malloc(size);
+    memcpy(bytedata->bytes, data, size);
+    
     if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, &mca_oob_name_self))) {
         return rc;
     }
     asprintf(&segment, "%s-%s", OMPI_RTE_MODEX_SEGMENT, jobidstring);
-    rc = ompi_registry.put(
-        OMPI_REGISTRY_OVERWRITE, 
+
+    asprintf(&keyval.key, "%s-%s-%d-%d", 
+        source_component->mca_type_name,
+        source_component->mca_component_name,
+        source_component->mca_component_major_version,
+        source_component->mca_component_minor_version);
+    keyval.type = ORTE_BYTE_OBJECT;
+    keyval.value.byte_object = bytedata;
+    
+    rc = orte_registry.put(
+        ORTE_REGISTRY_AND | ORTE_REGISTRY_OVERWRITE, 
         segment,
-        keys,
-        (ompi_registry_object_t)bptr,
-        (ompi_registry_object_size_t)bsize);
+        tokens,
+        1,
+        &keyval);
     free(segment);
     free(component_name_version);
     return rc;

@@ -73,16 +73,5 @@ struct orte_process_status_t {
 };
 typedef struct orte_process_status_t orte_process_status_t;
 
-/* constants defining runtime-related segment naming conventions for the
- * registry
- */
-#define OMPI_RTE_JOB_STATUS_SEGMENT     "ompi-job-status"
-#define OMPI_RTE_OOB_SEGMENT            "ompi-oob"
-#define OMPI_RTE_VM_STATUS_SEGMENT      "ompi-vm-status"
-#define OMPI_RTE_CELL_STATUS_SEGMENT    "ompi-cell-status"
-#define OMPI_RTE_SCHED_SEGMENT          "ompi-sched"
-#define OMPI_RTE_MODEX_SEGMENT          "ompi-modex"
-
-
 
 #endif  /* ORTE_TYPES_H */

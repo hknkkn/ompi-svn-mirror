@@ -198,7 +198,7 @@ typedef void (*mca_oob_addr_pack_fn_t)(ompi_buffer_t buffer);
  * @param 
  */
 typedef void (*mca_oob_update_callback_fn_t)(
-    ompi_registry_notify_message_t* msg,
+    orte_registry_notify_message_t* msg,
     void* cbdata);
 
     /**

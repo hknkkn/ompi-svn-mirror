@@ -85,37 +85,46 @@ char *ompi_parse_port (char *port_name, int *tag)
 int ompi_comm_namepublish ( char *service_name, char *port_name ) 
 {
 
-    char *key[2];
+    char *token[2];
+    orte_registry_keyval_t keyval;
     
-    key[0] = service_name;
-    key[1] = NULL;
-    return ompi_registry.put(OMPI_REGISTRY_OVERWRITE, "ompi_name_publish", 
-			     key, port_name, (strlen(port_name)+1));
+    token[0] = service_name;
+    token[1] = NULL;
+    
+    keyval.key = strdup("port_name");
+    keyval.type = ORTE_STRING;
+    keyval.value.strptr = strdup(port_name);
+    
+    return orte_registry.put(ORTE_REGISTRY_AND | ORTE_REGISTRY_OVERWRITE,
+                             "ompi_name_publish",
+                             token, 1, &keyval);
 }
 
 char* ompi_comm_namelookup ( char *service_name )
 {
-    char *key[2];
-    ompi_list_t *tmp=NULL;
-    ompi_registry_value_t *vtmp=NULL;
-    char *stmp=NULL, *stmp2=NULL;
-
-    key[0] = service_name;
+    char *token[2], *key[2];
+    orte_registry_keyval_t *keyvals=NULL;
+    int32_t cnt=0;
+    char *stmp=NULL;
+    int ret;
+    
+    token[0] = service_name;
+    token[1] = NULL;
+    
+    key[0] = strdup("port_name");
     key[1] = NULL;
-    tmp = ompi_registry.get(OMPI_REGISTRY_NONE, "ompi_name_publish", key);
-    if ( NULL != tmp ) {
-        vtmp = (ompi_registry_value_t *) ompi_list_get_first(tmp);
-	if (NULL != vtmp) {
-	    stmp  = (char *)vtmp->object;
-	    if ( NULL != stmp) {
-		stmp2 = strdup(stmp);
-		OBJ_RELEASE(vtmp);
-	    }
-}
-	OBJ_RELEASE(tmp);
+    
+    ret = orte_registry.get(ORTE_REGISTRY_AND, "ompi_name_publish",
+                            token, key, &cnt, keyvals);
+    if (ORTE_SUCCESS != ret) {
+        return NULL;
+    }
+    if ( 0 < cnt && NULL != keyvals ) {
+        stmp = strdup(keyval->value.strptr);
+        free(keyvals);
     }
 
-    return (stmp2);
+    return (stmp);
 }
 
 /* 
@@ -126,8 +135,12 @@ char* ompi_comm_namelookup ( char *service_name )
  */
 int ompi_comm_nameunpublish ( char *service_name )
 {
-    char *key[2];
-    key[0] = service_name;
-    key[1] = NULL;
-    return ompi_registry.delete_object(OMPI_REGISTRY_NONE, "ompi_name_publish", key); 
+    char *token[2];
+    
+    token[0] = service_name;
+    token[1] = NULL;
+    
+    return orte_registry.delete_entries(ORTE_REGISTRY_AND,
+                                        "ompi_name_publish",
+                                        token, NULL); 
 }

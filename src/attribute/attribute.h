@@ -300,7 +300,7 @@ int ompi_attr_create_predefined(void);
  * @returns Nothing
  */
 void ompi_attr_create_predefined_callback(
-	ompi_registry_notify_message_t *msg,
+	orte_registry_notify_message_t *msg,
 	void *cbdata);
 
 
