@@ -23,6 +23,8 @@
 
 #include "orte_config.h"
 
+#include "util/output.h"
+
 #include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
 
 #include "gpr_replica_fn.h"
@@ -46,6 +48,11 @@ int orte_gpr_replica_create_container(orte_gpr_replica_container_t **cptr,
     }
     
     (*cptr)->num_itags = num_itags;
+    
+    if (0 > ((*cptr)->index = orte_pointer_array_add(seg->containers, (void*)(*cptr)))) {
+ompi_output(0, "array_add failed for container - returned %d", (*cptr)->index);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
     
     return ORTE_SUCCESS;
 }
@@ -89,20 +96,24 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
 
 int orte_gpr_replica_update_keyval(orte_gpr_replica_segment_t *seg,
                                    orte_gpr_replica_itagval_t *iptr,
-                                   orte_gpr_keyval_t *kptr)
+                                   orte_gpr_keyval_t **kptr)
 {
     int rc;
     orte_gpr_replica_itag_t itag;
     
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&itag,
-                                            seg, kptr->key))) {
+                                            seg, (*kptr)->key))) {
         return rc;
     }
     
     iptr->itag = itag;
-    iptr->type = kptr->type;
+    iptr->type = (*kptr)->type;
     
-    return orte_gpr_replica_xfer_payload(&(iptr->value), &(kptr->value), iptr->type);
+    rc = orte_gpr_replica_xfer_payload(&(iptr->value), &((*kptr)->value), iptr->type);
+
+    free(*kptr);
+    *kptr = NULL;
+    return rc;
 }
 
 

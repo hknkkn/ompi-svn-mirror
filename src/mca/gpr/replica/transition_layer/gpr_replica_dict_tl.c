@@ -113,6 +113,7 @@ orte_gpr_replica_dict_lookup(orte_gpr_replica_itag_t *itag,
 {
     orte_gpr_replica_dict_t **ptr;
     int i;
+    size_t len, len2;
     
     /* initialize to illegal value */
     *itag = ORTE_GPR_REPLICA_ITAG_MAX;
@@ -127,11 +128,14 @@ orte_gpr_replica_dict_lookup(orte_gpr_replica_itag_t *itag,
         return ORTE_SUCCESS;
 	}
 
+    len = strlen(name);
+    
     /* want specified token-itag pair in that segment's dictionary */
     ptr = (orte_gpr_replica_dict_t**)((seg->dict)->addr);
     for (i=0; i < (seg->dict)->size; i++) {
         if (NULL != ptr[i]) {
-    	       if (0 == strncmp(ptr[i]->entry, name, strlen(ptr[i]->entry))) {
+            len2 = strlen(ptr[i]->entry);
+    	       if (len == len2 && 0 == strncmp(ptr[i]->entry, name, len)) {
                 *itag = ptr[i]->itag;
                 return ORTE_SUCCESS;
             }

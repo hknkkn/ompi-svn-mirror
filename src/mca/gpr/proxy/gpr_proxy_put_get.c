@@ -35,7 +35,7 @@
 #include "gpr_proxy.h"
 
 int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
-         char **tokens, int cnt, orte_gpr_keyval_t *keyvals)
+         char **tokens, int cnt, orte_gpr_keyval_t **keyvals)
 {
     orte_buffer_t *cmd;
     orte_buffer_t *answer;
@@ -81,7 +81,7 @@ int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode, char *segment,
 }
 
 int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
-                      char **tokens, int cnt, orte_gpr_keyval_t *keyvals,
+                      char **tokens, int cnt, orte_gpr_keyval_t **keyvals,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;

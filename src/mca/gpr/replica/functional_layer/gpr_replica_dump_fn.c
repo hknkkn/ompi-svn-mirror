@@ -330,8 +330,8 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
 
 static void orte_gpr_replica_dump_load_string(orte_buffer_t *buffer, char **tmp)
 {
-/*    ompi_output(0, "dump: loading %s", tmp); */
-    orte_dps.pack(buffer, tmp, 1, ORTE_STRING);
+    ompi_output(0, "%s", *tmp);
+/*    orte_dps.pack(buffer, tmp, 1, ORTE_STRING);*/
     free(*tmp);
 
 }

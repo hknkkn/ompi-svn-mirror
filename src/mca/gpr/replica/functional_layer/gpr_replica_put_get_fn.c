@@ -35,13 +35,13 @@
 int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
                             orte_gpr_replica_itag_t *token_itags, int num_tokens,
-                            int cnt, orte_gpr_keyval_t *keyvals,
+                            int cnt, orte_gpr_keyval_t **keyvals,
                             int8_t *action_taken)
 {
     orte_gpr_replica_itagval_t *iptr;
     orte_gpr_replica_container_t *cptr;
     orte_gpr_replica_itag_t itag;
-    orte_gpr_keyval_t *kptr;
+    orte_gpr_keyval_t **kptr;
     bool overwrite;
     int rc, i;
     bool found;
@@ -79,44 +79,46 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     if (!found) {  /* existing container not found - create one */
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_container(&cptr, seg,
                                             num_tokens, token_itags))) {
+ompi_output(0, "could not create container");
             return rc;
         }
  
-        if (0 < (cptr->index = orte_pointer_array_add(seg->containers, (void*)cptr))) {
-            return ORTE_ERR_OUT_OF_RESOURCE;
-        }
         /* ok, store all the keyvals in the container */
         kptr = keyvals;
         for (i=0; i < cnt; i++) {
-            if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &kptr))) {
+ompi_output(0, "new container: working keyval %d with key %s", i, kptr[i]->key);
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &(kptr[i])))) {
+ompi_output(0, "add_keyval in new container failed i %d returned %d", i, rc);
                 return rc;
             }
-            kptr++;
         }
         *action_taken = ORTE_GPR_REPLICA_ENTRY_ADDED;
     } else {  /* otherwise, see if entry already exists in container */
         kptr = keyvals;
         for (i=0; i < cnt; i++) {
-            if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, kptr->key) &&
+ompi_output(0, "existing container: working keyval %d with key %s", i, kptr[i]->key);
+            if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, kptr[i]->key) &&
                 orte_gpr_replica_search_container(&iptr, itag, cptr)) {
                 /* this key already exists - overwrite, if permission given
                  * else error
                  */
                  if (overwrite) {
-                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, iptr, kptr))) {
+                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, iptr, (&kptr[i])))) {
+ompi_output(0, "update keyval in existing container failed i %d rc %d", i, rc);
                         return rc;
                     }
                  } else {
+ompi_output(0, "found existing value and no overwrite i %d itag %d", i, (int)itag);
                     return ORTE_ERROR;
                  }
                  *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_UPDATED;
             } else { /* new key - add to container */
-                if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &kptr))) {
+                if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &(kptr[i])))) {
+ompi_output(0, "add keyval in existing container failed i %d rc %d", i, rc);
                     return rc;
                 }
                 *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
             }
-            kptr++;
         }
     }
 
@@ -131,7 +133,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 int orte_gpr_replica_put_nb_fn(orte_gpr_addr_mode_t addr_mode,
                 orte_gpr_replica_segment_t *seg,
                 orte_gpr_replica_itag_t *token_itags, int num_tokens,
-                int cnt, orte_gpr_keyval_t *keyvals,
+                int cnt, orte_gpr_keyval_t **keyvals,
                 orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
