@@ -47,10 +47,9 @@ int orte_gpr_replica_delete_segment(char *segment)
     OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
 
     /* locate the segment */
-    seg = orte_gpr_replica_find_seg(false, segment);
-    if (NULL == seg) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
-	    return ORTE_ERROR;
+	    return rc;
     }
 
     rc = orte_gpr_replica_release_segment(seg);
@@ -88,10 +87,10 @@ int orte_gpr_replica_delete_entries(orte_gpr_addr_mode_t addr_mode,
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
 
-    seg = orte_gpr_replica_find_seg(false, segment);
-    if (NULL == seg) {
+    /* locate the segment */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
-	   return ORTE_ERROR;
+        return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags, seg, tokens, &num_tokens))) {
@@ -155,12 +154,11 @@ int orte_gpr_replica_index(char *segment, size_t *cnt, char **index)
     if (NULL == segment) {  /* want global level index */
 	   seg = NULL;
     } else {
-	   /* locate the segment */
-	   seg = orte_gpr_replica_find_seg(false, segment);
-	   if (NULL == seg) {
+        /* locate the segment */
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
-	        return ORTE_ERROR;
-	   }
+            return rc;
+        }
     }
 
     rc = orte_gpr_replica_index_fn(seg, cnt, index);

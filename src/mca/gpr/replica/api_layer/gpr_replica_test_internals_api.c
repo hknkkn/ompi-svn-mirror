@@ -38,7 +38,6 @@ int orte_gpr_replica_test_internals(int level, ompi_list_t **test_results)
     int i, j, num_keys, rc;
     orte_gpr_replica_itag_t segtag, itag, *itags=NULL;
     orte_gpr_replica_segment_t *seg=NULL;
-    orte_gpr_replica_dict_t dict_entry;
     bool success=false;
 
     *test_results = OBJ_NEW(ompi_list_t);
@@ -51,9 +50,10 @@ int orte_gpr_replica_test_internals(int level, ompi_list_t **test_results)
     /* create several test segments */
     success = true;
     result = OBJ_NEW(orte_gpr_internal_test_results_t);
-    result->test = strdup("test-define-job-segment");
+    result->test = strdup("test-preallocate-segment");
     for (i=0; i<5 && success; i++) {
-	   if (ORTE_SUCCESS != (rc = orte_gpr_replica_define_job_segment((orte_jobid_t)i, (int)1000*i))) {
+       sprintf(name, "test-def-seg%d", i);
+	   if (ORTE_SUCCESS != (rc = orte_gpr_replica_preallocate_segment(name, (int)1000*i))) {
 	       success = false;
 	   }
     }
@@ -71,7 +71,7 @@ int orte_gpr_replica_test_internals(int level, ompi_list_t **test_results)
     result->test = strdup("test-get-seg-itag");
     for (i=0; i<5 && success; i++) {
 	   sprintf(name, "test-def-seg%d", i);
-	   if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&dict_entry, NULL, name))) {
+	   if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&itag, NULL, name))) {
             result->exit_code = rc;
 	        success = false;
 	   }

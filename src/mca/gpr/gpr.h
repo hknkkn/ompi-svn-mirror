@@ -218,6 +218,22 @@ typedef int (*orte_gpr_base_module_get_startup_msg_fn_t)(orte_jobid_t jobid,
                                     size_t *cnt,
 								  orte_process_name_t **procs);
 
+/*
+ * Unpack the startup message.
+ * When a startup message is received, it contains data required for
+ * initializing several subsystems. This includes OOB contact info,
+ * PTL contact info, and other things. Each of these subsystems has a
+ * callback function that is used to receive updates from the registry
+ * This function deconstructs the message and builds a notify
+ * message for each segment, and then passes that message to the appropriate
+ * callback function as if it came directly from the registry.
+ */
+typedef void (*orte_gpr_base_module_decode_startup_msg_fn_t)(
+                                    int status, orte_process_name_t *peer,
+                                    orte_buffer_t* msg, orte_rml_tag_t tag,
+                                    void *cbdata);
+
+
 /* Cleanup a job from the registry
  * Remove all references to a given job from the registry. This includes removing
  * all segments "owned" by the job, and removing all process names from dictionaries
@@ -714,6 +730,7 @@ struct orte_gpr_base_module_1_0_0_t {
     /* JOB-RELATED OPERATIONS */
     orte_gpr_base_module_preallocate_segment_fn_t preallocate_segment;
     orte_gpr_base_module_get_startup_msg_fn_t get_startup_msg;
+    orte_gpr_base_module_decode_startup_msg_fn_t decode_startup_msg;
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_base_module_subscribe_fn_t subscribe;
     orte_gpr_base_module_unsubscribe_fn_t unsubscribe;
@@ -731,8 +748,6 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_notify_off_fn_t notify_off;
     orte_gpr_base_module_triggers_active_fn_t triggers_active;
     orte_gpr_base_module_triggers_inactive_fn_t triggers_inactive;
-    /* MESSAGING OPERATIONS */
-    orte_gpr_base_module_deliver_notify_msg_fn_t deliver_notify_msg;
     /* CLEANUP OPERATIONS */
     orte_gpr_base_module_cleanup_job_fn_t cleanup_job;
     orte_gpr_base_module_cleanup_proc_fn_t cleanup_process;

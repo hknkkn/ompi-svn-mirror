@@ -173,13 +173,6 @@ int orte_gpr_proxy_dump(int output_id);
 
 
 /*
- * Messaging functions
- */
-int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_action_t state,
-				      orte_gpr_notify_message_t *message);
-
-
-/*
  * Test internals
  */
 int orte_gpr_proxy_test_internals(int level, ompi_list_t **results);
@@ -195,6 +188,9 @@ int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
                                     size_t *cnt,
                                     orte_process_name_t **procs);
 
+void orte_gpr_proxy_decode_startup_msg(int status, orte_process_name_t *peer,
+                                       orte_buffer_t* msg, orte_rml_tag_t tag,
+                                       void *cbdata);
 
 /*
  * Functions that interface to the replica

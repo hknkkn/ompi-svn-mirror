@@ -54,6 +54,7 @@
 #include "mca/oob/base/base.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
+#include "mca/rml/rml.h"
 
 #include "runtime/runtime.h"
 #include "event/event.h"
@@ -299,7 +300,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     
 
     /* wait to receive startup message and info distributed */
-    if (OMPI_SUCCESS != (ret = ompi_rte_wait_startup_msg())) {
+    if (OMPI_SUCCESS != (ret = orte_rml.xcast(NULL, NULL, 0, NULL, orte_gpr.decode_startup_msg))) {
 	    error = "ompi_rte_init: failed to see all procs register\n";
 	    goto error;
     }

@@ -49,7 +49,7 @@ int orte_gpr_replica_find_seg(orte_gpr_replica_segment_t **seg,
     
     if (!create) {
         /* couldn't find it and don't want it created - just return NULL */
-        return NULL;
+        return ORTE_ERR_BAD_PARAM;
     }
     
     /* add the segment to the registry */
