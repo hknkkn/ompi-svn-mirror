@@ -94,7 +94,7 @@ static void mca_oob_tcp_peer_construct(mca_oob_tcp_peer_t* peer)
  */
 static void mca_oob_tcp_peer_destruct(mca_oob_tcp_peer_t * peer)
 {
-    mca_oob_tcp_peer_close(peer); 
+    mca_oob_tcp_peer_shutdown(peer); 
     OBJ_DESTRUCT(&(peer->peer_send_queue));
     OBJ_DESTRUCT(&(peer->peer_lock));
 }
@@ -446,6 +446,11 @@ void mca_oob_tcp_peer_close(mca_oob_tcp_peer_t* peer)
         orte_errmgr.abort();
     }
 
+    mca_oob_tcp_peer_shutdown(peer);
+}
+
+void mca_oob_tcp_peer_shutdown(mca_oob_tcp_peer_t* peer)
+{
     /* giving up and cleanup any pending messages */
     if(peer->peer_retries++ > mca_oob_tcp_component.tcp_peer_retries) {
         mca_oob_tcp_msg_t *msg = peer->peer_send_msg;

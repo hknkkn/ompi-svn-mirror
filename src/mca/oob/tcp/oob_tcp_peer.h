@@ -88,7 +88,7 @@ OBJ_CLASS_DECLARATION(mca_oob_tcp_peer_t);
  */
 #define MCA_OOB_TCP_PEER_RETURN(peer) \
     { \
-    mca_oob_tcp_peer_close(peer); \
+    mca_oob_tcp_peer_shutdown(peer); \
     ompi_hash_table_remove_proc(&mca_oob_tcp_component.tcp_peers, &peer->peer_name); \
     OMPI_FREE_LIST_RETURN(&mca_oob_tcp_component.tcp_peer_free, (ompi_list_item_t*)peer); \
     }
@@ -132,6 +132,7 @@ bool mca_oob_tcp_peer_accept(mca_oob_tcp_peer_t* peer, int sd);
  * @param peer  The peer process.
  */
 void mca_oob_tcp_peer_close(mca_oob_tcp_peer_t* peer);
+void mca_oob_tcp_peer_shutdown(mca_oob_tcp_peer_t* peer);
 
 /**
  * The peers address has been resolved.
