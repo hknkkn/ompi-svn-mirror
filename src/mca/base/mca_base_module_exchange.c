@@ -198,15 +198,14 @@ static void mca_base_modex_registry_callback(
     ompi_proc_t **new_procs = NULL;
     size_t new_proc_count = 0;
     uint32_t i, j;
-    orte_gpr_keyval_t **keyval;
-    orte_gpr_value_t **value;
+    orte_gpr_keyval_t *keyval;
+    orte_gpr_value_t *value;
     ompi_proc_t *proc;
     char **token;
     orte_process_name_t *proc_name;
     mca_base_modex_t *modex;
     mca_base_modex_module_t *modex_module;
     mca_base_component_t component;
-    int32_t bsize;
     bool isnew = false;
  
 
@@ -214,13 +213,13 @@ static void mca_base_modex_registry_callback(
     value = msg->values;
     for (i=0; i < msg->cnt; i++) {
 
-        if (0 < (*value)->cnt) {  /* needs to be at least one value */
-            new_procs = malloc(sizeof(ompi_proc_t*) * (*value)->cnt);
+        if (0 < value->cnt) {  /* needs to be at least one value */
+            new_procs = malloc(sizeof(ompi_proc_t*) * value->cnt);
 
             /*
              * Token for the value should be the process name - look it up
              */
-            token = (*value)->tokens;
+            token = value->tokens;
             if (ORTE_SUCCESS == orte_ns.convert_string_to_process_name(&proc_name, *token)) {
                 proc = ompi_proc_find_and_add(proc_name, &isnew);
     
@@ -251,16 +250,15 @@ static void mca_base_modex_registry_callback(
                  * Could be multiple keyvals returned since there is one for each
                  * component type/name/version - process them all
                  */
-                keyval = (*value)->keyvals;
-                for (j=0; j < (*value)->cnt; j++) {
-                    if(sscanf((*keyval)->key, "modex-%[^-]-%[^-]-%d-%d", 
+                keyval = value->keyvals;
+                for (j=0; j < value->cnt; j++) {
+                    if(sscanf(keyval->key, "modex-%[^-]-%[^-]-%d-%d", 
                         component.mca_type_name,
                         component.mca_component_name,
                         &component.mca_component_major_version,
                         &component.mca_component_minor_version) != 4) {
                         ompi_output(0, "mca_base_modex_registry_callback: invalid component name %s\n", 
-                            (*keyval)->key);
-                        OBJ_RELEASE(keyval);
+                            keyval->key);
                         OMPI_THREAD_UNLOCK(&proc->proc_lock);
                         continue;
                     }
@@ -278,16 +276,12 @@ static void mca_base_modex_registry_callback(
                     /* 
                      * Create a copy of the data.
                      */
-                    bsize = ((*keyval)->value.byteobject)->size;
-                    modex_module->module_data = ((*keyval)->value.byteobject)->bytes;
-                    ((*keyval)->value.byteobject)->bytes = NULL;  /* dereference this pointer to avoid free'ng space */
-                    modex_module->module_data_size = bsize;
+                    modex_module->module_data = (void*)keyval->value.byteobject.bytes;
+                    keyval->value.byteobject.bytes = NULL;  /* dereference this pointer to avoid free'ng space */
+                    modex_module->module_data_size = keyval->value.byteobject.size;
                     modex_module->module_data_avail = true;
                     ompi_condition_signal(&modex_module->module_data_cond);
             
-                    /* release keyval */
-                    OBJ_RELEASE(*keyval);
-                    
                     /* sequence to next keyval object */
                     keyval++;
                 }
@@ -304,9 +298,6 @@ static void mca_base_modex_registry_callback(
         
         /* relock the thread */
         OMPI_THREAD_LOCK(&proc->proc_lock);
-        
-        /* release the value from the msg */
-        OBJ_RELEASE(*value);
         
         /* sequence to next value in msg */
         value++;
@@ -342,7 +333,7 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     OMPI_UNLOCK(&mca_base_modex_lock);
 
     /* otherwise - subscribe */
-    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(jobidstring, name))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobidstring, name))) {
         return rc;
     }
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
@@ -393,34 +384,33 @@ int mca_base_modex_send(
 {
     char *segment;
     char *tokens[2], *jobidstring;
-    orte_gpr_keyval_t *keyval;
-    orte_byte_object_t *bytedata;
+    orte_gpr_keyval_t keyval;
     int rc;
 
-    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(tokens[0], orte_process_info.my_name))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&tokens[0], orte_process_info.my_name))) {
         return rc;
     }
-    
     tokens[1] = NULL;
 
-    bytedata = (orte_byte_object_t*)malloc(sizeof(orte_byte_object_t));
-    bytedata->size = size;
-    bytedata->bytes = (void *)malloc(size);
-    memcpy(bytedata->bytes, data, size);
-    
-    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(jobidstring, orte_process_info.my_name))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobidstring, orte_process_info.my_name))) {
         return rc;
     }
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
 
-    keyval = OBJ_NEW(orte_gpr_keyval_t);
-    asprintf(&(keyval->key), "modex-%s-%s-%d-%d", 
+    OBJ_CONSTRUCT(&keyval, orte_gpr_keyval_t);
+    keyval.type = ORTE_BYTE_OBJECT;
+    keyval.value.byteobject.size = size;
+    keyval.value.byteobject.bytes = (void *)malloc(size); 
+    if(NULL == keyval.value.byteobject.bytes) {
+        return OMPI_ERR_OUT_OF_RESOURCE;
+    }
+    memcpy(keyval.value.byteobject.bytes, data, size);
+    
+    asprintf(&(keyval.key), "modex-%s-%s-%d-%d", 
         source_component->mca_type_name,
         source_component->mca_component_name,
         source_component->mca_component_major_version,
         source_component->mca_component_minor_version);
-    keyval->type = ORTE_BYTE_OBJECT;
-    keyval->value.byteobject = bytedata;
     
     rc = orte_gpr.put(
         ORTE_GPR_AND | ORTE_GPR_OVERWRITE, 
