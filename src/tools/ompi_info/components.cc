@@ -149,11 +149,8 @@ void ompi_info::open_components()
 
   // ORTE frameworks
 
-#if 0
-  // JMS Waiting for implementation
   orte_errmgr_base_open();
   component_map["errmgr"] = &orte_errmgr_base_components_available;
-#endif
 
   orte_gpr_base_open();
   component_map["gpr"] = &orte_gpr_base_components_available;

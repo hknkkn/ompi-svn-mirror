@@ -25,6 +25,7 @@
 
 #include "util/output.h"
 
+#include "mca/errmgr/errmgr.h"
 #include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
 
 #include "gpr_replica_fn.h"
@@ -43,6 +44,7 @@ int orte_gpr_replica_create_container(orte_gpr_replica_container_t **cptr,
     }
     if (ORTE_SUCCESS !=
           (rc = orte_gpr_replica_copy_itag_list(&((*cptr)->itags), itags, num_itags))) {
+        ORTE_ERROR_LOG(rc);
         OBJ_RELEASE(*cptr);
         return rc;
     }

@@ -62,6 +62,7 @@ int main(int argc, char **argv)
     orte_gpr_keyval_t *kptr=NULL, **kvals;
     orte_gpr_replica_itagval_t **ivals=NULL;
     orte_gpr_value_t **values, *val;
+    orte_process_name_t seed={0,0,0};
     
     test_init("test_gpr_replica");
 
@@ -79,6 +80,7 @@ int main(int argc, char **argv)
     ompi_init(argc, argv);
 
     orte_process_info.seed = true;
+    orte_process_info.my_name = &seed;
 
     /* startup the MCA */
     if (OMPI_SUCCESS == mca_base_open()) {
@@ -327,6 +329,7 @@ int main(int argc, char **argv)
     val->cnt = 1;
     val->segment = strdup("test-put-segment");
     val->num_tokens = 14;
+    val->tokens = (char**)malloc(val->num_tokens * sizeof(char*));
     for (i=0; i < 14; i++) {
         asprintf(&(val->tokens[i]), "dummy%d", i);
     }
@@ -352,6 +355,7 @@ int main(int argc, char **argv)
     val->cnt = 20;
     val->segment = strdup("test-put-segment");
     val->num_tokens = 14;
+    val->tokens = (char**)malloc(val->num_tokens * sizeof(char*));
     for (i=0; i < 14; i++) {
         asprintf(&(val->tokens[i]), "dummy%d", i);
     }
@@ -375,7 +379,6 @@ int main(int argc, char **argv)
 
     fprintf(stderr, "put 1 value/multiple keyvals - second container\n");
     val->num_tokens = 10;
-    names[10] = NULL;
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
                                 1, &val))) {
         fprintf(test_out, "gpr_test: put 1 value/multiple keyval in second container failed with error code %d\n", rc);
