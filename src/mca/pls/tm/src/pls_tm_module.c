@@ -28,6 +28,8 @@
 #include "include/orte_types.h"
 #include "util/argv.h"
 #include "util/output.h"
+#include "util/environ.h"
+#include "mca/base/mca_base_param.h"
 #include "mca/rmgr/base/base.h"
 #include "mca/rmaps/base/rmaps_base_map.h"
 #include "mca/pls/pls.h"
@@ -77,12 +79,13 @@ static int pls_tm_launch(orte_jobid_t jobid)
     ompi_list_item_t *item, *item2;
     tm_task_id tid;
     tm_node_id *tm_node_ids = NULL;
+    char **mca_env, **tmp_env, **local_env;
+    int num_mca_env;
 
     /* Open up our connection to tm */
 
     ret = tm_init(NULL, &root);
     if (TM_SUCCESS != ret) {
-        /* JMS May change...? */
         return ORTE_ERR_RESOURCE_BUSY;
     }
 
@@ -90,7 +93,6 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
     ret = orte_rmgr_base_get_app_context(jobid, &app, &app_size);
     if (ORTE_SUCCESS != ret) {
-        /* JMS May change...? */
         goto cleanup;
     }
 
@@ -107,7 +109,6 @@ static int pls_tm_launch(orte_jobid_t jobid)
                 total_count, app_size);
     statuses = malloc(sizeof(int) * total_count);
     if (NULL == statuses) {
-        /* JMS may change...? */
         ret = ORTE_ERR_OUT_OF_RESOURCE;
         goto cleanup;
     }
@@ -124,7 +125,6 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
         if (0 != chdir(app[i]->cwd) ||
             0 != chdir(old_cwd)) {
-            /* JMS May change...? */
             ret = ORTE_ERR_NOT_FOUND;
             goto cleanup;
         }
@@ -142,9 +142,6 @@ static int pls_tm_launch(orte_jobid_t jobid)
         goto cleanup;
     }
     mapping_valid = true;
-
-    /* JMS: Do we need to take into account that
-       orte_rmaps_base_get_map() may return an empty list? */
 
     for (item =  ompi_list_get_first(&mapping);
          item != ompi_list_get_end(&mapping);
@@ -182,7 +179,6 @@ static int pls_tm_launch(orte_jobid_t jobid)
     }
     ret = do_tm_resolve(hostnames, num_hostnames, tm_node_ids);
     if (ORTE_SUCCESS != ret) {
-        /* JMS May change...? */
         goto cleanup;
     }
 
@@ -190,13 +186,27 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
     for (count = i = 0; i < app_size; ++i) {
         flat = ompi_argv_join(app[i]->argv, ' ');
+
+        /* Get an environment that we want to use */
+
+        num_mca_env = 0;
+        mca_env = NULL;
+        mca_base_param_build_env(&mca_env, &num_mca_env, true);
+        tmp_env = ompi_environ_merge(app[i]->env, mca_env);
+        local_env = ompi_environ_merge(environ, tmp_env);
+        if (NULL != mca_env) {
+            ompi_argv_free(mca_env);
+        }
+        if (NULL != tmp_env) {
+            ompi_argv_free(tmp_env);
+        }
+
+        /* Launch all app[i]->num_procs procs */
+
         for (j = 0; j < (size_t) app[i]->num_procs; ++j, ++count) {
             ompi_output_verbose(10, 0, "Launching app %d, process %d: %s",
                                 i, j, flat);
-
-            /* Do the spawn */
-
-            ret = tm_spawn(app[i]->argc, app[i]->argv, app[i]->env, 
+            ret = tm_spawn(app[i]->argc, app[i]->argv, local_env,
                            tm_node_ids[count], &tid, &event);
             if (TM_SUCCESS != ret) {
                 statuses[count] = ORTE_PROC_EXITED;
@@ -212,18 +222,21 @@ static int pls_tm_launch(orte_jobid_t jobid)
             }
 
             statuses[count] = ORTE_PROC_ALIVE;
+            ret = ORTE_SUCCESS;
             continue;
 
         loop_error:
-            free(flat);
-            goto cleanup;
+            count = app_size + 1;
+            break;
+        }
+        if (NULL != local_env) {
+            ompi_argv_free(local_env);
         }
         free(flat);
     }
 
     /* All done */
 
-    ret = ORTE_SUCCESS;
  cleanup:
     if (mapping_valid) {
         while (NULL != (item = ompi_list_remove_first(&mapping))) {
@@ -255,10 +268,12 @@ static int pls_tm_terminate_job(orte_jobid_t jobid)
 }
 
 
+/*
+ * TM can't kill individual processes -- PBS will kill the entire job
+ */
 static int pls_tm_terminate_proc(const orte_process_name_t *name)
 {
-    /* JMS */
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    return ORTE_ERR_NOT_SUPPORTED;
 }
 
 
@@ -289,7 +304,6 @@ static int do_tm_resolve(char **hostnames, size_t num_hostnames,
 
     ret = tm_nodeinfo(&tm_node_ids, &num_node_ids);
     if (TM_SUCCESS != ret) {
-        /* JMS May change...? */
         return ORTE_ERR_NOT_FOUND;
     }
 
@@ -321,7 +335,6 @@ static int do_tm_resolve(char **hostnames, size_t num_hostnames,
         }
 
         if ((size_t) (num_tm_hostnames + 1) == j) {
-            /* JMS May change...? */
             ompi_argv_free(tm_hostnames);
             return ORTE_ERR_NOT_FOUND;
         }
