@@ -72,6 +72,8 @@ int orte_rmgr_base_select(void)
 
     /* If we didn't find one to select, barf */
     if (NULL == best_module) {
+        ompi_output(orte_rmgr_base.rmgr_output,
+                    "rmgr:select: no components available!");
         return ORTE_ERROR;
     }
 

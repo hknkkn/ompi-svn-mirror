@@ -80,7 +80,7 @@ static orte_pls_base_module_t *select_any(void)
 
     /* If the list is empty, return NULL */
 
-    if (ompi_list_is_empty(&orte_pls_base.pls_available) > 0) {
+    if (ompi_list_is_empty(&orte_pls_base.pls_available)) {
         ompi_output(orte_pls_base.pls_output,
                     "orte:base:select: no components available!");
         return NULL;

@@ -60,6 +60,13 @@ int orte_rds_base_select(void)
             ompi_list_append(&orte_rds_base.rds_selected, &selected->super);
         } 
     }
-    return (ompi_list_get_size(&orte_rds_base.rds_selected) > 0) ? ORTE_SUCCESS : ORTE_ERROR;
+
+    if (ompi_list_is_empty(&orte_rds_base.rds_selected)) {
+        ompi_output(orte_rds_base.rds_output,
+                    "rda:select: no components available!");
+        return ORTE_ERROR;
+    }
+
+    return ORTE_SUCCESS;
 }
 
