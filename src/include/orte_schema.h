@@ -77,7 +77,7 @@ extern char *orte_error_strings[];
 /*
  * Convenience functions for accessing ORTE data
  */
-typedef int (*orte_schema_get_proc_tokens_fn_t)(char ***tokens, orte_process_name_t *proc);
+typedef int (*orte_schema_get_proc_tokens_fn_t)(char ***tokens, int32_t*, orte_process_name_t *proc);
 
 typedef int (*orte_schema_get_node_tokens_fn_t)(char ***tokens, orte_cellid_t cellid, char *nodename);
 

@@ -57,7 +57,7 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_JOBID               (orte_data_type_t)   24 /**< a jobid */
 #define    ORTE_CELLID              (orte_data_type_t)   25 /**< a cellid */
 #define    ORTE_NODE_STATE          (orte_data_type_t)   26 /**< node status flag */
-#define    ORTE_STATUS_KEY          (orte_data_type_t)   27 /**< process/resource status key */
+#define    ORTE_PROC_STATE          (orte_data_type_t)   27 /**< process/resource status */
 #define    ORTE_EXIT_CODE           (orte_data_type_t)   28 /**< process exit code */
 #define    ORTE_BYTE_OBJECT         (orte_data_type_t)   29 /**< byte object structure */
 #define    ORTE_KEYVAL              (orte_data_type_t)   30 /**< registry key-value pair */
