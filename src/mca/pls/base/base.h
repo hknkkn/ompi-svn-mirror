@@ -81,14 +81,20 @@ extern "C" {
      */
     OMPI_DECLSPEC int orte_pls_base_close(void);
     /**
-     * Utility routine to set proces state/pid
+     * Utility routine to get/set proces pid
      */
     OMPI_DECLSPEC int orte_pls_base_set_proc_pid(orte_process_name_t*, pid_t);
+    OMPI_DECLSPEC int orte_pls_base_get_proc_pid(orte_process_name_t*, pid_t*);
     /**
-     * Utility routine to set daemon state/pid
+     * Utility routine to retreive all process pids w/in a specified job.
+     */
+    OMPI_DECLSPEC int orte_pls_base_get_proc_pids(orte_jobid_t jobid, pid_t** pids, size_t* num_pids);
+    /**
+     * Utility routine to set daemon pid
      */
     OMPI_DECLSPEC int orte_pls_base_set_node_pid(orte_cellid_t cellid, char* node_name, orte_jobid_t jobid, pid_t pid);
-
+    
+  
 #if defined(c_plusplus) || defined(__cplusplus)
 }
 #endif
