@@ -45,7 +45,7 @@ extern "C" {
     /* Local functions */
 
     int orte_pls_tm_put_tid(const orte_process_name_t* name, 
-                            pls_tm_proc_state_t *proc_state);
+                            tm_task_id tid, int state);
     int orte_pls_tm_get_tids(orte_jobid_t jobid, tm_task_id **tids, 
                              size_t *num_tids);
 

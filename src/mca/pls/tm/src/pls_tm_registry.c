@@ -34,7 +34,7 @@
  * Save the TID of a given process
  */
 int orte_pls_tm_put_tid(const orte_process_name_t* name,
-                        pls_tm_proc_state_t *state)
+                        tm_task_id tid, int state)
 {
     orte_gpr_value_t* values[1];
     orte_gpr_value_t value;
@@ -48,13 +48,13 @@ int orte_pls_tm_put_tid(const orte_process_name_t* name,
         return rc;
     }
 
-    if(ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&value.tokens, &value.num_tokens, (orte_process_name_t*)name))) {
+    if (ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&value.tokens, &value.num_tokens, (orte_process_name_t*) name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
 
-    kv_tid.value.ui32 = state->tid;
-    kv_state.value.proc_state = state->state;
+    kv_tid.value.ui32 = tid;
+    kv_state.value.proc_state = state;
     keyvals[0] = &kv_tid;
     keyvals[1] = &kv_state;
     
