@@ -104,3 +104,5 @@ typedef struct {
 
 
 OBJ_CLASS_DECLARATION(orte_app_context_t);
+
+#endif
