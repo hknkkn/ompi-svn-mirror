@@ -22,10 +22,6 @@
 #include "mca/mca.h"
 #include "mca/ras/base/base.h"
 
-/**
- * globals
- */
-
 
 /*
  * "not available" functions

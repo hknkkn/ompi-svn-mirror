@@ -27,23 +27,23 @@
  * Function for selecting one component from all those that are
  * available.
  */
-int orte_mca_ras_base_select(bool *allow_multi_user_threads, 
+int mca_orte_ras_base_select(bool *allow_multi_user_threads, 
                        bool *have_hidden_threads)
 {
   ompi_list_item_t *item;
   mca_base_component_list_item_t *cli;
-  mca_ras_base_component_t *component, *best_component = NULL;
-  mca_ras_base_module_t *module, *best_module = NULL;
+  mca_orte_ras_base_component_t *component, *best_component = NULL;
+  mca_orte_ras_base_module_t *module, *best_module = NULL;
   bool multi, hidden;
   int priority, best_priority = -1;
 
   /* Iterate through all the available components */
 
-  for (item = ompi_list_get_first(&mca_ras_base_components_available);
-       item != ompi_list_get_end(&mca_ras_base_components_available);
+  for (item = ompi_list_get_first(&mca_orte_ras_base_components_available);
+       item != ompi_list_get_end(&mca_orte_ras_base_components_available);
        item = ompi_list_get_next(item)) {
     cli = (mca_base_component_list_item_t *) item;
-    component = (mca_ras_base_component_t *) cli->cli_component;
+    component = (mca_orte_ras_base_component_t *) cli->cli_component;
 
     /* Call the component's init function and see if it wants to be
        selected */
@@ -94,8 +94,8 @@ int orte_mca_ras_base_select(bool *allow_multi_user_threads,
      usage */
 
   orte_ras = *best_module;
-  orte_mca_ras_base_selected_component = *best_component;
-  orte_mca_ras_base_selected = true;
+  mca_orte_ras_base_selected_component = *best_component;
+  mca_orte_ras_base_selected = true;
 
   /* all done */
 

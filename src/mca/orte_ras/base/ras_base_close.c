@@ -33,7 +33,7 @@ int mca_orte_ras_base_close(void)
   }
 
   /* Close all remaining available components (may be one if this is a
-     OMPI RTE program, or [possibly] multiple if this is ompi_info) */
+     Open RTE program, or [possibly] multiple if this is ompi_info) */
 
   mca_base_components_close(mca_orte_ras_base_output, 
                             &mca_orte_ras_base_components_available, NULL);
