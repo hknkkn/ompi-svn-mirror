@@ -28,12 +28,6 @@ extern "C" {
 #endif
 
 /**
- * Internal functions
- */ 
-
-int orte_rds_hostfile_parse(const char* hostfile, ompi_list_t* list);
-
-/**
  * Resource Discovery Component 
  */
 struct orte_rds_hostfile_component_t {
