@@ -14,10 +14,12 @@
 
 #include "ompi_config.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "include/constants.h"
+#include "util/printf.h"
 #include "util/argv.h"
 #include "util/environ.h"
 
@@ -28,10 +30,9 @@
  */
 char **ompi_environ_merge(char **minor, char **major)
 {
-    int argc = 0;
-    char **argv = NULL;
-    char *a, *b;
-    int i, j;
+    int i;
+    char **ret = NULL;
+    char *name, *value;
 
     /* Check for bozo cases */
 
@@ -45,55 +46,146 @@ char **ompi_environ_merge(char **minor, char **major)
 
     /* First, copy major */
 
-    argv = ompi_argv_copy(major);
-    argc = ompi_argv_count(argv);
+    ret = ompi_argv_copy(major);
 
     /* Do we have something in minor? */
 
     if (NULL == minor) {
-        return argv;
+        return ret;
     }
 
-    /* Now go through minor and see if there's any non-duplicated env
-       variables in there that we can append to the new argv.  This is
-       not terribly efficient O(N*M), but this will never be in a
-       performance-critical path. */
+    /* Now go through minor and call ompi_setenv(), but with overwrite
+       as false */
 
     for (i = 0; NULL != minor[i]; ++i) {
-        a = strchr(minor[i], '=');
-        if (NULL != a) {
-            *a = '\0';
-        }
+        value = strchr(minor[i], '=');
+        if (NULL == value) {
+            ompi_setenv(minor[i], NULL, false, &ret);
+        } else {
 
-        for (j = 0; NULL != major[j]; ++j) {
-            b = strchr(major[j], '=');
-            if (NULL != b) {
-                *b = '\0';
-            }
+            /* strdup minor[i] in case it's a constat string */
 
-            if (0 == strcmp(a, b)) {
-                if (NULL != b) {
-                    *b = '=';
-                }
-                break;
-            }
-            if (NULL != b) {
-                *b = '=';
-            }
-        }
-        if (NULL != a) {
-            *a = '=';
-        }
-
-        /* Did we find a match in major?  If not, add this entry from
-           minor into the output argv */
-
-        if (NULL == major[j]) {
-            ompi_argv_append(&argc, &argv, minor[i]);
+            name = strdup(minor[i]);
+            value = name + (value - minor[i]);
+            *value = '\0';
+            printf("Setting: %s -- %s\n", name, value + 1);
+            ompi_setenv(name, value + 1, false, &ret);
+            free(name);
         }
     }
 
     /* All done */
 
-    return argv;
+    return ret;
+}
+
+
+/*
+ * Portable version of setenv(), allowing editing of any environ-like
+ * array
+ */
+int ompi_setenv(const char *name, const char *value, bool overwrite,
+                char ***env)
+{
+    int i;
+    char *newvalue, *compare;
+    size_t len;
+
+    /* Make the new value */
+
+    if (NULL == value) {
+        asprintf(&newvalue, "%s=", name);
+    } else {
+        asprintf(&newvalue, "%s=%s", name, value);
+    }
+    if (NULL == newvalue) {
+        return OMPI_ERR_OUT_OF_RESOURCE;
+    }
+
+    /* Check the bozo case */
+
+    if (NULL == env) {
+        return OMPI_ERR_BAD_PARAM;
+    } else if (NULL == *env) {
+        i = 0;
+        ompi_argv_append(&i, env, newvalue);
+        return OMPI_SUCCESS;
+    }
+
+    /* Make something easy to compare to */
+
+    asprintf(&compare, "%s=", name);
+    if (NULL == compare) {
+        free(newvalue);
+        return OMPI_ERR_OUT_OF_RESOURCE;
+    }
+    len = strlen(compare);
+
+    /* Look for a duplicate that's already set in the env */
+
+    for (i = 0; (*env)[i] != NULL; ++i) {
+        if (0 == strncmp((*env)[i], compare, len)) {
+            if (overwrite) {
+                free((*env)[i]);
+                (*env)[i] = newvalue;
+                free(compare);
+                return OMPI_SUCCESS;
+            } else {
+                free(compare);
+                free(newvalue);
+                return OMPI_EXISTS;
+            }
+        }
+    }
+
+    /* If we found no match, append this value */
+
+    i = ompi_argv_count(*env);
+    ompi_argv_append(&i, env, newvalue);
+
+    /* All done */
+
+    free(compare);
+    free(newvalue);
+    return OMPI_SUCCESS;
+}
+
+
+/*
+ * Portable version of unsetenv(), allowing editing of any
+ * environ-like array
+ */
+int ompi_unsetenv(const char *name, char ***env)
+{
+    int i;
+    char *compare;
+    size_t len;
+    bool found;
+
+    /* Make something easy to compare to */
+
+    asprintf(&compare, "%s=", name);
+    if (NULL == compare) {
+        return OMPI_ERR_OUT_OF_RESOURCE;
+    }
+    len = strlen(compare);
+
+    /* Look for a duplicate that's already set in the env.  If we find
+       it, free it, and then start shifting all elements down one in
+       the array. */
+
+    found = false;
+    for (i = 0; (*env)[i] != NULL; ++i) {
+        if (found) {
+            (*env)[i] = (*env)[i + 1];
+        } else if (0 == strncmp((*env)[i], compare, len)) {
+            free((*env)[i]);
+            (*env)[i] = (*env)[i + 1];
+            found = true;
+        }
+    }
+
+    /* All done */
+
+    return (found) ? OMPI_SUCCESS : OMPI_ERR_NOT_FOUND;
 }
