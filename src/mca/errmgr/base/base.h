@@ -60,7 +60,7 @@ OMPI_DECLSPEC    void orte_errmgr_base_log(char *msg, char *filename, int line);
 OMPI_DECLSPEC extern int orte_errmgr_base_output;
 OMPI_DECLSPEC extern bool orte_errmgr_base_selected;
 OMPI_DECLSPEC extern ompi_list_t orte_errmgr_base_components_available;
-OMPI_DECLSPEC extern mca_errmgr_base_component_t mca_errmgr_base_selected_component;
+OMPI_DECLSPEC extern mca_errmgr_base_component_t orte_errmgr_base_selected_component;
 
 /*
  * external API functions will be documented in the mca/errmgr/errmgr.h file

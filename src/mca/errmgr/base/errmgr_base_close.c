@@ -27,7 +27,7 @@ int orte_errmgr_base_close(void)
   /* If we have a selected component and module, then finalize it */
 
   if (orte_errmgr_base_selected) {
-      mca_errmgr_base_selected_component.errmgr_finalize();
+      orte_errmgr_base_selected_component.errmgr_finalize();
   }
 
   /* Close all remaining available components (may be one if this is a

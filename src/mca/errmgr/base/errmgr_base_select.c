@@ -92,7 +92,7 @@ int orte_errmgr_base_select(bool *allow_multi_user_threads,
      usage */
 
   orte_errmgr = *best_module;
-  mca_errmgr_base_selected_component = *best_component;
+  orte_errmgr_base_selected_component = *best_component;
   orte_errmgr_base_selected = true;
 
   /* all done */

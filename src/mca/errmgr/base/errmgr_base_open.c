@@ -45,7 +45,7 @@ orte_errmgr_base_module_t orte_errmgr = {
 };
 bool orte_errmgr_base_selected = false;
 ompi_list_t orte_errmgr_base_components_available;
-mca_errmgr_base_component_t mca_errmgr_base_selected_component;
+mca_errmgr_base_component_t orte_errmgr_base_selected_component;
 
 
 /**
@@ -57,7 +57,7 @@ int orte_errmgr_base_open(void)
   /* Open up all available components */
 
   if (ORTE_SUCCESS != 
-      mca_base_components_open("errmgr", 0, mca_errmgr_base_static_components, 
+      mca_base_components_open("errmgr", 0, orte_errmgr_base_static_components, 
                                &orte_errmgr_base_components_available)) {
     return ORTE_ERROR;
   }
