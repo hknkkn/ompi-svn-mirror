@@ -259,16 +259,19 @@ int orte_gpr_replica_add_values(orte_gpr_notify_data_t **data,
 
     if (orte_gpr_replica_globals.debug) {
         ompi_output(0, "add_values: performing a get");
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(sptr->addr_mode, sptr->seg,
-                ORTE_VALUE_ARRAY_GET_BASE(&(sptr->tokentags), orte_gpr_replica_itag_t),
-                num_tokens,
-                ORTE_VALUE_ARRAY_GET_BASE(&(sptr->keytags), orte_gpr_replica_itag_t),
-                num_keys,
-                &cnt, &values))) {
-            ORTE_ERROR_LOG(rc);
-            return rc;
-        }
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(sptr->addr_mode, sptr->seg,
+            ORTE_VALUE_ARRAY_GET_BASE(&(sptr->tokentags), orte_gpr_replica_itag_t),
+            num_tokens,
+            ORTE_VALUE_ARRAY_GET_BASE(&(sptr->keytags), orte_gpr_replica_itag_t),
+            num_keys,
+            &cnt, &values))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
 
+     if (orte_gpr_replica_globals.debug) {
         ompi_output(0, "add_values: get returned %d values", cnt);
         for (i=0; i < cnt; i++) {
             ompi_output(0, "Data for value %d from segment %s\nTokens:", i, values[i]->segment);
