@@ -29,40 +29,6 @@
 
 
 /*
- *  Set the vpid start and range on the "global" job segment.
- */
-
-static int orte_rmaps_rr_set_vpid_range(orte_jobid_t jobid, orte_vpid_t start, orte_vpid_t range)
-{
-    orte_gpr_value_t value;
-    orte_gpr_value_t* values;
-    orte_gpr_keyval_t vpid_start = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_START_KEY, ORTE_VPID };
-    orte_gpr_keyval_t vpid_range = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_RANGE_KEY, ORTE_VPID };
-    orte_gpr_keyval_t* keyvals[2];
-    char* tokens[2] = { ORTE_JOB_GLOBALS, NULL };
-    int rc;
-
-    keyvals[0] = &vpid_start;
-    keyvals[1] = &vpid_range;
-    value.addr_mode = ORTE_GPR_OVERWRITE;
-    value.tokens = tokens;
-    value.num_tokens = 1;
-    value.keyvals = keyvals;
-    value.cnt = 2;
-    values = &value;
-
-    if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&value.segment, jobid)))
-        return rc;
-
-    vpid_start.value.vpid = start;
-    vpid_range.value.vpid = range;
-    rc = orte_gpr.put(1, &values);
-    free(value.segment);
-    return rc;
-}
-
-
-/*
  * Create a default mapping for the application.
  */
 
@@ -202,7 +168,7 @@ static int orte_rmaps_rr_map(orte_jobid_t jobid)
     }
     
     /* save vpid start/range on the job segment */
-    rc = orte_rmaps_rr_set_vpid_range(jobid,vpid_start,num_procs);
+    rc = orte_rmaps_base_set_vpid_range(jobid,vpid_start,num_procs);
 
 cleanup:
     while(NULL != (item = ompi_list_remove_first(&nodes))) {
