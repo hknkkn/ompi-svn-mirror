@@ -12,35 +12,24 @@
  * $HEADER$
  */
 
-#include "ompi_config.h"
-#include "include/constants.h"
+#include "orte_config.h"
+#include "include/orte_constants.h"
 #include "util/output.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
 #include "mca/rml/base/base.h"
+#include "mca/oob/base/base.h"
 #include "rml_oob.h"
 
-/**
-  * component open/close/init function
-  */
-static int orte_rml_oob_open(void)
-{
-    return OMPI_SUCCESS;
-}
 
 
 static orte_rml_module_t* 
 orte_rml_oob_init(int* priority, bool *allow_multi_user_threads, bool *have_hidden_threads)
 {
+    if(mca_oob_base_init(allow_multi_user_threads, have_hidden_threads) != ORTE_SUCCESS)
+        return NULL;
     *priority = 1;
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = false;
     return &orte_rml_oob_module;
-}
-
-static int orte_rml_oob_close(void)
-{
-    return OMPI_SUCCESS;
 }
 
 
@@ -62,8 +51,8 @@ orte_rml_component_t orte_rml_oob_component = {
         1,  /* MCA component major version */
         0,  /* MCA component minor version */
         0,  /* MCA component release version */
-        orte_rml_oob_open,  /* component open  */
-        orte_rml_oob_close  /* component close */
+        mca_oob_base_open,  /* component open  */
+        mca_oob_base_close  /* component close */
       },
 
       /* Next the MCA v1.0.0 component meta data */
