@@ -159,8 +159,6 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_byte_object_t *sbyteptr;
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
-    orte_rmgr_app_info_t **app_info;
-    orte_rmgr_app_context_t **app_context;
 
     /* initialize the number of bytes */
     *num_bytes = 0;
@@ -343,25 +341,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             }
             break;
             
-        case ORTE_APP_INFO:
-            /* array of pointers to rmgr_app_info objects - need to pack the objects */
-            app_info = (orte_rmgr_app_info_t**) src;
-            for (i=0; i < num_vals; i++) {
-                /* pack the application name */
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)(&(app_info[i]->application)), 1, ORTE_STRING, &n)) {
-                    return ORTE_ERROR;
-                }
-                dst = (void*)((char*)dst + n);
-                /* pack the number of instances of this application */
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)(&(app_info[i]->num_procs)), 1, ORTE_INT32, &n)) {
-                    return ORTE_ERROR;
-                }
-                dst = (void*)((char*)dst + n);
-            }
-            break;
-            
+#if 0
         case ORTE_APP_CONTEXT:
             /* array of pointers to rmgr_app_context objects - need to pack the objects */
             app_context = (orte_rmgr_app_context_t**) src;
@@ -392,7 +372,8 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 dst = (void*)((char*)dst + n);
             }
             break;
-            
+#endif
+
         case ORTE_NULL:
             break;
 

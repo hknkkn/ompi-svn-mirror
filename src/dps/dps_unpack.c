@@ -147,8 +147,6 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_byte_object_t* dbyteptr;
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
-    orte_rmgr_app_info_t **app_info;
-    orte_rmgr_app_context_t **app_context;
     uint32_t len;
     char *str, *sstr;
     void *sptr;
@@ -397,31 +395,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             }
             break;
             
-        case ORTE_APP_INFO:
-        
-            /* unpack into array of app_info objects */
-            app_info = (orte_rmgr_app_info_t**) dst;
-            for (i=0; i < num_vals; i++) {
-                /* create the app_info object */
-                app_info[i] = OBJ_NEW(orte_rmgr_app_info_t);
-                if (NULL == app_info[i]) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
-                }
-                /* unpack the application name */
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_info[i]->application,
-                            src, 1, ORTE_STRING, mem_left, num_bytes))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + *num_bytes);
-                /* unpack the number of instances of this application */
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_info[i]->num_procs),
-                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + *num_bytes);
-            }
-            break;
-            
+#if 0
         case ORTE_APP_CONTEXT:
             
             /* unpack into array of app_context objects */
@@ -468,7 +442,8 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 src = (void*)((char*)src + *num_bytes);
             }
             break;
-            
+#endif
+
         case ORTE_NULL:
             break;
 

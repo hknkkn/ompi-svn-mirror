@@ -45,8 +45,6 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     orte_byte_object_t *sbyteptr=NULL;
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
-    orte_rmgr_app_info_t **app_info;
-    orte_rmgr_app_context_t **app_context;
 
     switch(type) {
 
@@ -132,16 +130,7 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             }
             return mem_req;
             
-        case ORTE_APP_INFO:
-            mem_req = 0;
-            app_info = (orte_rmgr_app_info_t**) src;
-            for (i=0; i < num_vals; i++) {
-                mem_req += orte_dps_memory_required(
-                                (void*)(&(app_info[i]->application)), 1, ORTE_STRING);
-                mem_req += sizeof(int32_t); /* number of instances */
-            }
-            return mem_req;
-            
+#if 0
         case ORTE_APP_CONTEXT:
             mem_req = 0;
             app_context = (orte_rmgr_app_context_t**) src;
@@ -156,7 +145,8 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
                                 app_context[i]->num_enviro, ORTE_STRING);
             }
             return mem_req;
-            
+#endif
+
         default:
             return 0;  /* unrecognized type */
     }
