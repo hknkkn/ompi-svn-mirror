@@ -254,7 +254,7 @@ int orte_ns_base_get_vpid_string(char **vpid_string, const orte_process_name_t* 
 
 int orte_ns_base_convert_vpid_to_string(char **vpid_string, const orte_vpid_t vpid)
 {
-    vpid_string = NULL;
+    *vpid_string = NULL;
     
     if (0 > asprintf(vpid_string, "%0X", vpid)) {
         return ORTE_ERR_OUT_OF_RESOURCE;
@@ -304,7 +304,7 @@ int orte_ns_base_get_jobid_string(char **jobid_string, const orte_process_name_t
 
 int orte_ns_base_convert_jobid_to_string(char **jobid_string, const orte_jobid_t jobid)
 {
-    jobid_string = NULL;
+    *jobid_string = NULL;
     
     if (0 > asprintf(jobid_string, "%0X", jobid)) {
 	   return ORTE_ERR_OUT_OF_RESOURCE;
