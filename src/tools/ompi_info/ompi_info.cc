@@ -72,11 +72,6 @@ int main(int argc, char *argv[])
 #endif
     exit(ret);
   }
-  // Start OMPI process
-
-  if (OMPI_SUCCESS != orte_init(cmd_line, argc, argv)) {
-    return -1;
-  }
 
   ompi_cmd_line_make_opt(cmd_line, 'v', "version", 2, 
                          "Show version of Open MPI or a component");
