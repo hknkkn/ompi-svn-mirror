@@ -21,8 +21,10 @@ libs = $(top_builddir)/src/libmpi.la
 
 bin_PROGRAMS = mpirun
 
+AM_CPPFLAGS = -DOMPI_VERSION=\"$(OMPI_VERSION)\"
+
 mpirun_SOURCES = \
         mpirun.c 
 
-mpirun_LDADD = $(libs) 
+mpirun_LDADD = $(libs)
 mpirun_DEPENDENCIES = $(libs)

@@ -30,18 +30,20 @@
 #include "event/event.h"
 #include "util/proc_info.h"
 #include "util/argv.h"
+#include "util/path.h"
+#include "util/os_path.h"
 #include "util/cmd_line.h"
 #include "util/sys_info.h"
-#include "util/session_dir.h"
 #include "util/output.h"
-#include "util/os_path.h"
 #include "util/universe_setup_file_io.h"
 #include "util/show_help.h"
+#include "threads/condition.h"
 
 #include "mca/base/base.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
 #include "mca/rmgr/rmgr.h"
+#include "mca/rml/rml.h"
 
 #include "runtime/runtime.h"
 #include "runtime/orte_wait.h"
@@ -50,40 +52,47 @@ extern char** environ;
 
 struct ompi_event term_handler;
 struct ompi_event int_handler;
-struct ompi_event exit_handler;
-orte_jobid_t new_jobid = ORTE_JOBID_MAX;
+orte_jobid_t jobid = ORTE_JOBID_MAX;
+
+static int create_app(int argc, char* argv[], orte_app_context_t **app);
 
 static void
 exit_callback(int fd, short event, void *arg)
 {
-    printf("we failed to exit cleanly :(\n");
+    fprintf(stderr, "mpirun: abnormal exit(\n");
     exit(1);
 }
 
 static void
-signal_callback(int fd, short event, void *arg)
+signal_callback(int fd, short flags, void *arg)
 {
     int ret;
-    struct timeval tv;
+    struct timeval tv = { 5, 0 };
+    ompi_event_t* event;
 
-    if (new_jobid != ORTE_JOBID_MAX) {
-        ret = orte_rmgr.terminate_job(new_jobid);
-        if (OMPI_SUCCESS != ret) {
-            new_jobid = ORTE_JOBID_MAX;
+    static int signalled = 0;
+    if (0 != signalled++) {
+         return;
+    }
+
+    if (jobid != ORTE_JOBID_MAX) {
+        ret = orte_rmgr.terminate_job(jobid);
+        if (ORTE_SUCCESS != ret) {
+            jobid = ORTE_JOBID_MAX;
         }
     }
-#if 0
-    tv.tv_sec = 3;
-    tv.tv_usec = 0;
-    ompi_evtimer_set(&exit_handler, exit_callback, NULL);
-    ompi_evtimer_add(&exit_handler, &tv);
-#endif
+
+    if (NULL != (event = (ompi_event_t*)malloc(sizeof(ompi_event_t)))) {
+        ompi_evtimer_set(event, exit_callback, NULL);
+        ompi_evtimer_add(event, &tv);
+    }
 }
 
 /*
  * setup globals for catching mpirun command line options
  */
 struct {
+    bool debug;
     bool help;
     bool version;
     int num_procs;
@@ -109,86 +118,43 @@ orte_context_value_names_t mpirun_context_tbl[] = {
 int
 main(int argc, char *argv[])
 {
-#if 0
-    bool multi_thread = false;
-    bool hidden_thread = false;
-    int ret;
-    ompi_cmd_line_t *cmd_line = NULL;
-    ompi_list_t *nodelist = NULL;
-    ompi_list_t schedlist;
-    int num_procs = 1;
-    char cwd[MAXPATHLEN];
-    char *my_contact_info, *tmp, *jobidstring;
-    char *contact_file, *filenm, *segment;
-    ompi_registry_notify_id_t rc_tag;
-    ompi_rte_process_status_t *proc_status;
-    ompi_list_t *status_list;
-    ompi_registry_value_t *value;
-        
+    int rc, i, temp_argc, num_apps, app_num;
+    orte_app_context_t **apps;
+    ompi_cmd_line_t cmd_line;
+    char **temp_argv;
+    char *contact_file, *filenm;
 
 
-    /* setup to check command line options */
-    cmd_line = OBJ_NEW(ompi_cmd_line_t);
-
-    /* parse my context */
-    if (ORTE_SUCCESS != (ret = orte_parse_context(mpirun_context_tbl, cmd_line, argc, argv))) {
-        return ret;
-    }
-    
-    /* check for help and version requests */
-    if (mpirun_globals.help) {
-        char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(cmd_line);
-        ompi_show_help("help-mpirun.txt", "mpirun:usage", false,
-                       argv[0], args);
-        free(args);
-        return 1;
-    }
-
-    if (mpirun_globals.version) {
-        /* show version message */
-        printf("...showing off my version!\n");
-        exit(1);
-    }
-
-    /*
-     * Start the Open Run Time Environment
-     */
-    if (ORTE_SUCCESS != (ret = orte_init(cmd_line, argc, argv))) {
+    /* Intialize our Open RTE environment */
+    OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
+    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
         ompi_show_help("help-mpirun.txt", "mpirun:init-failure", true,
-                       "orte_init()", ret);
-	   return ret;
+                       "orte_init()", rc);
+        return rc;
     }
-
-    /* Finish setting up the RTE - contains commands
-     * that need to be inside a compound command, if one is active
-     */
-    if (OMPI_SUCCESS != (ret = orte_init_complete())) {
-        fprintf(stderr, "failed in orte_init_complete");
-	    return ret;
-    }
+    OBJ_DESTRUCT(&cmd_line);
 
     /* if i'm the seed, get my contact info and write my setup file for others to find */
     if (orte_process_info.seed) {
         if (NULL != orte_universe_info.seed_uri) {
-         free(orte_universe_info.seed_uri);
-         orte_universe_info.seed_uri = NULL;
+            free(orte_universe_info.seed_uri);
+            orte_universe_info.seed_uri = NULL;
         }
         orte_universe_info.seed_uri = orte_rml.get_uri();
         contact_file = orte_os_path(false, orte_process_info.universe_session_dir,
                  "universe-setup.txt", NULL);
 
-        if (ORTE_SUCCESS != (ret = orte_write_universe_setup_file(contact_file))) {
+        if (ORTE_SUCCESS != (rc = orte_write_universe_setup_file(contact_file))) {
             if (mpirun_globals.debug) {
                 ompi_output(0, "mpirun: couldn't write setup file");
-          }
-      } else if (mpirun_globals.debug) {
-          ompi_output(0, "mpirun: wrote setup file");
-       }
+            }
+        } else if (mpirun_globals.debug) {
+            ompi_output(0, "mpirun: wrote setup file");
+        }
     }
 
+     /* Prep to start the application */
 
-    /*****    PREP TO START THE APPLICATION    *****/
     ompi_event_set(&term_handler, SIGTERM, OMPI_EV_SIGNAL,
                    signal_callback, NULL);
     ompi_event_add(&term_handler, NULL);
@@ -196,163 +162,187 @@ main(int argc, char *argv[])
                    signal_callback, NULL);
     ompi_event_add(&int_handler, NULL);
 
-    /* discover resources */
-    if (ORTE_SUCCESS != (ret = orte_rmgr.query())) {
-        ORTE_ERROR_LOG(ret);
-        goto CLEANUP;
+    /* Count how many apps we're going to have */
+
+    for (num_apps = 1, i = 0; i < argc; ++i) {
+        if (0 == strcmp(argv[i], ":")) {
+            ++num_apps;
+        }
     }
+    apps = malloc(sizeof(orte_app_context_t **) * num_apps);
+    if (NULL == apps) {
+        /* JMS show_help */
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+
+    /* Make the apps */
+
+    temp_argc = 0;
+    temp_argv = NULL;
+    ompi_argv_append(&temp_argc, &temp_argv, argv[0]);
     
-    /* setup the jobid for the application */
-    if (ORTE_SUCCESS != (ret = orte_rmgr.create(&new_jobid))) {
-        ORTE_ERROR_LOG(ret);
-        orte_finalize();
-        return ret;
+    for (app_num = 0, i = 1; i < argc; ++i) {
+        if (0 == strcmp(argv[i], ":")) {
+            
+            /* Make an app with this argv */
+
+            if (ompi_argv_count(temp_argv) > 1) {
+                create_app(temp_argc, temp_argv, &(apps[app_num++]));
+            
+                /* Reset the temps */
+            
+                temp_argc = 0;
+                temp_argv = NULL;
+                ompi_argv_append(&temp_argc, &temp_argv, argv[0]);
+            } else {
+                --num_apps;
+            }
+        } else {
+            ompi_argv_append(&temp_argc, &temp_argv, argv[i]);
+        }
     }
-
-    /* allocate resources to this job */
-    if (ORTE_SUCCESS != (ret = orte_rmgr.query())) {
-        ORTE_ERROR_LOG(ret);
-        goto CLEANUP;
-    }
-
-    /*
-     * Process mapping
-     */
-    OBJ_CONSTRUCT(&schedlist,  ompi_list_t);
-    sched = OBJ_NEW(ompi_rte_node_schedule_t);
-    ompi_list_append(&schedlist, (ompi_list_item_t*) sched);
-    ompi_cmd_line_get_tail(cmd_line, &(sched->argc), &(sched->argv));
-
-    /*
-     * build environment to be passed
-     */
-    mca_pcm_base_build_base_env(environ, &(sched->envc), &(sched->env));
-    /* set initial contact info */
-    if (ompi_process_info.seed) {  /* i'm the seed - direct them towards me */
-	my_contact_info = mca_oob_get_contact_info();
-    } else { /* i'm not the seed - direct them to it */
-	my_contact_info = strdup(ompi_universe_info.ns_replica);
-    }
-    asprintf(&tmp, "OMPI_MCA_ns_base_replica=%s", my_contact_info);
-    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-    free(tmp);
-    asprintf(&tmp, "OMPI_MCA_gpr_base_replica=%s", my_contact_info);
-    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-    free(tmp);
-    if (NULL != ompi_universe_info.name) {
-	asprintf(&tmp, "OMPI_universe_name=%s", ompi_universe_info.name);
-	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-	free(tmp);
-    }
-    if (ompi_cmd_line_is_taken(cmd_line, "tmpdir")) {  /* user specified the tmp dir base */
-	asprintf(&tmp, "OMPI_tmpdir_base=%s", ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0));
-	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-	free(tmp);
-    }
-
-    getcwd(cwd, MAXPATHLEN);
-    sched->cwd = strdup(cwd);
-    sched->nodelist = nodelist;
-
-    if (sched->argc == 0) {
-        ompi_show_help("help-mpirun.txt", "mpirun:no-application", true,
-                       argv[0], argv[0]);
-	return 1;
-    }
-
-
-    /*
-     * register to monitor the startup and shutdown processes
-     */
-    /* setup segment for this job */
-    if (ORTE_SUCCESS != orte_name_services.convert_jobid_to_string(jobidstring, new_jobid)) {
-        return ORTE_ERROR;
-    }
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
-
-    /* register a synchro on the segment so we get notified when everyone registers */
-    rc_tag = ompi_registry.synchro(
-	     OMPI_REGISTRY_SYNCHRO_MODE_LEVEL|OMPI_REGISTRY_SYNCHRO_MODE_ONE_SHOT|
-	     OMPI_REGISTRY_SYNCHRO_MODE_STARTUP,
-	     OMPI_REGISTRY_OR,
-	     segment,
-	     NULL,
-	     num_procs,
-	     ompi_rte_all_procs_registered, NULL);
-    /* register a synchro on the segment so we get notified when everyone is gone
-     */
-    rc_tag = ompi_registry.synchro(
-         OMPI_REGISTRY_SYNCHRO_MODE_DESCENDING|OMPI_REGISTRY_SYNCHRO_MODE_ONE_SHOT|
-         OMPI_REGISTRY_SYNCHRO_MODE_STARTUP,
-	     OMPI_REGISTRY_OR,
-	     segment,
-	     NULL,
-	     0,
-	     ompi_rte_all_procs_unregistered, NULL);
-
-    /*
-     * spawn procs
-     */
-    if (OMPI_SUCCESS != (ret = ompi_rte_spawn_procs(spawn_handle, new_jobid, &schedlist))) {
-        ompi_show_help("help-mpirun.txt", "mpirun:error-spawning",
-                       true, argv[0], ret);
-	return 1;
-    }
-    
-   
-    if (OMPI_SUCCESS != (ret = ompi_rte_monitor_procs_registered())) {
-        ompi_show_help("help-mpirun.txt", "mpirun:proc-reg-failed", 
-                       true, argv[0], ret);
-	ompi_rte_job_shutdown(new_jobid);
-	return -1;
+    if (ompi_argv_count(temp_argv) > 1) {
+        create_app(temp_argc, temp_argv, &(apps[app_num]));
     } else {
-	ompi_rte_job_startup(new_jobid);
-	ompi_rte_monitor_procs_unregistered();
+        --num_apps;
+    }
+    ompi_argv_free(temp_argv);
+
+    /* Spawn the job */
+
+    rc = orte_rmgr.spawn(apps, num_apps, &jobid, NULL);
+    if (ORTE_SUCCESS != rc) {
+        /* JMS show_help */
+        ompi_output(0, "mpirun: spawn failed with errno=%d\n", rc);
     }
 
-    /* remove signal handler */
-    ompi_event_del(&term_handler);
-    ompi_event_del(&int_handler);
+    /* All done */
 
-    /*
-     * Determine if the processes all exited normally - if not, flag the output of mpirun
-     */
-    ret = 0;
-    status_list = ompi_registry.get(OMPI_REGISTRY_OR, segment, NULL);
-    while (NULL != (value = (ompi_registry_value_t*)ompi_list_remove_first(status_list))) {
-	proc_status = ompi_rte_unpack_process_status(value);
-	if (OMPI_PROC_TERMINATING != proc_status->status_key) {
-	    ret = -1;
-	}
-	if (0 != proc_status->exit_code) {
-	    ret = proc_status->exit_code;
-	}
-    }
 
     /*
      * Clean up
      */
-    if (NULL != nodelist) ompi_rte_deallocate_resources(spawn_handle, new_jobid, nodelist);
-    if (NULL != cmd_line) OBJ_RELEASE(cmd_line);
-    if (NULL != spawn_handle) OBJ_RELEASE(spawn_handle);
-
-    /* eventually, mpirun won't be the seed and so won't have to do this.
-     * for now, though, remove the universe-setup.txt file so the directories
+     
+    /* if i'm the seed, remove the universe-setup.txt file so the directories
      * can cleanup
      */
-    if (ompi_process_info.seed) {
-	filenm = ompi_os_path(false, ompi_process_info.universe_session_dir, "universe-setup.txt", NULL);
-	unlink(filenm);
+    if (orte_process_info.seed) {
+        filenm = orte_os_path(false, orte_process_info.universe_session_dir, "universe-setup.txt", NULL);
+        unlink(filenm);
     }
 
-    OBJ_DESTRUCT(&schedlist);
+    for (i = 0; i < num_apps; ++i) {
+        OBJ_RELEASE(apps[i]);
+    }
+    free(apps);
+    orte_finalize();
+    return rc;
+}
 
-    ompi_rte_finalize();
-    mca_base_close();
-    ompi_finalize();
 
-    return ret;
-#endif
-    return 0;
+
+static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr)
+{
+    ompi_cmd_line_t cmd_line;
+    char cwd[OMPI_PATH_MAX];
+    int i, rc;
+    char *param, *value, *value2;
+    orte_app_context_t *app;
+    extern char **environ;
+
+    /* Parse application command line options. */
+
+    app = OBJ_NEW(orte_app_context_t);
+    OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
+
+    /* parse my context */
+    if (ORTE_SUCCESS != (rc = orte_parse_context(mpirun_context_tbl, &cmd_line, argc, argv))) {
+        OBJ_RELEASE(app);
+        return rc;
+    }
+    
+    /* check for help and version requests */
+    if (mpirun_globals.help) {
+        char *args = NULL;
+        args = ompi_cmd_line_get_usage_msg(&cmd_line);
+        ompi_show_help("help-mpirun.txt", "mpirun:usage", false,
+                       argv[0], args);
+        free(args);
+        OBJ_RELEASE(app);
+        return ORTE_SUCCESS;
+    }
+
+    if (mpirun_globals.version) {
+        printf("Open MPI v%s\n", OMPI_VERSION);
+        OBJ_RELEASE(app);
+        return ORTE_SUCCESS;
+    }
+
+    /* Setup application context */
+
+    ompi_cmd_line_get_tail(&cmd_line, &app->argc, &app->argv);
+    if (0 == app->argc) {
+        ompi_show_help("help-mpirun.txt", "mpirun:no-application", true, argv[0], argv[0]);
+        OBJ_RELEASE(app);
+        return ORTE_ERR_NOT_FOUND;
+    }
+
+    /* Did the user request to export any environment variables? */
+
+    app->env = NULL;
+    app->num_env = 0;
+    if (ompi_cmd_line_is_taken(&cmd_line, "x")) {
+        for (i = 0; i < ompi_cmd_line_get_ninsts(&cmd_line, "x"); ++i) {
+            param = ompi_cmd_line_get_param(&cmd_line, "x", i, 0);
+
+            if (NULL != strchr(param, '=')) {
+                ompi_argv_append(&app->num_env, &app->env, param);
+            } else {
+                value = getenv(param);
+                if (NULL != value) {
+                    if (NULL != strchr(value, '=')) {
+                        ompi_argv_append(&app->num_env, &app->env, value);
+                    } else {
+                        asprintf(&value2, "%s=%s", param, value);
+                        ompi_argv_append(&app->num_env, &app->env, value2);
+                    }
+                } else {
+                    ompi_output(0, "Warning: could not find environment variable \"%s\"\n", param);
+                }
+            }
+            free(param);
+        }
+    }
+
+    /* What cwd do we want? */
+
+    if (NULL != mpirun_globals.wd) {
+        app->cwd = strdup(mpirun_globals.wd);
+    } else {
+        getcwd(cwd, sizeof(cwd));
+        app->cwd = strdup(cwd);
+    }
+
+    /* Get the numprocs */
+
+    app->num_procs = mpirun_globals.num_procs;
+    if (0 == app->num_procs) {
+        app->num_procs = 1; 
+    }
+
+    /* Find the argv[0] in the path */
+
+    app->app = ompi_path_findv(app->argv[0], 0, environ, app->cwd); 
+    if (NULL == app->app) {
+        ompi_show_help("help-mpirun.txt", "mpirun:no-application", true, argv[0], argv[0]);
+        OBJ_RELEASE(app);
+        return ORTE_ERR_NOT_FOUND;
+    }
+
+    /* All done */
+
+    *app_ptr = app;
+    OBJ_DESTRUCT(&cmd_line);
+    return rc;
 }
 
