@@ -14,6 +14,7 @@
 
 #ifndef ORTE_TYPES_H
 #define ORTE_TYPES_H
+#include "class/ompi_object.h"
 
 /**
  * Supported datatypes for messaging and storage operations.
@@ -76,6 +77,7 @@ typedef struct {
 
                                                                                             
 typedef struct {
+    ompi_object_t super;
     char   *app;
     int32_t num_procs;
     int32_t argc;
@@ -85,6 +87,8 @@ typedef struct {
     char   *cwd;
 } orte_app_context_t;
                                                                                                 
+OBJ_CLASS_DECLARATION(orte_app_context_t);
+
 
 typedef int8_t orte_exit_code_t;
 typedef int8_t orte_status_key_t;
