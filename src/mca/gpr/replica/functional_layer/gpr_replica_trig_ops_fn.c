@@ -603,19 +603,6 @@ FIRED:
     if (ORTE_GPR_TRIG_NOTIFY_START & trig->action) {
         trig->action = trig->action & ~ORTE_GPR_TRIG_NOTIFY_START;
     }
-    /* if one_shot, remove trigger action - remove entire trig if no notify requested */
-    if (ORTE_GPR_TRIG_ONE_SHOT & trig->action) {
-        if (ORTE_GPR_NOTIFY_ANY & trig->action) { /* just remove trigger */
-            trig->action = trig->action & ORTE_GPR_NOTIFY_ANY;
-        } else {
-            if (ORTE_SUCCESS != (rc = orte_pointer_array_set_item(orte_gpr_replica.triggers,
-                                                trig->index, NULL))) {
-                ORTE_ERROR_LOG(rc);
-                return rc;
-            }
-            OBJ_RELEASE(trig);
-        }
-    }
 
     return ORTE_SUCCESS;
 }

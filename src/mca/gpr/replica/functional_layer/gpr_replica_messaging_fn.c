@@ -43,7 +43,7 @@ int orte_gpr_replica_process_callbacks(void)
     orte_gpr_replica_subscribed_data_t **sdata;
     orte_gpr_replica_triggers_t *trig;
     bool processed;
-    int i, k;
+    int i, k, rc;
 
     /* aggregate messages for identical recipient - local messages just get called */
 
@@ -54,16 +54,17 @@ int orte_gpr_replica_process_callbacks(void)
 
 
     while (NULL != (cb = (orte_gpr_replica_callbacks_t*)ompi_list_remove_first(&orte_gpr_replica.callbacks))) {
-	   if (NULL == cb->requestor) {  /* local callback */
-	       if (orte_gpr_replica_globals.debug) {
+        /* get this request off of the local notify request tracker */
+        trig = (orte_gpr_replica_triggers_t*)((orte_gpr_replica.triggers)->addr[(cb->message)->idtag]);
+        if (NULL == trig) {
+            ORTE_ERROR_LOG(ORTE_ERR_GPR_DATA_CORRUPT);
+            goto CLEANUP;
+        }
+        
+	    if (NULL == cb->requestor) {  /* local callback */
+	        if (orte_gpr_replica_globals.debug) {
 		      ompi_output(0, "process_callbacks: local");
-	       }
-            /* get this request off of the local notify request tracker */
-            trig = (orte_gpr_replica_triggers_t*)((orte_gpr_replica.triggers)->addr[(cb->message)->idtag]);
-            if (NULL == trig) {
-                ORTE_ERROR_LOG(ORTE_ERR_GPR_DATA_CORRUPT);
-                goto CLEANUP;
-            }
+	        }
             data = (cb->message)->data;
             sdata = (orte_gpr_replica_subscribed_data_t**)((trig->subscribed_data)->addr);
             for (i=0; i < (cb->message)->cnt; i++) {
@@ -81,9 +82,19 @@ int orte_gpr_replica_process_callbacks(void)
                         ORTE_NAME_ARGS(cb->requestor));
     	       }
     	       orte_gpr_replica_remote_notify(cb->requestor, cb->remote_idtag, cb->message);
-    	   }
+        }
 CLEANUP:
-	   OBJ_RELEASE(cb);
+        /* if one_shot, remove trigger action */
+        if (ORTE_GPR_TRIG_ONE_SHOT & trig->action) {
+            if (ORTE_SUCCESS != (rc = orte_pointer_array_set_item(orte_gpr_replica.triggers,
+                                                trig->index, NULL))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+            }
+            OBJ_RELEASE(trig);
+        }
+        
+    	    OBJ_RELEASE(cb);
     }
 
     return ORTE_SUCCESS;
