@@ -55,8 +55,9 @@ int orte_schema_get_proc_tokens(char ***proc_tokens, int32_t* num_tokens, orte_p
 {
     int rc;
     char** tokens;
+    
     tokens = (char**)malloc(3 * sizeof(char*));
-    if (NULL == *tokens) {
+    if (NULL == tokens) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }

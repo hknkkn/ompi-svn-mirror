@@ -34,8 +34,9 @@
 #include "util/session_dir.h"
 #include "util/universe_setup_file_io.h"
 
-#include "mca/oob/base/base.h"
+#include "mca/rml/rml.h"
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "runtime/runtime.h"
 
@@ -49,14 +50,13 @@ int orte_universe_exists()
     int ret;
     orte_process_name_t proc={0,0,0};
 /*    bool ns_found=false, gpr_found=false; */
-    bool ping_success=false;
 
-    /* TEMPORARY */
-    return ORTE_ERR_NOT_FOUND;
-
+    /* ensure that system info has been populated */
+    orte_sys_info();
+    
     /* if both ns_replica and gpr_replica were provided, check for contact with them */
     if (NULL != orte_process_info.ns_replica && NULL != orte_process_info.gpr_replica) {
-	return OMPI_SUCCESS;
+	   return ORTE_SUCCESS;
     }
 
 /* 	/\* ping to verify ns_replica alive *\/ */
@@ -107,17 +107,18 @@ int orte_universe_exists()
      * check if local or remote host specified
      */
 
-    if (0 != strncmp(orte_universe_info.host, orte_system_info.nodename, strlen(orte_system_info.nodename))) { /* remote host specified */
-	ompi_output(0, "remote hosts not currently supported");
-	return OMPI_ERR_NOT_IMPLEMENTED;
+    if (NULL != orte_universe_info.host &&
+        0 != strncmp(orte_universe_info.host, orte_system_info.nodename, strlen(orte_system_info.nodename))) { /* remote host specified */
+	   ompi_output(0, "connect_uni: remote hosts not currently supported");
+	   return ORTE_ERR_NOT_IMPLEMENTED;
     }
 
     if (orte_debug_flag) {
-	ompi_output(0, "looking for session directory");
+	   ompi_output(0, "connect_uni: looking for session directory");
     }
 
     /* check to see if local universe already exists */
-    if (OMPI_SUCCESS == orte_session_dir(false,
+    if (ORTE_SUCCESS == orte_session_dir(false,
 					 orte_process_info.tmpdir_base,
 					 orte_system_info.user,
 					 orte_system_info.nodename,
@@ -127,7 +128,7 @@ int orte_universe_exists()
 					 NULL)) { /* found */
 
 	if (orte_debug_flag) {
-	    ompi_output(0, "check for contact info file");
+	    ompi_output(0, "connect_uni: check for contact info file");
 	}
 
 	/* check for "contact-info" file. if present, read it in. */
@@ -136,13 +137,13 @@ int orte_universe_exists()
 
 	if (OMPI_SUCCESS != (ret = orte_read_universe_setup_file(contact_file))) {
 	    if (orte_debug_flag) {
-		ompi_output(0, "could not read contact file %s", contact_file);
+		ompi_output(0, "connect_uni: could not read contact file %s", contact_file);
 	    }
 	    return ret;
 	}
 
 	if (orte_debug_flag) {
-	    ompi_output(0, "contact info read");
+	    ompi_output(0, "connect_uni: contact info read");
 	}
 
 	if (!orte_universe_info.console) {  /* if we aren't trying to connect a console */
@@ -152,43 +153,40 @@ int orte_universe_exists()
 		 * matching universe name
 		 */
 		if (orte_debug_flag) {
-		    ompi_output(0, "connection not allowed");
+		    ompi_output(0, "connect_uni: connection not allowed");
 		}
-		return OMPI_ERR_NO_CONNECTION_ALLOWED;
+		return ORTE_ERR_NO_CONNECTION_ALLOWED;
 	    }
 	}
 
 	if (orte_debug_flag) {
-	    ompi_output(0, "contact info to set: %s", orte_universe_info.seed_uri);
+	    ompi_output(0, "connect_uni: contact info to set: %s", orte_universe_info.seed_uri);
 	}
 
 
 	/* if persistent, set contact info... */
-	if (OMPI_SUCCESS != mca_oob_set_contact_info(orte_universe_info.seed_uri)) { /* set contact info */
-	    if (orte_debug_flag) {
-		ompi_output(0, "error setting oob contact info - please report error to bugs@open-mpi.org\n");
-	    }
-	    return OMPI_ERR_FATAL;
+	if (OMPI_SUCCESS != (ret = orte_rml.set_uri(orte_universe_info.seed_uri))) { /* set contact info */
+        ORTE_ERROR_LOG(ret);
+	    return ret;
 	}
 
-	mca_oob_parse_contact_info(orte_universe_info.seed_uri, &proc, NULL);
+	if (ORTE_SUCCESS != (ret = orte_rml.parse_uris(orte_universe_info.seed_uri, &proc, NULL))) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
 
 	if (orte_debug_flag) {
-	    ompi_output(0, "contact info set: %s", orte_universe_info.seed_uri);
-	    ompi_output(0, "issuing ping: %d %d %d", proc.cellid, proc.jobid, proc.vpid);
+	    ompi_output(0, "connect_uni: contact info set: %s", orte_universe_info.seed_uri);
+	    ompi_output(0, "connect_uni: issuing ping: %d %d %d", proc.cellid, proc.jobid, proc.vpid);
 	}
 
 
 	/* ...and ping to verify it's alive */
-	ping_success = false;
-	if (OMPI_SUCCESS == mca_oob_ping(&proc, &ompi_rte_ping_wait)) {
-	    ping_success = true;
-	}
-	if (!ping_success) {
-	    if (orte_debug_flag) {
-		ompi_output(0, "ping failed");
-	    }
-	    return OMPI_ERR_CONNECTION_FAILED;
+	if (ORTE_SUCCESS != orte_rml.ping(&proc, &ompi_rte_ping_wait)) {
+        if (orte_debug_flag) {
+            ORTE_ERROR_LOG(ORTE_ERR_CONNECTION_FAILED);
+        }
+	    return ORTE_ERR_CONNECTION_FAILED;
 	}
 
 	if (NULL != orte_process_info.ns_replica) {
@@ -196,6 +194,7 @@ int orte_universe_exists()
 	    orte_process_info.ns_replica = NULL;
 	}
     if (ORTE_SUCCESS != (ret = orte_ns.copy_process_name(&orte_process_info.ns_replica, &proc))) {
+        ORTE_ERROR_LOG(ret);
         return ret;
     }
 
@@ -204,6 +203,7 @@ int orte_universe_exists()
 	    orte_process_info.gpr_replica = NULL;
 	}
     if (ORTE_SUCCESS != (ret = orte_ns.copy_process_name(&orte_process_info.gpr_replica, &proc))) {
+        ORTE_ERROR_LOG(ret);
         return ret;
     }
 
@@ -211,8 +211,8 @@ int orte_universe_exists()
 	 * only request info required - check ns_found/gpr_found
 	 */
 
-	return OMPI_SUCCESS;
+	return ORTE_SUCCESS;
     }
 
-    return OMPI_ERR_NOT_FOUND;
+    return ORTE_ERR_NOT_FOUND;
 }

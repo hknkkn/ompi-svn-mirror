@@ -199,7 +199,9 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
         ORTE_ERROR_LOG(ret);
         return ret;
     }
-    
+
+ompi_output(0, "seed: %d  daemon: %d", (int)orte_process_info.seed, (int)orte_process_info.daemon);  
+  
     /* If I'm a daemon or the seed, then process the daemon context */
     if (orte_process_info.seed || orte_process_info.daemon) {
         if (ORTE_SUCCESS != (ret = orte_parse_daemon_context(cmd_line, argc, argv))) {
@@ -246,6 +248,14 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
      * Runtime Messaging Layer
      */
     if (OMPI_SUCCESS != (ret = orte_rml_base_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+
+    /*
+     * Runtime Messaging Layer
+     */
+    if (OMPI_SUCCESS != (ret = orte_rml_base_select())) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }
@@ -302,14 +312,6 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
      * Name Server 
      */
     if (OMPI_SUCCESS != (ret = orte_ns_base_select())) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
-
-    /*
-     * Runtime Messaging Layer
-     */
-    if (OMPI_SUCCESS != (ret = orte_rml_base_select())) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }

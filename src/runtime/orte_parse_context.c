@@ -67,8 +67,8 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                         ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
                         return ORTE_ERR_BAD_PARAM;
                     }
-                    context_tbl[i].dest = strdup(tmp);
-                    if (NULL == context_tbl[i].dest) {
+                    *((char**)context_tbl[i].dest) = strdup(tmp);
+                    if (NULL == *((char**)context_tbl[i].dest)) {
                         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
                         return ORTE_ERR_OUT_OF_RESOURCE;
                     }
@@ -83,7 +83,7 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                     break;
             
                 case ORTE_BOOL:
-                    *((bool*)context_tbl[i].dest) = (bool)context_tbl[i].def;
+                    *((bool*)context_tbl[i].dest) = true;
                     break;
                     
                 default:

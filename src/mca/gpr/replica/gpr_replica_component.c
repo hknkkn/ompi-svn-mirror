@@ -496,7 +496,6 @@ int orte_gpr_replica_finalize(void)
          if (NULL != trig[i]) {
              OBJ_RELEASE(trig[i]);
          }
-         trig++;
     }
     
     while (NULL != (cb = (orte_gpr_replica_callbacks_t*)ompi_list_remove_first(&orte_gpr_replica.callbacks))) {
