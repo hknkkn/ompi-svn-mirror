@@ -14,30 +14,29 @@
 
 #include "ompi_config.h"
 #include "include/constants.h"
+#include "util/proc_info.h"
+
+#include "mca/ns/ns.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
-#include "mca/pcmclient/pcmclient.h"
-#include "mca/pcmclient/base/base.h"
 
 
 int mca_oob_barrier(void)
 {
     orte_process_name_t* peers;
-    orte_process_name_t* self;
     size_t i, npeers;
     struct iovec iov;
     int foo = 0;
 
-    int rc = mca_pcmclient.pcmclient_get_peers(&peers,&npeers);
+    int rc = orte_ns.get_peers(&peers,&npeers);
     if(rc != OMPI_SUCCESS)
         return rc;
 
-    self = mca_pcmclient.pcmclient_get_self();
     iov.iov_base = (void*)&foo;
     iov.iov_len = sizeof(foo);
 
     /* All non-root send & receive zero-length message. */
-    if (self != peers) {
+    if (orte_process_info.my_name != peers) {
         int tag=-1;
         rc = mca_oob_send(&peers[0],&iov,1,tag,0);
         if (rc < 0) {

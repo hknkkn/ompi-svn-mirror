@@ -24,7 +24,6 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 #include "threads/mutex.h"
-#include "mca/pcmclient/base/base.h"
 #include "mca/oob/oob.h"
 #include "mca/ns/base/base.h"
 #include "mca/gpr/base/base.h"
@@ -42,7 +41,6 @@ int ompi_rte_finalize(void)
 {
     ompi_rte_wait_finalize();
 
-    mca_pcmclient_base_close();
     orte_ns_base_close();
     orte_gpr_base_close();
     mca_oob_base_close();

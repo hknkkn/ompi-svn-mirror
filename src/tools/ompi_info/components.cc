@@ -50,8 +50,6 @@
 #include "mca/ns/base/base.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
-#include "mca/pcmclient/pcmclient.h"
-#include "mca/pcmclient/base/base.h"
 #include "mca/ras/ras.h"
 #include "mca/ras/base/base.h"
 #include "mca/rds/rds.h"
@@ -168,9 +166,6 @@ void ompi_info::open_components()
 
   mca_oob_base_open();
   component_map["oob"] = &mca_oob_base_components;
-
-  mca_pcmclient_base_open();
-  component_map["pcmclient"] = &mca_pcmclient_base_components_available;
 
   orte_ras_base_open();
   component_map["ras"] = &orte_ras_base.ras_components;

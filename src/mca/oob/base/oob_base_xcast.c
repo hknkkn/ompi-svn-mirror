@@ -19,8 +19,6 @@
 #include "util/proc_info.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
-#include "mca/pcmclient/pcmclient.h"
-#include "mca/pcmclient/base/base.h"
 #include "mca/ns/ns.h"
 #include "runtime/runtime.h"
 

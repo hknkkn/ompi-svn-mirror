@@ -51,7 +51,7 @@ ompi_info_SOURCES = \
         param.cc \
         version.cc 
 ompi_info_LDADD = $(libs) $(LIBMPI_EXTRA_LIBS) $(LIBOMPI_EXTRA_LIBS)
-ompi_info_LDFLAGS = $(LIBMPI_EXTRA_LDFLAGS) $(LIBOMPI_EXTRA_LDFLAGS)
+ompi_info_LDFLAGS = $(LIBMPI_EXTRA_LDFLAGS) $(LIBOMPI_EXTRA_LDFLAGS) -lxml2 -lz -liconv
 ompi_info_DEPENDENCIES = $(libs)
 
 clean-local:

@@ -18,10 +18,9 @@
 
 #include "threads/mutex.h"
 #include "util/output.h"
+#include "util/proc_info.h"
 #include "dps/dps.h"
 #include "proc/proc.h"
-#include "mca/pcmclient/pcmclient.h"
-#include "mca/pcmclient/base/base.h"
 #include "mca/oob/oob.h"
 #include "mca/ns/ns.h"
 #include "mca/pml/pml.h"
@@ -73,27 +72,21 @@ void ompi_proc_destruct(ompi_proc_t* proc)
 int ompi_proc_init(void)
 {
     orte_process_name_t *peers;
-    orte_process_name_t *self;
     size_t i, npeers;
     int rc;
 
     OBJ_CONSTRUCT(&ompi_proc_list, ompi_list_t);
     OBJ_CONSTRUCT(&ompi_proc_lock, ompi_mutex_t);
 
-    if(OMPI_SUCCESS != (rc = mca_pcmclient.pcmclient_get_peers(&peers, 
-                                                               &npeers))) {
-        ompi_output(0, "ompi_proc_init: mca_pcm.pcm_peers failed with errno=%d", rc);
-        return rc;
-    }
-    if(NULL == (self = mca_pcmclient.pcmclient_get_self())) {
-        ompi_output(0, "ompi_proc_init: mca_pcm.pcm_self failed with errno=%d", rc);
+    if(OMPI_SUCCESS != (rc = orte_ns.get_peers(&peers, &npeers))) {
+        ompi_output(0, "ompi_proc_init: get_peers failed with errno=%d", rc);
         return rc;
     }
 
     for(i=0; i<npeers; i++) {
         ompi_proc_t *proc = OBJ_NEW(ompi_proc_t);
         proc->proc_name = peers[i];
-        if( peers + i == self ) {
+        if( peers + i == orte_process_info.my_name ) {
             ompi_proc_local_proc = proc;
         }
     }

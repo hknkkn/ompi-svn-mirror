@@ -21,7 +21,6 @@
 #include "runtime/runtime.h"
 #include "util/output.h"
 #include "mca/oob/oob.h"
-#include "mca/pcmclient/base/base.h"
 
 int ompi_rte_init_cleanup(void)
 {
@@ -35,11 +34,6 @@ int ompi_rte_init_cleanup(void)
        ompi_output(0, "ompi_rte_init: failed in mca_oob_base_module_init()\n");
        return ret;
     }
-
-    /*
-     * Let the pcmclient finish up
-     */
-    mca_pcmclient.pcmclient_init_cleanup();
 
     return OMPI_SUCCESS;
 }

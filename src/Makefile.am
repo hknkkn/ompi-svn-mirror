@@ -117,7 +117,6 @@ libmpi_la_LIBADD = \
         mca/mpool/base/libmca_mpool_base.la $(MCA_mpool_STATIC_LTLIBS) \
         mca/ns/base/libmca_ns_base.la $(MCA_ns_STATIC_LTLIBS) \
         mca/oob/base/libmca_oob_base.la $(MCA_oob_STATIC_LTLIBS) \
-        mca/pcmclient/base/libmca_pcmclient_base.la $(MCA_pcmclient_STATIC_LTLIBS) \
         mca/pls/base/libmca_pls_base.la $(MCA_pls_STATIC_LTLIBS) \
         mca/pml/base/libmca_pml_base.la $(MCA_pml_STATIC_LTLIBS) \
         mca/ptl/base/libmca_ptl_base.la $(MCA_ptl_STATIC_LTLIBS) \

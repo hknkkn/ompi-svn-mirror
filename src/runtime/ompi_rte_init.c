@@ -28,7 +28,6 @@
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
-#include "mca/pcmclient/base/base.h"
 #include "mca/oob/oob.h"
 #include "mca/ns/base/base.h"
 #include "mca/gpr/base/base.h"
@@ -126,14 +125,10 @@ static void printname(char *location);
 
 int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads)
 {
-    int ret, cmpval;
+    int ret;
     bool user_threads, hidden_threads;
     char *universe, *jobid_str, *procid_str;
     pid_t pid;
-    orte_jobid_t jobid;
-    orte_vpid_t vpid;
-    orte_process_name_t illegal_name={ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX};
-    orte_process_name_t *new_name;
 
     *allow_multi_user_threads = true;
     *have_hidden_threads = false;
@@ -347,26 +342,3 @@ static void printname(char *loc)
 	}
     }
 }
-
-
-int
-ompi_rte_get_peers(orte_process_name_t **peers, size_t *npeers)
-{
-    orte_process_name_t *useless;
-    orte_process_name_t **peers_p;
-
-    if (NULL == mca_pcmclient.pcmclient_get_peers) {
-        return OMPI_ERR_NOT_IMPLEMENTED;
-    }
-
-    if (NULL == peers) {
-        /* the returned value is a pointer to a static buffer, so no
-           free is neeeded.  This is therefore completely safe.  Yay */
-        peers_p = &useless;
-    } else {
-        peers_p = peers;
-    }
-
-    return mca_pcmclient.pcmclient_get_peers(peers_p, npeers);
-}
-

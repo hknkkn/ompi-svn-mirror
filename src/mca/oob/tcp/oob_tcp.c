@@ -36,8 +36,6 @@
 #include "mca/oob/tcp/oob_tcp.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
-#include "mca/pcmclient/pcmclient.h"
-#include "mca/pcmclient/base/base.h"
 
                                                                   
 /*
@@ -634,7 +632,7 @@ int mca_oob_tcp_init(void)
         mca_oob_tcp_peer_send_ident(peer);
     }
 
-    rc = mca_pcmclient.pcmclient_get_peers(&peers, &npeers);
+    rc = orte_ns.get_peers(&peers, &npeers);
     if(rc != OMPI_SUCCESS) {
         OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
         return rc;
