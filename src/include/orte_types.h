@@ -48,19 +48,19 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_FLOAT16             (orte_data_type_t)   21 /**< 16-byte float - used as long-double on some systems */
     /* orte-specific typedefs */
 #define    ORTE_NAME                (orte_data_type_t)   22 /**< an ompi_process_name_t */
-#define    ORTE_VPID                ORTE_UINT32             /**< a vpid */
-#define    ORTE_JOBID               ORTE_UINT32             /**< a jobid */
-#define    ORTE_CELLID              ORTE_UINT32             /**< a cellid */
-#define    ORTE_NODE_STATE          ORTE_INT8               /**< node status flag */
-#define    ORTE_STATUS_KEY          ORTE_INT8               /**< process/resource status key */
-#define    ORTE_EXIT_CODE           ORTE_INT8               /**< process exit code */
-#define    ORTE_BYTE_OBJECT         (orte_data_type_t)   23 /**< byte object structure */
-#define    ORTE_KEYVAL              (orte_data_type_t)   24 /**< registry key-value pair */
-#define    ORTE_NOTIFY_ACTION       (orte_data_type_t)   25 /**< registry notify action */
-#define    ORTE_SYNCHRO_MODE        (orte_data_type_t)   26 /**< registry synchro mode */
-#define    ORTE_GPR_CMD             (orte_data_type_t)   27 /**< registry command */
-#define    ORTE_GPR_NOTIFY_ID       (orte_data_type_t)   28 /**< registry notify id tag */
-#define    ORTE_NULL                (orte_data_type_t)   29 /**< don't interpret data type */
+#define    ORTE_VPID                (orte_data_type_t)   23 /**< a vpid */
+#define    ORTE_JOBID               (orte_data_type_t)   24 /**< a jobid */
+#define    ORTE_CELLID              (orte_data_type_t)   25 /**< a cellid */
+#define    ORTE_NODE_STATE          (orte_data_type_t)   26 /**< node status flag */
+#define    ORTE_STATUS_KEY          (orte_data_type_t)   27 /**< process/resource status key */
+#define    ORTE_EXIT_CODE           (orte_data_type_t)   28 /**< process exit code */
+#define    ORTE_BYTE_OBJECT         (orte_data_type_t)   29 /**< byte object structure */
+#define    ORTE_KEYVAL              (orte_data_type_t)   30 /**< registry key-value pair */
+#define    ORTE_NOTIFY_ACTION       (orte_data_type_t)   31 /**< registry notify action */
+#define    ORTE_SYNCHRO_MODE        (orte_data_type_t)   32 /**< registry synchro mode */
+#define    ORTE_GPR_CMD             (orte_data_type_t)   33 /**< registry command */
+#define    ORTE_GPR_NOTIFY_ID       (orte_data_type_t)   34 /**< registry notify id tag */
+#define    ORTE_NULL                (orte_data_type_t)   35 /**< don't interpret data type */
 
 typedef struct {
     size_t size;

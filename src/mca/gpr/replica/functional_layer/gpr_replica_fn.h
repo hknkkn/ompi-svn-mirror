@@ -152,6 +152,16 @@ int orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
  */
 int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg);
 
+int orte_gpr_replica_store_keyval(orte_gpr_replica_segment_t *seg,
+                                  orte_gpr_replica_container_t *cptr,
+                                  orte_gpr_keyval_t **kptr);
+
+int orte_gpr_replica_xfer_payload(orte_gpr_replica_itagval_t *iptr,
+                                  orte_gpr_keyval_t *kptr);
+
+int orte_gpr_replica_purge_itag(orte_gpr_replica_segment_t *seg,
+                                orte_gpr_replica_itag_t itag);
+
 /*
  * DICTIONARY OPERATIONS
  */
@@ -162,9 +172,8 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
 				    orte_gpr_replica_itag_t num_itags_entry,
 				    orte_gpr_replica_itag_t *entry_itags);
 
-int orte_gpr_replica_purge_itag(orte_gpr_replica_segment_t *seg,
-                                orte_gpr_replica_itag_t itag);
-
+int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
+                                    orte_gpr_replica_itag_t *src, int num_itags);
 
 /*
  * Trigger Operations

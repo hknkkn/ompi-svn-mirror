@@ -41,10 +41,11 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     orte_gpr_mode_t put_mode;
     orte_gpr_replica_trigger_list_t *trig;
     int return_code;
+    bool found;
 
 
     if (orte_gpr_replica_globals.debug) {
-	ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s",
+	    ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s",
 		    ORTE_NAME_ARGS(*(orte_process_info.my_name)), seg->name);
     }
 
@@ -54,11 +55,49 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     put_mode = addr_mode & ORTE_GPR_OVERWRITE;
 
     /* find the specified container */
-    cptr = (orte_gpr_replica_container_t*)((seg->containers)->addr);
-    for (i=0; i < (seg->containers)->size; i++) {
-        
+    found = false;
+    cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
+    for (i=0; i < (seg->containers)->size && !found; i++) {
+        if (NULL != cptr && orte_gpr_replica_check_itag_list(ORTE_GPR_XAND,
+                                             num_tokens, token_itags,
+                                             (*cptr)->num_itags, (*cptr)->itags)) {
+            found = true;
+            break;
+        }
+        cptr++;
+    }
+    
+    if (!found) {  /* existing container not found - create one */
+        cptr = OBJ_NEW(orte_gpr_replica_container_t);
+        if (NULL == cptr) {
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        if (ORTE_SUCCESS !=
+                (rc = orte_gpr_replica_copy_itag_list(&(cpr->itags),
+                                                      token_itags, num_tokens))) {
+            return rc;
+        }
+        if (0 < (cptr->index = orte_pointer_array_add(seg->containers, (void*)cptr))) {
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        /* ok, store all the keyvals in the container */
+        kptr = keyvals;
+        for (i=0; i < cnt; i++) {
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_store_keyval(seg, cptr, &kptr))) {
+                return rc;
+            }
+            kptr++;
+        }
+    } else {  /* otherwise, see if entry already exists in container */
+        iptr = (orte_gpr_replica_itagval_t*)((cptr->itagvals)->addr);
+        for (i=0; i < (cptr->itagvals)->size; i++) {
+            if (NULL != iptr) {
+            }
+        }
+    }
+
     for (entry_ptr = (orte_gpr_replica_core_t*)ompi_list_get_first(&seg->registry_entries);
-	 entry_ptr != (orte_gpr_replica_core_t*)ompi_list_get_end(&seg->registry_entries);
+	   entry_ptr != (orte_gpr_replica_core_t*)ompi_list_get_end(&seg->registry_entries);
 	 entry_ptr = (orte_gpr_replica_core_t*)ompi_list_get_next(entry_ptr)) {
 	if (orte_gpr_replica_check_key_list(put_mode, num_keys, keys,
 				       entry_ptr->num_keys, entry_ptr->keys)) {

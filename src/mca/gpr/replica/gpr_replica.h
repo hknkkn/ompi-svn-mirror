@@ -134,6 +134,7 @@ OBJ_CLASS_DECLARATION(orte_gpr_replica_segment_t);
  */
 struct orte_gpr_replica_container_t {
     ompi_object_t super;              /**< Make this an object */
+    int index;                        /**< Location in the pointer array */
     orte_gpr_replica_itag_t *itags;   /**< Array of itags that define this container */
     int num_itags;                    /**< Number of itags in array */
     orte_gpr_notify_id_t *triggers;   /**< Array of indices into notifier array */

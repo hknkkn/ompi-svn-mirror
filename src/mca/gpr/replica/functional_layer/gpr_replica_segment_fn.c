@@ -23,7 +23,118 @@
 
 #include "orte_config.h"
 
+#include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
+
 #include "gpr_replica_fn.h"
+
+
+int orte_gpr_replica_store_keyval(orte_gpr_replica_segment_t *seg,
+                                  orte_gpr_replica_container_t *cptr,
+                                  orte_gpr_keyval_t **kptr)
+{
+    orte_gpr_replica_itagval_t *iptr;
+    int rc;
+    
+    iptr = OBJ_NEW(orte_gpr_replica_itagval_t);
+    if (NULL == iptr) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&(iptr->itag),
+                                            seg, (*kptr)->key))) {
+        OBJ_RELEASE(iptr);
+        return rc;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(iptr, *kptr))) {
+        OBJ_RELEASE(iptr);
+        return rc;
+    }
+    
+    free(*kptr);
+    *kptr = NULL;
+    return ORTE_SUCCESS;
+}
+
+
+int orte_gpr_replica_xfer_payload(orte_gpr_replica_itagval_t *iptr,
+                                  orte_gpr_keyval_t *kptr)
+{
+    iptr->type = kptr->type;
+    
+    switch(iptr->type) {
+
+        case ORTE_STRING:
+            (iptr->value).strptr = strdup((kptr->value).strptr);
+            break;
+            
+        case ORTE_UINT8:
+            (iptr->value).ui8 = (kptr->value).ui8;
+            break;
+            
+        case ORTE_UINT16:
+            (iptr->value).ui16 = (kptr->value).ui16;
+            break;
+            
+        case ORTE_UINT32:
+            (iptr->value).ui32 = (kptr->value).ui32;
+            break;
+            
+#ifdef HAVE_I64
+        case ORTE_UINT64:
+            (iptr->value).ui64 = (kptr->value).ui64;
+            break;
+#endif
+
+        case ORTE_INT8:
+            (iptr->value).i8 = (kptr->value).i8;
+            break;
+        
+        case ORTE_INT16:
+            (iptr->value).i16 = (kptr->value).i16;
+            break;
+        
+        case ORTE_INT32:
+            (iptr->value).i32 = (kptr->value).i32;
+            break;
+        
+#ifdef HAVE_I64
+        case ORTE_INT64:
+            (iptr->value).i64 = (kptr->value).i64;
+            break;
+#endif
+
+        case ORTE_BYTE_OBJECT:
+            ((iptr->value).byteobject).size = ((kptr->value).byteobject).size;
+            ((iptr->value).byteobject).bytes = ((kptr->value).byteobject).bytes;
+            ((kptr->value).byteobject).bytes = NULL;
+            break;
+            
+        case ORTE_NAME:
+            (iptr->value).proc = (kptr->value).proc;;
+            break;
+            
+        case ORTE_JOBID:
+            (iptr->value).jobid = (kptr->value).jobid;
+            break;
+            
+        case ORTE_NODE_STATE:
+            (iptr->value).node_state = (kptr->value).node_state;
+            break;
+            
+        case ORTE_STATUS_KEY:
+            (iptr->value).proc_status = (kptr->value).proc_status;
+            break;
+            
+        case ORTE_EXIT_CODE:
+            (iptr->value).exit_code = (kptr->value).exit_code;
+            break;
+            
+        default:
+            return ORTE_ERR_BAD_PARAM;
+            break;
+    }
+}
 
 
 int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg)
