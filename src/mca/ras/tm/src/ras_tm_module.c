@@ -36,7 +36,7 @@ static int deallocate(orte_jobid_t jobid);
 static int finalize(void);
 
 static int discover(ompi_list_t* nodelist);
-static char* get_tm_hostname(tm_node_id node);
+static int get_tm_hostname(tm_node_id node, char **hostname, char **arch);
 
 
 /*
@@ -54,6 +54,7 @@ orte_ras_base_module_t orte_ras_tm_module = {
  * requested number of nodes/process slots to the job.
  *  
  */
+#include "mca/gpr/gpr.h"
 static int allocate(orte_jobid_t jobid)
 {
     int ret;
@@ -138,7 +139,7 @@ static int discover(ompi_list_t* nodelist)
     ompi_list_item_t* item;
     ompi_list_t new_nodes;
     tm_node_id *tm_node_ids;
-    char *hostname;
+    char *hostname, *arch;
 
     /* Ignore anything that the user already specified -- we're
        getting nodes only from TM. */
@@ -161,7 +162,7 @@ static int discover(ompi_list_t* nodelist)
 
     OBJ_CONSTRUCT(&new_nodes, ompi_list_t);
     for (i = 0; i < num_node_ids; ++i) {
-        hostname = get_tm_hostname(tm_node_ids[i]);
+        get_tm_hostname(tm_node_ids[i], &hostname, &arch);
         ompi_output(orte_ras_base.ras_output, 
                     "ras:tm:allocate:discover: got hostname %s", hostname);
 
@@ -192,6 +193,7 @@ static int discover(ompi_list_t* nodelist)
                         "ras:tm:allocate:discover: not found -- added to list");
             node = OBJ_NEW(orte_ras_base_node_t);
             node->node_name = hostname;
+            node->node_arch = arch;
             node->node_state = ORTE_NODE_STATE_UP;
             node->node_cellid = 0;
             node->node_slots_inuse = 0;
@@ -239,10 +241,9 @@ static int discover(ompi_list_t* nodelist)
  * For a given TM node ID, get the string hostname corresponding to
  * it.
  */
-static char* get_tm_hostname(tm_node_id node)
+static int get_tm_hostname(tm_node_id node, char **hostname, char **arch)
 {
     int ret, local_errno;
-    char *hostname;
     tm_event_t event;
     char buffer[256];
     char **argv;
@@ -253,14 +254,14 @@ static char* get_tm_hostname(tm_node_id node)
     if (TM_SUCCESS != ret) {
         ompi_output(orte_ras_base.ras_output, 
                     "ras:tm:hostname: tm_rescinfo failed");
-        return NULL;
+        return ORTE_ERROR;
     }
 
     /* Now wait for that event to happen */
 
     ret = tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
     if (TM_SUCCESS != ret) {
-        return NULL;
+        return ORTE_ERROR;
     }
 
     /* According to the TM man page, we get back a space-separated
@@ -272,14 +273,15 @@ static char* get_tm_hostname(tm_node_id node)
     buffer[sizeof(buffer) - 1] = '\0';
     argv = ompi_argv_split(buffer, ' ');
     if (NULL == argv) {
-        return NULL;
+        return ORTE_ERROR;
     }
-    hostname = strdup(argv[1]);
+    *hostname = strdup(argv[1]);
+    *arch = strdup(buffer);
     ompi_argv_free(argv);
 
     /* All done */
 
     ompi_output(orte_ras_base.ras_output, 
                 "ras:tm:hostname: got hostname %s", hostname);
-    return hostname;
+    return ORTE_SUCCESS;
 }

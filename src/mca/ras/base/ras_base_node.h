@@ -39,6 +39,9 @@ struct orte_ras_base_node_t {
     ompi_list_item_t super;
     /** String node name */
     char *node_name;
+    /** String of the architecture for the node.  This is permitted to
+        be NULL if it is not known. */
+    char *node_arch;
     /** The cell ID of this node */
     orte_cellid_t node_cellid;
     /** State of this node; see include/orte_types.h */

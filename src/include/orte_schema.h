@@ -67,6 +67,7 @@ extern char *orte_error_strings[];
 #define ORTE_JOBID_KEY              "orte-jobid"
 #define ORTE_VPID_KEY               "orte-vpid"
 #define ORTE_NODE_NAME_KEY          "orte-node-name"
+#define ORTE_NODE_ARCH_KEY          "orte-node-arch"
 #define ORTE_NODE_STATE_KEY         "orte-node-state"
 #define ORTE_NODE_SLOTS_KEY         "orte-node-slots"
 #define ORTE_NODE_SLOTS_ALLOC_KEY   "orte-node-slots-alloc"

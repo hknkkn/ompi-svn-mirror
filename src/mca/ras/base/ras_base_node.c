@@ -24,6 +24,7 @@
 static void orte_ras_base_node_construct(orte_ras_base_node_t* node)
 {
     node->node_name = NULL;
+    node->node_arch = NULL;
     node->node_cellid = 0;
     node->node_state = ORTE_NODE_STATE_UNKNOWN;
     node->node_slots = 0;
@@ -34,8 +35,12 @@ static void orte_ras_base_node_construct(orte_ras_base_node_t* node)
 
 static void orte_ras_base_node_destruct(orte_ras_base_node_t* node)
 {
-    if(node->node_name != NULL)
+    if (NULL != node->node_name) {
         free(node->node_name);
+    }
+    if (NULL != node->node_arch) {
+        free(node->node_arch);
+    }
 }
 
 
@@ -79,6 +84,10 @@ int orte_ras_base_node_query(ompi_list_t* nodes)
                 node->node_name = strdup(keyval->value.strptr);
                 continue;
             }
+            if(strcmp(keyval->key, ORTE_NODE_ARCH_KEY) == 0) {
+                node->node_arch = strdup(keyval->value.strptr);
+                continue;
+            }
             if(strcmp(keyval->key, ORTE_NODE_STATE_KEY) == 0) {
                 node->node_state = keyval->value.node_state;
                 continue;
@@ -112,6 +121,7 @@ int orte_ras_base_node_query_alloc(ompi_list_t* nodes, orte_jobid_t jobid)
 {
     char* keys[] = { 
         ORTE_NODE_NAME_KEY, 
+        ORTE_NODE_ARCH_KEY, 
         ORTE_NODE_STATE_KEY,
         ORTE_NODE_SLOTS_KEY,
         ORTE_NODE_SLOTS_ALLOC_KEY,
@@ -126,7 +136,7 @@ int orte_ras_base_node_query_alloc(ompi_list_t* nodes, orte_jobid_t jobid)
 
     if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_str, jobid)))
         return rc;
-    asprintf(&keys[3], "%s-%s", ORTE_NODE_SLOTS_ALLOC_KEY, jobid_str);
+    asprintf(&keys[4], "%s-%s", ORTE_NODE_SLOTS_ALLOC_KEY, jobid_str);
     free(jobid_str);
 
     /* query selected node entries */
@@ -150,6 +160,10 @@ int orte_ras_base_node_query_alloc(ompi_list_t* nodes, orte_jobid_t jobid)
             orte_gpr_keyval_t* keyval = value->keyvals[k];
             if(strcmp(keyval->key, ORTE_NODE_NAME_KEY) == 0) {
                 node->node_name = strdup(keyval->value.strptr);
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_NODE_ARCH_KEY) == 0) {
+                node->node_arch = strdup(keyval->value.strptr);
                 continue;
             }
             if(strcmp(keyval->key, ORTE_NODE_STATE_KEY) == 0) {
@@ -218,8 +232,8 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
         
         value->addr_mode = ORTE_GPR_OVERWRITE;
         value->segment = strdup(ORTE_NODE_SEGMENT);
-        value->cnt = 5;
-        value->keyvals = (orte_gpr_keyval_t**)malloc(5*sizeof(orte_gpr_keyval_t*));
+        value->cnt = 6;
+        value->keyvals = (orte_gpr_keyval_t**)malloc(value->cnt*sizeof(orte_gpr_keyval_t*));
         if (NULL == value->keyvals) {
             for (j=0; j < i; j++) {
                 OBJ_RELEASE(values[j]);
@@ -229,7 +243,7 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
         
-        for (j=0; j < 5; j++) {
+        for (j=0; j < value->cnt; j++) {
             value->keyvals[j] = OBJ_NEW(orte_gpr_keyval_t);
             if (NULL == value->keyvals[j]) {
                 for (j=0; j <= i; j++) {
@@ -248,25 +262,39 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
         orte_gpr_value_t* value = values[i];
         node = (orte_ras_base_node_t*)item;
 
-        (value->keyvals[0])->key = strdup(ORTE_NODE_NAME_KEY);
-        (value->keyvals[0])->type = ORTE_STRING;
-        (value->keyvals[0])->value.strptr = strdup(node->node_name);
+        j = 0;
+        (value->keyvals[j])->key = strdup(ORTE_NODE_NAME_KEY);
+        (value->keyvals[j])->type = ORTE_STRING;
+        (value->keyvals[j])->value.strptr = strdup(node->node_name);
         
-        (value->keyvals[1])->key = strdup(ORTE_NODE_STATE_KEY);
-        (value->keyvals[1])->type = ORTE_NODE_STATE;
-        (value->keyvals[1])->value.node_state = node->node_state;
+        ++j;
+        (value->keyvals[j])->key = strdup(ORTE_NODE_ARCH_KEY);
+        (value->keyvals[j])->type = ORTE_STRING;
+        if (NULL != node->node_arch) {
+            (value->keyvals[j])->value.strptr = strdup(node->node_arch);
+        } else {
+            (value->keyvals[j])->value.strptr = strdup("");
+        }
         
-        (value->keyvals[2])->key = strdup(ORTE_CELLID_KEY);
-        (value->keyvals[2])->type = ORTE_CELLID;
-        (value->keyvals[2])->value.cellid = node->node_cellid;
+        ++j;
+        (value->keyvals[j])->key = strdup(ORTE_NODE_STATE_KEY);
+        (value->keyvals[j])->type = ORTE_NODE_STATE;
+        (value->keyvals[j])->value.node_state = node->node_state;
         
-        (value->keyvals[3])->key = strdup(ORTE_NODE_SLOTS_KEY);
-        (value->keyvals[3])->type = ORTE_UINT32;
-        (value->keyvals[3])->value.ui32 = node->node_slots;
+        ++j;
+        (value->keyvals[j])->key = strdup(ORTE_CELLID_KEY);
+        (value->keyvals[j])->type = ORTE_CELLID;
+        (value->keyvals[j])->value.cellid = node->node_cellid;
         
-        (value->keyvals[4])->key = strdup(ORTE_NODE_SLOTS_MAX_KEY);
-        (value->keyvals[4])->type = ORTE_UINT32;
-        (value->keyvals[4])->value.ui32 = node->node_slots_max;
+        ++j;
+        (value->keyvals[j])->key = strdup(ORTE_NODE_SLOTS_KEY);
+        (value->keyvals[j])->type = ORTE_UINT32;
+        (value->keyvals[j])->value.ui32 = node->node_slots;
+        
+        ++j;
+        (value->keyvals[j])->key = strdup(ORTE_NODE_SLOTS_MAX_KEY);
+        (value->keyvals[j])->type = ORTE_UINT32;
+        (value->keyvals[j])->value.ui32 = node->node_slots_max;
 
         /* setup index/keys for this node */
         rc = orte_schema.get_node_tokens(&value->tokens, &value->num_tokens, node->node_cellid, node->node_name);
