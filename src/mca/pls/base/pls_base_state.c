@@ -24,6 +24,11 @@
 #include "mca/soh/soh_types.h"
 
 
+/**
+ * Set the process pid in the job segment and indicate the state
+ * as being launched.
+ */
+
 int orte_pls_base_set_proc_pid(orte_process_name_t* name, pid_t pid)
 {
     orte_gpr_value_t* values[1];
@@ -33,7 +38,6 @@ int orte_pls_base_set_proc_pid(orte_process_name_t* name, pid_t pid)
     orte_gpr_keyval_t* keyvals[2];
     int i, rc;
 
-    /* query the job segment on the registry */
     if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&value.segment, name->jobid)))
         return rc;
 
@@ -58,6 +62,11 @@ int orte_pls_base_set_proc_pid(orte_process_name_t* name, pid_t pid)
 }
 
 
+/**
+ * Add a key-value to the node segment containing the process pid for
+ * the daemons.
+ */
+
 int orte_pls_base_set_node_pid(char* node_name, orte_process_name_t* name, pid_t pid)
 {
     orte_gpr_value_t* values[1];
@@ -67,7 +76,6 @@ int orte_pls_base_set_node_pid(char* node_name, orte_process_name_t* name, pid_t
     char* jobid;
     int i, rc;
 
-    /* query the job segment on the registry */
     if(ORTE_SUCCESS != (rc = orte_schema.get_node_tokens(&value.tokens, &value.num_tokens, name->cellid, node_name)))
         return rc;
 
