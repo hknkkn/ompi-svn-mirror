@@ -296,31 +296,21 @@ orte_gpr_replica_trig_op_add_target(orte_gpr_replica_triggers_t *trig,
 
 int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                                      orte_gpr_replica_container_t *cptr,
-                                     orte_gpr_replica_itagval_t *old_iptr,
-                                     orte_gpr_replica_itagval_t *new_iptr)
+                                     int num_iptrs,
+                                     orte_gpr_replica_itagval_t **iptr,
+                                     orte_gpr_replica_itagval_t *rep_iptr,
+                                     orte_gpr_replica_action_t action)
 {
     /* three cases need to be considered:
-     * (a) new_iptr = NULL => existing value is being deleted from this container.
+     * (a) action = DELETE => existing value is being deleted from this container.
      *              In this case, need to run through triggers to see if the
      *              existing value is on the list of targets/counters. If so, remove it
      *              from the list.
-     * (b) old_iptr = NULL => new value is being added to this container. In this
-     *              case, need to run through triggers to see if the new value
-     *              meets their criteria. If so, add it to that trigger's target
-     *              list. Since we already have the container pointer, we don't
-     *              need to check tokens - they've already been matched. Only need
-     *              to check if new_iptr's key is on the keytags list.
-     * Note that we don't have to check counters in case (b) as the subscribe
-     * operation always places a value for a counter on the registry. Hence,
-     * counters can only be updated, they can't be added to a trigger once the
-     * trigger has been defined - which is why we don't have to store the counters'
-     * descriptions (tokens, keys, etc.).
-     * 
-     * (c) both values are non-NULL => replace the old_iptr value with the new_iptr
-     *              value. In this case, we need to run through the triggers to
-     *              see if they have the old_iptr on their target or counter list.
-     *              If so, we replace that value with the new one. This is required
-     *              when a value is updated on the registry.
+     * (b) action = ADD => new value is being added to this container. In this
+     *              case, need to run through triggers to see if seg/container
+     *              included in target. If so, add it to that trigger's target
+     *              list.
+     * (c) action = UPDATED => replace the iptr with the rep_iptr.
      */
      
     orte_gpr_replica_triggers_t **trigs;
@@ -328,6 +318,7 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
     orte_gpr_replica_target_t **targets;
     orte_gpr_replica_itagval_t **iptrs;
     orte_gpr_replica_counter_t **cntrs;
+    bool replaced;
     int i, j, k, m, n, rc;
      
     trigs = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
@@ -342,59 +333,93 @@ int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                     targets = (orte_gpr_replica_target_t**)((data[j]->targets)->addr);
                     for (k=0; k < (data[j]->targets)->size; k++) {
                         if (NULL != targets[k] &&
-                            cptr == targets[k]->cptr && /* got the right container */
-                            0 < targets[k]->num_ivals) {
-                            iptrs = (orte_gpr_replica_itagval_t**)((targets[k]->ivals)->addr);
-                            for (m=0; m < (targets[k]->ivals)->size; m++) {
-                                if (NULL != iptrs[m]) {
-                                    /* check case (a) */
-                                    if (NULL == new_iptr &&
-                                        NULL != old_iptr &&
-                                        old_iptr == iptrs[m]) {
-                                        if (ORTE_SUCCESS != (rc =
-                                            orte_pointer_array_set_item(targets[k]->ivals, m, NULL))) {
-                                            ORTE_ERROR_LOG(rc);
-                                            return rc;
-                                        }
-                                        (targets[k]->num_ivals)--;
-                                    } else if (NULL != new_iptr &&
-                                               NULL == old_iptr) { /* check case (b) */
-                                        if (orte_gpr_replica_check_itag_list(data[j]->key_addr_mode,
-                                                1, &(new_iptr->itag),
-                                                (int)orte_value_array_get_size(&(data[j]->keytags)),
-                                                ORTE_VALUE_ARRAY_GET_BASE(&(data[j]->keytags), orte_gpr_replica_itag_t))) {
-                                            if (ORTE_SUCCESS != (rc =
-                                                orte_pointer_array_add(targets[k]->ivals, new_iptr))) {
-                                                ORTE_ERROR_LOG(rc);
-                                                return rc;
-                                            }
-                                            (targets[k]->num_ivals)++;
-                                        }
-                                    } else if (NULL != new_iptr &&
-                                               NULL != old_iptr &&
-                                               old_iptr == iptrs[m]) {  /* case (c) */
-                                        if (ORTE_SUCCESS != (rc =
-                                            orte_pointer_array_set_item(targets[k]->ivals, m, new_iptr))) {
-                                            ORTE_ERROR_LOG(rc);
-                                            return rc;
-                                        }
-                                    }
+                            cptr == targets[k]->cptr) {  /* got the right container */
+                            if (ORTE_GPR_REPLICA_ENTRY_ADDED == action) {  /* case (b) */
+                                if (ORTE_SUCCESS != (rc = orte_pointer_array_add(targets[k]->ivals, iptr))) {
+                                    ORTE_ERROR_LOG(rc);
+                                    return rc;
                                 }
-                            }  /* for m */
+                                (targets[k]->num_ivals)++;
+                            } else { /* for each provided iptr, see if it is present */
+                                iptrs = (orte_gpr_replica_itagval_t**)((targets[k]->ivals)->addr);
+                                for (n=0, replaced=false; n < num_iptrs; n++) {
+                                    for (m=0; m < (targets[k]->ivals)->size; m++) {
+                                        if (NULL != iptrs[m] && iptr[n] == iptrs[m]) { /* found it */
+                                            if (ORTE_GPR_REPLICA_ENTRY_DELETED == action) {  /* case (a) */
+                                                if (ORTE_SUCCESS != (rc =
+                                                    orte_pointer_array_set_item(targets[k]->ivals, m, NULL))) {
+                                                    ORTE_ERROR_LOG(rc);
+                                                    return rc;
+                                                }
+                                                (targets[k]->num_ivals)--;
+                                            } else if (ORTE_GPR_REPLICA_ENTRY_UPDATED == action) {
+                                                if (replaced) { /* only add rep_iptr in once */
+                                                    if (ORTE_SUCCESS != (rc =
+                                                        orte_pointer_array_set_item(targets[k]->ivals, m, NULL))) {
+                                                        ORTE_ERROR_LOG(rc);
+                                                        return rc;
+                                                    }
+                                                } else {
+                                                    if (ORTE_SUCCESS != (rc =
+                                                        orte_pointer_array_set_item(targets[k]->ivals, m, rep_iptr))) {
+                                                        ORTE_ERROR_LOG(rc);
+                                                        return rc;
+                                                    }
+                                                    replaced = true;
+                                                }  /* if replaced */
+                                            } /* if actions */
+                                        } /* if iptrs not NULL */
+                                    } /* for m */
+                                } /* for n */
+                            } /* if action */
                         }  /* if targets not NULL */
                     }  /* for k */
                 }  /* if data not NULL */
             }  /* for j */
         }  /* if trigs not NULL */
         
-        /* now check the counters */
-        
+        /* check the counters next */
+        if (NULL != trigs[i] && 0 < trigs[i]->num_counters) {
+            cntrs = (orte_gpr_replica_counter_t**)((trigs[i]->counters)->addr);
+            for (j=0; j < (trigs[i]->counters)->size; j++) {
+                if (NULL != cntrs[j] && cptr == cntrs[j]->cptr) { /* found the container */
+                    for (k=0, replaced=false; k < num_iptrs; k++) {
+                        if (iptr[k] == cntrs[j]->iptr) {  /* got a match */
+                            if (ORTE_GPR_REPLICA_ENTRY_DELETED == action) {  /* case (a) */
+                                if (ORTE_SUCCESS != (rc =
+                                    orte_pointer_array_set_item(trigs[i]->counters, j, NULL))) {
+                                    ORTE_ERROR_LOG(rc);
+                                    return rc;
+                                }
+                                (trigs[i]->num_counters)--;
+                            } else if (ORTE_GPR_REPLICA_ENTRY_UPDATED == action) {
+                                if (replaced) {
+                                    if (ORTE_SUCCESS != (rc =
+                                        orte_pointer_array_set_item(trigs[i]->counters, j, NULL))) {
+                                        ORTE_ERROR_LOG(rc);
+                                        return rc;
+                                    }
+                                } else {
+                                    if (ORTE_SUCCESS != (rc =
+                                        orte_pointer_array_set_item(trigs[i]->counters, j, rep_iptr))) {
+                                        ORTE_ERROR_LOG(rc);
+                                        return rc;
+                                    }
+                                    replaced = true;
+                                }
+                            } /* if actions */
+                        }  /* if iptr */
+                    }  /* for k */
+                }  /* if cntrs not NULL */
+            } /* for j */
+        } /* if trigs not NULL */
     } /* for i */
     return ORTE_SUCCESS;
 }
 
 
-int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_t action_taken)
+int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg,
+                                         orte_gpr_replica_action_t action_taken)
 {
     orte_gpr_replica_triggers_t **trig;
     orte_gpr_replica_subscribed_data_t **sptr;

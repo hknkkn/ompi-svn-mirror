@@ -64,6 +64,9 @@ typedef uint8_t orte_gpr_replica_addr_mode_t;
 #define ORTE_GPR_REPLICA_ENTRY_CHG_FRM     (int8_t) 5
 #define ORTE_GPR_REPLICA_VALUE_INCREMENTED (int8_t) 6
 #define ORTE_GPR_REPLICA_VALUE_DECREMENTED (int8_t) 7
+#define ORTE_GPR_REPLICA_ENTRY_UPDATED     (int8_t) 8
+
+typedef int8_t orte_gpr_replica_action_t;
 
 typedef struct {
     int debug;

@@ -189,8 +189,10 @@ int orte_gpr_replica_init_targets(orte_gpr_replica_triggers_t *trig);
 
 int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
                                      orte_gpr_replica_container_t *cptr,
-                                     orte_gpr_replica_itagval_t *old_iptr,
-                                     orte_gpr_replica_itagval_t *new_iptr);
+                                     int num_iptrs,
+                                     orte_gpr_replica_itagval_t **iptr,
+                                     orte_gpr_replica_itagval_t *rep_iptr,
+                                     orte_gpr_replica_action_t action);
                     
 int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_t action_taken);
 

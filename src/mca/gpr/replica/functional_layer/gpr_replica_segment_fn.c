@@ -128,6 +128,17 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
         }  /* if trig not NULL */
     }  /* for i */
     
+    /* clear all the trigger/counter pointers that are targeting the ivals in this container */
+    for (i=0; i < (cptr->itagvals)->size; i++) {
+        if (NULL != iptr[i]) {
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_triggers(seg, cptr, 1,
+                                        &(iptr[i]), NULL, ORTE_GPR_REPLICA_ENTRY_DELETED))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+            }
+        }
+    }
+    
     /* remove container from segment and release it */
     orte_pointer_array_set_item(seg->containers, cptr->index, NULL);
     OBJ_RELEASE(cptr);
@@ -178,6 +189,13 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_itagval_t **ivalptr,
         return rc;
     }
     
+    /* update the triggers/counters being monitored */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_triggers(seg, cptr, 1, &iptr,
+                                NULL, ORTE_GPR_REPLICA_ENTRY_ADDED))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
     *ivalptr = iptr;
     return ORTE_SUCCESS;
 }
@@ -187,19 +205,33 @@ int orte_gpr_replica_update_keyval(orte_gpr_replica_segment_t *seg,
                                    orte_gpr_replica_container_t *cptr,
                                    orte_gpr_keyval_t *kptr)
 {
-    int i;
+    int i, p, rc;
     orte_pointer_array_t *ptr;
-    orte_gpr_replica_itagval_t *iptr;
+    orte_gpr_replica_itagval_t *iptr, **iptrs;
     size_t j, n;
 
     /* NEED TO CHECK SUBSCRIPTIONS CHG_TO/FROM HERE */
-        
-    /* for each item in the search array, delete it */
     ptr = orte_gpr_replica_globals.srch_ival;
     
-    for (i = 0; i < ptr->size; i++) {
+    /* find out how many items are in the search array */
+    for (i=0, n=0;  i < ptr->size; i++) {
+        if (NULL != ptr->addr[i]) {
+            p++;
+        }
+    }
+    
+    /* allocate storage for the iptrs array */
+    iptrs = (orte_gpr_replica_itagval_t**)malloc(p * sizeof(orte_gpr_replica_itagval_t));
+    if (NULL == iptrs) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    /* for each item in the search array, delete it */
+    for (i=0, p=0; i < ptr->size; i++) {
         if (NULL != ptr->addr[i]) {
             iptr = (orte_gpr_replica_itagval_t*)ptr->addr[i];
+            iptrs[p] = iptr;
             orte_pointer_array_set_item(cptr->itagvals, iptr->index, NULL);
             n = orte_value_array_get_size(&(cptr->itaglist));
             for (j=0; j < n; j++) {
@@ -209,11 +241,24 @@ int orte_gpr_replica_update_keyval(orte_gpr_replica_segment_t *seg,
                 }
             }
             OBJ_RELEASE(iptr);
+            p++;
         }
     }
     
     /* now add new item in their place */
-   return orte_gpr_replica_add_keyval(&iptr, seg, cptr, kptr);
+   if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(&iptr, seg, cptr, kptr))) {
+       ORTE_ERROR_LOG(rc);
+       return rc;
+   }
+   
+   /* update the trigger/counter information */
+   if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_triggers(seg, cptr, p, iptrs,
+                                    iptr, ORTE_GPR_REPLICA_ENTRY_UPDATED))) {
+       ORTE_ERROR_LOG(rc);
+       return rc;
+   }
+   
+   return ORTE_SUCCESS;
 }
 
 
