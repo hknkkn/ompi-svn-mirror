@@ -184,15 +184,6 @@ typedef int (*mca_oob_base_module_init_fn_t)(void);
  */
 typedef int (*mca_oob_base_module_fini_fn_t)(void);
 
-/**
- * Callback function for updating the peer address cache
- *
- * @param 
- */
-typedef void (*mca_oob_update_callback_fn_t)(
-    orte_registry_notify_message_t* msg,
-    void* cbdata);
-
     /**
      * xcast function for sending common messages to all processes
      */
@@ -215,7 +206,6 @@ struct mca_oob_1_0_0_t {
     mca_oob_base_module_recv_cancel_fn_t oob_recv_cancel;
     mca_oob_base_module_init_fn_t        oob_init;
     mca_oob_base_module_fini_fn_t        oob_fini;
-    mca_oob_update_callback_fn_t         oob_update;
     mca_oob_base_module_xcast_fn_t       oob_xcast;
 };
 

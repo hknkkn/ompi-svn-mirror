@@ -14,39 +14,35 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-    base \
-    coll \
-    common \
-    io \
-    iof \
-    mpool \
-    ns \
-    one \
-    oob \
-	pcmclient \
-	pls \
-    pml \
-    ptl \
-    rml \
-	ras \
-	rds \
-	rmaps \
-	rmgr \
-    soh \
-    svc \
-    topo
+noinst_LTLIBRARIES = libmca_iof_base.la
+
+# For VPATH builds, have to specify where static-modules.h will be found
+
+AM_CPPFLAGS = -I$(top_builddir)/src
 
 # Source code files
 
-headers = mca.h
+headers = \
+        base.h \
+        iof_base_header.h \
+        iof_base_endpoint.h \
+        iof_base_fragment.h
+
+libmca_iof_base_la_SOURCES = \
+        $(headers) \
+        iof_base_close.c \
+        iof_base_open.c \
+        iof_base_flush.c \
+        iof_base_endpoint.c \
+        iof_base_fragment.c \
+ 	    iof_base_select.c
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca
+ompidir = $(includedir)/openmpi/mca/iof/base
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)
 endif
+

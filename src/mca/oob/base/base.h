@@ -30,7 +30,6 @@
 	#include <sys/uio.h>
 #endif
 
-#include "util/bufpack.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {

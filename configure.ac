@@ -1133,6 +1133,8 @@ AC_CONFIG_FILES([
     src/mca/coll/base/Makefile
     src/mca/io/Makefile
     src/mca/io/base/Makefile
+    src/mca/iof/Makefile
+    src/mca/iof/base/Makefile
     src/mca/mpool/Makefile
     src/mca/mpool/base/Makefile
     src/mca/one/Makefile

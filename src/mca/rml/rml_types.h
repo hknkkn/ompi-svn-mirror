@@ -21,6 +21,7 @@
 
 #include "orte_config.h"
 #include "include/orte_constants.h"
+#include "util/proc_info.h"
 #include <limits.h>
 
 /**
@@ -51,14 +52,20 @@ typedef uint32_t orte_rml_tag_t;
                                * size for the receive and return the allocated buffer and size in the first
                                * element of the iovec array. */
                                                                                                                                         
-
 /**
  * The wildcard for receives from any peer.
  */
 #define ORTE_RML_NAME_ANY  &orte_rml_name_any
+
 /**
  * Process name of seed
  */
 #define ORTE_RML_NAME_SEED &orte_rml_name_seed
+
+/**
+ * Process name of self
+ */
+#define ORTE_RML_NAME_SELF orte_process_info.my_name
+
 
 #endif  /* RML_TYPES */
