@@ -46,6 +46,7 @@ int orte_pls_base_set_proc_pid(const orte_process_name_t* name, pid_t pid)
 
     if(ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&value.tokens, &value.num_tokens, (orte_process_name_t*)name))) {
         ORTE_ERROR_LOG(rc);
+        free(value.segment);
         return rc;
     }
 
@@ -59,6 +60,10 @@ int orte_pls_base_set_proc_pid(const orte_process_name_t* name, pid_t pid)
     values[0] = &value;
     
     rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
+    if(ORTE_SUCCESS != rc) {
+        ORTE_ERROR_LOG(rc);
+    }
+
     free(value.segment);
     for(i=0; i<value.num_tokens; i++)
         free(value.tokens[i]);
@@ -121,8 +126,11 @@ int orte_pls_base_get_proc_pid(const orte_process_name_t* name, pid_t* pid)
 
 cleanup:
     if(NULL != values) {
-        for(i=0; i<num_values; i++)
-            OBJ_RELEASE(values[i]);
+        for(i=0; i<num_values; i++) {
+            if(NULL != values[i]) {
+                OBJ_RELEASE(values[i]);
+            }
+        }
         free(values);
     }
     free(segment);
@@ -176,8 +184,11 @@ int orte_pls_base_get_proc_pids(orte_jobid_t jobid, pid_t **pids, size_t* num_pi
 
 cleanup:
     if(NULL != values) {
-        for(i=0; i<num_values; i++)
-            OBJ_RELEASE(values[i]);
+        for(i=0; i<num_values; i++) {
+            if(NULL != values[i]) {
+                OBJ_RELEASE(values[i]);
+            }
+        }
         free(values);
     }
     free(segment);
@@ -217,6 +228,9 @@ int orte_pls_base_set_node_pid(orte_cellid_t cellid, char* node_name, orte_jobid
     values[0] = &value;
     
     rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
+    if(ORTE_SUCCESS != rc) {
+        ORTE_ERROR_LOG(rc);
+    }
 
 cleanup:
     free(kv_pid.key);

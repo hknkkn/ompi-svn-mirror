@@ -105,9 +105,6 @@ int main(int argc, char *argv[])
         return ret;
     }
 
-    /* GPR test code */
-    ret = orte_pls_base_set_proc_pid(orte_process_info.my_name, getpid());
-
     exit_cmd = false;
     while (!exit_cmd) {
         	printf("ompiconsole> ");

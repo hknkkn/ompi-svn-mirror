@@ -44,7 +44,7 @@
  * Cleanup and restart a selected set of services.
  */
 
-int orte_restart(orte_process_name_t *name)
+int orte_restart(orte_process_name_t *name, const char* uri)
 {
     int rc;
 
@@ -142,6 +142,15 @@ int orte_restart(orte_process_name_t *name)
     }
 
     /*
+     * Set contact info.
+     */
+
+    if (ORTE_SUCCESS != (rc = orte_rml.set_uri(uri))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+
+    /*
      * Re-init selected modules.
      */
     if (ORTE_SUCCESS != (rc = orte_rml.init())) {
@@ -168,7 +177,6 @@ int orte_restart(orte_process_name_t *name)
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-
     return ORTE_SUCCESS;
 }
 

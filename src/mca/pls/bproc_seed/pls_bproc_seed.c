@@ -34,6 +34,7 @@
 #include "mca/rmgr/base/base.h"
 #include "mca/rml/rml.h"
 #include "mca/errmgr/errmgr.h"
+#include "mca/soh/soh.h"
 #include "mca/ras/base/base.h"
 #include "mca/rmaps/base/rmaps_base_map.h"
 
@@ -239,14 +240,12 @@ static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, s
         return rc;
     }
 
-#if 0
     /* set the process status in the registery - child is not running yet */
     rc = orte_pls_base_set_proc_pid(&proc->proc_name, *pid);
     if(ORTE_SUCCESS != rc) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-#endif
 
     /* write the process image to the app */
     while(bytes_writen < image_len) {
@@ -272,37 +271,51 @@ static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, s
 
 static void orte_pls_bproc_wait_proc(pid_t pid, int status, void* cbdata)
 {
+    orte_rmaps_base_proc_t* proc = (orte_rmaps_base_proc_t*)cbdata;
+
+    /* set the state of this process */
+    if(NULL != proc) {
+        int rc = orte_soh.set_proc_soh(&proc->proc_name, ORTE_PROC_STATE_TERMINATED, status);
+        if(ORTE_SUCCESS != rc) {
+            ORTE_ERROR_LOG(rc);
+        }
+        OBJ_RELEASE(proc);
+    }
+
+    /* release any waiting threads */
     OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
     mca_pls_bproc_seed_component.num_children--;
     ompi_condition_signal(&mca_pls_bproc_seed_component.condition);
     OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
-
-    /* notify SOH the process has exited */
 }
+
 
 /*
  *  Wait for a callback indicating the daemon has exited.
  */
 static void orte_pls_bproc_wait_node(pid_t pid, int status, void* cbdata)
 {
-#if 0
     orte_rmaps_base_node_t* node = (orte_rmaps_base_node_t*)cbdata;
     ompi_list_item_t* item;
-#endif
 
-    OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
-    mca_pls_bproc_seed_component.num_children--;
-    ompi_condition_signal(&mca_pls_bproc_seed_component.condition);
-    OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
-
-#if 0
+    /* set state of all processes associated with the daemon as terminated */
     for(item =  ompi_list_get_first(&node->node_procs);
         item != ompi_list_get_end(&node->node_procs);
         item =  ompi_list_get_next(item)) {
 
-        /* notify SOH all of the procs have exited */
+        orte_rmaps_base_proc_t* proc = (orte_rmaps_base_proc_t*)cbdata;
+        int rc = orte_soh.set_proc_soh(&proc->proc_name, ORTE_PROC_STATE_TERMINATED, 0);
+        if(ORTE_SUCCESS != rc) {
+            ORTE_ERROR_LOG(rc);
+        }
     }
-#endif
+    OBJ_RELEASE(node);
+
+    /* release any waiting threads */
+    OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
+    mca_pls_bproc_seed_component.num_children--;
+    ompi_condition_signal(&mca_pls_bproc_seed_component.condition);
+    OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
 }
 
 
@@ -421,27 +434,18 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         ompi_output(0, "orte_pls_bproc: node name=%d.%d.%d\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
 
         /* restart the daemon w/ the new process name */
-        rc = orte_restart(daemon_name);
+        rc = orte_restart(daemon_name, uri);
         if(ORTE_SUCCESS != rc) {
             ORTE_ERROR_LOG(rc);
             _exit(-1);
         }
         
-        /* setup contact info to the process that launched us */
-        rc = orte_rml.set_uri(uri);
-        if(ORTE_SUCCESS != rc) {
-            ORTE_ERROR_LOG(rc);
-            _exit(-1);
-        }
-
-#if 0
         /* save the daemons pid in the registry */
         rc = orte_pls_base_set_node_pid(node->node_cellid, node->node_name, jobid, getpid());
         if(ORTE_SUCCESS != rc) {
             ORTE_ERROR_LOG(rc);
             _exit(-1);
         }
-#endif
 
         /* start the required number of copies of the application */
         index = 0;
@@ -461,6 +465,7 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
             mca_pls_bproc_seed_component.num_children++;
             OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
+            OBJ_RETAIN(proc);
             orte_wait_cb(pid, orte_pls_bproc_wait_proc, proc);
 
             ompi_output(0, "orte_pls_bproc: started: %d.%d.%d\n", ORTE_NAME_ARGS(&proc->proc_name));
@@ -494,7 +499,7 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
             mca_pls_bproc_seed_component.num_children++;
             OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
-
+ 
             orte_wait_cb(daemon_pids[index++], orte_pls_bproc_wait_node, node);
         }
         rc = ORTE_SUCCESS;

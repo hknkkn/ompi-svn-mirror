@@ -686,7 +686,7 @@ int mca_oob_tcp_init(void)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     trig_value.cnt = 1;
-    trig_value.keyvals[0] = (orte_gpr_keyval_t*)malloc(sizeof(orte_gpr_keyval_t));
+    trig_value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     if(NULL == trig_value.keyvals[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
@@ -920,6 +920,7 @@ int mca_oob_tcp_set_addr(const orte_process_name_t* name, const char* uri)
 {
     struct sockaddr_in inaddr;
     mca_oob_tcp_addr_t* addr;
+    mca_oob_tcp_peer_t* peer;
     int rc;
     if((rc = mca_oob_tcp_parse_uri(uri,&inaddr)) != OMPI_SUCCESS)
         return rc;
@@ -932,6 +933,11 @@ int mca_oob_tcp_set_addr(const orte_process_name_t* name, const char* uri)
         ompi_hash_table_set_proc(&mca_oob_tcp_component.tcp_peer_names, &addr->addr_name, addr);
     }
     rc = mca_oob_tcp_addr_insert(addr, &inaddr);
+    peer = (mca_oob_tcp_peer_t *)ompi_hash_table_get_proc(
+        &mca_oob_tcp_component.tcp_peers, &addr->addr_name);
+    if(NULL != peer) {
+        mca_oob_tcp_peer_resolved(peer, addr);
+    }
     OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
     return rc;
 }

@@ -120,7 +120,7 @@ OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
      *
      * Restart selected components with a new process name.
      */
-OMPI_DECLSPEC    int orte_restart(orte_process_name_t* name);
+OMPI_DECLSPEC    int orte_restart(orte_process_name_t* name, const char* uri);
 
     /**
      * Finalize the Open run time environment. Any function calling \code

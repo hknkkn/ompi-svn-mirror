@@ -84,7 +84,8 @@ static void orte_gpr_value_destructor(orte_gpr_value_t* reg_val)
 
     if (0 < reg_val->cnt && NULL != reg_val->keyvals) {
         for (i=0; i < reg_val->cnt; i++) {
-            OBJ_RELEASE(reg_val->keyvals[i]);
+            if(NULL != reg_val->keyvals[i])
+                OBJ_RELEASE(reg_val->keyvals[i]);
         }
 	   free(reg_val->keyvals);
     }
@@ -92,7 +93,8 @@ static void orte_gpr_value_destructor(orte_gpr_value_t* reg_val)
     if (0 < reg_val->num_tokens && NULL != reg_val->tokens) {
         tokens = reg_val->tokens;
         for (i=0; i < reg_val->num_tokens; i++) {
-            free(tokens[i]);
+            if(NULL != tokens[i])
+                free(tokens[i]);
         }
         free(tokens);
     }
