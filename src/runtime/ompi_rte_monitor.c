@@ -43,11 +43,11 @@ static bool ompi_rte_waiting = false;
  */
 
 
-void ompi_rte_all_procs_registered(ompi_registry_notify_message_t* match, void* cbdata)
+void ompi_rte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdata)
 {
     if (ompi_rte_debug_flag) {
-	ompi_output(0, "[%d,%d,%d] all procs registered",
-		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
+	    ompi_output(0, "[%d,%d,%d] all procs registered",
+		    ORTE_NAME_ARGS(*orte_process_info.my_name));
     }
 
     OMPI_THREAD_LOCK(&ompi_rte_mutex);
@@ -59,7 +59,7 @@ void ompi_rte_all_procs_registered(ompi_registry_notify_message_t* match, void* 
 }
 
 
-void ompi_rte_all_procs_unregistered(ompi_registry_notify_message_t* match, void* cbdata)
+void ompi_rte_all_procs_unregistered(orte_gpr_notify_message_t* match, void* cbdata)
 {
     OMPI_THREAD_LOCK(&ompi_rte_mutex);
     ompi_rte_job_finished = true;

@@ -316,7 +316,8 @@ typedef int (*orte_rml_module_barrier_fn_t)(void);
 
 typedef int (*orte_rml_module_xcast_fn_t)(
     orte_process_name_t* root, 
-    ompi_list_t* peers,
+    orte_process_name_t* peers,
+    size_t num_peers,
     orte_buffer_t* buffer,
     orte_rml_buffer_callback_fn_t cbfunc);
 

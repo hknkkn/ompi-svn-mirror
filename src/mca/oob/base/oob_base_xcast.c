@@ -39,11 +39,12 @@
                                                                                                   
 int mca_oob_xcast(
     orte_process_name_t* root,
-    ompi_list_t* peers,
+    orte_process_name_t* peers,
+    size_t num_peers,
     orte_buffer_t* buffer,
     mca_oob_callback_packed_fn_t cbfunc)
 {
-    orte_name_services_namelist_t *ptr;
+    size_t i;
     int rc;
     int tag = MCA_OOB_TAG_XCAST;
     int cmpval;
@@ -51,10 +52,8 @@ int mca_oob_xcast(
     /* check to see if I am the root process name */
     cmpval = orte_ns.compare(ORTE_NS_CMP_ALL, root, orte_process_info.my_name);
     if(NULL != root && 0 == cmpval) {
-        for (ptr = (orte_name_services_namelist_t*)ompi_list_get_first(peers);
-	     ptr != (orte_name_services_namelist_t*)ompi_list_get_end(peers);
-	     ptr = (orte_name_services_namelist_t*)ompi_list_get_next(ptr)) {
-            rc = mca_oob_send_packed(ptr->name, buffer, tag, 0);
+        for(i=0; i<num_peers; i++) {
+            rc = mca_oob_send_packed(peers+i, buffer, tag, 0);
             if(rc < 0) {
                 return rc;
             }

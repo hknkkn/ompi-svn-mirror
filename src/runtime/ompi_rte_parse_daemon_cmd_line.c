@@ -35,8 +35,8 @@ void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
 
     /* see if I'm the seed */
     if (ompi_cmd_line_is_taken(cmd_line, "seed") &&
-	false == ompi_process_info.seed) {
-	ompi_process_info.seed = true;
+	false == orte_process_info.seed) {
+	orte_process_info.seed = true;
 	setenv("OMPI_universe_seed", "1", 1);
     }
 

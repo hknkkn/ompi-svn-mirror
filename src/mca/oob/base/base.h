@@ -401,7 +401,8 @@ OMPI_DECLSPEC int mca_oob_recv_packed_nb(
 
 OMPI_DECLSPEC int mca_oob_xcast(
     orte_process_name_t* root, 
-    ompi_list_t* peers,
+    orte_process_name_t* peers,
+    size_t num_peers,
     orte_buffer_t* buffer,
     mca_oob_callback_packed_fn_t cbfunc);
 

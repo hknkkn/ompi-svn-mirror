@@ -188,7 +188,8 @@ typedef int (*mca_oob_base_module_fini_fn_t)(void);
      * xcast function for sending common messages to all processes
      */
 typedef int (*mca_oob_base_module_xcast_fn_t)(orte_process_name_t* root, 
-    ompi_list_t* peers,
+    orte_process_name_t* peers,
+    size_t num_peers,
     orte_buffer_t* buffer,
     mca_oob_callback_packed_fn_t cbfunc);
 

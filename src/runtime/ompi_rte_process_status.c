@@ -35,9 +35,10 @@
 
 ompi_rte_process_status_t *ompi_rte_get_process_status(orte_process_name_t *proc)
 {
+#if 0
     char *segment, *tokens[2], *jobidstring;
     ompi_registry_value_t *value;
-    ompi_rte_process_status_t *stat_ptr;
+    orte_rte_process_status_t *stat_ptr;
     ompi_list_t *returned_list;
 
     if (NULL == proc) { 
@@ -71,7 +72,7 @@ ompi_rte_process_status_t *ompi_rte_get_process_status(orte_process_name_t *proc
 
         return stat_ptr;
     }
-
+#endif
     return NULL;
 }
 
@@ -79,6 +80,7 @@ ompi_rte_process_status_t *ompi_rte_get_process_status(orte_process_name_t *proc
 int ompi_rte_set_process_status(ompi_rte_process_status_t *status,
 				orte_process_name_t *proc)
 {
+#if 0
     char *segment, *jobidstring;
     char *tokens[2];
     void *addr;
@@ -122,18 +124,19 @@ int ompi_rte_set_process_status(ompi_rte_process_status_t *status,
     free(tokens[0]);
     free(segment);
     ompi_buffer_free(buffer);
-
+#endif
     return OMPI_SUCCESS;
 }
 
 
-ompi_rte_process_status_t
-*ompi_rte_unpack_process_status(ompi_registry_value_t *value)
+ompi_rte_process_status_t *
+ompi_rte_unpack_process_status(orte_gpr_value_t *value)
 {
+#if 0
     ompi_buffer_t buffer;
-    ompi_rte_process_status_t *stat_ptr;
+    orte_rte_process_status_t *stat_ptr;
 
-    stat_ptr = (ompi_rte_process_status_t*)malloc(sizeof(ompi_rte_process_status_t));
+    stat_ptr = (orte_rte_process_status_t*)malloc(sizeof(orte_rte_process_status_t));
 
     /* transfer ownership of registry object to buffer and unpack */
     ompi_buffer_init_preallocated(&buffer, value->object, value->object_size);
@@ -148,4 +151,7 @@ ompi_rte_process_status_t
     ompi_unpack(buffer, &stat_ptr->exit_code, 1, OMPI_EXIT_CODE);
 
     return stat_ptr;
+#else
+    return NULL;
+#endif
 }

@@ -23,7 +23,6 @@
 #include "util/output.h"
 #include "util/sys_info.h"
 #include "util/proc_info.h"
-#include "util/bufpack.h"
 
 #include "mca/oob/base/base.h"
 #include "mca/ns/ns.h"
@@ -35,6 +34,7 @@
 ompi_rte_vm_status_t
 *ompi_rte_get_vm_status(orte_cellid_t cellid, char *nodename)
 {
+#if 0
     char *tokens[3];
     ompi_registry_value_t *value;
     ompi_rte_vm_status_t *stat_ptr;
@@ -57,13 +57,14 @@ ompi_rte_vm_status_t
         OBJ_RELEASE(returned_list);
         return stat_ptr;
     }
-    
+#endif
     return NULL;
 }
 
 
 int ompi_rte_set_vm_status(ompi_rte_vm_status_t *status)
 {
+#if 0
     char *tokens[3];
     void *addr;
     int size, rc;
@@ -101,12 +102,16 @@ int ompi_rte_set_vm_status(ompi_rte_vm_status_t *status)
     ompi_buffer_free(buffer);
 
     return OMPI_SUCCESS;
+#else
+    return OMPI_ERROR;
+#endif
 }
 
 
 ompi_rte_vm_status_t
-*ompi_rte_unpack_vm_status(ompi_registry_value_t *value)
+*ompi_rte_unpack_vm_status(orte_gpr_value_t *value)
 {
+#if 0
     ompi_buffer_t buffer;
     ompi_rte_vm_status_t *stat_ptr;
     
@@ -128,10 +133,14 @@ ompi_rte_vm_status_t
     ompi_unpack(buffer, &stat_ptr->state, 1, OMPI_NODE_STATE);
     
     return stat_ptr;
+#else
+    return NULL;
+#endif
 }
 
 int ompi_rte_vm_register(void)
 {
+#if 0
     ompi_rte_vm_status_t status;
     int ret_code=OMPI_SUCCESS;
         
@@ -175,6 +184,9 @@ int ompi_rte_vm_register(void)
     ompi_registry.assign_ownership(OMPI_RTE_VM_STATUS_SEGMENT, ORTE_JOBID_MAX);
 
     return ret_code;
+#else
+    return OMPI_ERROR;
+#endif
 }
 
 

@@ -30,8 +30,7 @@
 
 int ompi_rte_job_shutdown(orte_jobid_t jobid)
 {
-    ompi_registry.triggers_inactive(jobid);
-    ompi_registry.cleanup_job(jobid);
-
+    orte_gpr.triggers_inactive(jobid);
+    orte_gpr.cleanup_job(jobid);
     return OMPI_SUCCESS;
 }

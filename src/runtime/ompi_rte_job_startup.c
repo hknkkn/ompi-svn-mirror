@@ -25,8 +25,7 @@
 
 #include "util/output.h"
 
-#include "mca/oob/oob.h"
-#include "mca/oob/base/base.h"
+#include "mca/rml/rml.h"
 #include "mca/ns/ns_types.h"
 #include "mca/gpr/gpr.h"
 
@@ -35,53 +34,46 @@
 
 int ompi_rte_job_startup(orte_jobid_t jobid)
 {
-    ompi_list_t *recipients;
-    ompi_buffer_t startup_msg;
-    orte_name_services_namelist_t *ptr;
+    orte_buffer_t* startup_msg;
     ompi_rte_process_status_t *proc_status;
-    int num_procs;
-    size_t buf_size;
+    orte_process_name_t* procs;
+    size_t i, num_procs;
+    int rc;
 
     if (ompi_rte_debug_flag) {
         	ompi_output(0, "[%d,%d,%d] entered rte_job_startup for job %d",
-        		    ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
+        		    ORTE_NAME_ARGS(*orte_process_info.my_name), (int)jobid);
     }
 
-    recipients = OBJ_NEW(ompi_list_t);
-
-    startup_msg = ompi_registry.get_startup_msg(jobid, recipients);
-    ompi_registry.triggers_active(jobid);
-
-    if (ompi_rte_debug_flag) {
-        ompi_buffer_size(startup_msg, &buf_size);
-        	ompi_output(0, "[%d,%d,%d] rte_job_startup: sending startup message of size %d to %d recipients",
-        		    ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)buf_size,
-        		    ompi_list_get_size(recipients));
+    rc = orte_gpr.get_startup_msg(jobid, &startup_msg, &num_procs, &procs);
+    if(rc != OMPI_SUCCESS) {
+        return rc;
     }
+    orte_gpr.triggers_active(jobid);
 
     /* check to ensure there are recipients on list - don't send if not */
-    if (0 < (num_procs = (int)ompi_list_get_size(recipients))) {
-	mca_oob_xcast(ompi_rte_get_self(), recipients, startup_msg, NULL);
+    if (num_procs > 0) {
+	    orte_rml.xcast(orte_process_info.my_name, procs, num_procs, startup_msg, NULL);
+    }
 
     if (ompi_rte_debug_flag) {
          ompi_output(0, "[%d,%d,%d] rte_job_startup: completed xcast of startup message",
-                 ORTE_NAME_ARGS(*ompi_rte_get_self()));
+                 ORTE_NAME_ARGS(*orte_process_info.my_name));
     }
 
         /* for each recipient, set process status to "running" */
 
-	while (NULL != (ptr = (orte_name_services_namelist_t*)ompi_list_remove_first(recipients))) {
-		proc_status = ompi_rte_get_process_status(ptr->name);
+	for(i=0; i<num_procs; i++) {
+		proc_status = ompi_rte_get_process_status(procs+i);
 		proc_status->status_key = OMPI_PROC_RUNNING;
 		proc_status->exit_code = 0;
-		ompi_rte_set_process_status(proc_status, ptr->name);
+		ompi_rte_set_process_status(proc_status, procs+i);
 		free(proc_status);
 	}
-    }
-
-   OBJ_RELEASE(recipients);
+    free(procs);
 
     /* return number of processes started = number of recipients */
     return num_procs;
 
 }
+

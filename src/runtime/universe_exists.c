@@ -31,7 +31,6 @@
 #include "util/sys_info.h"
 #include "util/proc_info.h"
 #include "util/os_path.h"
-#include "util/bufpack.h"
 #include "util/session_dir.h"
 #include "util/universe_setup_file_io.h"
 
@@ -53,36 +52,36 @@ int ompi_rte_universe_exists()
     bool ping_success=false;
 
     /* if both ns_replica and gpr_replica were provided, check for contact with them */
-    if (NULL != ompi_process_info.ns_replica && NULL != ompi_process_info.gpr_replica) {
+    if (NULL != orte_process_info.ns_replica && NULL != orte_process_info.gpr_replica) {
 	return OMPI_SUCCESS;
     }
 
 /* 	/\* ping to verify ns_replica alive *\/ */
-/* 	if (OMPI_SUCCESS != mca_oob_ping(ompi_process_info.ns_replica, &ompi_rte_ping_wait)) { */
+/* 	if (OMPI_SUCCESS != mca_oob_ping(orte_process_info.ns_replica, &ompi_rte_ping_wait)) { */
 /* 	    if (ompi_rte_debug_flag) { */
 /* 		ompi_output(0, "univ_exists: ns_replica ping failed"); */
 /* 	    } */
 /* 	    free(ompi_universe_info.ns_replica); */
-/* 	    if (NULL != ompi_process_info.ns_replica) { */
-/* 		free(ompi_process_info.ns_replica); */
-/* 		ompi_process_info.ns_replica = NULL; */
+/* 	    if (NULL != orte_process_info.ns_replica) { */
+/* 		free(orte_process_info.ns_replica); */
+/* 		orte_process_info.ns_replica = NULL; */
 /* 	    } */
 /* 	} else {  /\* name server found *\/ */
 /* 	    ns_found = true; */
 /* 	} */
 /* 	/\* next check gpr - first see if it's the same as ns. if so, don't bother *\/ */
 
-/* 	if (0 != ns_base_compare(OMPI_NS_CMP_ALL, ompi_process_info.ns_replica, */
-/* 				 ompi_process_info.gpr_replica)) { */
+/* 	if (0 != ns_base_compare(OMPI_NS_CMP_ALL, orte_process_info.ns_replica, */
+/* 				 orte_process_info.gpr_replica)) { */
 /* 	    /\* ping to verify gpr_replica alive *\/ */
-/* 	    if (OMPI_SUCCESS != mca_oob_ping(ompi_process_info.gpr_replica, &ompi_rte_ping_wait)) { */
+/* 	    if (OMPI_SUCCESS != mca_oob_ping(orte_process_info.gpr_replica, &ompi_rte_ping_wait)) { */
 /* 		if (ompi_rte_debug_flag) { */
 /* 		    ompi_output(0, "univ_exists: gpr_replica ping failed"); */
 /* 		} */
 /* 		free(ompi_universe_info.gpr_replica); */
-/* 		if (NULL != ompi_process_info.gpr_replica) { */
-/* 		    free(ompi_process_info.gpr_replica); */
-/* 		    ompi_process_info.gpr_replica = NULL; */
+/* 		if (NULL != orte_process_info.gpr_replica) { */
+/* 		    free(orte_process_info.gpr_replica); */
+/* 		    orte_process_info.gpr_replica = NULL; */
 /* 		} */
 /* 	    } else {  */
 /* 		gpr_found = true; */
@@ -105,7 +104,7 @@ int ompi_rte_universe_exists()
      * check if local or remote host specified
      */
 
-    if (0 != strncmp(ompi_universe_info.host, ompi_system_info.nodename, strlen(ompi_system_info.nodename))) { /* remote host specified */
+    if (0 != strncmp(ompi_universe_info.host, orte_system_info.nodename, strlen(orte_system_info.nodename))) { /* remote host specified */
 	ompi_output(0, "remote hosts not currently supported");
 	return OMPI_ERR_NOT_IMPLEMENTED;
     }
@@ -115,10 +114,10 @@ int ompi_rte_universe_exists()
     }
 
     /* check to see if local universe already exists */
-    if (OMPI_SUCCESS == ompi_session_dir(false,
-					 ompi_process_info.tmpdir_base,
-					 ompi_system_info.user,
-					 ompi_system_info.nodename,
+    if (OMPI_SUCCESS == orte_session_dir(false,
+					 orte_process_info.tmpdir_base,
+					 orte_system_info.user,
+					 orte_system_info.nodename,
 					 NULL,
 					 ompi_universe_info.name,
 					 NULL,
@@ -129,7 +128,7 @@ int ompi_rte_universe_exists()
 	}
 
 	/* check for "contact-info" file. if present, read it in. */
-	contact_file = ompi_os_path(false, ompi_process_info.universe_session_dir,
+	contact_file = orte_os_path(false, orte_process_info.universe_session_dir,
 				    "universe-setup.txt", NULL);
 
 	if (OMPI_SUCCESS != (ret = ompi_read_universe_setup_file(contact_file))) {
@@ -190,25 +189,25 @@ int ompi_rte_universe_exists()
 	}
 
 	/* set the my_universe field */
-	if (NULL != ompi_process_info.my_universe) {
-	    free(ompi_process_info.my_universe);
-	    ompi_process_info.my_universe = NULL;
+	if (NULL != orte_process_info.my_universe) {
+	    free(orte_process_info.my_universe);
+	    orte_process_info.my_universe = NULL;
 	}
-	ompi_process_info.my_universe = strdup(ompi_universe_info.name);
+	orte_process_info.my_universe = strdup(ompi_universe_info.name);
 
-	if (NULL != ompi_process_info.ns_replica) {
-	    free(ompi_process_info.ns_replica);
-	    ompi_process_info.ns_replica = NULL;
+	if (NULL != orte_process_info.ns_replica) {
+	    free(orte_process_info.ns_replica);
+	    orte_process_info.ns_replica = NULL;
 	}
-    if (ORTE_SUCCESS != (ret = orte_name_services.copy_process_name(ompi_process_info.ns_replica, &proc))) {
+    if (ORTE_SUCCESS != (ret = orte_ns.copy_process_name(&orte_process_info.ns_replica, &proc))) {
         return ret;
     }
 
-	if (NULL != ompi_process_info.gpr_replica) {
-	    free(ompi_process_info.gpr_replica);
-	    ompi_process_info.gpr_replica = NULL;
+	if (NULL != orte_process_info.gpr_replica) {
+	    free(orte_process_info.gpr_replica);
+	    orte_process_info.gpr_replica = NULL;
 	}
-    if (ORTE_SUCCESS != (ret = orte_name_services.copy_process_name(ompi_process_info.gpr_replica, &proc))) {
+    if (ORTE_SUCCESS != (ret = orte_ns.copy_process_name(&orte_process_info.gpr_replica, &proc))) {
         return ret;
     }
 
