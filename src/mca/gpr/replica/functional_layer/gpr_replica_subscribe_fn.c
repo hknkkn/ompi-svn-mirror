@@ -26,6 +26,7 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "gpr_replica_fn.h"
 
@@ -45,13 +46,15 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
 
     trig = (orte_gpr_replica_triggers_t*)((orte_gpr_replica.triggers)->addr[local_idtag]);
     if (NULL == trig) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         return ORTE_ERR_BAD_PARAM;
     }
     
-    trig->token_addr_mode = 0x00ff & addr_mode;
-    trig->key_addr_mode = ((0xff00 & addr_mode) >> 8) & 0x00ff;
+    trig->token_addr_mode = 0x004f & addr_mode;
+    trig->key_addr_mode = ((0x4f00 & addr_mode) >> 8) & 0x004f;
 
     if (num_tokens != orte_value_array_set_size(&(trig->tokentags), num_tokens)) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     for (i=0; i < num_tokens; i++) {
@@ -60,6 +63,7 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
     }
     
     if (num_keys != orte_value_array_set_size(&(trig->keytags), num_keys)) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     for (i=0; i < num_keys; i++) {

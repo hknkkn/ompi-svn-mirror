@@ -26,6 +26,7 @@
 #include "dps/dps.h"
 
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "gpr_replica_api.h"
 
@@ -37,8 +38,8 @@ orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
 			  orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
     int rc;
-    orte_gpr_replica_segment_t *seg;
-    orte_gpr_replica_itag_t *token_itags, *key_itags;
+    orte_gpr_replica_segment_t *seg=NULL;
+    orte_gpr_replica_itag_t *token_itags=NULL, *key_itags=NULL;
     int num_tokens, num_keys;
     orte_gpr_notify_id_t remote_idtag;
     orte_gpr_replica_act_sync_t flag;
@@ -48,13 +49,15 @@ orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
     
     /* protect against errors */
     if (NULL == segment) {
-	   return ORTE_ERR_BAD_PARAM;
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+	    return ORTE_ERR_BAD_PARAM;
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     /* locate the segment */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, segment))) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         return rc;
     }
@@ -81,6 +84,7 @@ orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
     /* convert tokens to itags */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags,
                          seg, tokens, &num_tokens))) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         return rc;
     }
@@ -88,29 +92,30 @@ orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
     /* convert keys to itags */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&key_itags,
                          seg, keys, &num_keys))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
+        ORTE_ERROR_LOG(rc);
+        goto CLEANUP;
     }
 
     /* enter request on notify tracking system */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_enter_notify_request(local_idtag, seg,
                                     ORTE_GPR_SUBSCRIBE_CMD, &flag,
                                     NULL, 0, cb_func, user_tag))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
+        ORTE_ERROR_LOG(rc);
+        goto CLEANUP;
     }
 
     /* register subscription */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(addr_mode, seg,
 				      token_itags, num_tokens, key_itags, num_keys, *local_idtag))) {
         orte_gpr_replica_remove_notify_request(*local_idtag, &remote_idtag);
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
+        ORTE_ERROR_LOG(rc);
+        goto CLEANUP;
     }
 
     /* check subscriptions */
     orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_SUBSCRIBER_ADDED);
 
+CLEANUP:
     if (NULL != key_itags) {
 	   free(key_itags);
     }

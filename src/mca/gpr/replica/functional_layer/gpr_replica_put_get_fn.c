@@ -138,7 +138,10 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     if (addr_mode & ORTE_GPR_OVERWRITE) {
         overwrite = true;
     }
-    tok_mode = 0x00ff & addr_mode;
+    tok_mode = 0x004f & addr_mode;
+    if (0x00 == tok_mode) {  /* default tokens addressing mode to AND */
+        tok_mode = ORTE_GPR_REPLICA_AND;
+    }
 
     /* find the specified container(s) */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_containers(&num_found, seg, tok_mode,
@@ -251,8 +254,14 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     }
     *cnt = 0;
     *values = NULL;
-    tokmode = 0x00ff & addr_mode;
-    keymode = ((0xff00 & addr_mode) >> 8) & 0x00ff;
+    tokmode = 0x004f & addr_mode;
+    if (0x00 == tokmode) {  /* default token addressing mode to AND */
+        tokmode = ORTE_GPR_REPLICA_AND;
+    }
+    keymode = ((0x4f00 & addr_mode) >> 8) & 0x004f;
+    if (0x00 == keymode) {  /* default key addressing mode to OR */
+        keymode = ORTE_GPR_REPLICA_OR;
+    }
     
     /* find all containers that meet search criteria for tokens */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_containers(&num_found, seg, tokmode,

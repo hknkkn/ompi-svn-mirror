@@ -79,7 +79,8 @@ orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
     trig->user_tag = user_tag;
 
     if (0 > (rc = orte_pointer_array_add(orte_gpr_replica.triggers, trig))) {
-        return rc;
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
     trig->local_idtag = (orte_gpr_notify_id_t)rc;
