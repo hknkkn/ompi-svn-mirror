@@ -57,11 +57,11 @@ extern char** environ;
 /*
  * Globals
  */
-struct ompi_event term_handler;
-struct ompi_event int_handler;
-orte_jobid_t jobid = ORTE_JOBID_MAX;
-ompi_pointer_array_t apps_pa;
-
+static struct ompi_event term_handler;
+static struct ompi_event int_handler;
+static orte_jobid_t jobid = ORTE_JOBID_MAX;
+static ompi_pointer_array_t apps_pa;
+static bool wait_for_job_completion = true;
 
 /*
  * setup globals for catching orterun command line options
@@ -71,6 +71,7 @@ struct globals_t {
     bool version;
     bool verbose;
     bool exit;
+    bool no_wait_for_job_completion;
     int num_procs;
     char *hostfile;
     char *env_val;
@@ -112,6 +113,11 @@ ompi_cmd_line_init_t cmd_line_init[] = {
     { "hostfile", NULL, NULL, '\0', NULL, "hostfile", 1,
       &orterun_globals.num_procs, OMPI_CMD_LINE_TYPE_INT,
       "Provide a hostfile" },
+
+    /* Don't wait for the process to finish before exiting */
+    { NULL, NULL, NULL, '\0', "nw", "nw", 0,
+      &orterun_globals.no_wait_for_job_completion, OMPI_CMD_LINE_TYPE_BOOL,
+      "Launch the processes and do not wait for their completion (i.e., let orterun complete as soon a successful launch occurs)" },
 
     /* Export environment variables; potentially used multiple times,
        so it does not make sense to set into a variable */
@@ -212,11 +218,15 @@ int main(int argc, char *argv[], char* env[])
         ompi_output(0, "orterun: spawn failed with errno=%d\n", rc);
     } else {
         /* Wait for the app to complete */
-        OMPI_THREAD_LOCK(&orterun_globals.lock);
-        while(orterun_globals.exit == false) {
-            ompi_condition_wait(&orterun_globals.cond, &orterun_globals.lock);
+
+        if (!wait_for_job_completion) {
+            OMPI_THREAD_LOCK(&orterun_globals.lock);
+            while (!orterun_globals.exit) {
+                ompi_condition_wait(&orterun_globals.cond, 
+                                    &orterun_globals.lock);
+            }
+            OMPI_THREAD_UNLOCK(&orterun_globals.lock);
         }
-        OMPI_THREAD_UNLOCK(&orterun_globals.lock);
     }
 
     /* All done */
@@ -261,7 +271,9 @@ static void signal_callback(int fd, short flags, void *arg)
     ompi_event_t* event;
 
     static int signalled = 0;
+    printf("in orterun signal_callback\n");
     if (0 != signalled++) {
+        printf("exiting gratuitious callback\n");
          return;
     }
 
@@ -282,6 +294,7 @@ static void signal_callback(int fd, short flags, void *arg)
 static int init_globals(void) 
 {
     struct globals_t tmp = {
+        false,
         false,
         false,
         false,
@@ -329,6 +342,12 @@ static int parse_globals(int argc, char* argv[])
 
         /* If someone asks for version, that should be all we do */
         exit(0);
+    }
+
+    /* If we don't want to wait, we don't want to wait */
+
+    if (orterun_globals.no_wait_for_job_completion) {
+        wait_for_job_completion = false;
     }
 
     OBJ_DESTRUCT(&cmd_line);
