@@ -293,5 +293,5 @@ int orte_gpr_replica_close(void);
  */
 orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority);
 int orte_gpr_replica_finalize(void);
-
+int orte_gpr_replica_module_init(void);
 #endif

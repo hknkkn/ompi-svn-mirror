@@ -214,10 +214,7 @@ struct mca_oob_1_0_0_t {
 /**
  * OOB Component
  */
-typedef mca_oob_t* (*mca_oob_base_component_init_fn_t)(
-    int  *priority,
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+typedef mca_oob_t* (*mca_oob_base_component_init_fn_t)(int  *priority);
 
 /**
  * the standard component data structure
@@ -277,7 +274,7 @@ OBJ_CLASS_DECLARATION(mca_oob_base_info_t);
  * Global functions for MCA overall collective open and close
  */
     int mca_oob_base_open(void);
-    int mca_oob_base_init(bool *allow_multi_user_threads, bool *have_hidden_threads);
+    int mca_oob_base_init(void);
     int mca_oob_base_module_init(void);
     int mca_oob_base_close(void);
 

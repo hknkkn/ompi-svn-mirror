@@ -59,6 +59,7 @@ OMPI_COMP_EXPORT mca_gpr_base_component_t mca_gpr_replica_component = {
  * setup the function pointers for the module
  */
 static orte_gpr_base_module_t orte_gpr_replica_module = {
+    orte_gpr_replica_module_init,
     orte_gpr_replica_get,
     orte_gpr_replica_put,
     orte_gpr_replica_delete_entries,
@@ -444,27 +445,29 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
             return NULL;
         }
         
-     	/* issue the non-blocking receive */ 
-        if (!orte_gpr_replica_globals.isolate) {
-    	        rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
-                                     orte_gpr_replica_recv, NULL);
-    	        if (rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) { 
-    	            return NULL;
-    	        }
+        if (orte_gpr_replica_globals.debug) {
+            ompi_output(0, "nb receive setup");
         }
-        
-        	if (orte_gpr_replica_globals.debug) {
-        	    ompi_output(0, "nb receive setup");
-        	}
-        
-        	/* Return the module */
-        
-        	initialized = true;
-        	return &orte_gpr_replica_module;
+       
+       	/* Return the module */
+       
+        initialized = true;
+        return &orte_gpr_replica_module;
     } else {
-    	   return NULL;
+    	return NULL;
     }
 }
+
+
+static int orte_gpr_replica_module_init(void)
+{
+    /* issue the non-blocking receive */ 
+    if (!orte_gpr_replica_globals.isolate) {
+        return orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0, orte_gpr_replica_recv, NULL);
+    }
+    return ORTE_SUCCESS;
+}
+        
 
 /*
  * finalize routine

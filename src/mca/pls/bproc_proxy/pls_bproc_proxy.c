@@ -24,12 +24,18 @@
 
 int orte_pls_bproc_proxy_launch(orte_jobid_t jobid)
 {
-    orte_buffer_t buffer;
-    OBJ_CONSTRUCT(&buffer, orte_buffer_t);
-    OBJ_DESTRUCT(&buffer);
-    return ORTE_SUCCESS;
+    return ORTE_ERROR;
 }
 
+int orte_pls_bproc_proxy_terminate_job(orte_jobid_t jobid)
+{
+    return ORTE_ERROR;
+}
+
+int orte_pls_bproc_proxy_terminate_proc(const orte_process_name_t* proc_name)
+{
+    return ORTE_ERROR;
+}
 
 int orte_pls_bproc_proxy_finalize(void)
 {
@@ -39,6 +45,8 @@ int orte_pls_bproc_proxy_finalize(void)
 
 orte_pls_base_module_t orte_pls_bproc_proxy_module = {
     orte_pls_bproc_proxy_launch,
+    orte_pls_bproc_proxy_terminate_job,
+    orte_pls_bproc_proxy_terminate_proc,
     orte_pls_bproc_proxy_finalize
 };
 

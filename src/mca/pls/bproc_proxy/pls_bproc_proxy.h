@@ -43,8 +43,11 @@ int orte_pls_bproc_proxy_finalize(void);
  * Interface
  */
 int orte_pls_bproc_proxy_launch(orte_jobid_t);
+int orte_pls_bproc_proxy_terminate_job(orte_jobid_t);
+int orte_pls_bproc_proxy_terminate_proc(const orte_process_name_t* proc_name);
 
-extern orte_pls_base_module_t orte_pls_bproc_proxy_module;
+ORTE_DECLSPEC extern orte_pls_base_component_t mca_pls_bproc_proxy_component;
+ORTE_DECLSPEC extern orte_pls_base_module_t orte_pls_bproc_proxy_module;
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

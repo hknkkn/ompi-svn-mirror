@@ -44,6 +44,8 @@ int orte_pls_bproc_seed_finalize(void);
  * Interface
  */
 int orte_pls_bproc_seed_launch(orte_jobid_t);
+int orte_pls_bproc_seed_terminate_job(orte_jobid_t);
+int orte_pls_bproc_seed_terminate_proc(const orte_process_name_t* proc_name);
 
 
 /**
@@ -61,7 +63,7 @@ struct orte_pls_bproc_component_t {
 };
 typedef struct orte_pls_bproc_component_t orte_pls_bproc_component_t;
                                                                                                           
-ORTE_DECLSPEC extern orte_pls_bproc_component_t orte_pls_bproc_seed_component;
+ORTE_DECLSPEC extern orte_pls_bproc_component_t mca_pls_bproc_seed_component;
 ORTE_DECLSPEC extern orte_pls_base_module_t orte_pls_bproc_seed_module;
 
 #if defined(c_plusplus) || defined(__cplusplus)

@@ -30,7 +30,7 @@
 /*
  * Struct of function pointers and all that to let us be initialized
  */
-orte_pls_bproc_component_t orte_pls_bproc_seed_component = {
+orte_pls_bproc_component_t mca_pls_bproc_seed_component = {
     {
         {
         ORTE_PLS_BASE_VERSION_1_0_0,
@@ -68,15 +68,15 @@ static  int orte_pls_bproc_param_register_int(
 int orte_pls_bproc_seed_component_open(void)
 {
     /* init globals */
-    OBJ_CONSTRUCT(&orte_pls_bproc_seed_component.lock, ompi_mutex_t);
-    OBJ_CONSTRUCT(&orte_pls_bproc_seed_component.condition, ompi_condition_t);
-    orte_pls_bproc_seed_component.num_completed = 0;
+    OBJ_CONSTRUCT(&mca_pls_bproc_seed_component.lock, ompi_mutex_t);
+    OBJ_CONSTRUCT(&mca_pls_bproc_seed_component.condition, ompi_condition_t);
+    mca_pls_bproc_seed_component.num_completed = 0;
 
     /* init parameters */
-    orte_pls_bproc_seed_component.debug = orte_pls_bproc_param_register_int("debug", 1);
-    orte_pls_bproc_seed_component.image_frag_size = orte_pls_bproc_param_register_int("image_frag_size", 256*1024);
-    orte_pls_bproc_seed_component.name_fd = orte_pls_bproc_param_register_int("name_fd", 3);
-    orte_pls_bproc_seed_component.priority = orte_pls_bproc_param_register_int("priority", 20);
+    mca_pls_bproc_seed_component.debug = orte_pls_bproc_param_register_int("debug", 1);
+    mca_pls_bproc_seed_component.image_frag_size = orte_pls_bproc_param_register_int("image_frag_size", 256*1024);
+    mca_pls_bproc_seed_component.name_fd = orte_pls_bproc_param_register_int("name_fd", 3);
+    mca_pls_bproc_seed_component.priority = orte_pls_bproc_param_register_int("priority", 20);
 
     return ORTE_SUCCESS;
 }
@@ -112,7 +112,7 @@ orte_pls_base_module_t* orte_pls_bproc_seed_init(
     /* post a non-blocking receive */
 
 
-    *priority = orte_pls_bproc_seed_component.priority;
+    *priority = mca_pls_bproc_seed_component.priority;
     return &orte_pls_bproc_seed_module;
 }
 

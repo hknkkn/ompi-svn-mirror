@@ -51,6 +51,9 @@ int orte_universe_exists()
 /*    bool ns_found=false, gpr_found=false; */
     bool ping_success=false;
 
+    /* TEMPORARY */
+    return ORTE_ERR_NOT_FOUND;
+
     /* if both ns_replica and gpr_replica were provided, check for contact with them */
     if (NULL != orte_process_info.ns_replica && NULL != orte_process_info.gpr_replica) {
 	return OMPI_SUCCESS;

@@ -1,4 +1,3 @@
-# -*- makefile -*-
 #
 # Copyright (c) 2004-2005 The Trustees of Indiana University.
 #                         All rights reserved.
@@ -15,5 +14,15 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS		= ompi_info mpirun wrappers orted orterun bootproxy openmpi console
+EXTRA_DIST = $(pkgdata_DATA)
+pkgdata_DATA = help-orterun.txt
 
+libs = $(top_builddir)/src/libmpi.la
+
+bin_PROGRAMS = orterun
+
+orterun_SOURCES = \
+        orterun.c 
+
+orterun_LDADD = $(libs) 
+orterun_DEPENDENCIES = $(libs)

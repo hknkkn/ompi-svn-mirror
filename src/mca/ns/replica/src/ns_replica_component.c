@@ -65,6 +65,7 @@ OMPI_COMP_EXPORT mca_ns_base_component_t mca_ns_replica_component = {
  * setup the function pointers for the module
  */
 static mca_ns_base_module_t orte_ns_replica = {
+    orte_ns_replica_module_init,
     orte_ns_replica_create_cellid,
     orte_ns_base_assign_cellid_to_process,
     orte_ns_replica_create_jobid,
@@ -180,7 +181,6 @@ mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool 
 
     if (NULL == orte_process_info.ns_replica) {
 
-      int rc;
       orte_ns_replica_next_cellid = 0;
       orte_ns_replica_next_jobid = 1;  /* jobid 0 reserved for universe */
 
@@ -211,19 +211,18 @@ mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool 
      /* Return the module */
 
       initialized = true;
-
-      /* issue non-blocking receive for call_back function */
-      rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_NS, 0, orte_ns_replica_recv, NULL);
-      if(rc != OMPI_SUCCESS && rc != OMPI_ERR_NOT_IMPLEMENTED) {
-          ompi_output(0, "orte_ns_replica_init: unable to post non-blocking recv\n");
-          return NULL;
-      }
-
       return &orte_ns_replica;
     } else {
       return NULL;
     }
 }
+
+int orte_ns_replica_module_init(void)
+{
+    /* issue non-blocking receive for call_back function */
+    return orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_NS, 0, orte_ns_replica_recv, NULL);
+}
+
 
 /*
  * finalize routine

@@ -132,7 +132,7 @@ OMPI_DECLSPEC    int ompi_abort(int status, char *fmt, ...);
      * be called by every application using the RTE interface, including
      * MPI applications and mpirun.
      */
-OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads);
+OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line);
 
     /**
      * Re-init the Open run time environment.

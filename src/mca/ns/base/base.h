@@ -76,8 +76,7 @@ typedef uint8_t orte_ns_cmd_bitmask_t;
  * function definitions
  */
 OMPI_DECLSPEC    int orte_ns_base_open(void);
-OMPI_DECLSPEC    int orte_ns_base_select(bool *allow_multi_user_threads,
-			   bool *have_hidden_threads);
+OMPI_DECLSPEC    int orte_ns_base_select(void);
 OMPI_DECLSPEC    int orte_ns_base_close(void);
 
     /*
@@ -129,6 +128,8 @@ OMPI_DECLSPEC    int orte_ns_base_compare(orte_ns_cmp_bitmask_t fields,
 			const orte_process_name_t* name2);
 
 OMPI_DECLSPEC    int orte_ns_base_free_name(orte_process_name_t **name);
+
+OMPI_DECLSPEC    int orte_ns_base_module_init_not_available(void);
 
 OMPI_DECLSPEC    int orte_ns_base_create_cellid_not_available(orte_cellid_t *cellid);
 

@@ -1211,6 +1211,7 @@ AC_CONFIG_FILES([
     src/tools/mpirun/Makefile
     src/tools/ompi_info/Makefile
     src/tools/orted/Makefile
+    src/tools/orterun/Makefile
     src/tools/openmpi/Makefile
     src/tools/wrappers/Makefile
     

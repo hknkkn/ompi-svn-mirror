@@ -94,8 +94,7 @@ extern "C" {
 
 
     OMPI_DECLSPEC int orte_gpr_base_open(void);
-    OMPI_DECLSPEC int orte_gpr_base_select(bool *allow_multi_user_threads,
-			    bool *have_hidden_threads);
+    OMPI_DECLSPEC int orte_gpr_base_select(void);
     OMPI_DECLSPEC int orte_gpr_base_close(void);
 
     /* general usage functions */

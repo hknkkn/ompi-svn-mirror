@@ -87,7 +87,7 @@ int mca_oob_parse_contact_info(
  *
  * Call the init function on all available modules.
  */
-int mca_oob_base_init(bool *user_threads, bool *hidden_threads)
+int mca_oob_base_init(void)
 {
     ompi_list_item_t *item;
     mca_base_component_list_item_t *cli;
@@ -95,8 +95,6 @@ int mca_oob_base_init(bool *user_threads, bool *hidden_threads)
     mca_oob_t *module;
     extern ompi_list_t mca_oob_base_components;
     mca_oob_t *s_module = NULL;
-    bool s_user_threads = true;
-    bool s_hidden_threads = false;
     int  s_priority = -1;
 
     char** include = ompi_argv_split(mca_oob_base_include, ',');
@@ -147,9 +145,7 @@ int mca_oob_base_init(bool *user_threads, bool *hidden_threads)
             ompi_output_verbose(10, mca_oob_base_output, "mca_oob_base_init: no init function; ignoring component");
         } else {
             int priority = -1;
-            bool u_threads;
-            bool h_threads;
-            module = component->oob_init(&priority, &u_threads, &h_threads);
+            module = component->oob_init(&priority);
             if (NULL != module) {
                 inited = OBJ_NEW(mca_oob_base_info_t);
                 inited->oob_component = component;
@@ -160,8 +156,6 @@ int mca_oob_base_init(bool *user_threads, bool *hidden_threads)
                 if(priority > s_priority) {
                     s_priority = priority;
                     s_module = module;
-                    s_user_threads = u_threads;
-                    s_hidden_threads = h_threads;
                 }
             }
         }
@@ -173,8 +167,6 @@ int mca_oob_base_init(bool *user_threads, bool *hidden_threads)
    }
 
    mca_oob = *s_module;
-   *user_threads &= s_user_threads;
-   *hidden_threads |= s_hidden_threads;
    return OMPI_SUCCESS;
 }
 

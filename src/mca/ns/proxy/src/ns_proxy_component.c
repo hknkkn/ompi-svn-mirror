@@ -61,6 +61,7 @@ OMPI_COMP_EXPORT mca_ns_base_component_t mca_ns_proxy_component = {
  * setup the function pointers for the module
  */
 static mca_ns_base_module_t orte_ns_proxy = {
+    orte_ns_proxy_module_init,
     orte_ns_proxy_create_cellid,
     orte_ns_base_assign_cellid_to_process,
     orte_ns_proxy_create_jobid,
@@ -185,6 +186,13 @@ mca_ns_base_module_t* orte_ns_proxy_init(bool *allow_multi_user_threads, bool *h
 	   return NULL;
     }
 }
+
+
+int orte_ns_proxy_module_init(void)
+{
+    return ORTE_SUCCESS;
+}
+
 
 /*
  * finalize routine

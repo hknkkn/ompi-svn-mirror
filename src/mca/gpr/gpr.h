@@ -55,6 +55,12 @@ extern "C" {
  */
 
 /*
+ * Perform any one-time initialization required by the module
+ * after RML/NS are available.
+ */
+typedef int (*orte_gpr_base_module_init_fn_t)(void);
+
+/*
  * Begin recording a compound command.
  * Normally, the registry executes each command as it is called. This, however, can result
  * in an undesirable amount of network traffic. To reduce the traffic, this command allows
@@ -719,7 +725,9 @@ typedef int (*orte_gpr_base_module_test_internals_fn_t)(int level, ompi_list_t *
  * Ver 1.0.0
  */
 struct orte_gpr_base_module_1_0_0_t {
-   /* BLOCKING OPERATIONS */
+    /* INIT */
+    orte_gpr_base_module_init_fn_t init;
+    /* BLOCKING OPERATIONS */
     orte_gpr_base_module_get_fn_t get;
     orte_gpr_base_module_put_fn_t put;
     orte_gpr_base_module_delete_entries_fn_t delete_entries;

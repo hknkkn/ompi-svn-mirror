@@ -38,11 +38,16 @@ static int orte_rmgr_urm_map(
 static int orte_rmgr_urm_launch(
     orte_jobid_t jobid);
 
+static int orte_rmgr_urm_terminate_job(
+    orte_jobid_t jobid);
+
+static int orte_rmgr_urm_terminate_proc(
+    const orte_process_name_t* proc_name);
+
 static int orte_rmgr_urm_spawn(
     orte_app_context_t** app_context,
     size_t num_context,
     orte_jobid_t* jobid);
-
 
 orte_rmgr_base_module_t orte_rmgr_urm_module = {
     orte_rds_base_query,
@@ -51,6 +56,8 @@ orte_rmgr_base_module_t orte_rmgr_urm_module = {
     orte_ras_base_deallocate,
     orte_rmgr_urm_map,
     orte_rmgr_urm_launch,
+    orte_rmgr_urm_terminate_job,
+    orte_rmgr_urm_terminate_proc,
     orte_rmgr_urm_spawn,
     NULL, /* finalize */
 };
@@ -93,6 +100,17 @@ static int orte_rmgr_urm_launch(orte_jobid_t jobid)
 {
     return mca_rmgr_urm_component.urm_pls->launch(jobid);
 }
+
+static int orte_rmgr_urm_terminate_job(orte_jobid_t jobid)
+{
+    return mca_rmgr_urm_component.urm_pls->terminate_job(jobid);
+}
+
+static int orte_rmgr_urm_terminate_proc(const orte_process_name_t* proc_name)
+{
+    return mca_rmgr_urm_component.urm_pls->terminate_proc(proc_name);
+}
+
 
 
 /*

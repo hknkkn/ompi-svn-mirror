@@ -24,10 +24,9 @@
 
 
 
-static orte_rml_module_t* 
-orte_rml_oob_init(int* priority, bool *allow_multi_user_threads, bool *have_hidden_threads)
+static orte_rml_module_t* orte_rml_oob_init(int* priority)
 {
-    if(mca_oob_base_init(allow_multi_user_threads, have_hidden_threads) != ORTE_SUCCESS)
+    if(mca_oob_base_init() != ORTE_SUCCESS)
         return NULL;
     *priority = 1;
     return &orte_rml_oob_module;

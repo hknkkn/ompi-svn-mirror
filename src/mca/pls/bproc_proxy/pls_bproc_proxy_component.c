@@ -28,7 +28,7 @@
 /*
  * Struct of function pointers and all that to let us be initialized
  */
-orte_pls_base_component_t orte_pls_bproc_proxy_component = {
+orte_pls_base_component_t mca_pls_bproc_proxy_component = {
   {
     ORTE_PLS_BASE_VERSION_1_0_0,
 

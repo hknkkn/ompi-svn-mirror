@@ -36,6 +36,8 @@
 
 orte_pls_base_module_t orte_pls_bproc_seed_module = {
     orte_pls_bproc_seed_launch,
+    orte_pls_bproc_seed_terminate_job,
+    orte_pls_bproc_seed_terminate_proc,
     orte_pls_bproc_seed_finalize
 };
 
@@ -95,7 +97,7 @@ static int orte_pls_bproc_dump(orte_app_context_t* app, uint8_t** image, size_t*
      */
 
     close(pfd[1]); /* close the sending end - we are read only */
-    image_buffer = (uint8_t*)malloc(orte_pls_bproc_seed_component.image_frag_size);
+    image_buffer = (uint8_t*)malloc(mca_pls_bproc_seed_component.image_frag_size);
     if (!image_buffer) {
         ompi_output(0, "orte_pls_bproc_seed: couldn't allocate space for image\n");
         rc = ORTE_ERR_OUT_OF_RESOURCE;
@@ -106,7 +108,7 @@ static int orte_pls_bproc_dump(orte_app_context_t* app, uint8_t** image, size_t*
     cur_offset = 0;
     num_buffers = 1;
     while (1) {
-        int num_bytes = read(pfd[0], image_buffer + tot_offset, orte_pls_bproc_seed_component.image_frag_size - cur_offset);
+        int num_bytes = read(pfd[0], image_buffer + tot_offset, mca_pls_bproc_seed_component.image_frag_size - cur_offset);
         if (0 > num_bytes) {  /* got an error - abort process */
             free(image_buffer);
             rc = ORTE_ERR_OUT_OF_RESOURCE;
@@ -117,9 +119,9 @@ static int orte_pls_bproc_dump(orte_app_context_t* app, uint8_t** image, size_t*
 
         tot_offset += num_bytes;
         cur_offset += num_bytes;
-        if (orte_pls_bproc_seed_component.image_frag_size == cur_offset) {  /* filled the current buffer -  need to realloc */
+        if (mca_pls_bproc_seed_component.image_frag_size == cur_offset) {  /* filled the current buffer -  need to realloc */
             num_buffers++;
-            image_buffer = (uint8_t*)realloc(image_buffer, num_buffers * orte_pls_bproc_seed_component.image_frag_size);
+            image_buffer = (uint8_t*)realloc(image_buffer, num_buffers * mca_pls_bproc_seed_component.image_frag_size);
             if(NULL == image_buffer) {
                 ompi_output(0, "orte_pls_bproc_seed: couldn't allocate space for image\n");
                 goto cleanup;
@@ -158,12 +160,12 @@ static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, s
         close(p_image[1]);  /* child is read only */
         close(p_name[1]);
 
-        if(p_image[0] == orte_pls_bproc_seed_component.name_fd) {
+        if(p_image[0] == mca_pls_bproc_seed_component.name_fd) {
             int fd = dup(p_image[0]);
             close(p_image[0]);
             p_image[0] = fd;
         }
-        dup2(p_name[0], orte_pls_bproc_seed_component.name_fd);
+        dup2(p_name[0], mca_pls_bproc_seed_component.name_fd);
         bproc_undump(p_image[0]);  /* child is now executing */
         exit(1);
     }
@@ -193,10 +195,10 @@ static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, s
 
 static void orte_pls_bproc_wait_proc(pid_t pid, int status, void* cbdata)
 {
-    OMPI_THREAD_LOCK(&orte_pls_bproc_seed_component.lock);
-    orte_pls_bproc_seed_component.num_completed++;
-    ompi_condition_signal(&orte_pls_bproc_seed_component.condition);
-    OMPI_THREAD_UNLOCK(&orte_pls_bproc_seed_component.lock);
+    OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
+    mca_pls_bproc_seed_component.num_completed++;
+    ompi_condition_signal(&mca_pls_bproc_seed_component.condition);
+    OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
 
     /* notify SOH the process has exited */
 }
@@ -316,14 +318,14 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         free(image);
 
         /* wait for all children to complete */
-        OMPI_THREAD_LOCK(&orte_pls_bproc_seed_component.lock);
+        OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
         num_procs = ompi_list_get_size(&node->node_procs);
-        while(orte_pls_bproc_seed_component.num_completed < num_procs) {
+        while(mca_pls_bproc_seed_component.num_completed < num_procs) {
             ompi_condition_wait(
-                &orte_pls_bproc_seed_component.condition,
-                &orte_pls_bproc_seed_component.lock);
+                &mca_pls_bproc_seed_component.condition,
+                &mca_pls_bproc_seed_component.lock);
         }
-        OMPI_THREAD_UNLOCK(&orte_pls_bproc_seed_component.lock);
+        OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
 
         /* daemon is done when all children have completed */
         exit(0);
@@ -387,6 +389,16 @@ cleanup:
     return rc;
 }
 
+
+int orte_pls_bproc_seed_terminate_job(orte_jobid_t jobid)
+{
+    return ORTE_ERROR;
+}
+
+int orte_pls_bproc_seed_terminate_proc(const orte_process_name_t* proc_name)
+{
+    return ORTE_ERROR;
+}
 
 int orte_pls_bproc_seed_finalize(void)
 {

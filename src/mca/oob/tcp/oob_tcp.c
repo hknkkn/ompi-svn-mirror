@@ -418,12 +418,9 @@ static void mca_oob_tcp_recv_handler(int sd, short flags, void* user)
  * (1) initialize static resources
  * (2) create listen socket
  */
-mca_oob_t* mca_oob_tcp_component_init(int* priority, bool *allow_multi_user_threads, bool *have_hidden_threads)
+mca_oob_t* mca_oob_tcp_component_init(int* priority)
 {
     *priority = 1;
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = OMPI_HAVE_THREADS;
-
 
     /* are there any interfaces? */
     if(ompi_ifcount() == 0)

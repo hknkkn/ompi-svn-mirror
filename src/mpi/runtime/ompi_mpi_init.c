@@ -103,22 +103,12 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     /* Join the run-time environment */
     allow_multi_user_threads = true;
     have_hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = orte_init(NULL, &allow_multi_user_threads,
-					     &have_hidden_threads))) {
+    if (OMPI_SUCCESS != (ret = orte_init(NULL))) {
 	goto error;
     }
 
     /* start recording the compound command that starts us up */
     orte_gpr.begin_compound_cmd();
-
-    /* Finish setting up the RTE - contains commands
-     * that need to be inside the compound command
-     */
-    if (OMPI_SUCCESS != (ret = orte_init_cleanup(&allow_multi_user_threads,
-                         &have_hidden_threads))) {
-	error = "ompi_rte_init_cleanup failed";
-	goto error;
-    }
 
     /* Once we've joined the RTE, see if any MCA parameters were
        passed to the MPI level */

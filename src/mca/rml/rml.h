@@ -381,10 +381,7 @@ typedef struct orte_rml_module_t orte_rml_module_t;
 /**
  * RML Component
  */
-typedef orte_rml_module_t* (*orte_rml_component_init_fn_t)(
-    int  *priority,
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+typedef orte_rml_module_t* (*orte_rml_component_init_fn_t)(int  *priority);
 
 /**
  * the standard component data structure

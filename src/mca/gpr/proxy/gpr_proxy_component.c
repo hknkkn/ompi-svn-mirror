@@ -53,7 +53,7 @@ OMPI_COMP_EXPORT mca_gpr_base_component_t mca_gpr_proxy_component = {
     {
 	false /* checkpoint / restart */
     },
-    orte_gpr_proxy_init,    /* module init */
+    orte_gpr_proxy_component_init,    /* module init */
     orte_gpr_proxy_finalize /* module shutdown */
 };
 
@@ -61,6 +61,8 @@ OMPI_COMP_EXPORT mca_gpr_base_component_t mca_gpr_proxy_component = {
  * setup the function pointers for the module
  */
 static orte_gpr_base_module_t orte_gpr_proxy = {
+   /* INIT */
+    orte_gpr_proxy_module_init,
    /* BLOCKING OPERATIONS */
     orte_gpr_proxy_get,
     orte_gpr_proxy_put,
@@ -163,11 +165,9 @@ int orte_gpr_proxy_close(void)
 }
 
 orte_gpr_base_module_t*
-orte_gpr_proxy_init(bool *allow_multi_user_threads, bool *have_hidden_threads,
+orte_gpr_proxy_component_init(bool *allow_multi_user_threads, bool *have_hidden_threads,
                             int *priority)
 {
-    int rc;
-
     if (orte_gpr_proxy_globals.debug) {
 	    ompi_output(0, "gpr_proxy_init called");
     }
@@ -203,27 +203,25 @@ orte_gpr_proxy_init(bool *allow_multi_user_threads, bool *have_hidden_threads,
 	orte_gpr_proxy_globals.compound_cmd = NULL;
 
 	/* initialize the notify request tracker */
-    if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_proxy_globals.notify_tracker),
-                            orte_gpr_proxy_globals.block_size,
-                            orte_gpr_proxy_globals.max_size,
-                            orte_gpr_proxy_globals.block_size)) {
+        if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_proxy_globals.notify_tracker),
+                                orte_gpr_proxy_globals.block_size,
+                                orte_gpr_proxy_globals.max_size,
+                                orte_gpr_proxy_globals.block_size)) {
+            return NULL;
+        }
+        initialized = true;
+        return &orte_gpr_proxy;
+    } else {
         return NULL;
     }
-
-	/* issue the non-blocking receive */
-	rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY, 0, orte_gpr_proxy_notify_recv, NULL);
-	if(rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) {
-	    return NULL;
-	}
-
-	/* Return the module */
-
-	initialized = true;
-	return &orte_gpr_proxy;
-    } else {
-	return NULL;
-    }
 }
+
+int orte_gpr_proxy_module_init(void)
+{
+    /* issue the non-blocking receive */
+    return orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY, 0, orte_gpr_proxy_notify_recv, NULL);
+}
+
 
 /*
  * finalize routine

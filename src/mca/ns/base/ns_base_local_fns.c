@@ -39,6 +39,12 @@
 /*
  * "not available" functions
  */
+int 
+orte_ns_base_module_init_not_available(void)
+{
+    return ORTE_ERROR;
+}
+
 int
 orte_ns_base_create_cellid_not_available(orte_cellid_t *cellid)
 {

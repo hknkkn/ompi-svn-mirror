@@ -49,6 +49,7 @@ int orte_ns_proxy_close(void);
  * Startup / Shutdown
  */
 mca_ns_base_module_t* orte_ns_proxy_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority);
+int orte_ns_proxy_module_init(void);
 int orte_ns_proxy_finalize(void);
 
 /*

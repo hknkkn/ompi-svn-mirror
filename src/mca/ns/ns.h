@@ -42,6 +42,11 @@
  */
 
 /**
+ * Initialize the selected module.
+ */
+typedef int (*orte_ns_base_module_init_fn_t)(void);
+
+/**
  * Create a new cell id.
  * The create_cellid() function allocates a new cell id for use by the caller.
  * The function checks to find the next available cell id, reserves it, and returns that
@@ -547,6 +552,7 @@ typedef int (*orte_ns_base_module_get_peers_fn_t)(orte_process_name_t **procs,
  * Ver 1.0.0
  */
 struct mca_ns_base_module_1_0_0_t {
+    orte_ns_base_module_init_fn_t init;
     orte_ns_base_module_create_cellid_fn_t create_cellid;
     orte_ns_base_module_assign_cellid_to_process_fn_t assign_cellid_to_process;
     orte_ns_base_module_create_jobid_fn_t create_jobid;

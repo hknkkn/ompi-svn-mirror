@@ -105,6 +105,25 @@ typedef int (*orte_rmgr_base_module_map_fn_t)(orte_jobid_t job);
 typedef int (*orte_rmgr_base_module_launch_fn_t)(orte_jobid_t job);
 
 /**
+ * Terminate an entire job. 
+ *
+ * @code
+ * return_value = orte_rmgr.terminate_job(orte_jobid_t jobid);
+ * @endcode
+ */
+typedef int (*orte_rmgr_base_module_terminate_job_fn_t)(orte_jobid_t job);
+
+/**
+ * Terminate a specific process. 
+ *
+ * @code
+ * return_value = orte_rmgr.terminate_proc(const orte_process_name_t* proc_name);
+ * @endcode
+ */
+typedef int (*orte_rmgr_base_module_terminate_proc_fn_t)(const orte_process_name_t* proc_name);
+
+
+/**
  * Shortcut to spawn an applications. Perform all steps required to 
  * launch the specified application.
  *
@@ -141,6 +160,8 @@ struct orte_rmgr_base_module_1_0_0_t {
     orte_rmgr_base_module_deallocate_fn_t deallocate;
     orte_rmgr_base_module_map_fn_t map;
     orte_rmgr_base_module_launch_fn_t launch;
+    orte_rmgr_base_module_terminate_job_fn_t terminate_job;
+    orte_rmgr_base_module_terminate_proc_fn_t terminate_proc;
     orte_rmgr_base_module_spawn_fn_t spawn;
     orte_rmgr_base_module_finalize_fn_t finalize;
 };

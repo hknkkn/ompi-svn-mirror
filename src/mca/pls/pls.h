@@ -195,6 +195,17 @@
 typedef int (*orte_pls_base_module_launch_fn_t)(orte_jobid_t);
 
 /**
+ * Terminate any processes launched for the respective jobid by
+ * this component.
+ */
+typedef int (*orte_pls_base_module_terminate_job_fn_t)(orte_jobid_t);
+
+/**
+ * Terminate a specific process.
+ */
+typedef int (*orte_pls_base_module_terminate_proc_fn_t)(const orte_process_name_t*);
+
+/**
  * Cleanup all resources held by the module
  */
 typedef int (*orte_pls_base_module_finalize_fn_t)(void);
@@ -204,6 +215,8 @@ typedef int (*orte_pls_base_module_finalize_fn_t)(void);
  */
 struct orte_pls_base_module_1_0_0_t {
    orte_pls_base_module_launch_fn_t launch;
+   orte_pls_base_module_terminate_job_fn_t terminate_job;
+   orte_pls_base_module_terminate_proc_fn_t terminate_proc;
    orte_pls_base_module_finalize_fn_t finalize;
 };
 

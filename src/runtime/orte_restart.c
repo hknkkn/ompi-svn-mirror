@@ -45,8 +45,6 @@
 int orte_restart(orte_process_name_t *name)
 {
     int rc;
-    bool user_threads = true;
-    bool have_threads = false;
 
     orte_process_name_t* copy;
     if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&copy, name))) {
@@ -100,17 +98,17 @@ int orte_restart(orte_process_name_t *name)
         return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_ns_base_select(&user_threads, &have_threads))) {
+    if (ORTE_SUCCESS != (rc = orte_ns_base_select())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
  
-    if (ORTE_SUCCESS != (rc = orte_gpr_base_select(&user_threads, &have_threads))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_select())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
  
-    if (ORTE_SUCCESS != (rc = orte_rml_base_select(&user_threads, &have_threads))) {
+    if (ORTE_SUCCESS != (rc = orte_rml_base_select())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }

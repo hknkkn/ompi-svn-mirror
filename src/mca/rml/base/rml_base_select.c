@@ -29,15 +29,13 @@ orte_rml_module_t orte_rml;
  * they want to run.  Select the single component with the highest 
  * priority.
  */
-int orte_rml_base_select(bool *allow_multi_user_threads, bool* have_hidden_threads)
+int orte_rml_base_select(void)
 {
     ompi_list_item_t *item;
     mca_base_component_list_item_t *cli;
     int selected_priority = -1;
     orte_rml_component_t *selected_component = NULL;
     orte_rml_module_t *selected_module = NULL;
-    bool selected_allow_user;
-    bool selected_have_hidden;
  
     /* Traverse the list of opened modules; call their init functions. */
     for(item = ompi_list_get_first(&orte_rml_base.rml_components);
@@ -57,10 +55,8 @@ int orte_rml_base_select(bool *allow_multi_user_threads, bool* have_hidden_threa
           ompi_output_verbose(10, orte_rml_base.rml_output, 
               "orte_rml_base_select: no init function; ignoring component");
         } else {
-            bool allow_user;
-            bool have_hidden;
             int priority;
-            orte_rml_module_t* module = component->rml_init(&priority, &allow_user, &have_hidden);
+            orte_rml_module_t* module = component->rml_init(&priority);
 
             /* If the component didn't initialize, remove it from the opened
                list and remove it from the component repository */
@@ -74,8 +70,6 @@ int orte_rml_base_select(bool *allow_multi_user_threads, bool* have_hidden_threa
                 selected_priority = priority;
                 selected_component = component;
                 selected_module = module;
-                selected_allow_user = allow_user;
-                selected_have_hidden = have_hidden;
             }
         }
     }
@@ -100,8 +94,6 @@ int orte_rml_base_select(bool *allow_multi_user_threads, bool* have_hidden_threa
 
     /* setup reference to selected module */
     if(NULL != selected_module) {
-        *allow_multi_user_threads = selected_allow_user;
-        *have_hidden_threads = selected_have_hidden;
         orte_rml = *selected_module;
     }
     return OMPI_SUCCESS;

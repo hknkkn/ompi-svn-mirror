@@ -38,7 +38,8 @@ int orte_gpr_proxy_close(void);
  * Startup / Shutdown
  */
 orte_gpr_base_module_t*
-orte_gpr_proxy_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority);
+orte_gpr_proxy_component_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority);
+int orte_gpr_proxy_module_init(void);
 
 int orte_gpr_proxy_finalize(void);
 

@@ -23,8 +23,7 @@
  * Function for selecting one component from all those that are
  * available.
  */
-int orte_gpr_base_select(bool *allow_multi_user_threads, 
-                       bool *have_hidden_threads)
+int orte_gpr_base_select(void)
 {
   ompi_list_item_t *item;
   mca_base_component_list_item_t *cli;
@@ -62,8 +61,6 @@ int orte_gpr_base_select(bool *allow_multi_user_threads,
         /* Save the new best one */
         best_module = module;
         best_component = component;
-        *allow_multi_user_threads = multi;
-        *have_hidden_threads = hidden;
 
 	/* update the best priority */
 	best_priority = priority;
