@@ -11,26 +11,11 @@
  * 
  * $HEADER$
  */
-/** @file:
- *
- * Shutdown a job and cleanup the registry
- *
- */
+/** @file **/
 
-/*
- * includes
- */
+#include "orte_config.h"
 
-#include "ompi_config.h"
-
-#include "mca/ns/ns_types.h"
-#include "mca/gpr/gpr.h"
-
-#include "runtime/runtime.h"
-
-int ompi_rte_job_shutdown(orte_jobid_t jobid)
+int orte_daemon_bootproxy(void)
 {
-    orte_gpr.triggers_inactive(jobid);
-    orte_gpr.cleanup_job(jobid);
-    return OMPI_SUCCESS;
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }

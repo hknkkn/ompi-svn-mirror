@@ -28,6 +28,7 @@
 
 #include "mca/mca.h"
 #include "mca/ns/ns_types.h"
+#include "mca/soh/soh_types.h"
 
 /*
  * Component functions - all MUST be provided!
@@ -37,12 +38,18 @@
  */
 typedef int (*mca_soh_base_module_update_cell_soh_fn_t)(orte_cellid_t cellid);
 
-
+/*
+ * Query the state-of-health of a process
+ */
+typedef int (*mca_soh_base_module_get_proc_soh_fn_t)(orte_status_key_t *status,
+                                                     orte_process_name_t *proc);
+                                                     
 /*
  * Ver 1.0.0
  */
 struct mca_soh_base_module_1_0_0_t {
     mca_soh_base_module_update_cell_soh_fn_t update_cell_soh;
+    mca_soh_base_module_get_proc_soh_fn_t get_proc_soh;
 };
 
 typedef struct mca_soh_base_module_1_0_0_t mca_soh_base_module_1_0_0_t;
@@ -83,5 +90,7 @@ typedef mca_soh_base_component_1_0_0_t mca_soh_base_component_t;
   MCA_BASE_VERSION_1_0_0, \
   /* soh v1.0 */ \
   "soh", 1, 0, 0
+
+OMPI_DECLSPEC extern mca_soh_base_module_t orte_soh;
 
 #endif

@@ -76,7 +76,7 @@ static orte_gpr_base_module_t orte_gpr_proxy = {
     /* JOB-RELATED OPERATIONS */
     orte_gpr_proxy_preallocate_segment,
     orte_gpr_proxy_get_startup_msg,
-    orte_gpr_proxy_decode_startup_msg,
+    orte_gpr_base_decode_startup_msg,
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_proxy_subscribe,
     orte_gpr_proxy_unsubscribe,

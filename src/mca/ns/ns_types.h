@@ -54,20 +54,18 @@
 /*
  * define maximum value for id's in any field
  */
-#define ORTE_CELLID_MAX UINT32_MAX
-#define ORTE_JOBID_MAX  UINT32_MAX
-#define ORTE_VPID_MAX   UINT32_MAX
+#define ORTE_CELLID_MAX INT32_MAX
+#define ORTE_JOBID_MAX  INT32_MAX
+#define ORTE_VPID_MAX   INT32_MAX
 
 /*
  * general typedefs & structures
  */
-/** Set the allowed range for ids in each space */
-/* CAUTION - any changes here must also change corresponding
- * OOB_PACK definitions below
+/** Set the allowed range for ids in each space
  */
-typedef uint32_t orte_jobid_t;
-typedef uint32_t orte_cellid_t;
-typedef uint32_t orte_vpid_t;
+typedef int32_t orte_jobid_t;
+typedef int32_t orte_cellid_t;
+typedef int32_t orte_vpid_t;
 typedef uint8_t  orte_ns_cmp_bitmask_t;  /**< Bit mask for comparing process names */
 typedef uint16_t orte_ns_cmd_flag_t;
 

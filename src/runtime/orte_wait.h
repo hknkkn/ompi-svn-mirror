@@ -18,10 +18,10 @@
  * Interface for waitpid / async notification of child death with the
  * libevent runtime system.
  */
-#ifndef OMPI_RTE_WAIT_H
-#define OMPI_RTE_WAIT_H
+#ifndef ORTE_WAIT_H
+#define ORTE_WAIT_H
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -30,13 +30,13 @@
 #ifndef WIN32
 
 /** typedef for callback function used in \c ompi_rte_wait_cb */
-typedef void (*ompi_rte_wait_fn_t)(pid_t wpid, int status, void *data);
+typedef void (*orte_wait_fn_t)(pid_t wpid, int status, void *data);
 
 
 /**
  * Wait for process terminiation
  *
- * Similar to \c waitpid, \c ompi_rte_waitpid utilizes the run-time
+ * Similar to \c waitpid, \c orte_waitpid utilizes the run-time
  * event library for process terminiation notification.  The \c
  * WUNTRACED option is not supported, but the \c WNOHANG option is
  * supported.
@@ -44,7 +44,7 @@ typedef void (*ompi_rte_wait_fn_t)(pid_t wpid, int status, void *data);
  * \note A \c wpid value of \c -1 is not currently supported and will
  * return an error.
  */
-pid_t ompi_rte_waitpid(pid_t wpid, int *status, int options);
+pid_t orte_waitpid(pid_t wpid, int *status, int options);
 
 
 /**
@@ -61,20 +61,20 @@ pid_t ompi_rte_waitpid(pid_t wpid, int *status, int options);
  * \warning It is not legal for \c wpid to be -1 when registering a
  * callback.
  */
-int ompi_rte_wait_cb(pid_t wpid, ompi_rte_wait_fn_t callback, void *data);
+int orte_wait_cb(pid_t wpid, orte_wait_fn_t callback, void *data);
 
-int ompi_rte_wait_cb_cancel(pid_t wpid);
+int orte_wait_cb_cancel(pid_t wpid);
 
-int ompi_rte_wait_cb_disable(void);
+int orte_wait_cb_disable(void);
 
-int ompi_rte_wait_cb_enable(void);
+int orte_wait_cb_enable(void);
 
 /**
  * \internal
  *
  * Initialize the wait system (allocate mutexes, etc.)
  */
-int ompi_rte_wait_init(void);
+int orte_wait_init(void);
 
 
 /**
@@ -82,7 +82,7 @@ int ompi_rte_wait_init(void);
  *
  * Finalize the wait system (deallocate mutexes, etc.)
  */
-int ompi_rte_wait_finalize(void);
+int orte_wait_finalize(void);
 
 #endif /* #ifndef WIN32 */
-#endif /* #ifndef OMPI_RTE_WAIT_H */
+#endif /* #ifndef ORTE_WAIT_H */

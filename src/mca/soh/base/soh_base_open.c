@@ -42,8 +42,9 @@
  * Global variables
  */
 int mca_soh_base_output = -1;
-mca_soh_base_module_t ompi_soh_monitor = {
-    mca_soh_base_update_cell_soh_not_available
+mca_soh_base_module_t orte_soh = {
+    mca_soh_base_update_cell_soh_not_available,
+    mca_soh_base_get_proc_soh_not_available
 };
 bool mca_soh_base_selected = false;
 ompi_list_t mca_soh_base_components_available;

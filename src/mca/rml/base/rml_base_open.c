@@ -43,6 +43,7 @@ orte_rml_module_t orte_rml = {
     NULL,
     (orte_rml_module_get_uri_fn_t)mca_oob_get_contact_info,
     (orte_rml_module_set_uri_fn_t)mca_oob_set_contact_info,
+    (orte_rml_module_parse_uris_fn_t)mca_oob_parse_contact_info,
     (orte_rml_module_ping_fn_t)mca_oob_ping,
     (orte_rml_module_send_fn_t)mca_oob_send,
     (orte_rml_module_send_nb_fn_t)mca_oob_send_nb,

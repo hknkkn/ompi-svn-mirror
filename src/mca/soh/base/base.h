@@ -25,6 +25,7 @@
 #include "include/constants.h"
 #include "class/ompi_list.h"
 #include "mca/mca.h"
+#include "mca/ns/ns_types.h"
 
 #include "mca/soh/soh.h"
 
@@ -41,6 +42,8 @@ OMPI_DECLSPEC    int mca_soh_base_select(bool *allow_multi_user_threads,
 			                            bool *have_hidden_threads);
 OMPI_DECLSPEC    int mca_soh_base_close(void);
 OMPI_DECLSPEC    int mca_soh_base_update_cell_soh_not_available(orte_cellid_t cellid);
+OMPI_DECLSPEC    int mca_soh_base_get_proc_soh_not_available(orte_status_key_t *status,
+                                                             orte_process_name_t *proc);
 
 /*
  * globals that might be needed

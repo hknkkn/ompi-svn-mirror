@@ -46,7 +46,7 @@ orte_errmgr_base_module_t orte_errmgr = {
 bool orte_errmgr_base_selected = false;
 ompi_list_t orte_errmgr_base_components_available;
 mca_errmgr_base_component_t orte_errmgr_base_selected_component;
-
+bool orte_errmgr_initialized = false;
 
 /**
  * Function for finding and opening either all MCA components, or the one
@@ -54,21 +54,27 @@ mca_errmgr_base_component_t orte_errmgr_base_selected_component;
  */
 int orte_errmgr_base_open(void)
 {
-  /* Open up all available components */
-
-  if (ORTE_SUCCESS != 
-      mca_base_components_open("errmgr", 0, mca_errmgr_base_static_components, 
-                               &orte_errmgr_base_components_available)) {
-    return ORTE_ERROR;
-  }
-
-  /* setup output for debug messages */
-  if (!ompi_output_init) {  /* can't open output */
-      return ORTE_ERROR;
-  }
-
-  orte_errmgr_base_output = ompi_output_open(NULL);
-
+    if (!orte_errmgr_initialized) { /* ensure we only do this once */
+      
+        /* Open up all available components */
+    
+        if (ORTE_SUCCESS != 
+            mca_base_components_open("errmgr", 0, mca_errmgr_base_static_components, 
+                                   &orte_errmgr_base_components_available)) {
+            return ORTE_ERROR;
+        }
+    
+        /* setup output for debug messages */
+        if (!ompi_output_init) {  /* can't open output */
+            return ORTE_ERROR;
+        }
+    
+        if (0 > orte_errmgr_base_output)
+            orte_errmgr_base_output = ompi_output_open(NULL);
+      
+        orte_errmgr_initialized = true;
+    }
+    
   /* All done */
 
   return ORTE_SUCCESS;

@@ -11,29 +11,26 @@
  * 
  * $HEADER$
  */
+/** @file:
+ *
+ * Shutdown a job and cleanup the registry
+ *
+ */
 
-/** @file **/
+/*
+ * includes
+ */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
-#include "include/constants.h"
+#include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr.h"
 
 #include "runtime/runtime.h"
-#include "util/output.h"
-#include "mca/oob/oob.h"
 
-int ompi_rte_init_cleanup(void)
+int orte_job_shutdown(orte_jobid_t jobid)
 {
-    int ret;
-
-    /*
-     * Call back into OOB to allow do any final initialization
-     * (e.g. put contact info in register).
-     */
-    if (OMPI_SUCCESS != (ret = mca_oob_base_module_init())) {
-       ompi_output(0, "ompi_rte_init: failed in mca_oob_base_module_init()\n");
-       return ret;
-    }
-
-    return OMPI_SUCCESS;
+    orte_gpr.triggers_inactive(jobid);
+    orte_gpr.cleanup_job(jobid);
+    return ORTE_SUCCESS;
 }

@@ -134,10 +134,10 @@ int orte_session_dir(bool create, char *prfx, char *usr, char *hostid,
     }
 
     if (NULL == univ) { /* see if universe set elsewhere */
-	if (NULL == orte_process_info.my_universe) {  /* error condition */
+	if (NULL == orte_system_info.name) {  /* error condition */
 	    return OMPI_ERROR;
 	} else {
-	    universe = strdup(orte_process_info.my_universe);
+	    universe = strdup(orte_universe_info.name);
 	}
     } else {
 	universe = strdup(univ);

@@ -24,6 +24,11 @@
 
 void orte_errmgr_base_log(char *msg, char *filename, int line)
 {
-    ompi_output(0, "[%d,%d,%d] ORTE_ERROR_LOG: %s in file %s at line %d",
+    if (NULL == orte_process_info.my_name) {
+        ompi_output(0, "[NO-NAME] ORTE_ERROR_LOG: %s in file %s at line %d",
+                                msg, filename, line);
+    } else {
+        ompi_output(0, "[%d,%d,%d] ORTE_ERROR_LOG: %s in file %s at line %d",
                 ORTE_NAME_ARGS(*(orte_process_info.my_name)), msg, filename, line);
+    }
 }

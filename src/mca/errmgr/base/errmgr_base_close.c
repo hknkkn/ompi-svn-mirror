@@ -36,6 +36,7 @@ int orte_errmgr_base_close(void)
   mca_base_components_close(orte_errmgr_base_output, 
                             &orte_errmgr_base_components_available, NULL);
 
+    orte_errmgr_initialized = false;
   /* All done */
 
   return ORTE_SUCCESS;

@@ -68,70 +68,27 @@
 extern "C" {
 #endif
 
-    /* globals used by RTE - instanced in ompi_rte_init.c */
+    /* globals used by RTE - instanced in orte_init.c */
 
-    OMPI_DECLSPEC extern int ompi_rte_debug_flag;
+    OMPI_DECLSPEC extern int orte_debug_flag;
 
     /* Define the info structure underlying the Open MPI universe system
     * instanced in ompi_rte_init.c */
 
-    struct ompi_universe_t {
-	char *name;
-	char *host;
-	char *uid;
-	pid_t pid;
-	bool persistence;
-	char *scope;
-	bool probe;
-	bool console;
-        char *ns_replica;   /**< OOB contact info for name server */
-        char *gpr_replica;  /**< OOB contact info for GPR */
-	char *seed_contact_info;  /**< OOB contact info for universe seed */
-	bool console_connected;   /**< Indicates if console is connected */
-	char *scriptfile;   /**< Name of file containing commands to be executed */
-	char *hostfile;   /**< Name of file containing list of hosts to be built into virtual machine */
+    struct orte_universe_t {
+        char *name;
+        char *host;
+        bool persistence;
+        char *scope;
+        bool console;
+        char *seed_uri;             /**< OOB contact info for universe seed */
+        bool console_connected;     /**< Indicates if console is connected */
+        char *scriptfile;           /**< Name of file containing commands to be executed */
     };
-    typedef struct ompi_universe_t ompi_universe_t;
+    typedef struct orte_universe_t orte_universe_t;
 
-OMPI_DECLSPEC extern ompi_universe_t ompi_universe_info;
+OMPI_DECLSPEC extern orte_universe_t orte_universe_info;
 
-
-    struct ompi_rte_process_status_t {
-    	int32_t rank;
-    	int32_t local_pid;
-    	char *nodename;
-	ompi_status_key_t status_key;
-	ompi_exit_code_t exit_code;
-    };
-    typedef struct ompi_rte_process_status_t ompi_rte_process_status_t;
-
-
-    struct ompi_rte_vm_status_t {
-    orte_cellid_t cell;  /* cell id for this vm */
-	char *nodename;             /* name of the node */
-    uint32_t node_address;      /* node address */
-    uint16_t num_cpus;          /* number of CPU's in this node */
-    uint32_t mem_size;          /* size of memory, in MB */
-    char *arch;                 /* architecture of the CPU's */
-    char *op_sys;               /* operating system */
-    char *release;              /* operating system release */
-    char *user;                 /* userid of the owner of this node */
-    char *group;                /* name of the owning group */
-    uint32_t permission;        /* Unix-style permissions for the node */
-    ompi_node_state_t state;    /* state of this node */
-    };
-    typedef struct ompi_rte_vm_status_t ompi_rte_vm_status_t;
-
-    struct ompi_rte_cell_status_t {
-        orte_cellid_t cell;      /* cellid for this cell */
-        char *cell_name;                /* name for this cell */
-        char *system_type;              /* cluster, grid, SMP, etc. */
-        char *launch_mech;              /* launch mechanism for this cell */
-        uint32_t num_nodes;             /* number of nodes in cell */
-        ompi_node_state_t state;        /* state of the cell */
-    };
-    typedef struct ompi_rte_cell_status_t ompi_rte_cell_status_t;
-    
     /**
      * Initialize the Open MPI support code
      *
@@ -166,7 +123,7 @@ OMPI_DECLSPEC    int ompi_abort(int status, char *fmt, ...);
 
 
     /**
-     * Initialize the Open MPI run time environment
+     * Initialize the Open run time environment
      *
      * Initlize the Open MPI run time environment, including process
      * control and out of band messaging.  This function should be
@@ -174,85 +131,31 @@ OMPI_DECLSPEC    int ompi_abort(int status, char *fmt, ...);
      * be called by every application using the RTE interface, including
      * MPI applications and mpirun.
      */
-OMPI_DECLSPEC    int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads);
+OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads);
 
     /**
-     * Finalize the Open MPI run time environment
+     * Finalize the Open run time environment
      *
      */
-OMPI_DECLSPEC    int ompi_rte_finalize(void);
-
-   /**
-     * Get names of peer processes which have been launched
-     *
-     * @param peers (OUT) Pointer to a pointer of
-     *                    ompi_process_name_t. \c *peers will be set
-     *                    to point to a statically allocated buffer
-     *                    containing the array of peer processes
-     *                    started with the current process.  If \c
-     *                    peers is NULL, then only \c npeers is
-     *                    updated.
-     * @param npeers (OUT) pointer to an integer that will be updated
-     *                    with the total number of peers started with
-     *                    the current process.  Also the length of \c
-     *                    *peers array if \c peers is not \c NULL
-     *
-     * @return OMPI_SUCCESS on success
-     *         OMPI_ERR_NOT_IMPLEMENTED if the underlying module is
-     *                     not properly loaded.
-     *
-     */
-OMPI_DECLSPEC    int ompi_rte_get_peers(orte_process_name_t **peers, size_t *npeers);
-
-    /**
-     * Get current status of the process
-     */
-OMPI_DECLSPEC    ompi_rte_process_status_t *ompi_rte_get_process_status(orte_process_name_t *proc);
-
-    /**
-     * Set process status
-     */
-
-OMPI_DECLSPEC    int ompi_rte_set_process_status(ompi_rte_process_status_t *status,
-				                 orte_process_name_t *proc);
-
-    /**
-     * Unpack the process status structure stored on the registry
-     */
-OMPI_DECLSPEC    ompi_rte_process_status_t *ompi_rte_unpack_process_status(orte_gpr_value_t *value);
-
-    /**
-     * Get virtual machine node status
-     */
-OMPI_DECLSPEC   ompi_rte_vm_status_t *ompi_rte_get_vm_status(orte_cellid_t cellid, char *nodename);
-
-    /**
-     * Set virtual machine node status
-     */
-OMPI_DECLSPEC   int ompi_rte_set_vm_status(ompi_rte_vm_status_t *status);
-
-    /**
-     * Upack the virtual machine node status stored on the registry
-     */
-OMPI_DECLSPEC   ompi_rte_vm_status_t *ompi_rte_unpack_vm_status(orte_gpr_value_t *value);
+OMPI_DECLSPEC    int orte_finalize(void);
 
     /**
      * Hold for startup message to arrive, then decode it.
      */
 
-OMPI_DECLSPEC    int ompi_rte_wait_startup_msg(void);
+OMPI_DECLSPEC    int orte_wait_startup_msg(void);
 
     /**
      * Change state as processes complete registration/unregistration
      */
 
-OMPI_DECLSPEC    void ompi_rte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdata);
+OMPI_DECLSPEC    void orte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdata);
 
-OMPI_DECLSPEC    void ompi_rte_all_procs_unregistered(orte_gpr_notify_message_t* match, void* cbdata);
+OMPI_DECLSPEC    void orte_all_procs_unregistered(orte_gpr_notify_message_t* match, void* cbdata);
 
-OMPI_DECLSPEC	 int ompi_rte_monitor_procs_registered(void);
+OMPI_DECLSPEC	 int orte_monitor_procs_registered(void);
 
-OMPI_DECLSPEC    int ompi_rte_monitor_procs_unregistered(void);
+OMPI_DECLSPEC    int orte_monitor_procs_unregistered(void);
 
     /**
      * Setup rte command line options
@@ -262,7 +165,7 @@ OMPI_DECLSPEC    int ompi_rte_monitor_procs_unregistered(void);
      * @param cmd_line Pointer to an ompi_cmd_line_t object
      * @retval None
      */
-OMPI_DECLSPEC    void ompi_rte_cmd_line_setup(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    void orte_cmd_line_setup(ompi_cmd_line_t *cmd_line);
 
 
     /**
@@ -274,7 +177,7 @@ OMPI_DECLSPEC    void ompi_rte_cmd_line_setup(ompi_cmd_line_t *cmd_line);
      * @param cmd_line Command line to be parsed.
      * @retval None
      */
-OMPI_DECLSPEC    void ompi_rte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    void orte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
 
     /**
      * Parse the rte command line for daemon-specific options
@@ -285,7 +188,7 @@ OMPI_DECLSPEC    void ompi_rte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
      * @param cmd_line Command line to be parsed.
      * @retval None
      */
-OMPI_DECLSPEC    void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    void orte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line);
 
     /**
      * Check for universe existence
@@ -307,7 +210,7 @@ OMPI_DECLSPEC    void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line);
      * @retval OMPI_CONNECTION_REFUSED Universe found and contact made, but
      * universe refused to allow connection.
      */
-OMPI_DECLSPEC    int ompi_rte_universe_exists(void);
+OMPI_DECLSPEC    int orte_universe_exists(void);
 
     /**
      * Parse the RTE environmental variables
@@ -320,28 +223,23 @@ OMPI_DECLSPEC    int ompi_rte_universe_exists(void);
      *
      * @retval None
      */
-OMPI_DECLSPEC    void ompi_rte_parse_environ(void);
+OMPI_DECLSPEC    void orte_parse_environ(void);
 
-
-    /**
-     * Register on the virtual machine segment.
-     */
-OMPI_DECLSPEC    int ompi_rte_vm_register(void);
 
     /**
      * Startup a job - notify processes that all ready to begin
      */
-OMPI_DECLSPEC   int ompi_rte_job_startup(orte_jobid_t jobid);
+OMPI_DECLSPEC   int orte_job_startup(orte_jobid_t jobid);
 
     /**
      * Shutdown a job - notify processes that all ready to stop
      */
-OMPI_DECLSPEC   int ompi_rte_job_shutdown(orte_jobid_t jobid);
+OMPI_DECLSPEC   int orte_job_shutdown(orte_jobid_t jobid);
 
     /**
      * Complete initialization of the RTE
      */
-OMPI_DECLSPEC   int ompi_rte_init_cleanup(void);
+OMPI_DECLSPEC   int orte_init_cleanup(bool *allow_user_threads, bool *have_hidden_threads);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

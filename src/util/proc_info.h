@@ -53,9 +53,10 @@ struct orte_proc_info_t {
     pid_t pid;                      /**< Local process ID for this process */
     bool seed;                      /**< Indicate whether or not this is seed daemon */
     bool daemon;                    /**< Indicate whether or not I am a daemon */
+    char *ns_replica_uri;           /**< contact info for name services replica */
+    char *gpr_replica_uri;          /**< contact info for registry replica */
     orte_process_name_t *ns_replica; /**< Name of my name server replica (NULL=>me) */
     orte_process_name_t *gpr_replica; /**< Name of my registry replica (NULL=>me) */
-    char *my_universe;              /**< Name of the universe to which this process belongs */
     char *tmpdir_base;              /**< Base directory of the session dir tree */
     char *top_session_dir;          /**< Top-most directory of the session tree */
     char *universe_session_dir;     /**< Location of universe temp dir.

@@ -28,9 +28,11 @@
 
 #include "orte_config.h"
 #include "include/orte_types.h"
+#include "include/orte_schema.h"
 #include "class/ompi_object.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/soh/soh_types.h"
 
 /** Define the notification actions for the subscription system - can be OR'd
  * to create multiple actions
@@ -126,6 +128,7 @@ typedef union {                             /* shared storage for the value */
 #endif
     orte_byte_object_t byteobject;
     orte_process_name_t proc;
+    orte_vpid_t vpid;
     orte_jobid_t jobid;
     orte_cellid_t cellid;
     orte_node_state_t node_state;

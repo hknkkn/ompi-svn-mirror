@@ -28,3 +28,9 @@ int mca_soh_base_update_cell_soh_not_available(orte_cellid_t cellid)
 {
     return OMPI_ERR_NOT_IMPLEMENTED;
 }
+
+int mca_soh_base_get_proc_soh_not_available(orte_status_key_t *status,
+                                            orte_process_name_t *proc)
+{
+    return OMPI_ERR_NOT_IMPLEMENTED;
+}

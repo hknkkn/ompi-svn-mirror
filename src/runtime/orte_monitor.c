@@ -24,8 +24,6 @@
 #include "event/event.h"
 #include "threads/mutex.h"
 #include "threads/condition.h"
-#include "mca/oob/base/base.h"
-#include "mca/oob/oob.h"
 #include "mca/ns/ns_types.h"
 #include "mca/gpr/gpr_types.h"
 
@@ -43,9 +41,9 @@ static bool ompi_rte_waiting = false;
  */
 
 
-void ompi_rte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdata)
+void orte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdata)
 {
-    if (ompi_rte_debug_flag) {
+    if (orte_debug_flag) {
 	    ompi_output(0, "[%d,%d,%d] all procs registered",
 		    ORTE_NAME_ARGS(*orte_process_info.my_name));
     }
@@ -59,7 +57,7 @@ void ompi_rte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdat
 }
 
 
-void ompi_rte_all_procs_unregistered(orte_gpr_notify_message_t* match, void* cbdata)
+void orte_all_procs_unregistered(orte_gpr_notify_message_t* match, void* cbdata)
 {
     OMPI_THREAD_LOCK(&ompi_rte_mutex);
     ompi_rte_job_finished = true;
@@ -76,7 +74,7 @@ void ompi_rte_all_procs_unregistered(orte_gpr_notify_message_t* match, void* cbd
  * shutdown....
  */
 
-int ompi_rte_monitor_procs_registered(void)
+int orte_monitor_procs_registered(void)
 {
     struct timeval tv;
     struct timespec ts;
@@ -103,7 +101,7 @@ int ompi_rte_monitor_procs_registered(void)
     return OMPI_SUCCESS;
 }
 
-int ompi_rte_monitor_procs_unregistered(void)
+int orte_monitor_procs_unregistered(void)
 {
     OMPI_THREAD_LOCK(&ompi_rte_mutex);
     /* wait for all processes to complete */

@@ -174,6 +174,11 @@ extern "C" {
                                  orte_buffer_t **msg, size_t *cnt,
                                  orte_process_name_t **recipients);
 
+    OMPI_DECLSPEC int orte_gpr_base_decode_startup_msg(int status,
+                                 orte_process_name_t *peer,
+                                 orte_buffer_t* msg,
+                                 orte_rml_tag_t tag, void *cbdata);
+
     OMPI_DECLSPEC int orte_gpr_base_pack_triggers_active_cmd(orte_buffer_t *cmd,
                                                              orte_jobid_t jobid);
     OMPI_DECLSPEC int orte_gpr_base_unpack_triggers_active_cmd(orte_buffer_t *cmd);

@@ -159,9 +159,4 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
                                     size_t *cnt,
                                     orte_process_name_t **procs);
 
-void
-orte_gpr_replica_decode_startup_msg(int status, orte_process_name_t *peer,
-                orte_buffer_t* msg, orte_rml_tag_t tag, void *cbdata);
-
-
 #endif

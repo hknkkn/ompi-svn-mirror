@@ -733,7 +733,7 @@ void ompi_comm_mark_dyncomm (ompi_communicator_t *comm)
     int i, j, numjobids=0;
     int size, rsize;
     int found;
-    uint32_t jobids[OMPI_COMM_MAXJOBIDS], thisjobid;
+    orte_jobid_t jobids[OMPI_COMM_MAXJOBIDS], thisjobid;
     ompi_group_t *grp=NULL;
 
     /* special case for MPI_COMM_NULL */

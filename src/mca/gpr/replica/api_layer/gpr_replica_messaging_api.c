@@ -32,6 +32,7 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
                                     size_t *cnt,
                                     orte_process_name_t **procs)
 {
+    orte_buffer_t *cmd, *answer;
     int rc;
     
     if (orte_gpr_replica_globals.debug) {
@@ -48,72 +49,28 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
         OBJ_RELEASE(*msg);
     }
     
-    *msg = OBJ_NEW(orte_buffer_t);
-    if (NULL == *msg) {
+    answer = OBJ_NEW(orte_buffer_t);
+    if (NULL == answer) {
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
-    rc = orte_gpr_replica_get_startup_msg_fn(jobid, msg);
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_startup_msg_fn(jobid, answer))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(answer);
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+        return rc;
+    }
 
     /* need to parse the buffer to obtain the message */
+    rc = orte_gpr_base_unpack_get_startup_msg(answer, msg, cnt, procs);
+    if (ORTE_SUCCESS != rc) {
+        ORTE_ERROR_LOG(rc);
+    }
+    OBJ_RELEASE(answer);
     
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     return rc;
 }
-
-void
-orte_gpr_replica_decode_startup_msg(int status, orte_process_name_t *peer,
-                                    orte_buffer_t* msg,
-                                    orte_rml_tag_t tag, void *cbdata)
-{
-#if 0
-    char *segment;
-    orte_gpr_notify_message_t *notify_msg;
-    orte_gpr_value_t *data_value;
-    int32_t num_objects, i;
-    size_t buf_size;
-
-    while (0 < ompi_unpack_string(msg, &segment)) {
-  if (ompi_rte_globals.debug_flag) {
-     ompi_output(0, "[%d,%d,%d] decoding msg for segment %s",
-           ORTE_NAME_ARGS(*ompi_rte_get_self()), segment);
-    }
-
- ompi_unpack(msg, &num_objects, 1, OMPI_INT32);  /* unpack #data objects */
-
-    if (ompi_rte_globals.debug_flag) {
-     ompi_output(0, "\twith %d objects", num_objects);
-  }
-
- if (0 < num_objects) {
-     notify_msg = OBJ_NEW(orte_gpr_notify_message_t);
-       notify_msg->segment = strdup(segment);
-
-        for (i=0; i < num_objects; i++) {
-
-     data_value = OBJ_NEW(orte_gpr_value_t);
-        ompi_unpack(msg, &data_obj_size, 1, MCA_GPR_OOB_PACK_OBJECT_SIZE);
-     data_object = (orte_gpr_object_t)malloc(data_obj_size);
-        ompi_unpack(msg, data_object, data_obj_size, OMPI_BYTE);
-       data_value->object = data_object;
-      data_value->object_size = data_obj_size;
-
-      ompi_list_append(&notify_msg->data, &data_value->item);
-        }
-
-     if (ompi_rte_globals.debug_flag) {
-     ompi_output(0, "[%d,%d,%d] delivering msg for segment %s with %d data objects",
-                ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, (int)num_objects);
-      }
-
-     orte_gpr.deliver_notify_msg(OMPI_REGISTRY_NOTIFY_ON_STARTUP, notify_msg);
-  }
-
- free(segment);
-    }
-#endif
-}
-

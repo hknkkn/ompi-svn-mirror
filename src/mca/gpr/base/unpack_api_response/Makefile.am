@@ -24,6 +24,7 @@ libmca_gpr_base_unpack_la_SOURCES = \
         $(headers) \
         gpr_base_unpack_cleanup.c \
         gpr_base_unpack_del_index.c \
+        gpr_base_decode_startup_msg.c \
         gpr_base_print_dump.c \
         gpr_base_unpack_mode_ops.c \
         gpr_base_unpack_put_get.c \

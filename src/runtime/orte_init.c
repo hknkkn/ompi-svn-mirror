@@ -14,9 +14,7 @@
 
 /** @file **/
 
-/* #define _GNU_SOURCE */
-
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,9 +26,11 @@
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
-#include "mca/oob/oob.h"
+#include "mca/rml/base/base.h"
+#include "mca/errmgr/base/base.h"
 #include "mca/ns/base/base.h"
 #include "mca/gpr/base/base.h"
+#include "mca/rmgr/base/base.h"
 #include "util/proc_info.h"
 #include "util/session_dir.h"
 #include "util/sys_info.h"
@@ -38,13 +38,13 @@
 
 #include "runtime/runtime.h"
 #include "runtime/runtime_internal.h"
-#include "runtime/ompi_rte_wait.h"
+#include "runtime/orte_wait.h"
 
 /**
- * Initialze and setup a process in the OMPI RTE.
+ * Initialze and setup a process in the ORTE.
  *
- * @retval OMPI_SUCCESS Upon success.
- * @retval OMPI_ERROR Upon failure.
+ * @retval ORTE_SUCCESS Upon success.
+ * @retval ORTE_ERROR Upon failure.
  *
  * This function performs 
  * 
@@ -103,27 +103,19 @@
  */
 
 /* globals used by RTE */
-int ompi_rte_debug_flag=0;
-ompi_universe_t ompi_universe_info = {
+int orte_debug_flag=0;
+orte_universe_t orte_universe_info = {
     /* .name =                */    NULL,
     /* .host =                */    NULL,
-    /* .uid =                 */    NULL,
-    /* .pid =                 */    0,
     /* .persistence =         */    false,
     /* .scope =               */    NULL,
-    /* .probe =               */    false,
     /* .console =             */    false,
-    /* .ns_replica =          */    NULL,
-    /* .gpr_replica =         */    NULL,
-    /* .seed_contact_info =    */   NULL,
+    /* .seed_uri =            */    NULL,
     /* .console_connected =   */    false,
     /* .scriptfile =          */    NULL,
-    /* .hostfile =            */    NULL
 };
 
-static void printname(char *location);
-
-int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads)
+int orte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads)
 {
     int ret;
     bool user_threads, hidden_threads;
@@ -133,10 +125,15 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
     *allow_multi_user_threads = true;
     *have_hidden_threads = false;
 
-    ret =  mca_base_param_register_int("ompi", "rte", "debug", NULL, 0);
-    mca_base_param_lookup_int(ret, &ompi_rte_debug_flag);
+    ret =  mca_base_param_register_int("orte", "debug", NULL, NULL, 1);
+    mca_base_param_lookup_int(ret, &orte_debug_flag);
 
-
+    /* ensure the error manager is open */
+    if (ORTE_SUCCESS != (ret = orte_errmgr_base_open())) {
+        ompi_output(0, "orte_init: failed to open errmgr - aborting");
+        return ret;
+    }
+    
     /* ensure that orte_process_info structure has been initialized */
     orte_proc_info();
     
@@ -144,126 +141,94 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
      * Initialize the event library 
     */
     if (OMPI_SUCCESS != (ret = ompi_event_init())) {
-	    ompi_output(0, "ompi_rte_init: ompi_event_init failed with error status: %d\n", ret);
+	    ORTE_ERROR_LOG(ret);
 	    return ret;
     }
 
     /*
      * Internal startup
      */
-    if (OMPI_SUCCESS != (ret = ompi_rte_wait_init())) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in ompi_rte_wait_init\n");
-	return ret;
+    if (OMPI_SUCCESS != (ret = orte_wait_init())) {
+	    ORTE_ERROR_LOG(ret);
+	    return ret;
     }
-
-
-    /*
-     * Out of Band Messaging
-     */
-    if (OMPI_SUCCESS != (ret = mca_oob_base_open())) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in oob_base_open\n");
-	return ret;
-    }
-    user_threads = true;
-    hidden_threads = false;
 
 
     /*
      * Name Server - just do the open so we can access base components
      */
     if (OMPI_SUCCESS != (ret = orte_ns_base_open())) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in ns_base_open\n");
-	return ret;
+        ORTE_ERROR_LOG(ret);
+        return ret;
     }
-
-    /* complete setup of OOB */
-    if (OMPI_SUCCESS != (ret = mca_oob_base_init(&user_threads, 
-						 &hidden_threads))) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in mca_oob_base_init()\n");
-	return ret;
-    }
-    *allow_multi_user_threads &= user_threads;
-    *have_hidden_threads |= hidden_threads;
-
-    printname("oob_init");
-
-    /* parse non-PCM environmental variables and fill corresponding info structures */
-    ompi_rte_parse_environ();
-
-    printname("parse_environ");
-
-    if (NULL != cmd_line) {
-	/* parse the cmd_line for rte options - override settings from enviro, where necessary
-	 * copy everything into enviro variables for passing later on
-	 */
-	ompi_rte_parse_cmd_line(cmd_line);
-
-	/* parse the cmd_line for daemon options - gets all the options relating
-	 * specifically to seed behavior, in case i'm a seed, but also gets
-	 * options about scripts and hostfiles that might be of use to me
-	 * overrride enviro variables where necessary
-	 */
-	ompi_rte_parse_daemon_cmd_line(cmd_line);
-    }
-
-    printname("cmd_line");
-
-    /* check for existing universe to join */
-    if (OMPI_SUCCESS != (ret = ompi_rte_universe_exists())) {
-	if (ompi_rte_debug_flag) {
-	    ompi_output(0, "ompi_mpi_init: could not join existing universe");
-	}
-	if (OMPI_ERR_NOT_FOUND != ret) {
-	    /* if it exists but no contact could be established,
-	     * define unique name based on current one.
-	     * and start new universe with me as seed
-	     */
-	    universe = strdup(ompi_universe_info.name);
-	    free(ompi_universe_info.name);
-	    ompi_universe_info.name = NULL;
-	    pid = getpid();
-	    if (0 > asprintf(&ompi_universe_info.name, "%s-%d", universe, pid) && ompi_rte_debug_flag) {
-		ompi_output(0, "mpi_init: error creating unique universe name");
-	    }
-	}
-
-	orte_process_info.my_universe = strdup(ompi_universe_info.name);
-	orte_process_info.seed = true;
-	if (NULL != ompi_universe_info.ns_replica) {
-	    free(ompi_universe_info.ns_replica);
-	    ompi_universe_info.ns_replica = NULL;
-	}
-	if (NULL != orte_process_info.ns_replica) {
-	    free(orte_process_info.ns_replica);
-	    orte_process_info.ns_replica = NULL;
-	}
-	if (NULL != ompi_universe_info.gpr_replica) {
-	    free(ompi_universe_info.gpr_replica);
-	    ompi_universe_info.gpr_replica = NULL;
-	}
-	if (NULL != orte_process_info.gpr_replica) {
-	    free(orte_process_info.gpr_replica);
-	    orte_process_info.gpr_replica = NULL;
-	}
-    }
-
-    printname("univ_exists");
 
     /*
-     * Name Server - base already opened in stage1, so just complete the selection
-     * of the proper module
+     * Runtime Messaging Layer
      */
+    if (OMPI_SUCCESS != (ret = orte_rml_base_open())) {
+        ORTE_ERROR_LOG(ret);
+	    return ret;
+    }
+
+    /* parse ORTE environmental variables and fill corresponding info structures */
+    orte_parse_environ();
+
+    if (NULL != cmd_line) {
+        	/* parse the cmd_line for rte options - override settings from enviro, where necessary
+        	 * copy everything into enviro variables for passing later on
+        	 */
+        	orte_parse_cmd_line(cmd_line);
+        
+        	/* parse the cmd_line for daemon options - gets all the options relating
+        	 * specifically to seed behavior, in case i'm a seed, but also gets
+        	 * options about scripts and hostfiles that might be of use to me
+        	 * overrride enviro variables where necessary
+        	 */
+        	orte_parse_daemon_cmd_line(cmd_line);
+    }
+
+    /* check for existing universe to join */
+    if (ORTE_SUCCESS != (ret = orte_universe_exists())) {
+        	if (orte_debug_flag) {
+        	    ompi_output(0, "orte_init: could not join existing universe");
+        	}
+        	if (ORTE_ERR_NOT_FOUND != ret) {
+        	    /* if it exists but no contact could be established,
+        	     * define unique name based on current one.
+        	     * and start new universe with me as seed
+        	     */
+        	    universe = strdup(orte_universe_info.name);
+        	    free(orte_universe_info.name);
+        	    orte_universe_info.name = NULL;
+        	    pid = getpid();
+        	    if (0 > asprintf(&orte_universe_info.name, "%s-%d", universe, pid)) {
+                ompi_output(0, "orte_init: failed to create unique universe name");
+                return ret;
+             }
+	    }
+
+        	orte_process_info.seed = true;
+        	if (NULL != orte_process_info.ns_replica) {
+        	    free(orte_process_info.ns_replica);
+        	    orte_process_info.ns_replica = NULL;
+        	}
+        	if (NULL != orte_process_info.gpr_replica) {
+        	    free(orte_process_info.gpr_replica);
+        	    orte_process_info.gpr_replica = NULL;
+        	}
+    }
+
+    /* init thread flags */
     user_threads = true;
     hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = orte_ns_base_select(&user_threads,
-						  &hidden_threads))) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in ns_base_select\n");
-	return ret;
+
+    /*
+     * Name Server - base already opened, so just complete the selection
+     * of the proper module
+     */
+    if (ORTE_SUCCESS != (ret = orte_ns_base_select(&user_threads, &hidden_threads))) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
     }
     *allow_multi_user_threads &= user_threads;
     *have_hidden_threads |= hidden_threads;
@@ -271,74 +236,70 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
     /*
      * Registry 
      */
-    if (OMPI_SUCCESS != (ret = orte_gpr_base_open())) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in orte_gpr_base_open()\n");
-	return ret;
+    if (ORTE_SUCCESS != (ret = orte_gpr_base_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
     }
     user_threads = true;
     hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = orte_gpr_base_select(&user_threads, 
+    if (ORTE_SUCCESS != (ret = orte_gpr_base_select(&user_threads, 
 						   &hidden_threads))) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in orte_gpr_base_select()\n");
-	return ret;
+        ORTE_ERROR_LOG(ret);
+        return ret;
     }
     *allow_multi_user_threads &= user_threads;
     *have_hidden_threads |= hidden_threads;
  
-    printname("gpr_select");
-
     /*****    SET MY NAME    *****/
     if (ORTE_SUCCESS != (ret = orte_ns.set_my_name())) {
+        ORTE_ERROR_LOG(ret);
         return ret;
     }
     
     /* setup my session directory */
     if (ORTE_SUCCESS != (ret = orte_ns.get_jobid_string(&jobid_str, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(ret);
         return ret;
     }
     if (ORTE_SUCCESS != (ret = orte_ns.get_vpid_string(&procid_str, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(ret);
         return ret;
     }
  
-    if (ompi_rte_debug_flag) {
+    if (orte_debug_flag) {
 	    ompi_output(0, "[%d,%d,%d] setting up session dir with",
                     ORTE_NAME_ARGS(*orte_process_info.my_name));
 	    if (NULL != orte_process_info.tmpdir_base) {
 	        ompi_output(0, "\ttmpdir %s", orte_process_info.tmpdir_base);
 	    }
-        	ompi_output(0, "\tuniverse %s", orte_process_info.my_universe);
+        	ompi_output(0, "\tuniverse %s", orte_universe_info.name);
         	ompi_output(0, "\tuser %s", orte_system_info.user);
         	ompi_output(0, "\thost %s", orte_system_info.nodename);
         	ompi_output(0, "\tjobid %s", jobid_str);
         	ompi_output(0, "\tprocid %s", procid_str);
     }
-    if (OMPI_ERROR == orte_session_dir(true,
-				       orte_process_info.tmpdir_base,
-				       orte_system_info.user,
-				       orte_system_info.nodename, NULL, 
-				       orte_process_info.my_universe,
-				       jobid_str, procid_str)) {
-	if (jobid_str != NULL) free(jobid_str);
-	if (procid_str != NULL) free(procid_str);
-	exit(-1);
+    if (ORTE_SUCCESS != (ret = orte_session_dir(true,
+                                orte_process_info.tmpdir_base,
+                                orte_system_info.user,
+                                orte_system_info.nodename, NULL,
+                                orte_universe_info.name,
+                                jobid_str, procid_str))) {
+        if (jobid_str != NULL) free(jobid_str);
+        if (procid_str != NULL) free(procid_str);
+        ORTE_ERROR_LOG(ret);
+        return ret;
     }
 
+    /* setup the resource manager */
+    if (ORTE_SUCCESS != (ret = orte_rmgr_base_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    
      /* 
      * All done 
      */
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
 
-static void printname(char *loc)
-{
-    if (ompi_rte_debug_flag) {
-	if (NULL == orte_process_info.my_name) {
-	    ompi_output(0, "My name after %s has NOT been set", loc);
-	} else {
-	    ompi_output(0, "My name after %s is [%d,%d,%d]", loc, ORTE_NAME_ARGS(*orte_process_info.my_name));
-	}
-    }
-}

@@ -68,6 +68,23 @@ typedef char* (*orte_rml_module_get_uri_fn_t)(void);
 typedef int (*orte_rml_module_set_uri_fn_t)(const char*);
                                                                                                                          
 /**
+*  orte_rml.rml_parse_uris()
+* 
+*  Extract from the contact info the peer process name and uri.
+*
+*  @param  uri (IN)   The contact information of the peer process.
+*  @param  name (OUT)   The peer process identifier - MUST BE PREVIOUSLY ALLOCATED.
+*  @param  uris (OUT)   Will return an array of uri strings corresponding
+*                       to the peers exported protocols.
+*              
+*  Note the caller may pass NULL for the uris if they only wish to extact
+*  the process name.
+*/
+
+typedef int (*orte_rml_module_parse_uris_fn_t)(const char* uri,
+                                    orte_process_name_t* peer, char*** uris);
+
+/**
 *  Implementation of orte_rml_ping().
 *   
 *  @param peer (IN)   Opaque name of peer process.
@@ -344,6 +361,7 @@ struct orte_rml_module_t {
     orte_rml_module_fini_fn_t            fini;
     orte_rml_module_get_uri_fn_t         get_uri;
     orte_rml_module_set_uri_fn_t         set_uri;
+    orte_rml_module_parse_uris_fn_t      parse_uris;
     orte_rml_module_ping_fn_t            ping;
     orte_rml_module_send_fn_t            send;
     orte_rml_module_send_nb_fn_t         send_nb;

@@ -15,16 +15,16 @@
 /**
  * @file
  *
- * Setup command line options for the Open MPI Run Time Environment
+ * Setup command line options for the Open Run Time Environment
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include "util/cmd_line.h"
 
 #include "runtime/runtime.h"
 
-void ompi_rte_cmd_line_setup(ompi_cmd_line_t *cmd_line)
+void orte_cmd_line_setup(ompi_cmd_line_t *cmd_line)
 {
     /* setup the rte command line arguments */
     ompi_cmd_line_make_opt3(cmd_line,  /* read in ompi_rte_parse_daemon_cmd_line */
@@ -32,8 +32,8 @@ void ompi_rte_cmd_line_setup(ompi_cmd_line_t *cmd_line)
 			   "Set the daemon seed to true.");
 
     ompi_cmd_line_make_opt3(cmd_line,  /* read in ompi_rte_parse_daemon_cmd_line */
-			    '\0', "probe", "probe", 0,
-			    "Define as probe");
+                '\0', "bootproxy", "bootproxy", 0,
+                "Act as bootproxy");
 
     ompi_cmd_line_make_opt3(cmd_line,  /* read in ompi_rte_parse_cmd_line */
 			    'u', "universe", "universe", 1,

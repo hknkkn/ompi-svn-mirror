@@ -15,5 +15,5 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS		= ompi_info mpirun wrappers ompid bootproxy openmpi console
+SUBDIRS		= ompi_info mpirun wrappers orted bootproxy openmpi console
 

@@ -24,11 +24,13 @@
 #include "orte_config.h"
 
 #include "include/orte_constants.h"
+#include "include/orte_schema.h"
 
 #include "util/output.h"
 #include "util/proc_info.h"
 
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "gpr_replica_fn.h"
 
@@ -73,16 +75,15 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
                                     orte_buffer_t *msg)
 {
 #if 0
-    orte_gpr_replica_segment_t *seg=NULL, *proc_stat_seg;
-    orte_gpr_replica_key_t *keys;
-    int num_keys, cmpval;
-    orte_gpr_replica_core_t *reg=NULL;
-    orte_gpr_replica_trigger_list_t *trig, *next_trig;
-    orte_gpr_replica_notify_request_tracker_t *trackptr;
-    orte_name_services_namelist_t *peer, *ptr;
-    ompi_rte_process_status_t *proc_status;
-    orte_process_name_t *name;
-    char *segment, *tokens[2], *jobidstring, *procstring;
+    char *segment=NULL, *jobidstring=NULL;
+    int rc, cnt, i;
+    orte_gpr_value_t **values=NULL;
+    orte_gpr_replica_segment_t *seg=NULL;
+    orte_gpr_replica_itag_t toktag, keytag1, keytag2;
+    orte_vpid_t vpid_start=ORTE_VPID_MAX, vpid_range=ORTE_VPID_MAX;
+    orte_gpr_keyval_t **keyvals;
+    orte_process_name_t *procs;
+    
     int32_t size;
     ompi_buffer_t msg;
     ompi_list_t *returned_list;
@@ -101,15 +102,97 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
      */
      
     /* setup tokens and segments for this job */
-    if (ORTE_SUCCESS != orte_name_services.convert_jobid_to_string(jobidstring, jobid)) {
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&segment, jobid))) {
+        ORTE_ERROR_LOG(rc);
         return NULL;
     }
-    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
 
     /* find the specified segment */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
+        ORTE_ERROR_LOG(rc);
+        free(segment);
         return rc;
     }
+    free(segment);  /* done with this string */
+    
+    /* get vpid start and range from "global" container */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&toktag, seg, "global"))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&keytags[0], seg, "vpid-start"))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&keytags[1], seg, "vpid-range"))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(ORTE_GPR_XAND,
+                                    seg, &toktag, 1, &keytags, 2, &cnt, &values))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (0 > cnt || 0 > values[0]->cnt) {
+        ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+        return ORTE_ERR_NOT_FOUND;
+    }
+    keyvals = values[0]->keyvals;
+    for (i=0; i < values[0]->cnt; i++) {
+        if (ORTE_VPID != keyvals[i]->type) {
+            ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+            rc = ORTE_ERR_BAD_PARAM;
+            goto CLEANUP;
+        }
+        if (0 == strcmp(keyvals[i]->key, "vpid-start")) {
+            vpid_start = keyvals[i]->value.vpid;
+        } else if (0 == strcmp(keyvals[i]->key, "vpid-range")) {
+            vpid_start = keyvals[i]->value.vpid;
+        }
+    }
+    OBJ_RELEASE(values[0]);
+    free(values);
+    values = NULL;
+    if (ORTE_VPID_MAX == vpid_start || ORTE_VPID_MAX == vpid_range) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+        rc = ORTE_ERR_BAD_PARAM;
+        goto CLEANUP;
+    }
+    
+    /* generate process recipient names */
+    procs = (orte_gpr_process_name_t*)malloc(vpid_range * sizeof(orte_gpr_process_name_t));
+    if (NULL == procs) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        rc = ORTE_ERR_OUT_OF_RESOURCE;
+        goto CLEANUP;
+    }
+    
+    for (i=0; i < vpid_range; i++) {
+        if (ORTE_SUCCESS != (rc = orte_ns.create_process_name(&procs[i], 0, jobid, i+vpid_start))) {
+            ORTE_ERROR_LOG(rc);
+            goto CLEANUP;
+        }
+    }
+    
+    /* store the names in the msg buffer */
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(msg, &procs, (size_t)vpid_range, ORTE_NAME))) {
+        ORTE_ERROR_LOG(rc);
+        goto CLEANUP;
+    }
+    
+    /* check list of subscriptions to find those on this segment */
+    trig = (orte_gpr_replica_triggers_t**)(orte_gpr_replica.triggers)->addr;
+    if (NULL == trig) {
+        ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+        rc = ORTE_ERR_NOT_FOUND;
+        goto CLEANUP;
+    }
+    for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
+         if (NULL != trig[i] && seg == trig[i]->seg &&
+             ORTE_GPR_SUBSCRIBE_CMD == trig[i]->cmd &&
+             ((ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA & ) ||
+                (ORTE_GPR_NOTIFY_INCLUDE_SHUTDOWN_DATA || ))) {
+             
 	    include_data = false;
 
 	    /* construct the list of recipients and find out if data is desired */

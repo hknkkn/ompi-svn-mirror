@@ -56,6 +56,7 @@
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
 #include "mca/rml/rml.h"
+#include "mca/soh/soh.h"
 
 #include "runtime/runtime.h"
 #include "event/event.h"
@@ -80,7 +81,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     bool allow_multi_user_threads;
     bool have_hidden_threads;
     ompi_proc_t** procs;
-    ompi_rte_process_status_t my_status;
+    orte_status_key_t my_status;
     size_t nprocs;
     char *error = NULL;
     char *jobid_string;
@@ -103,7 +104,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     /* Join the run-time environment */
     allow_multi_user_threads = true;
     have_hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = ompi_rte_init(NULL, &allow_multi_user_threads,
+    if (OMPI_SUCCESS != (ret = orte_init(NULL, &allow_multi_user_threads,
 					     &have_hidden_threads))) {
 	goto error;
     }
@@ -114,7 +115,8 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     /* Finish setting up the RTE - contains commands
      * that need to be inside the compound command
      */
-    if (OMPI_SUCCESS != (ret = ompi_rte_init_cleanup())) {
+    if (OMPI_SUCCESS != (ret = orte_init_cleanup(&allow_multi_user_threads,
+                         &have_hidden_threads))) {
 	error = "ompi_rte_init_cleanup failed";
 	goto error;
     }
@@ -278,23 +280,18 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
         error = "orte_ns - failed to get jobid string";
         goto error;
     }
-    if (ORTE_SUCCESS != orte_ns.get_vpid((orte_vpid_t*)(&my_status.rank), orte_process_info.my_name)) {
+/*    if (ORTE_SUCCESS != orte_ns.get_vpid((orte_vpid_t*)(&my_status.rank), orte_process_info.my_name)) {
         error = "orte_ns - failed to get vpid";
         goto error;
     }
-    my_status.local_pid = (int32_t)orte_process_info.pid;
-    my_status.nodename = strdup(orte_system_info.nodename);
-    my_status.status_key = OMPI_PROC_STARTING;
-    my_status.exit_code = 0;
     if (OMPI_SUCCESS != (ret = ompi_rte_set_process_status(&my_status, orte_process_info.my_name))) {
         error = "ompi_mpi_init: failed in ompi_rte_set_process_status()\n";
         goto error;
     } 
-
+*/
     /*
      * Set the virtual machine status for this node
      */
-    ompi_rte_vm_register();
     
     /* execute the compound command - no return data requested
     *  we'll get it all from the startup message
@@ -311,7 +308,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
 	    goto error;
     }
 
-    if (ompi_rte_debug_flag) {
+    if (orte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] process startup message received",
 		    ORTE_NAME_ARGS(*orte_process_info.my_name));
     }
@@ -391,7 +388,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     ompi_mpi_initialized = true;
     ompi_mpi_finalized = false;
 
-    if (ompi_rte_debug_flag) {
+    if (orte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] ompi_mpi_init completed",
 		    ORTE_NAME_ARGS(*orte_process_info.my_name));
     }

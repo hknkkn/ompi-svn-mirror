@@ -29,7 +29,6 @@
 #include "util/sys_info.h"
 #include "runtime/runtime.h"
 #include "runtime/ompi_progress.h"
-#include "runtime/ompi_rte_wait.h"
 #include "attribute/attribute.h"
 
 #include "mca/base/base.h"
@@ -47,12 +46,13 @@
 #include "mca/oob/base/base.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
+#include "mca/soh/soh.h"
 
 
 int ompi_mpi_finalize(void)
 {
     int ret;
-    ompi_rte_process_status_t my_status;
+    orte_status_key_t my_status;
     int my_rank;
     orte_jobid_t my_jobid;
 
@@ -67,15 +67,6 @@ int ompi_mpi_finalize(void)
     }
 
     /* Set process status to "terminating"*/
- 	my_rank = ompi_comm_rank(&ompi_mpi_comm_world);
-    my_status.rank = (int32_t)my_rank;
-    my_status.local_pid = (int32_t)orte_process_info.pid;
-    my_status.nodename = strdup(orte_system_info.nodename);
-    my_status.status_key = OMPI_PROC_TERMINATING;
-    my_status.exit_code = 0;
-    if (OMPI_SUCCESS != (ret = ompi_rte_set_process_status(&my_status, orte_process_info.my_name))) {
-	    return ret;
-    }
 
     /* execute the compound command - no return data requested
      */
@@ -95,7 +86,7 @@ int ompi_mpi_finalize(void)
          if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&my_jobid, orte_process_info.my_name))) {
             return ret;
          }
- 	 	 ompi_rte_job_shutdown(my_jobid);
+ 	 	 orte_job_shutdown(my_jobid);
  	 }
  	 
     /* Shut down any bindings-specific issues: C++, F77, F90 (may or
@@ -203,7 +194,7 @@ int ompi_mpi_finalize(void)
 
     /* Leave the RTE */
 
-    if (OMPI_SUCCESS != (ret = ompi_rte_finalize())) {
+    if (OMPI_SUCCESS != (ret = orte_finalize())) {
 	return ret;
     }
 

@@ -61,6 +61,11 @@ void ompi_rte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line)
 	ompi_universe_info.probe = true;
     }
 
+    /* see if I'm to be a bootproxy */
+    if (ompi_cmd_line_is_taken(cmd_line, "bootproxy")) {
+         setenv("OMPI_orte_bootproxy", "1", 1);
+    }
+
     /* get desired universe scope, if specified */
     if (ompi_cmd_line_is_taken(cmd_line, "scope")) {
 	if (NULL == ompi_cmd_line_get_param(cmd_line, "scope", 0, 0)) {
