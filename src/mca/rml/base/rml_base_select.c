@@ -21,8 +21,6 @@
 #include "mca/rml/rml.h"
 #include "mca/rml/base/base.h"
 
-orte_rml_module_t orte_rml;
-
 
 /**
  * Call the init function on all available components to find out if
