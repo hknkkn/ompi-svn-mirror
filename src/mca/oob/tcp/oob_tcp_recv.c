@@ -109,7 +109,11 @@ int mca_oob_tcp_recv(
     msg->msg_hdr.msg_tag = tag;
     msg->msg_hdr.msg_type = MCA_OOB_TCP_DATA;
     msg->msg_hdr.msg_src = *peer;
-    msg->msg_hdr.msg_dst = *orte_process_info.my_name;
+    if (NULL == orte_process_info.my_name) {
+        msg->msg_hdr.msg_dst = *MCA_OOB_NAME_ANY;
+    } else {
+        msg->msg_hdr.msg_dst = *orte_process_info.my_name;
+    }
     msg->msg_type = MCA_OOB_TCP_POSTED;
     msg->msg_rc = 0;
     msg->msg_flags = flags;

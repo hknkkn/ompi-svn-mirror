@@ -179,6 +179,10 @@ mca_oob_tcp_peer_t * mca_oob_tcp_peer_lookup(const orte_process_name_t* name)
     mca_oob_tcp_peer_t * peer, *old;
     ompi_list_item_t* item;
 
+    if (NULL == name) { /* can't look this one up */
+        return NULL;
+    }
+    
     OMPI_THREAD_LOCK(&mca_oob_tcp_component.tcp_lock);
     peer = (mca_oob_tcp_peer_t*)ompi_hash_table_get_proc(
        &mca_oob_tcp_component.tcp_peers, name);
@@ -469,7 +473,11 @@ static int mca_oob_tcp_peer_send_connect_ack(mca_oob_tcp_peer_t* peer)
      * without one.
     */
     orte_process_name_t guid[2];
-    guid[0] = *(orte_process_info.my_name);
+    if (NULL == orte_process_info.my_name) {  /* my name isn't defined yet */
+        guid[0] = *MCA_OOB_NAME_ANY;
+    } else {
+        guid[0] = *(orte_process_info.my_name);
+    }
     guid[1] = peer->peer_name;
     OMPI_PROCESS_NAME_HTON(guid[0]);
     OMPI_PROCESS_NAME_HTON(guid[1]);
