@@ -29,12 +29,13 @@ int orte_iof_base_close(void)
 {
     ompi_list_item_t* item;
 
-#if 0
-    /* JMS: Commented out on 15 Mar 2005 because *sometimes* we hang
-       in here -- needs to be fixed */
-    /* flush all pending output */
-    orte_iof_base_flush();
-#endif
+    /* We only need to flush if an iof component was successfully
+       selected */
+
+    if (orte_iof_base.iof_component_selected) {
+        orte_iof_base_flush();
+        orte_iof_base.iof_component_selected = false;
+    }
 
     /* shutdown any remaining opened components */
     if (0 != ompi_list_get_size(&orte_iof_base.iof_components_opened)) {
