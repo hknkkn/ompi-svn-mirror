@@ -125,7 +125,7 @@ int orte_pls_rsh_component_open(void)
     mca_pls_rsh_component.num_concurrent = orte_pls_rsh_param_register_int("num_concurrent",128);
     mca_pls_rsh_component.orted = orte_pls_rsh_param_register_string("orted","orted");
     mca_pls_rsh_component.priority = orte_pls_rsh_param_register_int("priority",10);
-    mca_pls_rsh_component.reap = orte_pls_rsh_param_register_int("priority",10);
+    mca_pls_rsh_component.reap = orte_pls_rsh_param_register_int("reap",1);
 
     param = orte_pls_rsh_param_register_string("agent","ssh");
     mca_pls_rsh_component.argv = ompi_argv_split(param, ' ');

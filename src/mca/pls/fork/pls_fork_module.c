@@ -90,6 +90,10 @@ static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_
     int p_stderr[2];
     int rc;
 
+    if(mca_pls_fork_component.debug) {
+        ompi_output(0, "orte_pls_fork: starting %d.%d.%d\n", ORTE_NAME_ARGS(&proc->proc_name));
+    }
+
     if(pipe(p_stdout) < 0 ||
        pipe(p_stderr) < 0) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
@@ -104,10 +108,6 @@ static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_
 
     if(pid == 0) {
 
-#if 0
-        /* set the process name in the environment */
-        mca_ns_nds_env_put(&proc->proc_name,...);
-#endif
         if(chdir(context->cwd) != 0) {
             ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         }
@@ -137,13 +137,6 @@ static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_
             return rc;
         }
 
-        /* wait for the child process */
-        OMPI_THREAD_LOCK(&mca_pls_fork_component.lock);
-        mca_pls_fork_component.num_children++;
-        OMPI_THREAD_UNLOCK(&mca_pls_fork_component.lock);
-        OBJ_RETAIN(proc);
-        orte_wait_cb(pid, orte_pls_fork_wait_proc, proc);
-
         /* connect read end to IOF */
         rc = orte_iof.iof_publish(&proc->proc_name, ORTE_IOF_SOURCE, ORTE_IOF_STDOUT, p_stdout[0]);
         if(ORTE_SUCCESS != rc) {
@@ -156,6 +149,13 @@ static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_
             ORTE_ERROR_LOG(rc);
             return rc;
         }
+
+        /* wait for the child process */
+        OMPI_THREAD_LOCK(&mca_pls_fork_component.lock);
+        mca_pls_fork_component.num_children++;
+        OMPI_THREAD_UNLOCK(&mca_pls_fork_component.lock);
+        OBJ_RETAIN(proc);
+        orte_wait_cb(pid, orte_pls_fork_wait_proc, proc);
     }
     return ORTE_SUCCESS;
 }
