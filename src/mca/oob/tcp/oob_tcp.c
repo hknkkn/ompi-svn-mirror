@@ -680,6 +680,17 @@ int mca_oob_tcp_init(void)
         return rc;
     }
 
+    trig_value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    if(NULL == trig_value.keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig_value.cnt = 1;
+    trig_value.keyvals[0] = (orte_gpr_keyval_t*)malloc(sizeof(orte_gpr_keyval_t));
+    if(NULL == trig_value.keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
     trig_value.keyvals[0]->type = ORTE_INT;
     trig_value.keyvals[0]->value.i32 = (int32_t)orte_process_info.num_procs;
     
