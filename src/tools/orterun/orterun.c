@@ -182,9 +182,9 @@ int main(int argc, char *argv[], char* env[])
     if (ompi_argv_count(temp_argv) > 1) {
         create_app(temp_argc, temp_argv, &(apps[app_num]));
     } else {
-        ompi_argv_free(temp_argv);
         --num_apps;
     }
+    ompi_argv_free(temp_argv);
 
     /* Spawn the job */
 
