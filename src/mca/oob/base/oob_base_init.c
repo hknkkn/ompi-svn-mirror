@@ -23,6 +23,7 @@
 #include "util/argv.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
+#include "mca/errmgr/errmgr.h"
 #include "mca/ns/ns.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
@@ -183,15 +184,19 @@ int mca_oob_base_init(void)
                                                                                                              
 char* mca_oob_get_contact_info()
 {
-    char *proc_name;
+    char *proc_name=NULL;
     char *proc_addr = mca_oob.oob_get_addr();
-    size_t size = strlen(proc_name) + 1 + strlen(proc_addr) + 1;
-    char *contact_info = malloc(size);
+    char *contact_info=NULL;
+    int rc;
     
-    if (ORTE_SUCCESS != orte_ns.get_proc_name_string(&proc_name, orte_process_info.my_name)) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&proc_name,
+                                            orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
         return NULL;
     }
-    sprintf(contact_info, "%s;%s", proc_name, proc_addr);
+    if (0 > asprintf(&contact_info, "%s;%s", proc_name, proc_addr)) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+    }
     free(proc_name);
     free(proc_addr);
     return contact_info;

@@ -117,9 +117,9 @@ int main(int argc, char *argv[])
         exit(1);
     }
     
-    /* if not, that means I'm a daemon - daemonize myself */
+    /* if not debugging or bootproxy, daemonize myself */
 #ifndef WIN32
-    if (!orted_globals.debug) {
+    if (!orted_globals.debug && !orte_universe_info.bootproxy) {
         ompi_output(0, "orted: daemonizing");
         orte_daemon_init(NULL);
     } else {

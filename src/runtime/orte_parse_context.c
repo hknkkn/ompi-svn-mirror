@@ -60,7 +60,6 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
          */
         if (NULL != cmd_line && NULL != context_tbl[i].cmd_line_name &&
             ompi_cmd_line_is_taken(cmd_line, context_tbl[i].cmd_line_name)) {
-ompi_output(0, "parse_ctx: cmd line option %s is taken", context_tbl[i].cmd_line_name);
             
             switch (context_tbl[i].type) {
                 case ORTE_STRING:
