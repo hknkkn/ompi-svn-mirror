@@ -419,19 +419,21 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 				*num_bytes+=n;
 
                 /* allocate the required space for the keyval object pointers */
-                values[i]->keyvals = (orte_gpr_keyval_t**)malloc(values[i]->cnt * sizeof(orte_gpr_keyval_t*));
-                if (NULL == values[i]->keyvals) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
-                }
+                if(values[i]->cnt) {
+                    values[i]->keyvals = (orte_gpr_keyval_t**)malloc(values[i]->cnt * sizeof(orte_gpr_keyval_t*));
+                    if (NULL == values[i]->keyvals) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
 
-                /* unpack the keyval pairs */
+                    /* unpack the keyval pairs */
 				n = 0;
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->keyvals,
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->keyvals,
                             src, values[i]->cnt, ORTE_KEYVAL, mem_left, &n))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + n);
+                        return rc;
+                    }
+                    src = (void*)((char*)src + n);
 				*num_bytes+=n;
+                } 
             }
 			/* must return here for composite unpacks that change mem_left directly */
             return ORTE_SUCCESS;
