@@ -26,7 +26,7 @@ headers = \
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca/orte_ras
+ompidir = $(includedir)/openmpi/mca/ras
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)

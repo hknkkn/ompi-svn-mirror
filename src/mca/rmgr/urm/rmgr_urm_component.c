@@ -16,6 +16,8 @@
 #include "include/orte_constants.h"
 #include "util/proc_info.h"
 #include "util/output.h"
+#include "mca/errmgr/errmgr.h"
+
 #include "mca/rds/base/base.h"
 #include "mca/ras/base/base.h"
 #include "mca/rmaps/base/base.h"
@@ -72,6 +74,7 @@ static int orte_rmgr_urm_open(void)
      * Open Resource Discovery Subsystem (RDS)
      */
     if (ORTE_SUCCESS != (rc = orte_rds_base_open())) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
 
@@ -79,6 +82,7 @@ static int orte_rmgr_urm_open(void)
      * Open Resource Allocation Subsystem (RAS)
      */
     if (ORTE_SUCCESS != (rc = orte_ras_base_open())) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
 
@@ -86,6 +90,7 @@ static int orte_rmgr_urm_open(void)
      * Open Resource Mapping Subsystem (RMAPS)
      */
     if (ORTE_SUCCESS != (rc = orte_rmaps_base_open())) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
 
@@ -93,6 +98,7 @@ static int orte_rmgr_urm_open(void)
      * Open Process Launch Subsystem (PLS)
      */
     if (ORTE_SUCCESS != (rc = orte_pls_base_open())) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
 
@@ -112,6 +118,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
      * Select RDS components.
      */
     if (ORTE_SUCCESS != (rc = orte_rds_base_select())) {
+        ORTE_ERROR_LOG(rc);
         return NULL;
     }
 
@@ -119,6 +126,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
      * Select RAS components.
      */
     if (ORTE_SUCCESS != (rc = orte_ras_base_select())) {
+        ORTE_ERROR_LOG(rc);
         return NULL;
     }
 
@@ -126,6 +134,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
      * Select RMAPS components.
      */
     if (NULL == (rmaps = orte_rmaps_base_select(NULL))) {
+        ORTE_ERROR_LOG(rc);
         return NULL;
     }
 
@@ -133,6 +142,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
      * Select PLS components.
      */
     if (NULL == (pls = orte_pls_base_select(NULL))) {
+        ORTE_ERROR_LOG(rc);
         return NULL;
     }
 
