@@ -3,9 +3,16 @@ Undecided timing:
 
 - if an MPI process fails (e.g., it seg faults), it causes orterun to
   hang.  This is with the rsh pls.
+  --> Looks like the problem is with what happens when you set the
+      state of the process in the soh to ORTE_PROC_STATE_ABORTED.
+  --> Ralph is looking at this
 
 - if the daemon is not found or fails to start, orterun will hang.  No
   indication is given to the users that something went wrong.
+  --> Brian thinks he fixed this, but since he sets the state to
+      ORTE_PROC_STATE_ABORTED, it won't be really clear until the
+      above issue is fixed.  But it at least tells you what went
+      wrong.
 
 - $prefix/etc/hosts vs. $prefix/etc/openmpi-default-hostfile
 
