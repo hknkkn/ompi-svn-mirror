@@ -198,16 +198,19 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
             case ORTE_INT8:
             case ORTE_UINT8:
                 mem_left -= num*sizeof(uint8_t);
+                src = ((char*) src) + num * sizeof(uint8_t);
                 break;
                 
             case ORTE_INT16:
             case ORTE_UINT16:
                 mem_left -= num * sizeof(uint16_t);
+                src = ((char*) src) + num * sizeof(uint16_t);
                 break;
                 
             case ORTE_INT32:
             case ORTE_UINT32:
                 mem_left -= num * sizeof(uint32_t);
+                src = ((char*) src) + num * sizeof(uint32_t);
                 break;
             
             case ORTE_INT64:
@@ -225,10 +228,12 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
     
             case ORTE_BOOL:
                 mem_left -= num * sizeof(uint8_t);
+                src = ((char*) src) + num * sizeof(uint8_t);
                 break;
     
             case ORTE_NAME:
                 mem_left -= num * sizeof(orte_process_name_t);
+                src = ((char*) src) + num * sizeof(orte_process_name_t);
                 break;
 
         case ORTE_STRING:
@@ -247,7 +252,7 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
                     ompi_output(outid, "Attempt to read past end of buffer");
                     return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
                 }
-                sstr = (char*)(sstr + len);
+                src = sstr = (char*)(sstr + len);
                 mem_left -= len;
             }
             break;
@@ -268,7 +273,7 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
                     ompi_output(outid, "Attempt to read past end of buffer");
                     return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
                 }
-                sptr = (void*)((uint8_t*)sptr + nbytes);
+                src = sptr = (void*)((uint8_t*)sptr + nbytes);
                 mem_left -= nbytes;
             }
             break;
