@@ -18,6 +18,7 @@
 #include "mca/base/mca_base_param.h"
 #include "util/proc_info.h"
 #include "util/output.h"
+#include "util/os_path.h"
 #include "rds_hostfile.h"
 
 /*
@@ -90,13 +91,17 @@ static char* orte_rds_hostfile_param_register_string(
   */
 static int orte_rds_hostfile_open(void)
 {
+    char *path = orte_os_path(false, ORTE_SYSCONFDIR, "orte-hostfile", NULL);
+    OBJ_CONSTRUCT(&mca_rds_hostfile_component.lock, ompi_mutex_t);
     mca_rds_hostfile_component.debug = orte_rds_hostfile_param_register_int("debug",1);
+    mca_rds_hostfile_component.path = orte_rds_hostfile_param_register_string("path", path);
     return ORTE_SUCCESS;
 }
 
 
 static orte_rds_base_module_t *orte_rds_hostfile_init(void)
 {
+    OBJ_DESTRUCT(&mca_rds_hostfile_component.lock);
     return &orte_rds_hostfile_module;
 }
 

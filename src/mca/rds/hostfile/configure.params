@@ -16,5 +16,4 @@
 # Specific to this module
 
 PARAM_INIT_FILE=rds_hostfile.c
-PARAM_CONFIG_HEADER_FILE="hostfile_config.h"
 PARAM_CONFIG_FILES="Makefile"

@@ -14,7 +14,7 @@
 
 # Use the top-level Makefile.options
 
-include $(top_ompi_srcdir)/config/Makefile.options
+include $(top_srcdir)/config/Makefile.options
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
@@ -28,7 +28,13 @@ component_noinst = libmca_rds_hostfile.la
 component_install =
 endif
 
+AM_CPPFLAGS = -I$(top_builddir)/src -DORTE_SYSCONFDIR="\"$(sysconfdir)\""
+AM_LFLAGS = -Porte_rds_hostfile_
+LEX_OUTPUT_ROOT = lex.orte_rds_hostfile_
+
 proxy_SOURCES = \
+    rds_hostfile_lex.l \
+    rds_hostfile_lex.h \
     rds_hostfile.c \
     rds_hostfile.h \
     rds_hostfile_component.c

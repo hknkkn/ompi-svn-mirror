@@ -19,18 +19,28 @@
 #ifndef ORTE_RDS_HOSTFILE_H
 #define ORTE_RDS_HOSTFILE_H
 
+#include "orte_config.h"
+#include "threads/mutex.h"
 #include "mca/rds/rds.h"
+
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
 
+/**
+ * Internal functions
+ */ 
+
+int orte_rds_hostfile_parse(const char* hostfile, ompi_list_t* list);
 
 /**
- * RMGR Component 
+ * Resource Discovery Component 
  */
 struct orte_rds_hostfile_component_t {
     orte_rds_base_component_t super;
     int debug;
+    char* path;
+    ompi_mutex_t lock;
 };
 typedef struct orte_rds_hostfile_component_t orte_rds_hostfile_component_t;
 
