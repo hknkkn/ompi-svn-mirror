@@ -219,7 +219,7 @@ int main(int argc, char *argv[], char* env[])
     } else {
         /* Wait for the app to complete */
 
-        if (!wait_for_job_completion) {
+        if (wait_for_job_completion) {
             OMPI_THREAD_LOCK(&orterun_globals.lock);
             while (!orterun_globals.exit) {
                 ompi_condition_wait(&orterun_globals.cond, 
