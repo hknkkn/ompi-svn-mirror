@@ -21,8 +21,10 @@
 #include "mca/mca.h"
 #include "mca/gpr/gpr.h"
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 #include "mca/rmgr/base/base.h"
 #include "mca/base/mca_base_param.h"
+#include "mca/rmaps/base/base.h"
 #include "mca/rmaps/base/rmaps_base_map.h"
 #include "mca/soh/soh_types.h"
 
@@ -615,3 +617,99 @@ cleanup:
 }
 
 
+/*
+ *  Set the vpid start and range on the "global" job segment.
+ */
+                                                                                                           
+int orte_rmaps_base_set_vpid_range(orte_jobid_t jobid, orte_vpid_t start, orte_vpid_t range)
+{
+    orte_gpr_value_t value;
+    orte_gpr_value_t* values;
+    orte_gpr_keyval_t vpid_start = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_START_KEY, ORTE_VPID };
+    orte_gpr_keyval_t vpid_range = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_RANGE_KEY, ORTE_VPID };
+    orte_gpr_keyval_t* keyvals[2];
+    char* tokens[2] = { ORTE_JOB_GLOBALS, NULL };
+    int rc;
+                                                                                                           
+    keyvals[0] = &vpid_start;
+    keyvals[1] = &vpid_range;
+    value.addr_mode = ORTE_GPR_OVERWRITE;
+    value.tokens = tokens;
+    value.num_tokens = 1;
+    value.keyvals = keyvals;
+    value.cnt = 2;
+    values = &value;
+                                                                                                           
+    if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&value.segment, jobid)))
+        return rc;
+                                                                                                           
+    vpid_start.value.vpid = start;
+    vpid_range.value.vpid = range;
+    rc = orte_gpr.put(1, &values);
+    free(value.segment);
+    return rc;
+}
+                                                                                                           
+
+/*
+ *  Get the vpid start and range from the "global" job segment.
+ */
+                                                                                                           
+int orte_rmaps_base_get_vpid_range(orte_jobid_t jobid, orte_vpid_t *start, orte_vpid_t *range)
+{
+    char *segment;
+    char *tokens[2];
+    char *keys[3];
+    orte_gpr_value_t** values = NULL;
+    int i, num_values = 0;
+    int rc;
+
+    /* query the job segment on the registry */
+    if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&segment, jobid)))
+        return rc;
+
+    tokens[0] = ORTE_JOB_GLOBALS;
+    tokens[1] = NULL;
+
+    keys[0] = ORTE_JOB_VPID_START_KEY;
+    keys[1] = ORTE_JOB_VPID_RANGE_KEY;
+    keys[2] = NULL;
+
+    rc = orte_gpr.get(
+        ORTE_GPR_KEYS_AND|ORTE_GPR_TOKENS_OR,
+        segment,
+        tokens,
+        keys,
+        &num_values,
+        &values
+        );
+    if(rc != ORTE_SUCCESS) {
+        free(segment);
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if(num_values != 1) {
+        rc = ORTE_ERR_NOT_FOUND;
+        ORTE_ERROR_LOG(rc);
+        goto cleanup;
+    }
+
+    for(i=0; i<values[0]->cnt; i++) {
+         if(strcmp(values[0]->keyvals[i]->key, ORTE_JOB_VPID_START_KEY) == 0) {
+             *start = values[0]->keyvals[i]->value.vpid;
+             continue;
+         }
+         if(strcmp(values[0]->keyvals[i]->key, ORTE_JOB_VPID_RANGE_KEY) == 0) {
+             *range = values[0]->keyvals[i]->value.vpid;
+             continue;
+         }
+    }
+
+cleanup:
+    for(i=0; i<num_values; i++)
+        OBJ_RELEASE(values[i]);
+    free(segment);
+    free(values);
+    return rc;
+}
+                                                                                                           

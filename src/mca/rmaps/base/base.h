@@ -86,6 +86,15 @@ extern "C" {
     OMPI_DECLSPEC orte_rmaps_base_module_t *orte_rmaps_base_select(char *preferred);
 
     /**
+     * Utility routines to get/set vpid mapping for the job
+     */ 
+                                                                      
+    OMPI_DECLSPEC int orte_rmaps_base_get_vpid_range(orte_jobid_t jobid, 
+        orte_vpid_t *start, orte_vpid_t *range);
+    OMPI_DECLSPEC int orte_rmaps_base_set_vpid_range(orte_jobid_t jobid, 
+        orte_vpid_t start, orte_vpid_t range);
+
+    /**
      * Close down the rmaps framework
      */
     OMPI_DECLSPEC int orte_rmaps_base_close(void);
