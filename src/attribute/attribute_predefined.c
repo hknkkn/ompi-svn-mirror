@@ -87,8 +87,8 @@ void ompi_attr_create_predefined_callback(
 {
     int err;
     uint32_t i, j;
-    orte_gpr_keyval_t **keyval;
-    orte_gpr_value_t **value;
+    orte_gpr_keyval_t *keyval;
+    orte_gpr_value_t *value;
     orte_jobid_t job;
 
     /* Set some default values */
@@ -129,17 +129,15 @@ void ompi_attr_create_predefined_callback(
     } else {
         value = msg->values;
         for (i=0; i < msg->cnt; i++) {
-            if (0 < value[i]->cnt) {  /* make sure some data was returned here */
-                keyval = value[i]->keyvals;
-                for (j=0; j < value[i]->cnt; j++) {
-                    if (0 == strncmp(keyval[j]->key, "num_cpus", strlen("num_cpus"))) {
+            if (0 < value[i].cnt) {  /* make sure some data was returned here */
+                keyval = value[i].keyvals;
+                for (j=0; j<value[i].cnt; j++) {
+                    if (0 == strncmp(keyval[j].key, "num_cpus", strlen("num_cpus"))) {
                         /* Process slot count */
-                        attr_universe_size += keyval[j]->value.i16;
+                        attr_universe_size += keyval[j].value.i16;
                     }
-                    OBJ_RELEASE(keyval[j]);
                 }
             }
-            OBJ_RELEASE(value[i]);
         }
     }
     OBJ_RELEASE(msg);
