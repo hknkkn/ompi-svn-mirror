@@ -22,12 +22,13 @@
 
 static int orte_ras_lsf_bproc_allocate(orte_jobid_t jobid)
 {
-    return ORTE_ERROR;
+    /* lookup the job record to determine the requirements */
+    return ORTE_SUCCESS;
 }
 
 static int orte_ras_lsf_bproc_deallocate(orte_jobid_t jobid)
 {
-    return ORTE_ERROR;
+    return ORTE_SUCCESS;
 }
 
 
