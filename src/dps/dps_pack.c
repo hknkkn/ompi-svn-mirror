@@ -368,15 +368,17 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 dst = (void*)((char*)dst + n);
 				*num_bytes+=n;
 
-                /* pack the tokens */
-				n = 0;
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)((values[i]->tokens)), values[i]->num_tokens, ORTE_STRING, &n)) {
-                    return ORTE_ERROR;
+                /* if there are tokens, pack them */
+                if (0 < values[i]->num_tokens) {
+    				   n = 0;
+                    if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                    (void*)((values[i]->tokens)), values[i]->num_tokens, ORTE_STRING, &n)) {
+                        return ORTE_ERROR;
+                    }
+                    dst = (void*)((char*)dst + n);
+    				   *num_bytes+=n;
                 }
-                dst = (void*)((char*)dst + n);
-				*num_bytes+=n;
-
+                
                 /* pack the number of keyval pairs so we can read it for unpacking */
 				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
@@ -435,30 +437,34 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 dst = (void*)((char*)dst + n);
 				*num_bytes+=n;
 
-                /* pack the argv entries */
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)(app_context[i]->argv), app_context[i]->argc, ORTE_STRING, &n)) {
-                    return ORTE_ERROR;
+                /* if there are entries, pack the argv entries */
+                if (0 < app_context[i]->argc) {
+                    if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                    (void*)(app_context[i]->argv), app_context[i]->argc, ORTE_STRING, &n)) {
+                        return ORTE_ERROR;
+                    }
+                    dst = (void*)((char*)dst + n);
+    				   *num_bytes+=n;
                 }
-                dst = (void*)((char*)dst + n);
-				*num_bytes+=n;
-
+                
                 /* pack the number of entries in the enviro array */
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(app_context[i]->num_env)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
-				*num_bytes+=n;
+			   *num_bytes+=n;
 
-                /* pack the enviro entries */
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)(app_context[i]->env), app_context[i]->num_env, ORTE_STRING, &n)) {
-                    return ORTE_ERROR;
+                /* if there are entries, pack the enviro entries */
+                if (0 < app_context[i]->num_env) {
+                    if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                    (void*)(app_context[i]->env), app_context[i]->num_env, ORTE_STRING, &n)) {
+                        return ORTE_ERROR;
+                    }
+                    dst = (void*)((char*)dst + n);
+    				   *num_bytes+=n;
                 }
-                dst = (void*)((char*)dst + n);
-				*num_bytes+=n;
-
+                
                 /* pack the cwd last */
 				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
@@ -501,14 +507,16 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 dst = (void*)((char*)dst + n);
                 *num_bytes+=n;
 
-                /* pack the tokens */
-                n = 0;
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)((subs[i]->tokens)), subs[i]->num_tokens, ORTE_STRING, &n)) {
-                    return ORTE_ERROR;
+                /* if there are tokens, pack them */
+                if (0 < subs[i]->num_tokens) {
+                    n = 0;
+                    if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                    (void*)((subs[i]->tokens)), subs[i]->num_tokens, ORTE_STRING, &n)) {
+                        return ORTE_ERROR;
+                    }
+                    dst = (void*)((char*)dst + n);
+                    *num_bytes+=n;
                 }
-                dst = (void*)((char*)dst + n);
-                *num_bytes+=n;
 
                 /* pack the number of keys so we can read it for unpacking */
                 n = 0;
@@ -519,14 +527,16 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 dst = (void*)((char*)dst + n);
                 *num_bytes+=n;
 
-                /* pack the keys */
-                n = 0;
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)((subs[i]->keys)), subs[i]->num_keys, ORTE_STRING, &n)) {
-                    return ORTE_ERROR;
+                /* if there are keys, pack them */
+                if (0 < subs[i]->num_keys) {
+                    n = 0;
+                    if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                    (void*)((subs[i]->keys)), subs[i]->num_keys, ORTE_STRING, &n)) {
+                        return ORTE_ERROR;
+                    }
+                    dst = (void*)((char*)dst + n);
+                    *num_bytes+=n;
                 }
-                dst = (void*)((char*)dst + n);
-                *num_bytes+=n;
                 
                 /* skip the pointers for cb_func and user_tag */
             }
@@ -572,14 +582,16 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 dst = (void*)((char*)dst + n);
                 *num_bytes+=n;
 
-                /* pack the values */
-                n = 0;
-                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)((data[i]->values)), data[i]->cnt, ORTE_GPR_VALUE, &n)) {
-                    return ORTE_ERROR;
+                /* if there are values, pack the values */
+                if (0 < data[i]->cnt) {
+                    n = 0;
+                    if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                    (void*)((data[i]->values)), data[i]->cnt, ORTE_GPR_VALUE, &n)) {
+                        return ORTE_ERROR;
+                    }
+                    dst = (void*)((char*)dst + n);
+                    *num_bytes+=n;
                 }
-                dst = (void*)((char*)dst + n);
-                *num_bytes+=n;
             }
             break;
             

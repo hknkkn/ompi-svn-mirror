@@ -404,21 +404,23 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 src = (void*)((char*)src + n);
 				*num_bytes+=n;
 
-                /* allocate the required space for the char * pointers */
-                values[i]->tokens = (char **)malloc(values[i]->num_tokens * sizeof(char*));
-                if (NULL == values[i]->tokens) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
+                /* if there are tokens, allocate the required space for the char * pointers */
+                if (0 < values[i]->num_tokens) {
+                    values[i]->tokens = (char **)malloc(values[i]->num_tokens * sizeof(char*));
+                    if (NULL == values[i]->tokens) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+    
+                    /* and unpack them */
+    				n = 0;
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->tokens,
+                                src, values[i]->num_tokens, ORTE_STRING, mem_left, &n))) {
+                        return rc;
+                    }
+                    src = (void*)((char*)src + n);
+    				*num_bytes+=n;
                 }
-
-                /* unpack the tokens */
-				n = 0;
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->tokens,
-                            src, values[i]->num_tokens, ORTE_STRING, mem_left, &n))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + n);
-				*num_bytes+=n;
-
+                
                 /* get the number of keyval pairs */
 				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->cnt),
@@ -436,13 +438,13 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                     }
 
                     /* unpack the keyval pairs */
-				n = 0;
+				   n = 0;
                     if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->keyvals,
                             src, values[i]->cnt, ORTE_KEYVAL, mem_left, &n))) {
                         return rc;
                     }
                     src = (void*)((char*)src + n);
-				*num_bytes+=n;
+				   *num_bytes+=n;
                 } 
             }
 			/* must return here for composite unpacks that change mem_left directly */
@@ -494,22 +496,23 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 src = (void*)((char*)src + n);
 				*num_bytes+=n;
 
-                /* allocate the required space for the char * pointers */
-                app_context[i]->argv = (char **)malloc((app_context[i]->argc+1) * sizeof(char*));
-                if (NULL == app_context[i]->argv) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
+                /* if there are argv strings, allocate the required space for the char * pointers */
+                if (0 < app_context[i]->argc) {
+                    app_context[i]->argv = (char **)malloc((app_context[i]->argc+1) * sizeof(char*));
+                    if (NULL == app_context[i]->argv) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+                    app_context[i]->argv[app_context[i]->argc] = NULL;
+    
+                    /* and unpack them */
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->argv,
+                                src, app_context[i]->argc, ORTE_STRING, mem_left, &n))) {
+                        return rc;
+                    }
+                    src = (void*)((char*)src + n);
+    				*num_bytes+=n;
                 }
-                app_context[i]->argv[app_context[i]->argc] = NULL;
-
-                /* unpack the argv strings */
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->argv,
-                            src, app_context[i]->argc, ORTE_STRING, mem_left, &n))) {
-                    return rc;
-                }
-
-                src = (void*)((char*)src + n);
-				*num_bytes+=n;
-
+                
                 /* get the number of env strings */
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_env),
                             src, 1, ORTE_INT32, mem_left, &n))) {
@@ -518,21 +521,23 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 src = (void*)((char*)src + n);
 				*num_bytes+=n;
 
-                /* allocate the required space for the char * pointers */
-                app_context[i]->env = (char **)malloc((app_context[i]->num_env+1) * sizeof(char*));
-                if (NULL == app_context[i]->env) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
+                /* if there are env strings, allocate the required space for the char * pointers */
+                if (0 < app_context[i]->num_env) {
+                    app_context[i]->env = (char **)malloc((app_context[i]->num_env+1) * sizeof(char*));
+                    if (NULL == app_context[i]->env) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+                    app_context[i]->env[app_context[i]->num_env] = NULL;
+            
+                    /* and unpack them */
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->env,
+                                src, app_context[i]->num_env, ORTE_STRING, mem_left, &n))) {
+                        return rc;
+                    }
+                    src = (void*)((char*)src + n);
+    				   *num_bytes+=n;
                 }
-                app_context[i]->env[app_context[i]->num_env] = NULL;
-        
-                /* unpack the env strings */
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->env,
-                            src, app_context[i]->num_env, ORTE_STRING, mem_left, &n))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + n);
-				*num_bytes+=n;
-
+                
                 /* unpack the cwd */
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&app_context[i]->cwd,
                             src, 1, ORTE_STRING, mem_left, &n))) {
@@ -581,21 +586,23 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 src = (void*)((char*)src + n);
                 *num_bytes+=n;
 
-                /* allocate the required space for the char * pointers */
-                subs[i]->tokens = (char **)malloc(subs[i]->num_tokens * sizeof(char*));
-                if (NULL == subs[i]->tokens) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
+                /* if there are tokens, allocate the required space for the char * pointers */
+                if (0 < subs[i]->num_tokens) {
+                    subs[i]->tokens = (char **)malloc(subs[i]->num_tokens * sizeof(char*));
+                    if (NULL == subs[i]->tokens) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+    
+                    /* and unpack them */
+                    n = 0;
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(subs[i]->tokens,
+                                src, subs[i]->num_tokens, ORTE_STRING, mem_left, &n))) {
+                        return rc;
+                    }
+                    src = (void*)((char*)src + n);
+                    *num_bytes+=n;
                 }
-
-                /* unpack the tokens */
-                n = 0;
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(subs[i]->tokens,
-                            src, subs[i]->num_tokens, ORTE_STRING, mem_left, &n))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + n);
-                *num_bytes+=n;
-
+                
                 /* get the number of keys */
                 n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(subs[i]->num_keys),
@@ -605,21 +612,23 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 src = (void*)((char*)src + n);
                 *num_bytes+=n;
 
-                /* allocate the required space for the char * pointers */
-                subs[i]->keys = (char **)malloc(subs[i]->num_keys * sizeof(char*));
-                if (NULL == subs[i]->keys) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
+                /* if there are keys, allocate the required space for the char * pointers */
+                if (0 < subs[i]->num_keys) {
+                    subs[i]->keys = (char **)malloc(subs[i]->num_keys * sizeof(char*));
+                    if (NULL == subs[i]->keys) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+    
+                    /* and unpack them */
+                    n = 0;
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(subs[i]->keys,
+                                src, subs[i]->num_keys, ORTE_STRING, mem_left, &n))) {
+                        return rc;
+                    }
+                    src = (void*)((char*)src + n);
+                    *num_bytes+=n;
                 }
-
-                /* unpack the keys */
-                n = 0;
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(subs[i]->keys,
-                            src, subs[i]->num_keys, ORTE_STRING, mem_left, &n))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + n);
-                *num_bytes+=n;
-
+                
                 /* the pointer fields for cb_func and user_tag were NOT packed
                  * so ignore them here as well
                  */
@@ -675,20 +684,22 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 src = (void*)((char*)src + n);
                 *num_bytes+=n;
 
-                /* allocate the required space for the value pointers */
-                data[i]->values = (orte_gpr_value_t**)malloc(data[i]->cnt * sizeof(orte_gpr_value_t*));
-                if (NULL == data[i]->values) {
-                    return ORTE_ERR_OUT_OF_RESOURCE;
+                /* if there are values, allocate the required space for the value pointers */
+                if (0 < data[i]->cnt) {
+                    data[i]->values = (orte_gpr_value_t**)malloc(data[i]->cnt * sizeof(orte_gpr_value_t*));
+                    if (NULL == data[i]->values) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+    
+                    /* and unpack them */
+                    n = 0;
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(data[i]->values,
+                                src, data[i]->cnt, ORTE_GPR_VALUE, mem_left, &n))) {
+                        return rc;
+                    }
+                    src = (void*)((char*)src + n);
+                    *num_bytes+=n;
                 }
-
-                /* unpack the values */
-                n = 0;
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(data[i]->values,
-                            src, data[i]->cnt, ORTE_GPR_VALUE, mem_left, &n))) {
-                    return rc;
-                }
-                src = (void*)((char*)src + n);
-                *num_bytes+=n;
             }
             /* must return here for composite unpacks that change mem_left directly */
             return ORTE_SUCCESS;
