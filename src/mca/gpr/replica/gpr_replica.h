@@ -187,20 +187,21 @@ typedef struct {
 
 OBJ_CLASS_DECLARATION(orte_gpr_replica_target_t);
 
-struct orte_gpr_replica_triggers_t {
-    ompi_object_t super;                            /**< Make this an object */
-    /* index of this trigger in the triggers array */
-    int index;
-    /* the segment to which this subscription is registered */
+typedef struct {
+    ompi_object_t super;
     orte_gpr_replica_segment_t *seg;
-    /* the action that causes a notification message to be sent out */
-    orte_gpr_notify_action_t action;
-    /* to whom and where the notification messages go */
-    orte_process_name_t *requestor;                 /**< Name of requesting process */
-    orte_gpr_notify_cb_fn_t callback;               /**< Function to be called for notification */
-    void *user_tag;                                 /**< User-provided tag for callback function */
-    /* remote idtag associated with this subscription */
-    orte_gpr_notify_id_t remote_idtag;              /**< Remote ID tag of subscription */
+    orte_gpr_replica_container_t *cptr;
+    orte_gpr_replica_itagval_t *iptr;
+    int trigger_level;
+} orte_gpr_replica_counter_t;
+
+OBJ_CLASS_DECLARATION(orte_gpr_replica_counter_t);
+
+typedef struct {
+    ompi_object_t super;                    /**< Makes this an object */
+    int index;                              /**< Index of this entry in original subscription */
+    /* the segment upon which this data is located */
+    orte_gpr_replica_segment_t *seg;
     /* describe the data to be returned with the message -
      * for triggers that are counting themselves (i.e., not monitoring a separate
      * counter), this also describes the data to be included in the count
@@ -215,14 +216,39 @@ struct orte_gpr_replica_triggers_t {
      */
     int num_targets;
     orte_pointer_array_t *targets;
+    /* where this block of data goes */
+    orte_gpr_notify_cb_fn_t callback;               /**< Function to be called for notification */
+    void *user_tag;                                 /**< User-provided tag for callback function */
+} orte_gpr_replica_subscribed_data_t;
+
+OBJ_CLASS_DECLARATION(orte_gpr_replica_subscribed_data_t);
+
+struct orte_gpr_replica_triggers_t {
+    ompi_object_t super;                            /**< Make this an object */
+    /* index of this trigger in the triggers array */
+    int index;
+    /* the action that causes a notification message to be sent out */
+    orte_gpr_notify_action_t action;
+    /* to whom the notification messages go - set to NULL if local */
+    orte_process_name_t *requestor;                 /**< Name of requesting process */
+    /* remote idtag associated with this subscription -
+     * set to ORTE_GPR_NOTIFY_ID_MAX if local
+     */
+    orte_gpr_notify_id_t remote_idtag;              /**< Remote ID tag of subscription */
+    /* a pointer to the data belonging to this subscription. Each subscribed data
+     * object describes a set of data to be returned whenever this subscription
+     * fires. for subscriptions that do not involve trigger events, these objects
+     * describe the data being monitored
+     */
+    int num_subscribed_data;
+    orte_pointer_array_t *subscribed_data;
     /* for triggers, store a pointer to the counters being monitored. This could
      * be counters we are using ourselves, or could be counters being run by someone
-     * else. Store the trigger level for counters we are monitoring until they reach
+     * else. Store the trigger level for each counter that we are monitoring until they reach
      * a specified level (as opposed to comparing values in two or more counters).
      */
     int num_counters;
     orte_pointer_array_t *counters;
-    int trigger_level;
 };
 typedef struct orte_gpr_replica_triggers_t orte_gpr_replica_triggers_t;
 
@@ -233,8 +259,6 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_triggers_t);
  */
 struct orte_gpr_replica_callbacks_t {
     ompi_list_item_t item;
-    orte_gpr_notify_cb_fn_t cb_func;
-    void *user_tag;
     orte_gpr_notify_message_t *message;
     orte_process_name_t *requestor;
     orte_gpr_notify_id_t remote_idtag;

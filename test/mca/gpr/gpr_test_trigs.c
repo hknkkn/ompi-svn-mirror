@@ -58,6 +58,7 @@ int main(int argc, char **argv)
     int rc, num_names, num_found, num_counters=6;
     int i, j, cnt, ret;
     orte_gpr_value_t *values, value, trig;
+    orte_gpr_subscription_t *subscription;
     orte_gpr_notify_id_t sub;
     char* keys[] = {
         /* changes to this ordering need to be reflected in code below */
@@ -155,12 +156,21 @@ int main(int argc, char **argv)
     value.keyvals[0]->type = ORTE_INT16;
     value.keyvals[0]->value.i16 = 1;
     
+    subscription = OBJ_NEW(orte_gpr_subscription_t);
+    subscription->addr_mode = ORTE_GPR_TOKENS_OR;
+    subscription->segment = strdup("test-segment");
+    subscription->num_tokens = 0;
+    subscription->tokens = NULL;
+    subscription->num_keys = 0;
+    subscription->keys = NULL;
+    subscription->cb_func = test_cbfunc;
+    subscription->user_tag = NULL;
+    
     fprintf(stderr, "register subscription on segment\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_NOTIFY_ADD_ENTRY,
-                                    &value,
-                                    NULL,
-                                    &sub,
-                                    test_cbfunc, NULL))) {
+                                    1, &subscription,
+                                    0, NULL,
+                                    &sub))) {
         fprintf(test_out, "gpr_test_trigs: subscribe on seg failed with error %s\n",
                         ORTE_ERROR_NAME(rc));
         test_failure("gpr_test_trigs: subscribe on seg failed");
@@ -242,30 +252,8 @@ int main(int argc, char **argv)
     orte_gpr_replica_dump(0);
 
 
-    /* for testing the trigger, we want the counter values returned to us
-     * setup value so it can be used for that purpose.
-     */
-    for (i=0; i < num_counters; i++) {
-        OBJ_RELEASE(value.keyvals[i]);
-    }
-    free(value.keyvals);
-    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
-    if (NULL == value.keyvals) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == value.keyvals[0]) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    value.cnt = 1;
-    value.keyvals[0]->key = strdup(keys[0]);
-    value.keyvals[0]->type = ORTE_NULL;
-    
-    /* setup the trigger information - initialize the common elements */
+    /* for testing the trigger, we'll just use the prior subscription setup.
+     * setup the trigger information - initialize the common elements */
     OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
     trig.addr_mode = ORTE_GPR_TOKENS_XAND;
     trig.segment = strdup("test-segment");
@@ -292,15 +280,13 @@ int main(int argc, char **argv)
    
    rc = orte_gpr.subscribe(
          ORTE_GPR_TRIG_ALL_CMP,
-         &value,
-         &trig,
-         &rc,
-         test_cbfunc,
-         NULL);
+         1, &subscription,
+         1, &trig,
+         &rc);
 
      if(ORTE_SUCCESS != rc) {
          ORTE_ERROR_LOG(rc);
-         OBJ_DESTRUCT(&value);
+         OBJ_RELEASE(subscription);
          OBJ_DESTRUCT(&trig);
          return rc;
      }
@@ -342,8 +328,8 @@ void test_cbfunc(orte_gpr_notify_message_t *msg, void *tag)
 {
     fprintf(test_out, "TRIGGER FIRED AND RECEIVED\n");
     
-    fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", (msg->values[0])->segment, msg->cnt);
-    
+/*    fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", (msg->values[0])->segment, msg->cnt);
+*/
     orte_gpr_replica_dump(0);
     
     OBJ_RELEASE(msg);

@@ -161,6 +161,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     char *str, *sstr;
     void *sptr;
     orte_gpr_subscription_t **subs;
+    orte_gpr_notify_data_t **data;
 
     /* defaults */
     rc = ORTE_SUCCESS;
@@ -622,6 +623,72 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 /* the pointer fields for cb_func and user_tag were NOT packed
                  * so ignore them here as well
                  */
+            }
+            /* must return here for composite unpacks that change mem_left directly */
+            return ORTE_SUCCESS;
+            break;
+            
+        case ORTE_GPR_NOTIFY_DATA:
+        
+            /* unpack into array of notify_data objects */
+            data = (orte_gpr_notify_data_t**) dst;
+            for (i=0; i < num_vals; i++) {
+                /* create the data object */
+                data[i] = OBJ_NEW(orte_gpr_notify_data_t);
+                if (NULL == data[i]) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+
+                /* unpack the callback number */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(data[i]->cb_num),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+                
+                /* unpack the address mode */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(data[i]->addr_mode),
+                            src, 1, ORTE_GPR_ADDR_MODE, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+                
+                /* unpack the segment name */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(data[i]->segment),
+                            src, 1, ORTE_STRING, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                /* get the number of values */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(data[i]->cnt),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                /* allocate the required space for the value pointers */
+                data[i]->values = (orte_gpr_value_t**)malloc(data[i]->cnt * sizeof(orte_gpr_value_t*));
+                if (NULL == data[i]->values) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+
+                /* unpack the values */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(data[i]->values,
+                            src, data[i]->cnt, ORTE_GPR_VALUE, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
             }
             /* must return here for composite unpacks that change mem_left directly */
             return ORTE_SUCCESS;

@@ -182,6 +182,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_gpr_value_t **values;
 	orte_app_context_t **app_context;
     orte_gpr_subscription_t **subs;
+    orte_gpr_notify_data_t **data;
 
     /* initialize the number of bytes */
     *num_bytes = 0;
@@ -528,6 +529,57 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 *num_bytes+=n;
                 
                 /* skip the pointers for cb_func and user_tag */
+            }
+            break;
+            
+        case ORTE_GPR_NOTIFY_DATA:
+            /* array of pointers to notify data objects - need to pack the objects */
+            data = (orte_gpr_notify_data_t**) src;
+            for (i=0; i<num_vals; i++) {
+                /* pack the callback number */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(data[i]->cb_num)), 1, ORTE_INT32, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+                
+                /* pack the address mode */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(data[i]->addr_mode)), 1, ORTE_GPR_ADDR_MODE, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+                
+                /* pack the segment name */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(data[i]->segment)), 1, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+
+                /* pack the number of values so we can read it for unpacking */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(data[i]->cnt)), 1, ORTE_INT32, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+
+                /* pack the values */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)((data[i]->values)), data[i]->cnt, ORTE_GPR_VALUE, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
             }
             break;
             

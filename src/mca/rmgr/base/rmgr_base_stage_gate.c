@@ -30,7 +30,8 @@
 int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
 {
     int i, rc, num_counters=6;
-    orte_gpr_value_t *values, value, trig;
+    orte_gpr_value_t *values, value, trig, *trigs;
+    orte_gpr_subscription_t sub, *subs;
     char* keys[] = {
         /* changes to this ordering need to be reflected in code below */
         ORTE_PROC_NUM_AT_STG1,
@@ -83,30 +84,38 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
         OBJ_DESTRUCT(&value);
         return rc;
     }
+    OBJ_DESTRUCT(&value);
     
     /* for the trigger, we want the counter values returned to us
-     * setup value so it can be used for that purpose. We'll add the key
-     * each time we are ready to register a subscription - for now, just
-     * get everything else ready.
+     * setup subscriptions for that purpose. we'll enter the precise data
+     * keys when we are ready to register the subscription - for now,
+     * do all the basic stuff
      */
-    for (i=0; i < num_counters; i++) {
-        OBJ_RELEASE(value.keyvals[i]);
+    OBJ_CONSTRUCT(&sub, orte_gpr_subscription_t);
+    sub.addr_mode = ORTE_GPR_TOKENS_XAND || ORTE_GPR_KEYS_OR;
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(sub.segment), job))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&sub);
+        return rc;
     }
-    free(value.keyvals);
-    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
-    if (NULL == value.keyvals) {
+    sub.tokens = (char**)malloc(sizeof(char*));
+    if (NULL == sub.tokens) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == value.keyvals[0]) {
+    sub.tokens[0] = strdup(ORTE_JOB_GLOBALS); /* the counters are in the job's globals container */
+    sub.num_tokens = 1;
+    sub.keys = (char**)malloc(sizeof(char*));
+    if (NULL == sub.keys) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    value.cnt = 1;
-    value.keyvals[0]->type = ORTE_NULL;
+    sub.num_keys = 1;
+    sub.cbfunc = orte_rmgr_base_proc_stage_gate_mgr;
+    sub.user_tag = NULL;
+    
     
     /* setup the trigger information - initialize the common elements */
     OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
@@ -163,40 +172,38 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
     trig.keyvals[0]->type = ORTE_NULL;
     trig.keyvals[1]->type = ORTE_NULL;
     
-    /* do the three stage gate subscriptions. the first stage gate returns all the
-     * startup information required by the different subsystems
+    /* do the three stage gate subscriptions.
      */
     for (i=0; i < 3; i++) {
-        value.keyvals[0]->key = strdup(keys[0]);
-        if (NULL == value.keyvals[0]->key) {
+        sub.keys[0] = strdup(keys[i]);
+        if (NULL == sub.keys[0]) {
             ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-            OBJ_DESTRUCT(&value);
+            OBJ_DESTRUCT(&sub);
             OBJ_DESTRUCT(&trig);
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
-        trig.keyvals[1]->key = strdup(keys[0]);
+        trig.keyvals[1]->key = strdup(keys[i]);
         if (NULL == trig.keyvals[1]->key) {
             ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
             OBJ_DESTRUCT(&value);
             OBJ_DESTRUCT(&trig);
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
-    
+        subs = &sub;
+        trigs = &trig;
         rc = orte_gpr.subscribe(
              ORTE_GPR_TRIG_ALL_CMP,
-             &value,
-             &trig,
-             &rc,
-             orte_rmgr_base_proc_stage_gate_mgr,
-             NULL);
+             1, &subs,
+             1, &trigs,
+             &rc);
     
          if(ORTE_SUCCESS != rc) {
              ORTE_ERROR_LOG(rc);
-             OBJ_DESTRUCT(&value);
+             OBJ_DESTRUCT(&sub);
              OBJ_DESTRUCT(&trig);
              return rc;
          }
-         free(value.keyvals[0]->key);
+         free(sub.keys[0]);
          free(trig.keyvals[1]->key);
     }
     
@@ -204,10 +211,10 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
      * any process abnormally terminates - if so, then call the stage_gate_mgr
      * so it can in turn call the error manager
      */
-    value.keyvals[0]->key = strdup(ORTE_PROC_NUM_ABORTED);
-    if (NULL == value.keyvals[0]) {
+    sub.keys[0] = strdup(ORTE_PROC_NUM_ABORTED);
+    if (NULL == sub.keys[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
@@ -240,30 +247,30 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
     trig.keyvals[0]->type = ORTE_INT32;
     trig.keyvals[0]->value.i32 = 1;  /* trigger on the first process that aborts */
     
+    subs = &sub;
+    trigs = &trig;
     rc = orte_gpr.subscribe(
          ORTE_GPR_TRIG_ALL_AT,
-         &value,
-         &trig,
-         &rc,
-         orte_rmgr_base_proc_stage_gate_mgr,
-         NULL);
+         1, &subs,
+         1, &trigs,
+         &rc);
 
      if (ORTE_SUCCESS != rc) {
          ORTE_ERROR_LOG(rc);
-         OBJ_DESTRUCT(&value);
+         OBJ_DESTRUCT(&sub);
          OBJ_DESTRUCT(&trig);
          return rc;
      }
 
-    OBJ_DESTRUCT(&value);
+    OBJ_DESTRUCT(&sub);
     OBJ_DESTRUCT(&trig);
 
     return ORTE_SUCCESS;
 }
 
 
-void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_message_t *notify_msg,
+void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
                                         void *user_tag)
 {
-    OBJ_RELEASE(notify_msg);
+    OBJ_RELEASE(data);
 }

@@ -34,6 +34,7 @@
  * globals
  */
 
+/** KEYVAL **/
 /* constructor - used to initialize state of keyval instance */
 static void orte_gpr_keyval_construct(orte_gpr_keyval_t* keyval)
 {
@@ -67,9 +68,12 @@ OBJ_CLASS_INSTANCE(
 
 
 
+/** VALUE **/
 /* constructor - used to initialize state of registry value instance */
 static void orte_gpr_value_construct(orte_gpr_value_t* reg_val)
 {
+    reg_val->addr_mode = 0;
+    reg_val->segment = NULL;
     reg_val->cnt = 0;
     reg_val->keyvals = NULL;
     reg_val->num_tokens = 0;
@@ -82,6 +86,8 @@ static void orte_gpr_value_destructor(orte_gpr_value_t* reg_val)
     char **tokens;
     int32_t i;
 
+    if (NULL != reg_val->segment) free(reg_val->segment);
+    
     if (0 < reg_val->cnt && NULL != reg_val->keyvals) {
         for (i=0; i < reg_val->cnt; i++) {
             if(NULL != reg_val->keyvals[i])
@@ -108,6 +114,43 @@ OBJ_CLASS_INSTANCE(
 		   orte_gpr_value_destructor); /* destructor */
 
 
+/** NOTIFY DATA **/
+/* constructor - used to initialize state of registry value instance */
+static void orte_gpr_notify_data_construct(orte_gpr_notify_data_t* ptr)
+{
+    ptr->cb_num = 0;
+    ptr->addr_mode = 0;
+    ptr->segment = NULL;
+    ptr->cnt = 0;
+    ptr->values = NULL;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_gpr_notify_data_destructor(orte_gpr_notify_data_t* ptr)
+{
+    char **tokens;
+    int32_t i;
+
+    if (NULL != ptr->segment) free(ptr->segment);
+    
+    if (0 < ptr->cnt && NULL != ptr->values) {
+        for (i=0; i < ptr->cnt; i++) {
+            if(NULL != ptr->values[i])
+                OBJ_RELEASE(ptr->values[i]);
+        }
+       free(ptr->values);
+    }
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+            orte_gpr_notify_data_t,  /* type name */
+            ompi_object_t, /* parent "class" name */
+            orte_gpr_notify_data_construct, /* constructor */
+            orte_gpr_notify_data_destructor); /* destructor */
+
+
+/** SUBSCRIPTION **/
 /* constructor - used to initialize state of registry subscription instance */
 static void orte_gpr_subscription_construct(orte_gpr_subscription_t* sub)
 {
@@ -157,6 +200,38 @@ OBJ_CLASS_INSTANCE(
          orte_gpr_subscription_destructor); /* destructor */
 
 
+/** NOTIFY MESSAGE */
+/* constructor - used to initialize notify message instance */
+static void orte_gpr_notify_message_construct(orte_gpr_notify_message_t* msg)
+{
+    msg->idtag = 0;
+    msg->cnt = 0;
+    msg->data = NULL;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_gpr_notify_message_destructor(orte_gpr_notify_message_t* msg)
+{
+    int i;
+    
+    if (0 < msg->cnt && NULL != msg->data) {
+        for (i=0; i < msg->cnt; i++) {
+            OBJ_RELEASE(msg->data[i]);
+        }
+        free(msg->data);
+    }
+    
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+            orte_gpr_notify_message_t,            /* type name */
+            ompi_object_t,                             /* parent "class" name */
+            orte_gpr_notify_message_construct,    /* constructor */
+            orte_gpr_notify_message_destructor);  /* destructor */
+
+
+/** TEST RESULTS */
 /* constructor - used to initialize state of test results instance */
 static void orte_gpr_internal_test_results_construct(orte_gpr_internal_test_results_t* results)
 {
@@ -181,33 +256,6 @@ OBJ_CLASS_INSTANCE(
 		   ompi_list_item_t,                                 /* parent "class" name */
 		   orte_gpr_internal_test_results_construct,    /* constructor */
 		   orte_gpr_internal_test_results_destructor);  /* destructor */
-
-
-/* constructor - used to initialize notify message instance */
-static void orte_gpr_notify_message_construct(orte_gpr_notify_message_t* msg)
-{
-    msg->cnt = 0;
-    msg->values = NULL;
-}
-
-/* destructor - used to free any resources held by instance */
-static void orte_gpr_notify_message_destructor(orte_gpr_notify_message_t* msg)
-{
-    int i;
-    
-    if (0 < msg->cnt && NULL != msg->values) {
-        for (i=0; i < msg->cnt; i++) OBJ_RELEASE(msg->values[i]);
-	    free(msg->values);
-    }
-    
-}
-
-/* define instance of ompi_class_t */
-OBJ_CLASS_INSTANCE(
-		   orte_gpr_notify_message_t,            /* type name */
-		   ompi_object_t,                             /* parent "class" name */
-		   orte_gpr_notify_message_construct,    /* constructor */
-		   orte_gpr_notify_message_destructor);  /* destructor */
 
 
 /*

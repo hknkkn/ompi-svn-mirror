@@ -37,10 +37,11 @@
 
 int
 orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
-                         orte_gpr_value_t *value,
-                         orte_gpr_value_t *trig,
-                         orte_gpr_notify_id_t *sub_number,
-                         orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
+                         int num_subs,
+                         orte_gpr_subscription_t **subscriptions,
+                         int num_trigs,
+                         orte_gpr_value_t **trigs,
+                         orte_gpr_notify_id_t *sub_number)
 {
     orte_buffer_t *cmd;
     orte_buffer_t *answer;
@@ -50,20 +51,21 @@ orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
     *sub_number = ORTE_GPR_NOTIFY_ID_MAX;
     
     /* need to protect against errors */
-    if (NULL == value || NULL == value->segment) {
+    if (NULL == subscriptions) {
         ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
 	    return ORTE_ERR_BAD_PARAM;
     }
 
     /* if this has a trigger in it, must specify the trigger condition */
-    if (ORTE_GPR_TRIG_ANY & action && NULL == trig) {
+    if (ORTE_GPR_TRIG_ANY & action && NULL == trigs) {
             ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
             return ORTE_ERR_BAD_PARAM;
     }
     
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
 	    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(orte_gpr_proxy_globals.compound_cmd,
-							                         action, value, trig))) {
+							                         action, num_subs, subscriptions,
+                                                       num_trigs, trigs))) {
             ORTE_ERROR_LOG(rc);
             return rc;
         }
@@ -73,7 +75,7 @@ orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
 	    /* store callback function and user_tag in local list for lookup */
 	    /* generate id_tag to send to replica to identify lookup entry */
 	    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
-                                            cb_func, user_tag))) {
+                                            num_subs, subscriptions))) {
             ORTE_ERROR_LOG(rc);
             OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
             return rc;
@@ -95,7 +97,9 @@ orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(cmd, action, value, trig))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(cmd, action,
+                                                num_subs, subscriptions,
+                                                num_trigs, trigs))) {
         ORTE_ERROR_LOG(rc);
 	    OBJ_RELEASE(cmd);
         return rc;
@@ -106,7 +110,7 @@ orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
     /* store callback function and user_tag in local list for lookup */
     /* generate id_tag to send to replica to identify lookup entry */
     if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
-                                        cb_func, user_tag))) {
+                                        num_subs, subscriptions))) {
         ORTE_ERROR_LOG(rc);
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         OBJ_RELEASE(cmd);
@@ -122,13 +126,13 @@ orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
     }
 
     if (orte_gpr_proxy_globals.debug) {
-	    ompi_output(0, "[%d,%d,%d] gpr proxy subscribe: subscribing to segment %s local idtag %d",
-				ORTE_NAME_ARGS(orte_process_info.my_name), value->segment, (int)idtag);
+	    ompi_output(0, "[%d,%d,%d] gpr proxy subscribe: register subscribe for local idtag %d",
+				ORTE_NAME_ARGS(orte_process_info.my_name), (int)idtag);
     }
 
 
     if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
-        ORTE_ERROR_LOG(rc);
+         ORTE_ERROR_LOG(rc);
          OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
          orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
          OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);

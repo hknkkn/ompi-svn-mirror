@@ -194,7 +194,7 @@ static mca_base_modex_module_t* mca_base_modex_create_module(
  */
 
 static void mca_base_modex_registry_callback(
-    orte_gpr_notify_message_t* msg,
+    orte_gpr_notify_data_t* data,
     void* cbdata)
 {
     ompi_proc_t **new_procs = NULL;
@@ -212,8 +212,8 @@ static void mca_base_modex_registry_callback(
  
 
     /* process the callback */
-    value = msg->values;
-    for (i=0; i < msg->cnt; i++) {
+    value = data->values;
+    for (i=0; i < data->cnt; i++) {
 
         if (0 < value[i]->cnt) {  /* needs to be at least one value */
             new_procs = malloc(sizeof(ompi_proc_t*) * value[i]->cnt);
@@ -270,7 +270,7 @@ static void mca_base_modex_registry_callback(
                      */
                     if(NULL == (modex_module = mca_base_modex_create_module(modex, &component))) {
                         ompi_output(0, "mca_base_modex_registry_callback: mca_base_modex_create_module failed\n");
-                        OBJ_RELEASE(msg);
+                        OBJ_RELEASE(data);
                         OMPI_THREAD_UNLOCK(&proc->proc_lock);
                         return;
                     }
@@ -310,7 +310,8 @@ static void mca_base_modex_registry_callback(
 static int mca_base_modex_subscribe(orte_process_name_t* name)
 {
     orte_gpr_notify_id_t rctag;
-    orte_gpr_value_t value, trig;
+    orte_gpr_value_t trig, *trigs;
+    orte_gpr_subscription_t sub, *subs;
     orte_jobid_t jobid;
     ompi_list_item_t* item;
     mca_base_modex_subscription_t* subscription;
@@ -332,49 +333,48 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     /* otherwise - subscribe to get this jobid's ptl contact info */
     if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, name))) {
         ORTE_ERROR_LOG(rc);
-        OBJ_DESTRUCT(&value);
         return rc;
     }
     
     /* setup the subscription definition */
-    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
-    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value.segment), jobid))) {
+    OBJ_CONSTRUCT(&sub, orte_gpr_subscription_t);
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(sub.segment), jobid))) {
         ORTE_ERROR_LOG(rc);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         return rc;
     }
-    value.addr_mode = ORTE_GPR_KEYS_OR | ORTE_GPR_TOKENS_OR;
-    value.tokens = NULL;
-    value.num_tokens = 0;
-    value.cnt = 1;
-    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
-    if (NULL == value.keyvals) {
-       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == value.keyvals[0]) {
+    sub.addr_mode = ORTE_GPR_KEYS_OR | ORTE_GPR_TOKENS_OR;
+    sub.tokens = NULL;
+    sub.num_tokens = 0;
+    sub.num_keys = 1;
+    sub.keys = (char**)malloc(sizeof(char*));
+    if (NULL == sub.keys) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    value.keyvals[0]->key = strdup("modex-*");
-    value.keyvals[0]->type = ORTE_NULL;
+    sub.keys[0] = strdup("modex-*");
+    if (NULL == sub.keys[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&sub);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    sub.cbfunc = mca_base_modex_registry_callback;
+    sub.user_tag = NULL;
     
     /* setup the trigger definition */
     OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
     trig.addr_mode = ORTE_GPR_TOKENS_XAND;
     if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(trig.segment), jobid))) {
         ORTE_ERROR_LOG(rc);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return rc;
     }
     trig.tokens = (char**)malloc(sizeof(char*));
     if (NULL == trig.tokens) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
@@ -383,23 +383,24 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
     if (NULL == trig.keyvals) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     trig.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     if (NULL == trig.keyvals[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     trig.keyvals[0]->key = strdup(ORTE_JOB_SLOTS_KEY);
     trig.keyvals[0]->type = ORTE_NULL;
+    
     trig.keyvals[1] = OBJ_NEW(orte_gpr_keyval_t);
     if (NULL == trig.keyvals[1]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
@@ -407,17 +408,18 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     trig.keyvals[1]->type = ORTE_NULL;
 
     /* register the subscription */
+    subs = &sub;
+    trigs = &trig;
     rc = orte_gpr.subscribe(
         	ORTE_GPR_NOTIFY_ALL | ORTE_GPR_TRIG_ALL_CMP,
-        	&value,
-         &trig,
-         &rctag,
-        	mca_base_modex_registry_callback,
-        	NULL);
+        	1, &subs,
+         1, &trigs,
+         &rctag);
     if(ORTE_SUCCESS != rc) {
         ompi_output(0, "mca_base_modex_exchange: "
 		    "ompi_gpr.subscribe failed with return code %d\n", rc);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
+        OBJ_DESTRUCT(&trig);
 	    return OMPI_ERROR;
     }
 
@@ -427,7 +429,8 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     subscription->jobid = name->jobid;
     ompi_list_append(&mca_base_modex_subscriptions, &subscription->item);
     OMPI_UNLOCK(&mca_base_modex_lock);
-    OBJ_DESTRUCT(&value);
+    OBJ_DESTRUCT(&sub);
+    OBJ_DESTRUCT(&trig);
     return OMPI_SUCCESS;
 }
 

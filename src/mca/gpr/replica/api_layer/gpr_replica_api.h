@@ -107,10 +107,11 @@ int orte_gpr_replica_get_nb(orte_gpr_addr_mode_t addr_mode,
  * Subscribe functions
  */
 int orte_gpr_replica_subscribe(orte_gpr_notify_action_t action,
-                               orte_gpr_value_t *value,
-                               orte_gpr_value_t *trig,
-                               orte_gpr_notify_id_t *sub_number,
-                               orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
+                               int num_subs,
+                               orte_gpr_subscription_t **subscriptions,
+                               int num_trigs,
+                               orte_gpr_value_t **trigs,
+                               orte_gpr_notify_id_t *sub_number);
 
 int orte_gpr_replica_unsubscribe(orte_gpr_notify_id_t sub_number);
 

@@ -93,9 +93,10 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
                                        orte_gpr_replica_container_t *cptr)
 {
     orte_gpr_replica_triggers_t **trig;
+    orte_gpr_replica_subscribed_data_t **sptr;
     orte_gpr_replica_target_t **targets;
     orte_gpr_replica_itagval_t **iptr;
-    int i, j, rc;
+    int i, j, k, rc;
     
     /* clear any triggers attached to it, adjusting synchros and
      * registering callbacks as required
@@ -104,25 +105,28 @@ int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
     trig = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
 
     for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
-        if (NULL != trig[i] && seg == trig[i]->seg) { /* valid trig on this segment */
-            targets = (orte_gpr_replica_target_t**)((trig[i]->targets)->addr);
-            for (j=0; j < (trig[i]->targets)->size; j++) {
-                if (NULL != targets[j]) {
-                    if (cptr == targets[j]->cptr) {
-                        if (ORTE_GPR_REPLICA_ENTRY_DELETED && trig[i]->action) {
-                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_register_callback(trig[i]))) {
-                                ORTE_ERROR_LOG(rc);
-                                return rc;
+        if (NULL != trig[i]) {
+            sptr = (orte_gpr_replica_subscribed_data_t**)((trig[i]->subscribed_data)->addr);
+            for (k=0; k < (trig[i]->subscribed_data)->size; k++) {
+                if (NULL != sptr[k]) {
+                    targets = (orte_gpr_replica_target_t**)((sptr[k]->targets)->addr);
+                    for (j=0; j < (sptr[k]->targets)->size; j++) {
+                        if (NULL != targets[j] && cptr == targets[j]->cptr) {
+                            if (ORTE_GPR_REPLICA_ENTRY_DELETED && trig[i]->action) {
+                                if (ORTE_SUCCESS != (rc = orte_gpr_replica_register_callback(trig[i]))) {
+                                    ORTE_ERROR_LOG(rc);
+                                    return rc;
+                                }
                             }
-                        }
-                    }
-                    orte_pointer_array_set_item(trig[i]->targets, j, NULL);
-                    free(targets[j]);
-                    break;
-                }
-            }
-        }
-    }
+                            orte_pointer_array_set_item(sptr[k]->targets, j, NULL);
+                            OBJ_RELEASE(targets[j]);
+                            break;
+                        }  /* if target not NULL */
+                    }  /* for j */
+                } /* if sptr not NULL */
+            }  /* for k */
+        }  /* if trig not NULL */
+    }  /* for i */
     
     /* remove container from segment and release it */
     orte_pointer_array_set_item(seg->containers, cptr->index, NULL);

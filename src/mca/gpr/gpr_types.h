@@ -159,27 +159,45 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_keyval_t);
  * contains \em copies of the data in the registry. This prevents inadvertent
  * modification of the registry, but requires the recipient to release the data's
  * memory when done.
+ * 
+ * The address mode and segment fields are included here for convenience and so that
+ * the structure can be re-used by the put command.
  */
 typedef struct {
     ompi_object_t super;                    /**< Makes this an object */
-    orte_gpr_addr_mode_t addr_mode;         /**< Address mode for combining keys/tokens */
+    orte_gpr_addr_mode_t addr_mode;         /**< Address mode that was used for combining keys/tokens */
+    char *segment;                          /**< Name of the segment this came from */
     int32_t cnt;                            /**< Number of keyval objects returned */
     orte_gpr_keyval_t **keyvals;            /**< Contiguous array of keyval object pointers */
-    char *segment;                          /**< Name of the segment this came from */
     int32_t num_tokens;                     /**< Number of tokens from the container that held these keyvals */
     char **tokens;                          /**< List of tokens that described the container */
 } orte_gpr_value_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_value_t);
 
+/** Return structure for notification messages
+ * A notification message contains data from each registered subscription structure.
+ * Each block of data is associated with a specified callback function and contains
+ * data from a single segment, one or more containers with one or more keyvals/container.
+ */
+typedef struct {
+    ompi_object_t super;                    /**< Makes this an object */
+    int32_t cb_num;                         /**< Number of the subscribed data - indicates which callback to use */
+    orte_gpr_addr_mode_t addr_mode;         /**< Address mode that was used for combining keys/tokens */
+    char *segment;                          /**< Name of the segment this came from */
+    int32_t cnt;                            /**< Number of value objects returned, one per container */
+    orte_gpr_value_t **values;              /**< Array of value objects returned */
+} orte_gpr_notify_data_t;
+
+OBJ_CLASS_DECLARATION(orte_gpr_notify_data_t);
 
 /** Return message for notify requests
  */
 typedef struct {
     ompi_object_t super;                        /**< Make this an object */
     orte_gpr_notify_id_t idtag;                 /**< Referenced notify request */
-    int32_t cnt;                                 /**< number of registry value objects */
-    orte_gpr_value_t **values;                  /**< Contiguous array of pointers to gpr value objects */
+    int32_t cnt;                                /**< number of data objects */
+    orte_gpr_notify_data_t **data;              /**< Contiguous array of pointers to data objects */
 } orte_gpr_notify_message_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_notify_message_t);
@@ -189,7 +207,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_notify_message_t);
  * 
  * user_tag = whatever tag data the user provided when filing the subscription
  */
-typedef void (*orte_gpr_notify_cb_fn_t)(orte_gpr_notify_message_t *notify_msg, void *user_tag);
+typedef void (*orte_gpr_notify_cb_fn_t)(orte_gpr_notify_data_t *notify_data, void *user_tag);
 
 /** Structure for registering subscriptions
  * A request to be notified when certain events occur, or when counters reach specified

@@ -253,61 +253,116 @@ OBJ_CLASS_INSTANCE(
          orte_gpr_replica_target_destructor); /* destructor */
 
 
+/* COUNTERS */
+/* constructor - used to initialize state of counter instance */
+static void orte_gpr_replica_counter_construct(orte_gpr_replica_counter_t* cntr)
+{
+    cntr->seg = NULL;
+    cntr->cptr = NULL;
+    cntr->iptr = NULL;
+    cntr->trigger_level = 0;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_gpr_replica_counter_destructor(orte_gpr_replica_counter_t* targ)
+{
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+         orte_gpr_replica_counter_t,           /* type name */
+         ompi_object_t,                 /* parent "class" name */
+         orte_gpr_replica_counter_construct,   /* constructor */
+         orte_gpr_replica_counter_destructor); /* destructor */
+
+
+/* SUBSCRIBED DATA */
+/* constructor - used to initialize state of subscribed data instance */
+static void orte_gpr_replica_subscribed_data_construct(orte_gpr_replica_subscribed_data_t* data)
+{
+    data->seg = NULL;
+    data->token_addr_mode = 0;
+    data->key_addr_mode = 0;
+    
+    OBJ_CONSTRUCT(&(data->tokentags), orte_value_array_t);
+    orte_value_array_init(&(data->tokentags), sizeof(orte_gpr_replica_itag_t));
+
+    OBJ_CONSTRUCT(&(data->keytags), orte_value_array_t);
+    orte_value_array_init(&(data->keytags), sizeof(orte_gpr_replica_itag_t));
+
+    data->num_targets = 0;
+    orte_pointer_array_init(&(data->targets), orte_gpr_replica_globals.block_size,
+                            orte_gpr_replica_globals.max_size,
+                            orte_gpr_replica_globals.block_size);
+
+    data->callback = NULL;
+    data->user_tag = NULL;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_gpr_replica_subscribed_data_destructor(orte_gpr_replica_subscribed_data_t* data)
+{
+    orte_gpr_replica_target_t **targets;
+    int i;
+
+    OBJ_DESTRUCT(&(data->tokentags));
+    
+    OBJ_DESTRUCT(&(data->keytags));
+
+    if (NULL != data->targets) {
+       targets = (orte_gpr_replica_target_t**)((data->targets)->addr);
+       for (i=0; i < (data->targets)->size; i++) {
+            if (NULL != targets[i]) free(targets[i]);
+       }
+       OBJ_RELEASE(data->targets);
+    }
+
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+         orte_gpr_replica_subscribed_data_t,           /* type name */
+         ompi_object_t,                 /* parent "class" name */
+         orte_gpr_replica_subscribed_data_construct,   /* constructor */
+         orte_gpr_replica_subscribed_data_destructor); /* destructor */
+
+
 /* TRIGGERS */
 /* constructor - used to initialize state of trigger instance */
 static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig)
 {
-    trig->seg = NULL;
+    trig->index = 0;
     trig->action = 0;
     
     trig->requestor = NULL;
-    trig->callback = NULL;
-    trig->user_tag = NULL;
-    
     trig->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
     
-    trig->token_addr_mode = 0;
-    trig->key_addr_mode = 0;
-    
-    OBJ_CONSTRUCT(&(trig->tokentags), orte_value_array_t);
-    orte_value_array_init(&(trig->tokentags), sizeof(orte_gpr_replica_itag_t));
-
-    OBJ_CONSTRUCT(&(trig->keytags), orte_value_array_t);
-    orte_value_array_init(&(trig->keytags), sizeof(orte_gpr_replica_itag_t));
-
-    trig->num_targets = 0;
-    orte_pointer_array_init(&(trig->targets), orte_gpr_replica_globals.block_size,
-                            orte_gpr_replica_globals.max_size,
-                            orte_gpr_replica_globals.block_size);
+    trig->num_subscribed_data = 0;
+    orte_pointer_array_init(&(trig->subscribed_data), 10,
+                            orte_gpr_replica_globals.max_size, 10);
 
     trig->num_counters = 0;
     orte_pointer_array_init(&(trig->counters), 1, orte_gpr_replica_globals.max_size, 1);
-
-    trig->trigger_level = 0;
 }
 
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* trig)
 {
     int i;
-    orte_gpr_replica_target_t **targets;
+    orte_gpr_replica_subscribed_data_t **data;
     
     if (NULL != trig->requestor) {
         free(trig->requestor);
     }
 
-    OBJ_DESTRUCT(&(trig->tokentags));
-    
-    OBJ_DESTRUCT(&(trig->keytags));
-
-    if (NULL != trig->targets) {
-       targets = (orte_gpr_replica_target_t**)((trig->targets)->addr);
-       for (i=0; i < (trig->targets)->size; i++) {
-            if (NULL != targets[i]) free(targets[i]);
+    if (NULL != trig->subscribed_data) {
+       data = (orte_gpr_replica_subscribed_data_t**)((trig->subscribed_data)->addr);
+       for (i=0; i < (trig->subscribed_data)->size; i++) {
+            if (NULL != data[i]) free(data[i]);
        }
-       OBJ_RELEASE(trig->targets);
+       OBJ_RELEASE(trig->subscribed_data);
     }
-
+    
     if (NULL != trig->counters) {
        OBJ_RELEASE(trig->counters);
     }
@@ -325,11 +380,9 @@ OBJ_CLASS_INSTANCE(
 /* constructor - used to initialize state of callback list instance */
 static void orte_gpr_replica_callbacks_construct(orte_gpr_replica_callbacks_t* cb)
 {
-    cb->cb_func = NULL;
     cb->message = NULL;
     cb->requestor = NULL;
     cb->remote_idtag = 0;
-    cb->user_tag = NULL;
 }
 
 /* destructor - used to free any resources held by instance */

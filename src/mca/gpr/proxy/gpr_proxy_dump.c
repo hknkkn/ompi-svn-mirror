@@ -32,6 +32,7 @@
 #include "include/orte_constants.h"
 
 #include "dps/dps.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "mca/oob/oob_types.h"
 #include "mca/rml/rml.h"
@@ -52,37 +53,49 @@ int orte_gpr_proxy_dump(int output_id)
 
     cmd = OBJ_NEW(orte_buffer_t);
     if (NULL == cmd) { /* got a problem */
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
 	    return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
     if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_dump(cmd))) {
+        ORTE_ERROR_LOG(rc);
         OBJ_RELEASE(cmd);
 	    return rc;
     }
 
     if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
     answer = OBJ_NEW(orte_buffer_t);
     if (NULL == answer) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
     if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
+        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
     n = 1;
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(answer, &command, &n, ORTE_GPR_CMD))) {
+        ORTE_ERROR_LOG(rc);
         OBJ_RELEASE(answer);
         return rc;
     }
     
 	if (ORTE_GPR_DUMP_CMD != command) {
+        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
         OBJ_RELEASE(answer);
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
-    return orte_gpr_base_print_dump(answer, output_id);
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_print_dump(answer, output_id))) {
+        ORTE_ERROR_LOG(rc);
+    }
+    
+    OBJ_RELEASE(answer);
+    return rc;
 }

@@ -408,47 +408,47 @@ typedef int (*orte_gpr_base_module_index_nb_fn_t)(char *segment,
  * the trigger operation. These can
  * be OR'd together from the defined registry action flags.
  * 
- * @param *value (IN) A pointer to an orte_gpr_value_t object that describes the addressing
- * mode, segment, tokens, and keys/values to which a subscription is requested. All of
+ * @param num_subs (IN) The numbr of subscription objects being provided
+ * 
+ * @param **subscriptions (IN) A pointer to an array of subscription objects that
+ * contain descriptions of the data that is to be returned when a subscription fires.
+ * For subscribe requests that do NOT include a trigger, this is the data that
+ * will be monitored per the specified action. All of
  * the described values will be returned in a notification message when the specified
  * action occurs.
  * 
- * @param *trig_value (IN) A pointer to an orte_gpr_value_t object that describes the
+ * @param num_trigs (IN) The number of trigger objects being provided
+ * 
+ * @param **trig_value (IN) A pointer to an array of orte_gpr_value_t objects that describe the
  * conditions (as described above) which will generate a trigger message to be sent
- * to the callback function. Trigger messages include all data from the monitored
- * counters - they do NOT contain the data from registry entries identified by \em value.
- * A data type of ORTE_NULL for a keyval indicates that the corresponding counter is
- * to be returned in the trigger message, but the value is not to be monitored.
+ * to the callback function. Trigger messages include all data specified in the
+ * subscription objects, but do NOT include the trigger counters themselves unless
+ * so specified with the ORTE_GPR_TRIG_INCLUDE_DATA command.
  * 
- * @param *sub_number (OUT) A notify id for the resulting subscription is returned in
- * the provided memory location. Callers should save this
- * number for later use if (for example) it is desired to temporarily turn "off" the
- * subscription or to permanently remove the subscription from the registry
+ * @param *sub_number (OUT) The notify id for the resulting subscription
+ * is returned in the provided memory location. Callers should save this
+ * number for later use if (for example) it is desired to remove the
+ * subscription from the registry
  * 
- * @param cb_func (IN) The orte_registry_notify_cb_fn_t callback function to be called when
- * a subscription is triggered. The data from each monitored object will be returned
- * to the callback function in an orte_gpr_notify_message_t structure.
- * 
- * @param user_tag (IN) A void* user-provided storage location that the caller can
- * use for its own purposes. A NULL value is acceptable.
- *
  * @retval ORTE_SUCCESS Operation was successfully completed.
  * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
  *
  * @code
+ * orte_gpr_subscription_t *subscription;
  * orte_gpr_notify_id_t sub_number;
- * orte_gpr_value_t value, trig_value;
+ * orte_gpr_value_t trig_value;
  * 
- * status_code = orte_gpr.subscribe(addr_mode, action, &value, &trig_value,
- *                                       &sub_number, cb_func, user_tag);
+ * status_code = orte_gpr.subscribe(action, 1, &subscription, &trig_value,
+ *                                       &sub_number);
  * @endcode
  */
 typedef int (*orte_gpr_base_module_subscribe_fn_t)(
                             orte_gpr_notify_action_t actions,
-                            orte_gpr_value_t *value,
-                            orte_gpr_value_t *trig_value,
-                            orte_gpr_notify_id_t *sub_number,
-                            orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
+                            int num_subs,
+                            orte_gpr_subscription_t **subscriptions,
+                            int num_trigs,
+                            orte_gpr_value_t **trig_value,
+                            orte_gpr_notify_id_t *sub_number);
 
 /*
  * Cancel a subscription.

@@ -47,6 +47,7 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     orte_gpr_value_t **values;
     orte_app_context_t **app_context;
     orte_gpr_subscription_t **subs;
+    orte_gpr_notify_data_t **data;
 
     switch(type) {
 
@@ -181,6 +182,23 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             }
             return mem_req;
             
+        case ORTE_GPR_NOTIFY_DATA:
+            mem_req = 0;
+            data = (orte_gpr_notify_data_t**) src;
+            for (i=0; i<num_vals; i++) {
+                mem_req += sizeof(int32_t); /* callback number */
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(data[i]->addr_mode)), 1,
+                                ORTE_GPR_ADDR_MODE);
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(data[i]->segment)), 1, ORTE_STRING);
+                mem_req += sizeof(int32_t); /* number of values */
+                mem_req += orte_dps_memory_required(
+                                (void*)(data[i]->values), data[i]->cnt,
+                                ORTE_GPR_VALUE);
+            }
+            return mem_req;
+
         default:
             return 0;  /* unrecognized type */
     }

@@ -65,7 +65,8 @@ int ompi_attr_create_predefined(void)
 {
     orte_gpr_notify_id_t rc;
     int ret;
-    orte_gpr_value_t value, trig;
+    orte_gpr_value_t trig, *trig1;
+    orte_gpr_subscription_t sub, *sub1;
     orte_jobid_t job;
     
     if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&job, orte_process_info.my_name))) {
@@ -73,90 +74,101 @@ int ompi_attr_create_predefined(void)
         return ret;
     }
     
-    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
-    value.addr_mode = ORTE_GPR_TOKENS_OR | ORTE_GPR_KEYS_OR;
-    value.segment = strdup(ORTE_NODE_SEGMENT);
-    if (NULL == value.segment) {
+    OBJ_CONSTRUCT(&sub, orte_gpr_subscription_t);
+    sub.addr_mode = ORTE_GPR_TOKENS_OR | ORTE_GPR_KEYS_OR;
+    sub.segment = strdup(ORTE_NODE_SEGMENT);
+    if (NULL == sub.segment) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    value.tokens = NULL; /* wildcard - look at all containers */
-    value.num_tokens = 0;
-    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
-    if (NULL == value.keyvals) {
+    sub.tokens = NULL; /* wildcard - look at all containers */
+    sub.num_tokens = 0;
+    sub.num_keys = 1;
+    sub.keys = (char**)malloc(sizeof(char*));
+    if (NULL == sub.keys) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == value.keyvals[0]) {
+    sub.keys[0] = strdup(ORTE_NODE_SLOTS_KEY);
+    if (NULL == sub.keys[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    value.keyvals[0]->key = strdup(ORTE_NODE_SLOTS_KEY);
-
+    sub.cbfunc = ompi_attr_create_predefined_callback;
+    sub.user_tag = NULL;
+    
     /* setup the trigger information */
     OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
     trig.addr_mode = ORTE_GPR_TOKENS_XAND;
     if (ORTE_SUCCESS != (ret = orte_schema.get_job_segment_name(&(trig.segment), job))) {
         ORTE_ERROR_LOG(ret);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ret;
     }
     trig.tokens = (char**)malloc(sizeof(char*));
     if (NULL == trig.tokens) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     trig.tokens[0] = strdup(ORTE_JOB_GLOBALS);
     trig.num_tokens = 1;
-    trig.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
     if (NULL == trig.keyvals) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     trig.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     if (NULL == trig.keyvals[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&sub);
         OBJ_DESTRUCT(&trig);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    trig.keyvals[0]->key = strdup(ORTE_PROC_NUM_AT_STG1);
-    trig.keyvals[0]->type = ORTE_INT32;
-    trig.keyvals[0]->value.i32 = orte_process_info.num_procs;
+    trig.keyvals[0]->key = strdup(ORTE_JOB_SLOTS_KEY);
+    trig.keyvals[0]->type = ORTE_NULL;
+    
+    trig.keyvals[1] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == trig.keyvals[1]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&sub);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[1]->key = strdup(ORTE_PROC_NUM_AT_STG1);
+    trig.keyvals[1]->type = ORTE_NULL;
     
     /* do the subscription */
+    sub1 = &sub;
+    trig1 = &trig;
     ret = orte_gpr.subscribe(
-         ORTE_GPR_TRIG_AT_LEVEL | ORTE_GPR_TRIG_MONITOR_ONLY |
+         ORTE_GPR_TRIG_CMP_LEVELS | ORTE_GPR_TRIG_MONITOR_ONLY |
          ORTE_GPR_TRIG_ONE_SHOT,
-         &value,
-         &trig,
-         &rc,
-         ompi_attr_create_predefined_callback,
-         NULL);
+         1, &sub1,
+         1, &trig1,
+         &rc);
      if(ORTE_SUCCESS != ret) {
          ompi_output(0, "ompi_attr_create_predefined: subscribe failed");
-         OBJ_DESTRUCT(&value);
+         OBJ_DESTRUCT(&sub);
          OBJ_DESTRUCT(&trig);
          return OMPI_ERROR;
      }
-     OBJ_DESTRUCT(&value);
+     OBJ_DESTRUCT(&sub);
      OBJ_DESTRUCT(&trig);
      return OMPI_SUCCESS;
 }
 
 
 void ompi_attr_create_predefined_callback(
-	orte_gpr_notify_message_t *msg,
-	void *cbdata)
+    orte_gpr_notify_data_t *data,
+    void *cbdata)
 {
     int err;
     int32_t i, j;
@@ -197,11 +209,11 @@ void ompi_attr_create_predefined_callback(
      */
 
     attr_universe_size = 0;
-    if (0 == msg->cnt) {  /* no data returned */
+    if (0 == data->cnt) {  /* no data returned */
         attr_universe_size = ompi_comm_size(MPI_COMM_WORLD);
     } else {
-        value = msg->values;
-        for (i=0; i < msg->cnt; i++) {
+        value = data->values;
+        for (i=0; i < data->cnt; i++) {
             if (0 < value[i]->cnt) {  /* make sure some data was returned here */
                 keyval = value[i]->keyvals;
                 for (j=0; j < value[i]->cnt; j++) {
@@ -213,7 +225,7 @@ void ompi_attr_create_predefined_callback(
             }
         }
     }
-    OBJ_RELEASE(msg);
+    OBJ_RELEASE(data);
 
     /* DO NOT CHANGE THE ORDER OF CREATING THESE KEYVALS!  This order
        strictly adheres to the order in mpi.h.  If you change the

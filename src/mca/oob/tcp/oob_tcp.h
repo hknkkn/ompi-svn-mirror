@@ -232,7 +232,7 @@ int mca_oob_tcp_parse_uri(
  * Callback from registry on change to subscribed segments
  */
 void mca_oob_tcp_registry_callback(
-     orte_gpr_notify_message_t* msg,
+     orte_gpr_notify_data_t* data,
      void* cbdata);
 
 

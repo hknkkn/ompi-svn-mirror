@@ -464,7 +464,7 @@ mca_oob_t* mca_oob_tcp_component_init(int* priority)
  */
 
 void mca_oob_tcp_registry_callback(
-    orte_gpr_notify_message_t* msg,
+    orte_gpr_notify_data_t* data,
     void* cbdata)
 {
     int32_t i;
@@ -475,8 +475,8 @@ void mca_oob_tcp_registry_callback(
 
     /* process the callback */
     OMPI_THREAD_LOCK(&mca_oob_tcp_component.tcp_lock);
-    for(i = 0; i < msg->cnt; i++) {
-        orte_gpr_value_t* value = msg->values[i];
+    for(i = 0; i < data->cnt; i++) {
+        orte_gpr_value_t* value = data->values[i];
         orte_buffer_t buffer;
         mca_oob_tcp_addr_t* addr, *existing;
         mca_oob_tcp_peer_t* peer;
@@ -612,8 +612,9 @@ int mca_oob_tcp_init(void)
 {
     orte_jobid_t jobid;
     orte_buffer_t *buffer;
-    orte_gpr_value_t *value, trig_value;
-    mca_oob_tcp_subscription_t* subscription;
+    orte_gpr_value_t trig, *trigs, *value;
+    mca_oob_tcp_subscription_t *subscription;
+    orte_gpr_subscription_t sub, *subs;
     int rc;
     ompi_list_item_t* item;
 
@@ -648,88 +649,101 @@ int mca_oob_tcp_init(void)
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.subscribe\n", 
             ORTE_NAME_ARGS(orte_process_info.my_name));
     }
-#if 0
+
     /* setup the subscription description value */
-    value = OBJ_NEW(orte_gpr_value_t);
-    if (NULL == value) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-     
+    OBJ_CONSTRUCT(&sub, orte_gpr_subscription_t);
+    sub.addr_mode = ORTE_GPR_TOKENS_OR | ORTE_GPR_KEYS_OR;
     if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, orte_process_info.my_name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value->segment), jobid))) {
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(sub.segment), jobid))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-
-    value->cnt = 1;
-    value->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
-    if(NULL == value->keyvals) {
+    sub.num_tokens= 0;
+    sub.tokens = NULL;
+    sub.num_keys = 1;
+    sub.keys = (char**)malloc(sizeof(char*));
+    if(NULL == sub.keys) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == value->keyvals[0]) {
+    sub.keys[0] = strdup("oob-tcp");
+    if (NULL == sub.keys[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    (value->keyvals[0])->key = strdup("oob-tcp");
-    (value->keyvals[0])->type = ORTE_NULL;
+    sub.cbfunc = mca_oob_tcp_registry_callback;
+    sub.user_tag = NULL;
 
     /* setup the trigger value */
-    OBJ_CONSTRUCT(&trig_value, orte_gpr_value_t);
-    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(trig_value.segment), jobid))) {
+    OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
+    trig.addr_mode = ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(trig.segment), jobid))) {
         ORTE_ERROR_LOG(rc);
         OBJ_DESTRUCT(&value);
-        OBJ_DESTRUCT(&trig_value);
+        OBJ_DESTRUCT(&trig);
         return rc;
     }
-
-    trig_value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
-    if(NULL == trig_value.keyvals) {
+    trig.num_tokens = 1;
+    trig.tokens = (char**)malloc(sizeof(char*));
+    if (NULL == trig.tokens) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    trig_value.cnt = 1;
-    trig_value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if(NULL == trig_value.keyvals[0]) {
+    trig.tokens[0] = strdup(ORTE_JOB_GLOBALS);
+    if (NULL == trig.tokens[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    trig_value.keyvals[0]->type = ORTE_INT;
-    trig_value.keyvals[0]->value.i32 = (int32_t)orte_process_info.num_procs;
+    trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
+    if(NULL == trig.keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.cnt = 2;
+    trig.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if(NULL == trig.keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[0]->key = strdup(ORTE_JOB_SLOTS_KEY);
+    trig.keyvals[0]->type = ORTE_NULL;
     
+    trig.keyvals[1] = OBJ_NEW(orte_gpr_keyval_t);
+    if(NULL == trig.keyvals[1]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[1]->key = strdup(ORTE_PROC_NUM_AT_STG1);
+    trig.keyvals[1]->type = ORTE_NULL;
+    
+    trigs = &trig;
+    subs = &sub;
     rc = orte_gpr.subscribe(
-        ORTE_GPR_KEYS_OR,
-        ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_AT_LEVEL |
-        ORTE_GPR_NOTIFY_BEGIN,
-        value,
-        &trig_value,
-        &subscription->subid,
-        mca_oob_tcp_registry_callback,
-        NULL);
+        ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_VALUE_CHG |
+        ORTE_GPR_TRIG_CMP_LEVELS | ORTE_GPR_TRIG_NOTIFY_START,
+        1, &subs,
+        1, &trigs,
+        &subscription->subid);
     if(rc != OMPI_SUCCESS) {
         ORTE_ERROR_LOG(rc);
-        OBJ_RELEASE(value);
-        OBJ_DESTRUCT(&trig_value);
+        OBJ_DESTRUCT(&sub);
+        OBJ_DESTRUCT(&trig);
         return rc;
     }
-    OBJ_DESTRUCT(&trig_value);  /* done with this one */
-#endif
+    OBJ_DESTRUCT(&sub);
+    OBJ_DESTRUCT(&trig);  /* done with these */
 
     buffer = OBJ_NEW(orte_buffer_t);
     if(buffer == NULL) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_RELEASE(value);
         return OMPI_ERR_OUT_OF_RESOURCE;
     }
     rc = mca_oob_tcp_addr_pack(buffer);
     if(rc != OMPI_SUCCESS) {
         ORTE_ERROR_LOG(rc);
-        OBJ_RELEASE(value);
         OBJ_RELEASE(buffer);
         return rc;
     }
