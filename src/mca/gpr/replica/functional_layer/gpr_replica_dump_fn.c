@@ -86,23 +86,6 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
     }
     
     
-    trig = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
-    k = 0;
-    for (j=0; j < (orte_gpr_replica.triggers)->size; j++) {
-        if (NULL != trig[j]) k++;
-    }
-    
-    asprintf(&tmp_out, "Number of triggers: %d\n", k);
-    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-    
-    /* dump the trigger info for the registry */
-    for (j=0, k=0; j < (orte_gpr_replica.triggers)->size; j++) {
-        if (NULL != trig[j]) {
-            orte_gpr_replica_dump_trigger(buffer, k, trig[j]);
-            k++;
-        }
-    }
-
     /* loop through all segments */
     seg = (orte_gpr_replica_segment_t**)(orte_gpr_replica.segments)->addr;
     for (i=0; i < (orte_gpr_replica.segments)->size; i++) {
@@ -164,6 +147,23 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
          }
     }
     
+    trig = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
+    k = 0;
+    for (j=0; j < (orte_gpr_replica.triggers)->size; j++) {
+        if (NULL != trig[j]) k++;
+    }
+    
+    asprintf(&tmp_out, "Number of triggers: %d\n", k);
+    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    
+    /* dump the trigger info for the registry */
+    for (j=0, k=0; j < (orte_gpr_replica.triggers)->size; j++) {
+        if (NULL != trig[j]) {
+            orte_gpr_replica_dump_trigger(buffer, k, trig[j]);
+            k++;
+        }
+    }
+
     return ORTE_SUCCESS;
 }
 

@@ -100,12 +100,30 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
     if (ORTE_SUCCESS != (rc = orte_gpr.put(1, &value))) {
         ORTE_ERROR_LOG(rc);
     }
-    
+    OBJ_RELEASE(value);
+
     /* check to see if we need to increment orte-standard counters */
     /* first, cleanup value so it can be used for that purpose */
-    OBJ_RELEASE(value->keyvals[0]);
-    OBJ_RELEASE(value->keyvals[1]);
-    free(value->keyvals);
+
+    value = OBJ_NEW(orte_gpr_value_t);
+    if (NULL == value) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    value->addr_mode = ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_AND;
+    
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value->segment), jobid))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if(NULL == (value->tokens = (char**)malloc(sizeof(char*)))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(value);
+        return rc;
+    }
+    value->tokens[0] = strdup(ORTE_JOB_GLOBALS);
+    value->num_tokens = 1;
+    
     value->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
     if (NULL == value->keyvals) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
