@@ -21,107 +21,59 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include "mca/ns/ns_types.h"
 
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
-mca_gpr_replica_segment_t *mca_gpr_replica_define_segment(char *segment,
-							  orte_jobid_t jobid)
+
+orte_gpr_replica_segment_t *orte_gpr_replica_find_seg(bool create, char *segment)
 {
-    mca_gpr_replica_segment_t *seg;
-    mca_gpr_replica_key_t key;
+    orte_gpr_replica_dict_t *ptr;
+    orte_gpr_replica_segment_t *seg;
+    orte_gpr_replica_itag_t itag;
+    size_t len;
+    int rc;
 
-    if (mca_gpr_replica_debug) {
-	ompi_output(0, "[%d,%d,%d] define_segment: name %s jobid %d",
-		    ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, (int)jobid);
+    len = strlen(segment);
+    
+    /* search the registry segments to find which one is being referenced */
+    seg = (orte_gpr_replica_segment_t*)orte_gpr_replica.segments->addr;
+    for (i=0; i < orte_gpr_replica.segments->size; i++) {
+        if (NULL != seg) {
+            if (0 == strncmp(segment, seg->name, len)) {
+                return seg;
+            }
+        }
+        seg++;
     }
-
-    key = mca_gpr_replica_define_key(NULL, segment);
-    if (MCA_GPR_REPLICA_KEY_MAX == key) {  /* got some kind of error code */
- 	return NULL;
+    
+    if (!create) {
+        /* couldn't find it and don't want it created - just return NULL */
+        return NULL;
     }
-
-    /* need to add the segment to the registry */
-    seg = OBJ_NEW(mca_gpr_replica_segment_t);
+    
+    /* add the segment to the registry */
+    seg = OBJ_NEW(orte_gpr_replica_segment_t);
     seg->name = strdup(segment);
-    seg->key = key;
-    seg->owning_job = jobid;
-    seg->triggers_active = false;
-    ompi_list_append(&mca_gpr_replica_head.registry, &seg->item);
-
-
+    if (0 > (rc = orte_pointer_array_add(orte_gpr_replica.segments, (void*)seg))) {
+        OBJ_RELEASE(seg);
+        return NULL;
+    }
+    seg->itag = rc;
     return seg;
 }
 
-
-mca_gpr_replica_segment_t *mca_gpr_replica_find_seg(bool create, char *segment,
-						    orte_jobid_t jobid)
+int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg)
 {
-    mca_gpr_replica_keytable_t *ptr_seg;
-    mca_gpr_replica_segment_t *seg;
-
-
-    /* search the registry segments to find which one is being referenced */
-    for (ptr_seg = (mca_gpr_replica_keytable_t*)ompi_list_get_first(&mca_gpr_replica_head.segment_dict);
-	 ptr_seg != (mca_gpr_replica_keytable_t*)ompi_list_get_end(&mca_gpr_replica_head.segment_dict);
-	 ptr_seg = (mca_gpr_replica_keytable_t*)ompi_list_get_next(ptr_seg)) {
-	if (0 == strcmp(segment, ptr_seg->token)) {
-	    /* search mca_gpr_replica_head to find segment */
-	    for (seg=(mca_gpr_replica_segment_t*)ompi_list_get_first(&mca_gpr_replica_head.registry);
-		 seg != (mca_gpr_replica_segment_t*)ompi_list_get_end(&mca_gpr_replica_head.registry);
-		 seg = (mca_gpr_replica_segment_t*)ompi_list_get_next(seg)) {
-		if(seg->key == ptr_seg->key) {
-		    return(seg);
-		}
-	    }
-	}
+    int rc;
+    
+    if (0 > (rc = orte_pointer_array_set_item(orte_gpr_replica.segments, seg->itag, NULL))) {
+        return rc;
     }
-
-
-    if (create) {
-	/* didn't find the dictionary entry - create it */
-	return mca_gpr_replica_define_segment(segment, jobid);
-    }
-    return NULL;  /* don't create it - just return NULL */
+    OBJ_RELEASE(seg);
+    
+    return ORTE_SUCCESS;
 }
-
-int mca_gpr_replica_empty_segment(mca_gpr_replica_segment_t *seg)
-{
-    mca_gpr_replica_core_t *ptr;
-    mca_gpr_replica_keytable_t *keytab;
-    mca_gpr_replica_keylist_t *keylst;
-    mca_gpr_replica_trigger_list_t *trig;
-
-    /* need to free memory from each entry - remove_last returns pointer to the entry */
-    /* need to purge all subscriptions/synchros from notify tracker, and delete from segment */
-
-    /* empty the segment's registry */
-    while (NULL != (ptr = (mca_gpr_replica_core_t*)ompi_list_remove_first(&seg->registry_entries))) {
-	OBJ_RELEASE(ptr);
-    }
-
-    /* empty the segment's dictionary */
-    while (NULL != (keytab = (mca_gpr_replica_keytable_t*)ompi_list_remove_first(&seg->keytable))) {
-	OBJ_RELEASE(keytab);
-    }
-
-    /* empty the list of free keys */
-    while (NULL != (keylst = (mca_gpr_replica_keylist_t*)ompi_list_remove_first(&seg->freekeys))) {
-	OBJ_RELEASE(keylst);
-    }
-
-    /* empty the list of triggers */
-    while (NULL != (trig = (mca_gpr_replica_trigger_list_t*)ompi_list_remove_first(&seg->triggers))) {
-	OBJ_RELEASE(trig);
-    }
-
-    /* now remove segment from global registry */
-    ompi_list_remove_item(&mca_gpr_replica_head.registry, &seg->item);
-
-
-    return OMPI_SUCCESS;
-}
-
