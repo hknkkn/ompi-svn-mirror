@@ -73,7 +73,7 @@ int orte_pls_bproc_seed_component_open(void)
     mca_pls_bproc_seed_component.num_children = 0;
 
     /* init parameters */
-    mca_pls_bproc_seed_component.debug = orte_pls_bproc_param_register_int("debug", 1);
+    mca_pls_bproc_seed_component.debug = orte_pls_bproc_param_register_int("debug", 0);
     mca_pls_bproc_seed_component.reap = orte_pls_bproc_param_register_int("reap", 1);
     mca_pls_bproc_seed_component.image_frag_size = orte_pls_bproc_param_register_int("image_frag_size", 256*1024);
     mca_pls_bproc_seed_component.name_fd = orte_pls_bproc_param_register_int("name_fd", 3);

@@ -457,10 +457,12 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             orte_rmaps_base_proc_t* proc = (orte_rmaps_base_proc_t*)item;
             pid_t pid;
 
-            ompi_output(0, "orte_pls_bproc: starting: %d.%d.%d\n", ORTE_NAME_ARGS(&proc->proc_name));
+            if(mca_pls_bproc_seed_component.debug) {
+                ompi_output(0, "orte_pls_bproc: starting: %d.%d.%d\n", ORTE_NAME_ARGS(&proc->proc_name));
+            }
             rc = orte_pls_bproc_undump(proc, image, image_len, &pid);
             if(ORTE_SUCCESS != rc) {
-                ompi_output(0, "orte_pls_bproc_undump: failed status=%d\n", rc);
+                ORTE_ERROR_LOG(rc);
                 _exit(1);
             }
 
@@ -470,14 +472,18 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             OBJ_RETAIN(proc);
             orte_wait_cb(pid, orte_pls_bproc_wait_proc, proc);
 
-            ompi_output(0, "orte_pls_bproc: started: %d.%d.%d\n", ORTE_NAME_ARGS(&proc->proc_name));
+            if(mca_pls_bproc_seed_component.debug) {
+                ompi_output(0, "orte_pls_bproc: started: %d.%d.%d\n", ORTE_NAME_ARGS(&proc->proc_name));
+            }
         }
 
         /* free memory associated with the process image */
         free(image);
 
-        ompi_output(0, "orte_pls_bproc: waiting for %d children",  mca_pls_bproc_seed_component.num_children);
         /* wait for all children to complete */
+        if(mca_pls_bproc_seed_component.debug) {
+            ompi_output(0, "orte_pls_bproc: waiting for %d children",  mca_pls_bproc_seed_component.num_children);
+        }
         OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
         while(mca_pls_bproc_seed_component.num_children > 0) {
             ompi_condition_wait(
@@ -504,6 +510,8 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
  
             orte_wait_cb(daemon_pids[index++], orte_pls_bproc_wait_node, node);
         }
+
+        /* release resources */
         rc = ORTE_SUCCESS;
     }
    
