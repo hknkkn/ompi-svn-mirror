@@ -83,7 +83,11 @@ static void orte_pls_fork_wait_proc(pid_t pid, int status, void* cbdata)
 }
 
 
-static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_t* proc)
+static int orte_pls_fork_proc(
+    orte_app_context_t* context, 
+    orte_rmaps_base_proc_t* proc,
+    orte_vpid_t vpid_start,
+    orte_vpid_t vpid_range)
 {
     pid_t pid;
     int p_stdout[2];
@@ -108,9 +112,12 @@ static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_
 
     if(pid == 0) {
 
+        /* set working directory */
         if(chdir(context->cwd) != 0) {
             ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         }
+
+        /* setup stdout/stderr */
         close(p_stdout[0]);
         close(p_stderr[0]);
         if(p_stdout[1] != STDOUT_FILENO) {
@@ -121,6 +128,11 @@ static int orte_pls_fork_proc(orte_app_context_t* context, orte_rmaps_base_proc_
             dup2(p_stderr[1], STDERR_FILENO);
             close(p_stderr[1]);
         }
+
+        /* push name into environment */
+        orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range);
+  
+        /* execute application */
         execve(context->app, context->argv, context->env);
         ompi_output(0, "orte_pls_fork: execv failed with errno=%d\n", errno);
         exit(-1);
@@ -165,12 +177,20 @@ int orte_pls_fork_launch(orte_jobid_t jobid)
 {
     ompi_list_t map;
     ompi_list_item_t* item;
+    orte_vpid_t vpid_start;
+    orte_vpid_t vpid_range;
     int rc;
 
     /* query the allocation for this node */
     OBJ_CONSTRUCT(&map, ompi_list_t);
     rc = orte_rmaps_base_get_node_map(
         orte_process_info.my_name->cellid,jobid,orte_system_info.nodename,&map);
+    if (ORTE_SUCCESS != rc) {
+        ORTE_ERROR_LOG(rc);
+        goto cleanup;
+    }
+
+    rc = orte_rmaps_base_get_vpid_range(jobid, &vpid_start, &vpid_range);
     if (ORTE_SUCCESS != rc) {
         ORTE_ERROR_LOG(rc);
         goto cleanup;
@@ -183,7 +203,7 @@ int orte_pls_fork_launch(orte_jobid_t jobid)
         orte_rmaps_base_map_t* map = (orte_rmaps_base_map_t*)item;
         size_t i;
         for(i=0; i<map->num_procs; i++) {
-            rc = orte_pls_fork_proc(map->app, map->procs[i]);
+            rc = orte_pls_fork_proc(map->app, map->procs[i], vpid_start, vpid_range);
             if(ORTE_SUCCESS != rc) {
                 ORTE_ERROR_LOG(rc);
                 goto cleanup;
