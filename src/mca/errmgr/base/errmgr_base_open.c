@@ -57,7 +57,7 @@ int orte_errmgr_base_open(void)
   /* Open up all available components */
 
   if (ORTE_SUCCESS != 
-      mca_base_components_open("errmgr", 0, orte_errmgr_base_static_components, 
+      mca_base_components_open("errmgr", 0, mca_errmgr_base_static_components, 
                                &orte_errmgr_base_components_available)) {
     return ORTE_ERROR;
   }
