@@ -83,16 +83,11 @@ int orte_soh_base_select(void)
 
   } /* for each possible component */
 
+
   /* If we didn't find one to select, barf */
-
-  if (NULL == best_module) {
-    return OMPI_ERROR;
+  if (NULL != best_module) {
+      orte_soh = *best_module;
   }
-
-  /* We have happiness -- save the component and module for later
-     usage */
-
-  orte_soh = *best_module;
 
   /* all done */
 
