@@ -15,12 +15,12 @@
  *
  */
 
-#include "ompi_config.h"
-#include "include/constants.h"
+#include "orte_config.h"
+#include "include/orte_constants.h"
 #include "mca/mca.h"
 #include "util/bufpack.h"
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
+
 #include "ns_proxy.h"
 
 /**
@@ -31,138 +31,226 @@
  * functions
  */
 
-mca_ns_base_cellid_t mca_ns_proxy_create_cellid(void)
+int orte_ns_proxy_create_cellid(orte_cellid_t *cellid)
 {
     ompi_buffer_t cmd;
-    mca_ns_base_cellid_t cell;
     ompi_buffer_t answer;
-    mca_ns_cmd_flag_t command;
+    orte_ns_cmd_flag_t command;
     int recv_tag;
 
-    command = MCA_NS_CREATE_CELLID_CMD;
+    /* set the default value of error */
+    *cellid = ORTE_CELLID_MAX;
+    
+    command = ORTE_NS_CREATE_CELLID_CMD;
     recv_tag = MCA_OOB_TAG_NS;
 
     if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return OMPI_ERROR;
+	   return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&command, 1, MCA_NS_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD)) {
+	   return ORTE_ERR_PACK_FAILURE;
     }
 
-    if (0 > mca_oob_send_packed(mca_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
-	return MCA_NS_BASE_CELLID_MAX;
+    if (0 > mca_oob_send_packed(orte_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (0 > mca_oob_recv_packed(mca_ns_my_replica, &answer, &recv_tag)) {
-	return MCA_NS_BASE_CELLID_MAX;
+    if (0 > mca_oob_recv_packed(orte_ns_my_replica, &answer, &recv_tag)) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if ((OMPI_SUCCESS != ompi_unpack(answer, &command, 1, MCA_NS_OOB_PACK_CMD))
-	|| (MCA_NS_CREATE_CELLID_CMD != command)) {
+    if ((OMPI_SUCCESS != ompi_unpack(answer, &command, 1, ORTE_NS_OOB_PACK_CMD))
+	|| (ORTE_NS_CREATE_CELLID_CMD != command)) {
+	   ompi_buffer_free(answer);
+	   return ORTE_ERR_UNPACK_FAILURE;
+    }
+
+    if (OMPI_SUCCESS != ompi_unpack(answer, cellid, 1, ORTE_NS_OOB_PACK_CELLID)) {
+	   ompi_buffer_free(answer);
+	   return ORTE_ERR_UNPACK_FAILURE;
+    }
+    
 	ompi_buffer_free(answer);
-	return MCA_NS_BASE_CELLID_MAX;
-    }
-
-    if (OMPI_SUCCESS != ompi_unpack(answer, &cell, 1, MCA_NS_OOB_PACK_CELLID)) {
-	ompi_buffer_free(answer);
-	return MCA_NS_BASE_CELLID_MAX;
-    } else {
-	ompi_buffer_free(answer);
-	return cell;
-    }
+	return ORTE_SUCCESS;
 }
 
 
-mca_ns_base_jobid_t mca_ns_proxy_create_jobid(void)
+int orte_ns_proxy_create_jobid(orte_jobid_t *job)
 {
     ompi_buffer_t cmd;
-    mca_ns_base_jobid_t job;
     ompi_buffer_t answer;
-    mca_ns_cmd_flag_t command;
+    orte_ns_cmd_flag_t command;
     int recv_tag;
 
-    command = MCA_NS_CREATE_JOBID_CMD;
+    command = ORTE_NS_CREATE_JOBID_CMD;
     recv_tag = MCA_OOB_TAG_NS;
 
+    /* set default value */
+    *job = ORTE_JOBID_MAX;
+    
     if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return OMPI_ERROR;
+	   return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&command, 1, MCA_NS_OOB_PACK_CMD)) { /* got a problem */
-	return OMPI_ERROR;
+    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD)) { /* got a problem */
+	   return OMPI_ERR_PACK_FAILURE;
     }
 
-    if (0 > mca_oob_send_packed(mca_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
-	return MCA_NS_BASE_JOBID_MAX;
+    if (0 > mca_oob_send_packed(orte_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (0 > mca_oob_recv_packed(mca_ns_my_replica, &answer, &recv_tag)) {
-	return MCA_NS_BASE_JOBID_MAX;
+    if (0 > mca_oob_recv_packed(orte_ns_my_replica, &answer, &recv_tag)) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if ((OMPI_SUCCESS != ompi_unpack(answer, &command, 1, MCA_NS_OOB_PACK_CMD))
-	|| (MCA_NS_CREATE_JOBID_CMD != command)) {
+    if ((OMPI_SUCCESS != ompi_unpack(answer, &command, 1, ORTE_NS_OOB_PACK_CMD))
+	|| (ORTE_NS_CREATE_JOBID_CMD != command)) {
+	   ompi_buffer_free(answer);
+	   return ORTE_ERR_UNPACK_FAILURE;
+    }
+
+    if (OMPI_SUCCESS != ompi_unpack(answer, job, 1, ORTE_NS_OOB_PACK_JOBID)) {
+	   ompi_buffer_free(answer);
+	   return ORTE_ERR_UNPACK_FAILURE;
+    }
+    
 	ompi_buffer_free(answer);
-	return MCA_NS_BASE_JOBID_MAX;
-    }
-
-    if (OMPI_SUCCESS != ompi_unpack(answer, &job, 1, MCA_NS_OOB_PACK_JOBID)) {
-	ompi_buffer_free(answer);
-	return MCA_NS_BASE_JOBID_MAX;
-    } else {
-	ompi_buffer_free(answer);
-	return job;
-    }
+	return ORTE_SUCCESS;
 }
 
 
-mca_ns_base_vpid_t mca_ns_proxy_reserve_range(mca_ns_base_jobid_t job, mca_ns_base_vpid_t range)
+int orte_ns_proxy_reserve_range(orte_jobid_t job, orte_vpid_t range, orte_vpid_t *starting_vpid)
 {
     ompi_buffer_t cmd;
-    mca_ns_base_vpid_t starting_vpid;
     ompi_buffer_t answer;
-    mca_ns_cmd_flag_t command;
+    orte_ns_cmd_flag_t command;
     int recv_tag;
 
-    command = MCA_NS_RESERVE_RANGE_CMD;
+    command = ORTE_NS_RESERVE_RANGE_CMD;
     recv_tag = MCA_OOB_TAG_NS;
 
+    /* set default return value */
+    *starting_vpid = ORTE_VPID_MAX;
+    
     if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
-	return OMPI_ERROR;
+	   return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&command, 1, MCA_NS_OOB_PACK_CMD)) { /* got a problem */
-	return OMPI_ERROR;
+    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD)) { /* got a problem */
+	   return ORTE_ERR_PACK_FAILURE;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&job, 1, MCA_NS_OOB_PACK_JOBID)) { /* got a problem */
-	return OMPI_ERROR;
+    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&job, 1, ORTE_NS_OOB_PACK_JOBID)) { /* got a problem */
+	   return ORTE_ERR_PACK_FAILURE;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&range, 1, MCA_NS_OOB_PACK_VPID)) { /* got a problem */
-	return OMPI_ERROR;
+    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&range, 1, ORTE_NS_OOB_PACK_VPID)) { /* got a problem */
+	   return ORTE_ERR_PACK_FAILURE;
     }
 
-    if (0 > mca_oob_send_packed(mca_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
-	return MCA_NS_BASE_VPID_MAX;
+    if (0 > mca_oob_send_packed(orte_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (0 > mca_oob_recv_packed(mca_ns_my_replica, &answer, &recv_tag)) {
-	return MCA_NS_BASE_VPID_MAX;
+    if (0 > mca_oob_recv_packed(orte_ns_my_replica, &answer, &recv_tag)) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if ((OMPI_SUCCESS != ompi_unpack(answer, &command, 1, MCA_NS_OOB_PACK_CMD))
-	|| (MCA_NS_RESERVE_RANGE_CMD != command)) {
+    if ((OMPI_SUCCESS != ompi_unpack(answer, &command, 1, ORTE_NS_OOB_PACK_CMD))
+	|| (ORTE_NS_RESERVE_RANGE_CMD != command)) {
+	   ompi_buffer_free(answer);
+	   return ORTE_ERR_UNPACK_FAILURE;
+    }
+
+    if (OMPI_SUCCESS != ompi_unpack(answer, starting_vpid, 1, ORTE_NS_OOB_PACK_VPID)) {
+	   ompi_buffer_free(answer);
+	   return ORTE_ERR_UNPACK_FAILURE;
+    }
+    
 	ompi_buffer_free(answer);
-	return MCA_NS_BASE_VPID_MAX;
-    }
-
-    if (OMPI_SUCCESS != ompi_unpack(answer, &starting_vpid, 1, MCA_NS_OOB_PACK_VPID)) {
-	ompi_buffer_free(answer);
-	return MCA_NS_BASE_VPID_MAX;
-    } else {
-	ompi_buffer_free(answer);
-	return starting_vpid;
-    }
+	return ORTE_SUCCESS;
 }
+
+
+int orte_ns_proxy_assign_oob_tag(orte_oob_tag_t *tag,
+                                 char *name)
+{
+    ompi_buffer_t cmd;
+    ompi_buffer_t answer;
+    orte_ns_cmd_flag_t command;
+    int recv_tag;
+    orte_ns_proxy_tagitem_t* tagitem;
+
+    OMPI_THREAD_LOCK(&orte_ns_proxy_mutex);
+
+    /* first, check to see if name is already on local list
+     * if so, return tag
+     */
+    for (tagitem = (orte_ns_proxy_tagitem_t*)ompi_list_get_first(&orte_ns_proxy_taglist);
+         tagitem != (orte_ns_proxy_tagitem_t*)ompi_list_get_end(&orte_ns_proxy_taglist);
+         tagitem = (orte_ns_proxy_tagitem_t*)ompi_list_get_next(tagitem)) {
+        if (0 == strcmp(name, tagitem->name)) { /* found name on list */
+           *tag = tagitem->tag;
+           return ORTE_SUCCESS;
+        }
+    }
+         
+    /* okay, not on local list - so go get one from tag server */
+    command = ORTE_NS_ASSIGN_OOB_TAG_CMD;
+    recv_tag = MCA_OOB_TAG_NS;
+
+    *tag = ORTE_OOB_TAG_MAX;  /* set the default error value */
+    
+    if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+
+    if (OMPI_SUCCESS != ompi_pack(cmd, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD)) {
+        return ORTE_ERR_PACK_FAILURE;
+    }
+
+    if (0 > ompi_pack_string(cmd, (void*)name)) {
+        return ORTE_ERR_PACK_FAILURE;
+    }
+    
+    if (0 > mca_oob_send_packed(orte_ns_my_replica, cmd, MCA_OOB_TAG_NS, 0)) {
+        return ORTE_ERR_COMM_FAILURE;
+    }
+
+    if (0 > mca_oob_recv_packed(orte_ns_my_replica, &answer, &recv_tag)) {
+        return ORTE_ERR_COMM_FAILURE;
+    }
+
+    if ((OMPI_SUCCESS != ompi_unpack(answer, &command, 1, ORTE_NS_OOB_PACK_CMD))
+        || (ORTE_NS_CREATE_CELLID_CMD != command)) {
+            ompi_buffer_free(answer);
+            return ORTE_ERR_UNPACK_FAILURE;
+    }
+
+    if (OMPI_SUCCESS != ompi_unpack(answer, tag, 1, ORTE_NS_OOB_PACK_OOB_TAG)) {
+        ompi_buffer_free(answer);
+        return ORTE_ERR_UNPACK_FAILURE;
+    }
+    
+    ompi_buffer_free(answer);
+        
+    /* add the new tag to the local list so we don't have to get it again */
+    tagitem = OBJ_NEW(orte_ns_proxy_tagitem_t);
+    if (NULL == tagitem) { /* out of memory */
+        *tag = ORTE_OOB_TAG_MAX;
+        OMPI_THREAD_UNLOCK(&orte_ns_proxy_mutex);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    tagitem->tag = *tag;
+    tagitem->name = strdup(name);
+    ompi_list_append(&orte_ns_proxy_taglist, &tagitem->item);
+    
+    OMPI_THREAD_UNLOCK(&orte_ns_proxy_mutex);
+    
+    /* all done */
+    return ORTE_SUCCESS;
+}
+
+

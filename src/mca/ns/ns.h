@@ -28,90 +28,13 @@
  * includes
  */
 
-#include "ompi_config.h"
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#include <limits.h>
-
-#include "include/types.h"
-#include "class/ompi_list.h"
+#include "orte_config.h"
+#include "include/constants.h"
 
 #include "mca/mca.h"
+#include "mca/oob/oob_types.h"
 
-
-/*
- * useful defines for bit-masks
- */
-
-#define OMPI_NS_CMP_CELLID     0x01
-#define OMPI_NS_CMP_JOBID      0x02
-#define OMPI_NS_CMP_VPID       0x04
-#define OMPI_NS_CMP_ALL        0Xff
-
-/*
- * define maximum value for id's in any field
- */
-#define MCA_NS_BASE_CELLID_MAX UINT32_MAX
-#define MCA_NS_BASE_JOBID_MAX  UINT32_MAX
-#define MCA_NS_BASE_VPID_MAX   UINT32_MAX
-
-/*
- * define flag values for remote commands - only used internally
- */
-#define MCA_NS_CREATE_CELLID_CMD   0x01
-#define MCA_NS_CREATE_JOBID_CMD    0x02
-#define MCA_NS_RESERVE_RANGE_CMD   0x04
-#define MCA_NS_FREE_NAME_CMD       0x08
-#define MCA_NS_GET_MY_CELLID_CMD   0x10
-#define MCA_NS_ERROR               0xff
-
-
-/*
- * general typedefs & structures
- */
-/** Set the allowed range for ids in each space */
-/* CAUTION - any changes here must also change corresponding
- * OOB_PACK definitions below
- */
-typedef uint32_t mca_ns_base_jobid_t;
-typedef uint32_t mca_ns_base_cellid_t;
-typedef uint32_t mca_ns_base_vpid_t;
-typedef uint8_t ompi_ns_cmp_bitmask_t;  /**< Bit mask for comparing process names */
-typedef uint16_t mca_ns_cmd_flag_t;
-
-/*
- * packing type definitions
- */
-/* CAUTION - any changes here must also change corresponding
- * typedefs above
- */
-#define MCA_NS_OOB_PACK_JOBID   OMPI_INT32
-#define MCA_NS_OOB_PACK_CELLID  OMPI_INT32
-#define MCA_NS_OOB_PACK_VPID    OMPI_INT32
-#define MCA_NS_OOB_PACK_CMD     OMPI_INT16
-
-
-struct ompi_process_name_t {
-    mca_ns_base_cellid_t cellid;  /**< Cell number */
-    mca_ns_base_jobid_t jobid; /**< Job number */
-    mca_ns_base_vpid_t vpid;  /**< Process number */
-};
-typedef struct ompi_process_name_t ompi_process_name_t;
-
-
-/*
- * define the command names/ids for use in OOB buffers.
- * only needed for remotely executed commands.
- */
-#define OMPI_NS_CREATE_CELLID     0x01
-#define OMPI_NS_CREATE_JOBID      0x02
-#define OMPI_NS_RESERVE_RANGE     0x04
-#define OMPI_NS_FREE_NAME         0x08
-#define OMPI_NS_GET_MY_CELLID     0x10
-
-typedef uint8_t ompi_ns_cmd_bitmask_t;
+#include "ns_types.h"
 
 
 /*
@@ -137,7 +60,7 @@ typedef uint8_t ompi_ns_cmd_bitmask_t;
  * new_cellid = ompi_name_server.create_cellid()
  * @endcode
  */
-typedef mca_ns_base_cellid_t (*mca_ns_base_module_create_cellid_fn_t)(void);
+typedef int (*orte_ns_base_module_create_cellid_fn_t)(orte_cellid_t *cellid);
 
 /**
  * Get the cell id for a process.
@@ -165,7 +88,7 @@ typedef mca_ns_base_cellid_t (*mca_ns_base_module_create_cellid_fn_t)(void);
  * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
  * @endcode
  */
-typedef int (*mca_ns_base_module_assign_cellid_to_process_fn_t)(ompi_process_name_t* name);
+typedef int (*orte_ns_base_module_assign_cellid_to_process_fn_t)(orte_process_name_t* name);
 
 /**
  * Create a new job id.
@@ -191,7 +114,7 @@ typedef int (*mca_ns_base_module_assign_cellid_to_process_fn_t)(ompi_process_nam
  * new_jobid = ompi_name_server.create_jobid()
  * @endcode
  */
-typedef mca_ns_base_jobid_t (*mca_ns_base_module_create_jobid_fn_t)(void);
+typedef int (*orte_ns_base_module_create_jobid_fn_t)(orte_jobid_t *jobid);
 
 /**
  * Obtain a single new process name.
@@ -217,7 +140,10 @@ typedef mca_ns_base_jobid_t (*mca_ns_base_module_create_jobid_fn_t)(void);
  * new_name = ompi_name_server.create_process_name(cell, job, vpid);
  * @endcode
  */
-typedef ompi_process_name_t* (*mca_ns_base_module_create_proc_name_fn_t)(mca_ns_base_cellid_t cell, mca_ns_base_jobid_t job, mca_ns_base_vpid_t vpid);
+typedef int (*orte_ns_base_module_create_proc_name_fn_t)(orte_process_name_t *name,
+                                                         orte_cellid_t cell,
+                                                         orte_jobid_t job,
+                                                         orte_vpid_t vpid);
 
 /**
  * Derive a process vpid.
@@ -225,7 +151,9 @@ typedef ompi_process_name_t* (*mca_ns_base_module_create_proc_name_fn_t)(mca_ns_
  * is required because the vpid may not be an integer - need to provide a means for
  * computing the resulting vpid in case it isn't.
  */
-typedef mca_ns_base_vpid_t (*mca_ns_base_module_derive_vpid_fn_t)(mca_ns_base_vpid_t base_vpid, int offset);
+typedef int (*orte_ns_base_module_derive_vpid_fn_t)(orte_vpid_t *vpid,
+                                                    orte_vpid_t base_vpid,
+                                                    int offset);
 
 /**
  * Make a copy of a process name.
@@ -238,7 +166,8 @@ typedef mca_ns_base_vpid_t (*mca_ns_base_module_derive_vpid_fn_t)(mca_ns_base_vp
  * @retval NULL Indicates an error - most likely due to a NULL process name
  * pointer being supplied as input.
  */
-typedef ompi_process_name_t* (*mca_ns_base_module_copy_proc_name_fn_t)(ompi_process_name_t* name);
+typedef int (*orte_ns_base_module_copy_proc_name_fn_t)(orte_process_name_t *dest,
+                                                       orte_process_name_t* src);
 
 /**
  * Convert a string representation to a process name.
@@ -256,7 +185,8 @@ typedef ompi_process_name_t* (*mca_ns_base_module_copy_proc_name_fn_t)(ompi_proc
  * name = ompi_name_server.convert_string_to_process_name(name_string);
  * @endcode
  */
-typedef ompi_process_name_t* (*mca_ns_base_module_convert_string_to_process_name_fn_t)(const char* name);
+typedef int (*orte_ns_base_module_convert_string_to_process_name_fn_t)(orte_process_name_t *name,
+                                                                       const char* name_string);
 
 
 /**
@@ -277,7 +207,9 @@ typedef ompi_process_name_t* (*mca_ns_base_module_convert_string_to_process_name
  * starting_procid = ompi_name_server.reserve_range(jobid, range)
  * @endcode
  */
-typedef mca_ns_base_vpid_t (*mca_ns_base_module_reserve_range_fn_t)(mca_ns_base_jobid_t job, mca_ns_base_vpid_t range);
+typedef int (*orte_ns_base_module_reserve_range_fn_t)(orte_jobid_t job,
+                                                      orte_vpid_t range,
+                                                      orte_vpid_t *startvpid);
 
 
 /**
@@ -302,7 +234,7 @@ typedef mca_ns_base_vpid_t (*mca_ns_base_module_reserve_range_fn_t)(mca_ns_base_
  *     }
  * @endcode
  */
-typedef int (*mca_ns_base_module_free_name_fn_t)(ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_free_name_fn_t)(orte_process_name_t **name);
 
 /**
  * Get the process name as a character string.
@@ -327,7 +259,8 @@ typedef int (*mca_ns_base_module_free_name_fn_t)(ompi_process_name_t *name);
  * name-string = ompi_name_server.get_proc_name_string(&name)
  * @endcode
  */
-typedef char* (*mca_ns_base_module_get_proc_name_string_fn_t)(const ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_get_proc_name_string_fn_t)(char *name_string,
+                                                             const orte_process_name_t* name);
 
 /**
  * Get the virtual process id as a character string.
@@ -348,7 +281,7 @@ typedef char* (*mca_ns_base_module_get_proc_name_string_fn_t)(const ompi_process
  * vpid-string = ompi_name_server.get_vpid_string(&name)
  * @endcode
  */
-typedef char* (*mca_ns_base_module_get_vpid_string_fn_t)(const ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_get_vpid_string_fn_t)(char *vpid_string, const orte_process_name_t* name);
 
 /**
  * Convert vpid to character string
@@ -366,7 +299,7 @@ typedef char* (*mca_ns_base_module_get_vpid_string_fn_t)(const ompi_process_name
  * vpid-string = ompi_name_server.convert_vpid_to_string(vpid);
  * @endcode
  */
- typedef char* (*mca_ns_base_module_convert_vpid_to_string_fn_t)(const mca_ns_base_vpid_t vpid);
+ typedef int (*orte_ns_base_module_convert_vpid_to_string_fn_t)(char *vpid_string, const orte_vpid_t vpid);
  
  /**
   * Convert a string to a vpid.
@@ -382,7 +315,7 @@ typedef char* (*mca_ns_base_module_get_vpid_string_fn_t)(const ompi_process_name
   * vpid = ompi_name_server.convert_string_to_vpid(vpidstring);
   * @endcode
   */
-typedef mca_ns_base_vpid_t (*mca_ns_base_module_convert_string_to_vpid_fn_t)(const char *vpidstring);
+typedef int (*orte_ns_base_module_convert_string_to_vpid_fn_t)(orte_vpid_t *vpid, const char* vpidstring);
 
 /**
  * Get the job id as a character string.
@@ -403,7 +336,7 @@ typedef mca_ns_base_vpid_t (*mca_ns_base_module_convert_string_to_vpid_fn_t)(con
  * jobid-string = ompi_name_server.get_jobid_string(&name)
  * @endcode
  */
-typedef char* (*mca_ns_base_module_get_jobid_string_fn_t)(const ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_get_jobid_string_fn_t)(char *jobid_string, const orte_process_name_t* name);
 
 /**
  * Convert jobid to character string
@@ -422,7 +355,7 @@ typedef char* (*mca_ns_base_module_get_jobid_string_fn_t)(const ompi_process_nam
  * jobid-string = ompi_name_server.convert_jobid_to_string(jobid);
  * @endcode
  */
-typedef char* (*mca_ns_base_module_convert_jobid_to_string_fn_t)(const mca_ns_base_jobid_t jobid);
+typedef int (*orte_ns_base_module_convert_jobid_to_string_fn_t)(char *jobid_string, const orte_jobid_t jobid);
 
 /**
  * Convert a string to a jobid
@@ -439,7 +372,7 @@ typedef char* (*mca_ns_base_module_convert_jobid_to_string_fn_t)(const mca_ns_ba
  * @endcode
  *
  */
-typedef mca_ns_base_jobid_t (*mca_ns_base_module_convert_string_to_jobid_fn_t)(const char *jobidstring);
+typedef int (*orte_ns_base_module_convert_string_to_jobid_fn_t)(orte_jobid_t *jobid, const char* jobidstring);
 
 /**
  * Get the cell id as a character string.
@@ -460,7 +393,7 @@ typedef mca_ns_base_jobid_t (*mca_ns_base_module_convert_string_to_jobid_fn_t)(c
  * cellid-string = ompi_name_server.get_cellid_string(&name)
  * @endcode
  */
-typedef char* (*mca_ns_base_module_get_cellid_string_fn_t)(const ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_get_cellid_string_fn_t)(char *cellid_string, const orte_process_name_t* name);
 
 /**
  * Convert cellid to character string
@@ -478,7 +411,7 @@ typedef char* (*mca_ns_base_module_get_cellid_string_fn_t)(const ompi_process_na
  * cellid-string = ompi_name_server.convert_cellid_to_string(cellid);
  * @endcode
  */
- typedef char* (*mca_ns_base_module_convert_cellid_to_string_fn_t)(const mca_ns_base_cellid_t cellid);
+ typedef int (*orte_ns_base_module_convert_cellid_to_string_fn_t)(char *cellid_string, const orte_cellid_t cellid);
  
  /**
   * Convert a string to a cellid.
@@ -494,7 +427,7 @@ typedef char* (*mca_ns_base_module_get_cellid_string_fn_t)(const ompi_process_na
   * cellid = ompi_name_server.convert_string_to_cellid(cellidstring);
   * @endcode
   */
-typedef mca_ns_base_cellid_t (*mca_ns_base_module_convert_string_to_cellid_fn_t)(const char *cellidstring);
+typedef int (*orte_ns_base_module_convert_string_to_cellid_fn_t)(orte_cellid_t *cellid, const char *cellidstring);
 
 /**
  * Get the virtual process id as a numeric value.
@@ -511,7 +444,7 @@ typedef mca_ns_base_cellid_t (*mca_ns_base_module_convert_string_to_cellid_fn_t)
  * vpid = ompi_name_server.get_vpid(&name)
  * @endcode
  */
-typedef mca_ns_base_vpid_t (*mca_ns_base_module_get_vpid_fn_t)(const ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_get_vpid_fn_t)(orte_vpid_t *vpid, const orte_process_name_t *name);
 
 /**
  * Get the job id as a numeric value.
@@ -528,7 +461,7 @@ typedef mca_ns_base_vpid_t (*mca_ns_base_module_get_vpid_fn_t)(const ompi_proces
  * jobid = ompi_name_server.get_jobid(&name)
  * @endcode
  */
-typedef mca_ns_base_jobid_t (*mca_ns_base_module_get_jobid_fn_t)(const ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_get_jobid_fn_t)(orte_jobid_t *jobid, const orte_process_name_t* name);
 
 /**
  * Get the cell id as a numberic value.
@@ -545,7 +478,7 @@ typedef mca_ns_base_jobid_t (*mca_ns_base_module_get_jobid_fn_t)(const ompi_proc
  * cellid = ompi_name_server.get_cellid(&name)
  * @endcode
  */
-typedef mca_ns_base_cellid_t (*mca_ns_base_module_get_cellid_fn_t)(const ompi_process_name_t *name);
+typedef int (*orte_ns_base_module_get_cellid_fn_t)(orte_cellid_t *cellid, const orte_process_name_t* name);
 
 /**
  * Compare two name values.
@@ -576,7 +509,9 @@ typedef mca_ns_base_cellid_t (*mca_ns_base_module_get_cellid_fn_t)(const ompi_pr
  * result = ompi_name_server.compare(bit_mask, &name1, &name2)
  * @endcode
  */
-typedef int (*mca_ns_base_module_compare_fn_t)(ompi_ns_cmp_bitmask_t fields, const ompi_process_name_t *name1, const ompi_process_name_t *name2);
+typedef int (*orte_ns_base_module_compare_fn_t)(int *cmp, orte_ns_cmp_bitmask_t fields,
+                                                const orte_process_name_t* name1,
+                                                const orte_process_name_t* name2);
 
 /*
  * Pack a name structure for transmission and/or registry storage
@@ -596,7 +531,7 @@ typedef int (*mca_ns_base_module_compare_fn_t)(ompi_ns_cmp_bitmask_t fields, con
  * @endcode
  *
  */
-typedef int (*mca_ns_base_module_pack_name_fn_t)(void *dest, void *src, int n);
+typedef int (*orte_ns_base_module_pack_name_fn_t)(void *dest, void *src);
 
 /*
  * Unpack a name structure
@@ -616,7 +551,7 @@ typedef int (*mca_ns_base_module_pack_name_fn_t)(void *dest, void *src, int n);
  * @endcode
  *
  */
-typedef int (*mca_ns_base_module_unpack_name_fn_t)(void *dest, void *src, int n);
+typedef int (*orte_ns_base_module_unpack_name_fn_t)(void *dest, void *src);
 
 /*
  * Pack a cellid for transmission and/or registry storage
@@ -636,7 +571,7 @@ typedef int (*mca_ns_base_module_unpack_name_fn_t)(void *dest, void *src, int n)
  * @endcode
  *
  */
-typedef int (*mca_ns_base_module_pack_cellid_fn_t)(void *dest, void *src, int n);
+typedef int (*orte_ns_base_module_pack_cellid_fn_t)(void *dest, void *src);
 
 /*
  * Unpack a cellid
@@ -656,7 +591,7 @@ typedef int (*mca_ns_base_module_pack_cellid_fn_t)(void *dest, void *src, int n)
  * @endcode
  *
  */
-typedef int (*mca_ns_base_module_unpack_cellid_fn_t)(void *dest, void *src, int n);
+typedef int (*orte_ns_base_module_unpack_cellid_fn_t)(void *dest, void *src);
 
 
 
@@ -678,7 +613,7 @@ typedef int (*mca_ns_base_module_unpack_cellid_fn_t)(void *dest, void *src, int 
  * @endcode
  *
  */
-typedef int (*mca_ns_base_module_pack_jobid_fn_t)(void *dest, void *src, int n);
+typedef int (*orte_ns_base_module_pack_jobid_fn_t)(void *dest, void *src);
 
 /*
  * Unpack a jobid
@@ -698,43 +633,48 @@ typedef int (*mca_ns_base_module_pack_jobid_fn_t)(void *dest, void *src, int n);
  * @endcode
  *
  */
-typedef int (*mca_ns_base_module_unpack_jobid_fn_t)(void *dest, void *src, int n);
+typedef int (*orte_ns_base_module_unpack_jobid_fn_t)(void *dest, void *src);
 
-
+/*
+ * Allocate a tag
+ */
+typedef int (*orte_ns_base_module_assign_oob_tag_fn_t)(orte_oob_tag_t *tag,
+                                                   char *name);
 
 /*
  * Ver 1.0.0
  */
 struct mca_ns_base_module_1_0_0_t {
-    mca_ns_base_module_create_cellid_fn_t create_cellid;
-    mca_ns_base_module_assign_cellid_to_process_fn_t assign_cellid_to_process;
-    mca_ns_base_module_create_jobid_fn_t create_jobid;
-    mca_ns_base_module_create_proc_name_fn_t create_process_name;
-    mca_ns_base_module_copy_proc_name_fn_t copy_process_name;
-    mca_ns_base_module_convert_string_to_process_name_fn_t convert_string_to_process_name;
-    mca_ns_base_module_reserve_range_fn_t reserve_range;
-    mca_ns_base_module_free_name_fn_t free_name;
-    mca_ns_base_module_get_proc_name_string_fn_t get_proc_name_string;
-    mca_ns_base_module_get_vpid_string_fn_t get_vpid_string;
-    mca_ns_base_module_convert_vpid_to_string_fn_t convert_vpid_to_string;
-    mca_ns_base_module_convert_string_to_vpid_fn_t convert_string_to_vpid;
-    mca_ns_base_module_get_jobid_string_fn_t get_jobid_string;
-    mca_ns_base_module_convert_jobid_to_string_fn_t convert_jobid_to_string;
-    mca_ns_base_module_convert_string_to_jobid_fn_t convert_string_to_jobid;
-    mca_ns_base_module_get_cellid_string_fn_t get_cellid_string;
-    mca_ns_base_module_convert_cellid_to_string_fn_t convert_cellid_to_string;
-    mca_ns_base_module_convert_string_to_cellid_fn_t convert_string_to_cellid;
-    mca_ns_base_module_get_vpid_fn_t get_vpid;
-    mca_ns_base_module_get_jobid_fn_t get_jobid;
-    mca_ns_base_module_get_cellid_fn_t get_cellid;
-    mca_ns_base_module_compare_fn_t compare;
-    mca_ns_base_module_pack_name_fn_t pack_name;
-    mca_ns_base_module_unpack_name_fn_t unpack_name;
-    mca_ns_base_module_pack_cellid_fn_t pack_cellid;
-    mca_ns_base_module_unpack_cellid_fn_t unpack_cellid;
-    mca_ns_base_module_pack_jobid_fn_t pack_jobid;
-    mca_ns_base_module_unpack_jobid_fn_t unpack_jobid;
-    mca_ns_base_module_derive_vpid_fn_t derive_vpid;
+    orte_ns_base_module_create_cellid_fn_t create_cellid;
+    orte_ns_base_module_assign_cellid_to_process_fn_t assign_cellid_to_process;
+    orte_ns_base_module_create_jobid_fn_t create_jobid;
+    orte_ns_base_module_create_proc_name_fn_t create_process_name;
+    orte_ns_base_module_copy_proc_name_fn_t copy_process_name;
+    orte_ns_base_module_convert_string_to_process_name_fn_t convert_string_to_process_name;
+    orte_ns_base_module_reserve_range_fn_t reserve_range;
+    orte_ns_base_module_free_name_fn_t free_name;
+    orte_ns_base_module_get_proc_name_string_fn_t get_proc_name_string;
+    orte_ns_base_module_get_vpid_string_fn_t get_vpid_string;
+    orte_ns_base_module_convert_vpid_to_string_fn_t convert_vpid_to_string;
+    orte_ns_base_module_convert_string_to_vpid_fn_t convert_string_to_vpid;
+    orte_ns_base_module_get_jobid_string_fn_t get_jobid_string;
+    orte_ns_base_module_convert_jobid_to_string_fn_t convert_jobid_to_string;
+    orte_ns_base_module_convert_string_to_jobid_fn_t convert_string_to_jobid;
+    orte_ns_base_module_get_cellid_string_fn_t get_cellid_string;
+    orte_ns_base_module_convert_cellid_to_string_fn_t convert_cellid_to_string;
+    orte_ns_base_module_convert_string_to_cellid_fn_t convert_string_to_cellid;
+    orte_ns_base_module_get_vpid_fn_t get_vpid;
+    orte_ns_base_module_get_jobid_fn_t get_jobid;
+    orte_ns_base_module_get_cellid_fn_t get_cellid;
+    orte_ns_base_module_compare_fn_t compare;
+    orte_ns_base_module_pack_name_fn_t pack_name;
+    orte_ns_base_module_unpack_name_fn_t unpack_name;
+    orte_ns_base_module_pack_cellid_fn_t pack_cellid;
+    orte_ns_base_module_unpack_cellid_fn_t unpack_cellid;
+    orte_ns_base_module_pack_jobid_fn_t pack_jobid;
+    orte_ns_base_module_unpack_jobid_fn_t unpack_jobid;
+    orte_ns_base_module_derive_vpid_fn_t derive_vpid;
+    orte_ns_base_module_assign_oob_tag_fn_t assign_oob_tag;
 };
 
 typedef struct mca_ns_base_module_1_0_0_t mca_ns_base_module_1_0_0_t;
@@ -775,5 +715,9 @@ typedef mca_ns_base_component_1_0_0_t mca_ns_base_component_t;
   MCA_BASE_VERSION_1_0_0, \
   /* ns v1.0 */ \
   "ns", 1, 0, 0
+
+/* Global structure for accessing name server functions
+ */
+OMPI_DECLSPEC extern mca_ns_base_module_t orte_name_services;  /* holds selected module's function pointers */
 
 #endif

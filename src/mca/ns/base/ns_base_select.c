@@ -13,22 +13,11 @@
  */
 
 
-#include "ompi_config.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#include "runtime/runtime.h"
-#include "util/output.h"
-#include "util/proc_info.h"
+#include "orte_config.h"
+
 #include "mca/mca.h"
 #include "mca/base/base.h"
-#include "mca/ns/ns.h"
+
 #include "mca/ns/base/base.h"
 
 
@@ -96,17 +85,17 @@ int mca_ns_base_select(bool *allow_multi_user_threads,
   /* If we didn't find one to select, barf */
 
   if (NULL == best_component) {
-    return OMPI_ERROR;
+    return ORTE_ERROR;
   }
 
   /* We have happiness -- save the component and module for later
      usage */
 
-  ompi_name_server = *best_module;
+  orte_name_services = *best_module;
   mca_ns_base_selected_component = *best_component;
   mca_ns_base_selected = true;
 
   /* all done */
 
-  return OMPI_SUCCESS;
+  return ORTE_SUCCESS;
 }

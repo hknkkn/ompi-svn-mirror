@@ -25,16 +25,19 @@
 /*
  * includes
  */
-#include "ompi_config.h"
+#include "orte_config.h"
 
-#include "include/constants.h"
+#include "include/orte_constants.h"
+
 #include "threads/mutex.h"
 #include "util/proc_info.h"
 #include "util/output.h"
+
 #include "mca/mca.h"
 #include "mca/base/mca_base_param.h"
+
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
+
 #include "ns_replica.h"
 
 
@@ -49,49 +52,50 @@ OMPI_COMP_EXPORT mca_ns_base_component_t mca_ns_replica_component = {
     1,  /* MCA module major version */
     0,  /* MCA module minor version */
     0,  /* MCA module release version */
-    mca_ns_replica_open,  /* module open */
-    mca_ns_replica_close /* module close */
+    orte_ns_replica_open,  /* module open */
+    orte_ns_replica_close /* module close */
   },
   {
     false /* checkpoint / restart */
   },
-  mca_ns_replica_init,    /* module init */
-  mca_ns_replica_finalize /* module shutdown */
+  orte_ns_replica_init,    /* module init */
+  orte_ns_replica_finalize /* module shutdown */
 };
 
 /*
  * setup the function pointers for the module
  */
-static mca_ns_base_module_t mca_ns_replica = {
-    mca_ns_replica_create_cellid,
-    mca_ns_base_assign_cellid_to_process,
-    mca_ns_replica_create_jobid,
-    mca_ns_base_create_process_name,
-    mca_ns_base_copy_process_name,
-    mca_ns_base_convert_string_to_process_name,
-    mca_ns_replica_reserve_range,
-    mca_ns_base_free_name,
-    mca_ns_base_get_proc_name_string,
-    mca_ns_base_get_vpid_string,
-    mca_ns_base_convert_vpid_to_string,
-    mca_ns_base_convert_string_to_vpid,
-    mca_ns_base_get_jobid_string,
-    mca_ns_base_convert_jobid_to_string,
-    mca_ns_base_convert_string_to_jobid,
-    mca_ns_base_get_cellid_string,
-    mca_ns_base_convert_cellid_to_string,
-    mca_ns_base_convert_string_to_cellid,
-    mca_ns_base_get_vpid,
-    mca_ns_base_get_jobid,
-    mca_ns_base_get_cellid,
-    mca_ns_base_compare,
-    mca_ns_base_pack_name,
-    mca_ns_base_unpack_name,
-    mca_ns_base_pack_cellid,
-    mca_ns_base_unpack_cellid,
-    mca_ns_base_pack_jobid,
-    mca_ns_base_unpack_jobid,
-    mca_ns_base_derive_vpid
+static mca_ns_base_module_t orte_ns_replica = {
+    orte_ns_replica_create_cellid,
+    orte_ns_base_assign_cellid_to_process,
+    orte_ns_replica_create_jobid,
+    orte_ns_base_create_process_name,
+    orte_ns_base_copy_process_name,
+    orte_ns_base_convert_string_to_process_name,
+    orte_ns_replica_reserve_range,
+    orte_ns_base_free_name,
+    orte_ns_base_get_proc_name_string,
+    orte_ns_base_get_vpid_string,
+    orte_ns_base_convert_vpid_to_string,
+    orte_ns_base_convert_string_to_vpid,
+    orte_ns_base_get_jobid_string,
+    orte_ns_base_convert_jobid_to_string,
+    orte_ns_base_convert_string_to_jobid,
+    orte_ns_base_get_cellid_string,
+    orte_ns_base_convert_cellid_to_string,
+    orte_ns_base_convert_string_to_cellid,
+    orte_ns_base_get_vpid,
+    orte_ns_base_get_jobid,
+    orte_ns_base_get_cellid,
+    orte_ns_base_compare,
+    orte_ns_base_pack_name,
+    orte_ns_base_unpack_name,
+    orte_ns_base_pack_cellid,
+    orte_ns_base_unpack_cellid,
+    orte_ns_base_pack_jobid,
+    orte_ns_base_unpack_jobid,
+    orte_ns_base_derive_vpid,
+    orte_ns_replica_assign_oob_tag
 };
 
 /*
@@ -101,56 +105,80 @@ static bool initialized = false;
 
 
 /* constructor - used to initialize state of name_tracker instance */
-static void mca_ns_replica_tracker_construct(mca_ns_replica_name_tracker_t* name_tracker)
+static void orte_ns_replica_tracker_construct(orte_ns_replica_name_tracker_t* name_tracker)
 {
     name_tracker->job = 0;
     name_tracker->last_used_vpid = 0;
 }
 
 /* destructor - used to free any resources held by instance */
-static void mca_ns_replica_tracker_destructor(mca_ns_replica_name_tracker_t* name_tracker)
+static void orte_ns_replica_tracker_destructor(orte_ns_replica_name_tracker_t* name_tracker)
 {
 }
 
 /* define instance of ompi_class_t */
 OBJ_CLASS_INSTANCE(
-		   mca_ns_replica_name_tracker_t,  /* type name */
+		   orte_ns_replica_name_tracker_t,  /* type name */
 		   ompi_list_item_t, /* parent "class" name */
-		   mca_ns_replica_tracker_construct, /* constructor */
-		   mca_ns_replica_tracker_destructor); /* destructor */
+		   orte_ns_replica_tracker_construct, /* constructor */
+		   orte_ns_replica_tracker_destructor); /* destructor */
+
+/* constructor - used to initialize state of taglist instance */
+static void orte_ns_replica_tagitem_construct(orte_ns_replica_tagitem_t* tagitem)
+{
+    tagitem->tag = ORTE_OOB_TAG_MAX;
+    tagitem->name = NULL;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_ns_replica_tagitem_destructor(orte_ns_replica_tagitem_t* tagitem)
+{
+    if (NULL != tagitem->name) {
+       free(tagitem->name);
+    }
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+        orte_ns_replica_tagitem_t,  /* type name */
+        ompi_list_item_t, /* parent "class" name */
+        orte_ns_replica_tagitem_construct, /* constructor */
+        orte_ns_replica_tagitem_destructor); /* destructor */
 
 /*
  * globals needed within replica component
  */
-mca_ns_base_cellid_t mca_ns_replica_last_used_cellid;
-mca_ns_base_jobid_t mca_ns_replica_last_used_jobid;
-ompi_list_t mca_ns_replica_name_tracker;
-int mca_ns_replica_debug;
-ompi_mutex_t mca_ns_replica_mutex;
+orte_cellid_t orte_ns_replica_next_cellid;
+orte_jobid_t orte_ns_replica_next_jobid;
+ompi_list_t orte_ns_replica_name_tracker;
+orte_oob_tag_t orte_ns_replica_next_oob_tag;
+ompi_list_t orte_ns_replica_taglist;
+int orte_ns_replica_debug;
+ompi_mutex_t orte_ns_replica_mutex;
 
 /*
  * don't really need this function - could just put NULL in the above structure
  * Just holding the place in case we decide there is something we need to do
  */
-int mca_ns_replica_open(void)
+int orte_ns_replica_open(void)
 {
     int id;
 
     id = mca_base_param_register_int("ns", "replica", "debug", NULL, 0);
-    mca_base_param_lookup_int(id, &mca_ns_replica_debug);
+    mca_base_param_lookup_int(id, &orte_ns_replica_debug);
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
 
 /*
  * ditto for this one
  */
-int mca_ns_replica_close(void)
+int orte_ns_replica_close(void)
 {
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
 
-mca_ns_base_module_t* mca_ns_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority)
+mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority)
 {
     /* If we are to host a replica, then we want to be selected, so do all the
        setup and return the module */
@@ -158,8 +186,8 @@ mca_ns_base_module_t* mca_ns_replica_init(bool *allow_multi_user_threads, bool *
     if (NULL == ompi_process_info.ns_replica) {
 
       int rc;
-      mca_ns_replica_last_used_cellid = 0;
-      mca_ns_replica_last_used_jobid = 0;
+      orte_ns_replica_next_cellid = 0;
+      orte_ns_replica_next_jobid = 1;  /* jobid 0 reserved for universe */
 
       /* Return a module (choose an arbitrary, positive priority --
          it's only relevant compared to other ns components).  If
@@ -175,20 +203,28 @@ mca_ns_base_module_t* mca_ns_replica_init(bool *allow_multi_user_threads, bool *
 
       /* initialize the name tracker */
 
-      OBJ_CONSTRUCT(&mca_ns_replica_name_tracker, ompi_list_t);
+      OBJ_CONSTRUCT(&orte_ns_replica_name_tracker, ompi_list_t);
 
+      /* initialize the taglist */
+
+      OBJ_CONSTRUCT(&orte_ns_replica_taglist, ompi_list_t);
+      orte_ns_replica_next_oob_tag = ORTE_OOB_TAG_START_LIST;
+
+    /* setup the thread lock */
+    OBJ_CONSTRUCT(&orte_ns_replica_mutex, ompi_mutex_t);
+    
      /* Return the module */
 
       initialized = true;
 
       /* issue non-blocking receive for call_back function */
-      rc = mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS, 0, mca_ns_replica_recv, NULL);
+      rc = mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS, 0, orte_ns_replica_recv, NULL);
       if(rc != OMPI_SUCCESS && rc != OMPI_ERR_NOT_IMPLEMENTED) {
-          ompi_output(0, "mca_ns_replica_init: unable to post non-blocking recv\n");
+          ompi_output(0, "orte_ns_replica_init: unable to post non-blocking recv\n");
           return NULL;
       }
 
-      return &mca_ns_replica;
+      return &orte_ns_replica;
     } else {
       return NULL;
     }
@@ -197,24 +233,31 @@ mca_ns_base_module_t* mca_ns_replica_init(bool *allow_multi_user_threads, bool *
 /*
  * finalize routine
  */
-int mca_ns_replica_finalize(void)
+int orte_ns_replica_finalize(void)
 {
-    if (mca_ns_replica_debug) {
-	ompi_output(0, "finalizing ns replica");
+    orte_ns_replica_tagitem_t *tagitem;
+    
+    if (orte_ns_replica_debug) {
+	   ompi_output(0, "finalizing ns replica");
     }
 
   /* free all tracking storage, but only if this component was initialized */
 
-/*   if (initialized) { */
-/*     OBJ_DESTRUCT(&mca_ns_replica_name_tracker); */
+    if (initialized) {
+/*     OBJ_DESTRUCT(&orte_ns_replica_name_tracker); */
+        while (NULL != (tagitem = (orte_ns_replica_tagitem_t*)ompi_list_remove_first(&orte_ns_replica_taglist))) {
+            OBJ_RELEASE(tagitem);
+        }
+        OBJ_DESTRUCT(&orte_ns_replica_taglist);
+        OBJ_DESTRUCT(&orte_ns_replica_mutex);
 
-    initialized = false;
-/*   } */
+        initialized = false;
+    }
 
   /* All done */
 
-  mca_oob_recv_cancel(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS);
-  return OMPI_SUCCESS;
+    mca_oob_recv_cancel(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS);
+    return ORTE_SUCCESS;
 }
 
 
@@ -222,77 +265,121 @@ int mca_ns_replica_finalize(void)
  * handle message from proxies
  */
 
-void mca_ns_replica_recv(int status, ompi_process_name_t* sender,
-			 ompi_buffer_t buffer, int tag,
-			 void* cbdata)
+void orte_ns_replica_recv(int status, orte_process_name_t* sender,
+			             ompi_buffer_t buffer, int tag,
+			             void* cbdata)
 {
     ompi_buffer_t answer, error_answer;
-    mca_ns_cmd_flag_t command;
-    mca_ns_base_cellid_t cell;
-    mca_ns_base_jobid_t job;
-    mca_ns_base_vpid_t vpid, range;
+    orte_ns_cmd_flag_t command;
+    orte_cellid_t cell;
+    orte_jobid_t job;
+    orte_vpid_t startvpid, range;
+    char *tagname;
+    orte_oob_tag_t oob_tag;
+    int32_t return_code=ORTE_SUCCESS;
 
-    if (OMPI_SUCCESS != ompi_unpack(buffer, (void*)&command, 1, MCA_NS_OOB_PACK_CMD)) {
-	goto RETURN_ERROR;
+    if (ORTE_SUCCESS != ompi_unpack(buffer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD)) {
+       return_code = ORTE_ERR_BAD_PARAM;
+	   goto RETURN_ERROR;
     }
 
     if (OMPI_SUCCESS != ompi_buffer_init(&answer, 0)) {
-	/* RHC -- not sure what to do if this fails */
+        return_code = ORTE_ERR_OUT_OF_RESOURCE;
+        goto RETURN_ERROR;
     }
 
-    if (MCA_NS_CREATE_CELLID_CMD == command) {   /* got a command to create a cellid */
-	if (OMPI_SUCCESS != ompi_pack(answer, (void*)&command, 1, MCA_NS_OOB_PACK_CMD)) {
-	    goto RETURN_ERROR;
-	}
-	cell = ompi_name_server.create_cellid();
-	if (OMPI_SUCCESS != ompi_pack(answer, (void*)&cell, 1, MCA_NS_OOB_PACK_CELLID)) {
-	    goto RETURN_ERROR;
-	}
-	if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+    if (ORTE_NS_CREATE_CELLID_CMD == command) {   /* got a command to create a cellid */
+	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+	       goto RETURN_ERROR;
+	   }
+     
+	   if (ORTE_SUCCESS != (return_code = orte_ns_replica_create_cellid(&cell))) {
+            goto RETURN_ERROR;
+       }
+       
+	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&cell, 1, ORTE_NS_OOB_PACK_CELLID))) {
+	       goto RETURN_ERROR;
+	   }
+	   if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
 	    /* RHC -- not sure what to do if the return send fails */
-	}
-    } else if (MCA_NS_CREATE_JOBID_CMD == command) {   /* got command to create jobid */
-	if (OMPI_SUCCESS != ompi_pack(answer, (void*)&command, 1, MCA_NS_OOB_PACK_CMD)) {
-	    goto RETURN_ERROR;
-	}
-	job = ompi_name_server.create_jobid();
-	if (OMPI_SUCCESS != ompi_pack(answer, (void*)&job, 1, MCA_NS_OOB_PACK_JOBID)) {
-	    goto RETURN_ERROR;
-	}
-	if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
-	    /* RHC -- not sure what to do if the return send fails */
-	}
-    } else if (MCA_NS_RESERVE_RANGE_CMD == command) {  /* got command to reserve vpid range */
-	if (OMPI_SUCCESS != ompi_unpack(buffer, (void*)&job, 1, MCA_NS_OOB_PACK_JOBID)) {
-	    goto RETURN_ERROR;
-	}
+	   }
+     
+    } else if (ORTE_NS_CREATE_JOBID_CMD == command) {   /* got command to create jobid */
+	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+	       goto RETURN_ERROR;
+	   }
+     
+	   if (ORTE_SUCCESS != (return_code = orte_ns_replica_create_jobid(&job))) {
+            goto RETURN_ERROR;
+       }
+       
+	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&job, 1, ORTE_NS_OOB_PACK_JOBID))) {
+	       goto RETURN_ERROR;
+	   }
+     
+	   if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+	       /* RHC -- not sure what to do if the return send fails */
+	   }
+     
+    } else if (ORTE_NS_RESERVE_RANGE_CMD == command) {  /* got command to reserve vpid range */
+	   if (OMPI_SUCCESS != (return_code = ompi_unpack(buffer, (void*)&job, 1, ORTE_NS_OOB_PACK_JOBID))) {
+	       goto RETURN_ERROR;
+	   }
 
-	if (OMPI_SUCCESS != ompi_unpack(buffer, (void*)&range, 1, MCA_NS_OOB_PACK_VPID)) {
-	    goto RETURN_ERROR;
-	}
+	   if (OMPI_SUCCESS != (return_code = ompi_unpack(buffer, (void*)&range, 1, ORTE_NS_OOB_PACK_VPID))) {
+	       goto RETURN_ERROR;
+	   }
 
-	vpid = ompi_name_server.reserve_range(job, range);
-	if (OMPI_SUCCESS != ompi_pack(answer, (void*)&command, 1, MCA_NS_OOB_PACK_CMD)) {
-	    goto RETURN_ERROR;
-	}
+	   if (ORTE_SUCCESS != (return_code = orte_ns_replica_reserve_range(job, range, &startvpid))) {
+            goto RETURN_ERROR;
+       }
+       
+	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+	       goto RETURN_ERROR;
+	   }
 
-	if (OMPI_SUCCESS != ompi_pack(answer, (void*)&vpid, 1, MCA_NS_OOB_PACK_VPID)) {
-	    goto RETURN_ERROR;
-	}
-	if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
-	    /* RHC -- not sure what to do if the return send fails */
-	}
-    ompi_buffer_free(answer);
+	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&startvpid, 1, ORTE_NS_OOB_PACK_VPID))) {
+	       goto RETURN_ERROR;
+	   }
+     
+	   if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+	       /* RHC -- not sure what to do if the return send fails */
+	   }
+
+        
+    } else if (ORTE_NS_ASSIGN_OOB_TAG_CMD == command) {  /* got command to assign an OOB tag */
+       if (0 > ompi_unpack_string(buffer, &tagname)) {
+         return_code = ORTE_ERR_UNPACK_FAILURE;
+         goto RETURN_ERROR;
+      }
+
+      if (ORTE_SUCCESS != (return_code = orte_ns_replica_assign_oob_tag(&oob_tag, tagname))) {
+            goto RETURN_ERROR;
+      }
+       
+      if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+         goto RETURN_ERROR;
+      }
+
+      if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&oob_tag, 1, ORTE_NS_OOB_PACK_OOB_TAG))) {
+          goto RETURN_ERROR;
+      }
+     
+      if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+         /* RHC -- not sure what to do if the return send fails */
+      }
+
+        
     } else {  /* got an unrecognized command */
     RETURN_ERROR:
-	ompi_buffer_init(&error_answer, 8);
-	command = MCA_NS_ERROR;
-	ompi_pack(error_answer, (void*)&command, 1, MCA_NS_OOB_PACK_CMD);
-	mca_oob_send_packed(sender, error_answer, tag, 0);
-    ompi_buffer_free(error_answer);
+        ompi_buffer_free(answer);
+	    ompi_buffer_init(&error_answer, 0);
+	    ompi_pack(error_answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD);
+        ompi_pack(error_answer, (void*)&return_code, 1, ORTE_INT32);
+	    mca_oob_send_packed(sender, error_answer, tag, 0);
     }
 
     /* reissue the non-blocking receive */
-    mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS, 0, mca_ns_replica_recv, NULL);
+    mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS, 0, orte_ns_replica_recv, NULL);
 }
 
