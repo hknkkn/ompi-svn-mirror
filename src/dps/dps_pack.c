@@ -55,12 +55,12 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     orte_exit_code_t *exit_code_src, *exit_code_dest;
     
     /* check for error */
-    if (!buffer || !src) { return (ORTE_ERROR); }
+    if (!buffer || !src || 0 >= num_vals) { return (ORTE_ERROR); }
     
     dest = buffer->data_ptr;    /* get location in buffer */
 
     /* calculate the required memory size for this operation */
-    if (0 == (op_size = orte_dps_memory_required(false, src, type))) {  /* got error */
+    if (0 == (op_size = orte_dps_memory_required(src, num_vals, type))) {  /* got error */
         return ORTE_ERROR;
     }
     

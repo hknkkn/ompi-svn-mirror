@@ -34,11 +34,12 @@
  */
 
 int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
-                    size_t max_num_vals,
+                    size_t *max_num_vals,
                     orte_pack_type_t type)
 {
+    int rc=ORTE_SUCCESS;
     orte_pack_type_t stored_type;
-    size_t pack_type_size, mem_req, num_vals;
+    size_t pack_type_size, num_vals;
     int32_t mem_left, tst;
     void *src;
     size_t op_size=0;
@@ -101,28 +102,34 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
     /* account for the memory used */
     mem_left = mem_left - pack_type_size;
 
-    /* calculate required data size */
-    if (0 == (mem_req = orte_dps_memory_required(true, src, type))) {
+    /* got enough left for num_values? */
+
+    if (4 > mem_left) { /* not enough memory  */
         return ORTE_ERR_UNPACK_FAILURE;
     }
-    /* got enough left for data? */
-
-    if ((int32_t)mem_req > mem_left) { /* not enough memory  */
-        return ORTE_ERR_UNPACK_FAILURE;
-    }
-
-    /* ok, got enough memory, so we can now unpack it. */
 
     /* unpack the number of values */
     s32 = (uint32_t *) src;
     num_vals = (size_t)ntohl(*s32);
-    if (num_vals > max_num_vals) {  /* not enough space provided */
+    if (num_vals > *max_num_vals) {  /* not enough space provided */
         return ORTE_UNPACK_INADEQUATE_SPACE;
     }
     src = (void *)((char *)src + 4);
+    mem_left = mem_left - 4;
 
+    /* will check to see if adequate storage in buffer prior
+     * to unpacking the item
+     */
+    
+    /* default to ORTE_SUCCESS */
+    rc = ORTE_SUCCESS;
+    
     switch(type) {
         case ORTE_BYTE:
+            if ((int)num_vals > mem_left) {
+                num_vals = mem_left;
+                rc = ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
+            }
             s8 = (uint8_t *) src;
             d8 = (uint8_t *) dest;
             memcpy(d8, s8, num_vals);
@@ -244,6 +251,9 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
     buffer->toend -= op_size; /* closer to the end */
     buffer->len   -= op_size; /* and less data left */
 
-    return ORTE_SUCCESS;
+    /* return the number of values unpacked */
+    *max_num_vals = num_vals;
+    
+    return rc;
 
 }

@@ -67,8 +67,8 @@ OMPI_DECLSPEC int orte_dps_close(void);
  * by the DPS upon unpacking) via the RML upon transmission - the DPS cannot detect
  * such errors during packing.
  * 
- * @param buffer A pointer to the buffer into which the value is to be packed.
- * @param src A void* pointer to the data that is to be packed. Note that strings are
+ * @param *buffer A pointer to the buffer into which the value is to be packed.
+ * @param *src A void* pointer to the data that is to be packed. Note that strings are
  * to be passed as (char **) - i.e., the caller must pass the address of the pointer
  * to the string as the void*. This allows the DPS to use a single interface function,
  * but still allow the caller to pass multiple strings in a single call.
@@ -112,7 +112,9 @@ typedef int (*orte_dps_pack_fn_t)(orte_buffer_t *buffer, void *src,
  * Warning: The caller is responsible for providing adequate memory storage for
  * the requested data. The DPS peek_next_item function is provided to assist in
  * meeting this requirement. The user can provide a max_num_values argument to ensure
- * that memory overruns are prevented.
+ * that memory overruns are prevented. If more values are present in the buffer, the
+ * unpack function will unpack as much as it can - and then return an error
+ * ORTE_UNPACK_READ_PAST_END_OF_BUFFER.
  * 
  * Note that any data that was not hard type cast (i.e., not type cast
  * to a specific size) when packed may lose precision when unpacked by a non-homogeneous recipient.
@@ -122,48 +124,56 @@ typedef int (*orte_dps_pack_fn_t)(orte_buffer_t *buffer, void *src,
  * by the DPS upon unpacking) via the RML upon transmission - the DPS cannot detect
  * such errors during packing.
  * 
- * @param buffer A pointer to the buffer from which the value will be extracted.
- * @param dest A void* pointer to the memory location into which the data is to be
+ * @param *buffer A pointer to the buffer from which the value will be extracted.
+ * @param *dest A void* pointer to the memory location into which the data is to be
  * stored. Note that these values will be stored contiguously in memory. For strings,
  * this pointer must be to (char **) to provide a means of supporting multiple string
  * operations. The DPS unpack function will allocate memory for each string in the array -
  * the caller must only provide adequate memory for the array of pointers.
- * @param num A size_t value indicating the maximum number of values that are to be
+ * @param *num A pointer to a size_t value indicating the maximum number of values that are to be
  * unpacked, beginning at the location pointed to by src. This is provided to help
  * protect the caller from memory overrun - providing a value of "0" tells the DPS
  * to unpack ALL of the values stored in this item. This should be used with caution
  * as the caller must then be absolutely certain that adequate memory has been allocated
  * for this operation. Note that a string value is counted as a single value regardless
  * of length.
+ * 
+ * @note The unpack function will return the actual number of values unpacked in
+ * this location.
+ * 
  * @param type The type of the data to be unpacked - must be one of the DPS defined
  * data types.
  * 
- * @retval num_unpacked The number of values actually unpacked. In most cases,
+ * @retval *num The number of values actually unpacked. In most cases,
  * this should match the maximum number provided in the parameters - but in no case
- * will it exceed that parameter. Numbers less than zero are returned ORTE error codes
- * and should be handled accordingly.
+ * will it exceed that parameter.
+ * 
+ * @retval ORTE_SUCCESS The next item in the buffer was successfully unpacked.
+ * 
+ * @retval ORTE_ERROR(s) The unpack function returns an error code under one of several
+ * conditions: (a) the number of values in the item exceeds the max num provided by the
+ * caller; (b) the type of the next item in the buffer does not match the type specified
+ * by the caller; or (c) the unpack failed due to either an error in the buffer or
+ * an attempt to read past the end of the buffer.
  * 
  * @code
  * orte_buffer_t *buffer;
  * int32_t dest;
  * char **string_array;
+ * size_t num_values;
  * 
- * num_values = orte_dps.unpack(buffer, (void*)&dest, 1, ORTE_INT32);
- * if (1 > num_values) {
- *  got an error
- * }
+ * num_values = 1;
+ * status_code = orte_dps.unpack(buffer, (void*)&dest, &num_values, ORTE_INT32);
  * 
- * string_array = malloc(5*sizeof(char *));
- * num_strings = orte_dps.unpack(buffer, (void*)(&string_array), 5, ORTE_STRING);
- * if (5 > num_strings) {
- *  got an error
- * }
+ * num_values = 5;
+ * string_array = malloc(num_values*sizeof(char *));
+ * status_code = orte_dps.unpack(buffer, (void*)(&string_array), &num_values, ORTE_STRING);
  * 
  * @endcode
  * 
  */
 typedef int (*orte_dps_unpack_fn_t)(orte_buffer_t *buffer, void *dest,
-                                    size_t max_num_values,
+                                    size_t *max_num_values,
                                     orte_pack_type_t type);
 
 /*

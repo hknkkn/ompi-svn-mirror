@@ -14,7 +14,9 @@
 /** @file:
  *
  */
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "mca/base/mca_base_param.h"
 
 #include "dps_internal.h"
 
@@ -22,6 +24,7 @@
  * globals
  */
 bool orte_dps_debug;
+int orte_dps_page_size;
 
 orte_dps_t orte_dps = {
     orte_dps_pack,
@@ -57,6 +60,7 @@ OBJ_CLASS_INSTANCE(orte_buffer_t,
 int orte_dps_open(void)
 {
     char *enviro_val;
+    int id, page_size;
     
     enviro_val = getenv("ORTE_dps_debug");
     if (NULL != enviro_val) {  /* debug requested */
@@ -64,6 +68,11 @@ int orte_dps_open(void)
     } else {
         orte_dps_debug = false;
     }
+
+    /* setup the page size */
+    id = mca_base_param_register_int("dps", "page", "size", NULL, ORTE_DPS_DEFAULT_PAGE_SIZE);
+    mca_base_param_lookup_int(id, &page_size);
+    orte_dps_page_size = 1000*page_size;  /* convert to bytes */
     
     return ORTE_SUCCESS;
 }
