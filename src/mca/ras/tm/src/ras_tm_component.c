@@ -24,10 +24,7 @@
 /*
  * Local functions
  */
-static int ras_tm_open(void);
-static orte_ras_base_module_t* ras_tm_init(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+static orte_ras_base_module_t *ras_tm_init(void);
 
 
 orte_ras_base_component_1_0_0_t mca_ras_tm_component = {
@@ -49,7 +46,7 @@ orte_ras_base_component_1_0_0_t mca_ras_tm_component = {
         
         /* Component open and close functions */
         
-        ras_tm_open,
+        NULL,
         NULL
     },
     
@@ -63,31 +60,18 @@ orte_ras_base_component_1_0_0_t mca_ras_tm_component = {
 };
 
 
-/**
-  * component open/close/init function
-  */
-static int ras_tm_open(void)
-{
-    mca_base_param_register_int("ras", "tm", "debug", NULL, 0);
-
-    return ORTE_SUCCESS;
-}
-
-
-static orte_ras_base_module_t* 
-ras_tm_init(bool *allow_multi_user_threads, bool *have_hidden_threads)
+static orte_ras_base_module_t *ras_tm_init(void)
 {
     /* Are we running under a TM job? */
 
-    if (NULL != getenv("TM_ENVIRONMENT") &&
-        NULL != getenv("TM_JOBID")) {
-        *allow_multi_user_threads = false;
-        *have_hidden_threads = false;
-
+    if (NULL != getenv("PBS_ENVIRONMENT") &&
+        NULL != getenv("PBS_JOBID")) {
+        ompi_output(orte_ras_base.ras_output, "ras:tm: available for selection");
         return &orte_ras_tm_module;
     }
 
     /* Sadly, no */
 
+    ompi_output(orte_ras_base.ras_output, "ras:tm: NOT available for selection");
     return NULL;
 }
