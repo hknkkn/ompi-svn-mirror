@@ -20,6 +20,7 @@
 
 #include "ompi_config.h"
 #include "mca/pls/base/base.h"
+#include "threads/condition.h"
 #include <sys/bproc.h>
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -35,10 +36,7 @@ int orte_pls_bproc_seed_component_close(void);
 /*
  * Startup / Shutdown
  */
-orte_pls_base_module_t* orte_pls_bproc_seed_init(
-    bool* allow_threads,
-    bool* have_threads,
-    int *priority);
+orte_pls_base_module_t* orte_pls_bproc_seed_init(int *priority);
 
 int orte_pls_bproc_seed_finalize(void);
 
@@ -47,6 +45,23 @@ int orte_pls_bproc_seed_finalize(void);
  */
 int orte_pls_bproc_seed_launch(orte_jobid_t);
 
+
+/**
+ * RAS Component
+ */
+struct orte_pls_bproc_component_t {
+    orte_pls_base_component_t super;
+    int debug;
+    int name_fd;
+    int priority;
+    size_t image_frag_size;
+    size_t num_completed;
+    ompi_mutex_t lock;
+    ompi_condition_t condition;
+};
+typedef struct orte_pls_bproc_component_t orte_pls_bproc_component_t;
+                                                                                                          
+ORTE_DECLSPEC extern orte_pls_bproc_component_t orte_pls_bproc_seed_component;
 ORTE_DECLSPEC extern orte_pls_base_module_t orte_pls_bproc_seed_module;
 
 #if defined(c_plusplus) || defined(__cplusplus)

@@ -30,34 +30,55 @@
 /*
  * Struct of function pointers and all that to let us be initialized
  */
-orte_pls_base_component_t orte_pls_bproc_seed_component = {
+orte_pls_bproc_component_t orte_pls_bproc_seed_component = {
     {
-    ORTE_PLS_BASE_VERSION_1_0_0,
+        {
+        ORTE_PLS_BASE_VERSION_1_0_0,
 
-    "bproc_seed", /* MCA component name */
-    1,  /* MCA component major version */
-    0,  /* MCA component minor version */
-    0,  /* MCA component release version */
-    orte_pls_bproc_seed_component_open,  /* component open */
-    orte_pls_bproc_seed_component_close /* component close */
-    },
-    {
-    false /* checkpoint / restart */
-    },
-    orte_pls_bproc_seed_init    /* component init */
+        "bproc_seed", /* MCA component name */
+        1,  /* MCA component major version */
+        0,  /* MCA component minor version */
+        0,  /* MCA component release version */
+        orte_pls_bproc_seed_component_open,  /* component open */
+        orte_pls_bproc_seed_component_close /* component close */
+        },
+        {
+        false /* checkpoint / restart */
+        },
+        orte_pls_bproc_seed_init    /* component init */ 
+    }
 };
 
-/*
- * Module variables handles
- */
-static int param_priority;
 
+/**
+ *  Convience functions to lookup MCA parameter values.
+ */
+                                                                                                          
+static  int orte_pls_bproc_param_register_int(
+    const char* param_name,
+    int default_value)
+{
+    int id = mca_base_param_register_int("pls","bproc",param_name,NULL,default_value);
+    int param_value = default_value;
+    mca_base_param_lookup_int(id,&param_value);
+    return param_value;
+}
+                                                                                                          
 
 int orte_pls_bproc_seed_component_open(void)
 {
-   param_priority =
-    mca_base_param_register_int("pls", "bproc", "priority", NULL, 20);
-   return ORTE_SUCCESS;
+    /* init globals */
+    OBJ_CONSTRUCT(&orte_pls_bproc_seed_component.lock, ompi_mutex_t);
+    OBJ_CONSTRUCT(&orte_pls_bproc_seed_component.condition, ompi_condition_t);
+    orte_pls_bproc_seed_component.num_completed = 0;
+
+    /* init parameters */
+    orte_pls_bproc_seed_component.debug = orte_pls_bproc_param_register_int("debug", 1);
+    orte_pls_bproc_seed_component.image_frag_size = orte_pls_bproc_param_register_int("image_frag_size", 256*1024);
+    orte_pls_bproc_seed_component.name_fd = orte_pls_bproc_param_register_int("name_fd", 3);
+    orte_pls_bproc_seed_component.priority = orte_pls_bproc_param_register_int("priority", 20);
+
+    return ORTE_SUCCESS;
 }
 
 
@@ -68,8 +89,6 @@ int orte_pls_bproc_seed_component_close(void)
 
 
 orte_pls_base_module_t* orte_pls_bproc_seed_init(
-    bool* allow_threads,
-    bool* have_threads,
     int *priority)
 {
     int ret;
@@ -78,9 +97,6 @@ orte_pls_base_module_t* orte_pls_bproc_seed_init(
     /* are we the seed */
     if(orte_process_info.seed == false)
         return NULL;
-
-    /* initialize the priority */
-    mca_base_param_lookup_int(param_priority, priority);
 
     /* okay, we are in a daemon - now check to see if BProc is running here */
     ret = bproc_version(&version);
@@ -94,6 +110,9 @@ orte_pls_base_module_t* orte_pls_bproc_seed_init(
     }
 
     /* post a non-blocking receive */
+
+
+    *priority = orte_pls_bproc_seed_component.priority;
     return &orte_pls_bproc_seed_module;
 }
 
