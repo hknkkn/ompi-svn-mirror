@@ -72,13 +72,13 @@ void ompi_proc_destruct(ompi_proc_t* proc)
 int ompi_proc_init(void)
 {
     orte_process_name_t *peers;
-    size_t i, npeers;
+    size_t i, npeers, self;
     int rc;
 
     OBJ_CONSTRUCT(&ompi_proc_list, ompi_list_t);
     OBJ_CONSTRUCT(&ompi_proc_lock, ompi_mutex_t);
 
-    if(OMPI_SUCCESS != (rc = orte_ns.get_peers(&peers, &npeers))) {
+    if(OMPI_SUCCESS != (rc = orte_ns.get_peers(&peers, &npeers, &self))) {
         ompi_output(0, "ompi_proc_init: get_peers failed with errno=%d", rc);
         return rc;
     }
@@ -86,10 +86,11 @@ int ompi_proc_init(void)
     for(i=0; i<npeers; i++) {
         ompi_proc_t *proc = OBJ_NEW(ompi_proc_t);
         proc->proc_name = peers[i];
-        if( peers + i == orte_process_info.my_name ) {
+        if( i == self ) {
             ompi_proc_local_proc = proc;
         }
     }
+    free(peers);
     return OMPI_SUCCESS;
 }
 

@@ -174,7 +174,7 @@ int orte_ns_replica_close(void)
     return ORTE_SUCCESS;
 }
 
-mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority)
+mca_ns_base_module_t* orte_ns_replica_init(int *priority)
 {
     orte_ns_replica_name_tracker_t *new_nt;
 
@@ -192,11 +192,6 @@ mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool 
          return NULL. */
 
       *priority = 50;
-
-      /* We allow multi user threads but don't have any hidden threads */
-
-      *allow_multi_user_threads = true;
-      *have_hidden_threads = false;
 
       /* initialize the name tracker */
 

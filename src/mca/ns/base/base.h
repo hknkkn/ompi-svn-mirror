@@ -148,7 +148,7 @@ OMPI_DECLSPEC    int orte_ns_base_assign_rml_tag_not_available(orte_rml_tag_t *t
 OMPI_DECLSPEC    int orte_ns_base_set_my_name(void);
 
 OMPI_DECLSPEC    int orte_ns_base_get_peers(orte_process_name_t **procs, 
-                                  size_t *num_procs);
+                                  size_t *num_procs, size_t *self);
 /*
  * globals that might be needed
  */

@@ -72,7 +72,7 @@ int orte_ns_replica_close(void);
 /*
  * Startup / Shutdown
  */
-mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority);
+mca_ns_base_module_t* orte_ns_replica_init(int *priority);
 int orte_ns_replica_module_init(void);
 int orte_ns_replica_finalize(void);
 

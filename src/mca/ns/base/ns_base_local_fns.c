@@ -42,7 +42,7 @@
 int 
 orte_ns_base_module_init_not_available(void)
 {
-    return ORTE_ERROR;
+    return ORTE_ERR_UNREACH;
 }
 
 int

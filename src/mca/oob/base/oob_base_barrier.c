@@ -24,11 +24,11 @@
 int mca_oob_barrier(void)
 {
     orte_process_name_t* peers;
-    size_t i, npeers;
+    size_t i, npeers, self;
     struct iovec iov;
     int foo = 0;
 
-    int rc = orte_ns.get_peers(&peers,&npeers);
+    int rc = orte_ns.get_peers(&peers,&npeers,&self);
     if(rc != OMPI_SUCCESS)
         return rc;
 
@@ -36,7 +36,7 @@ int mca_oob_barrier(void)
     iov.iov_len = sizeof(foo);
 
     /* All non-root send & receive zero-length message. */
-    if (orte_process_info.my_name != peers) {
+    if (0 < self) {
         int tag=-1;
         rc = mca_oob_send(&peers[0],&iov,1,tag,0);
         if (rc < 0) {

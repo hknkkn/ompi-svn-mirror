@@ -41,8 +41,7 @@
  * Component functions - all MUST be provided!
  */
 
-/**
- * Initialize the selected module.
+/* Init the selected module
  */
 typedef int (*orte_ns_base_module_init_fn_t)(void);
 
@@ -545,7 +544,7 @@ typedef int (*orte_ns_base_module_set_my_name_fn_t)(void);
  * OF O(N) ARRAYS IN THE SYSTEM
  */
 typedef int (*orte_ns_base_module_get_peers_fn_t)(orte_process_name_t **procs, 
-                                  size_t *num_procs);
+                                  size_t *num_procs, size_t *self);
 
  
 /*
@@ -587,14 +586,17 @@ typedef mca_ns_base_module_1_0_0_t mca_ns_base_module_t;
 /*
  * NS Component
  */
+/**
+ * Initialize the selected component.
+ */
+typedef mca_ns_base_module_t* (*mca_ns_base_component_init_fn_t)(int *priority);
 
-typedef mca_ns_base_module_t* (*mca_ns_base_component_init_fn_t)(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads,
-    int *priority);
-
+/**
+ * Finalize the selected module
+ */
 typedef int (*mca_ns_base_component_finalize_fn_t)(void);
  
+
 /*
  * the standard component data structure
  */

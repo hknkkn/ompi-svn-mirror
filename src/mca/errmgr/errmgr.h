@@ -34,7 +34,7 @@
  * Macro definitions
  */
 #define ORTE_ERROR_LOG(n) \
-    orte_errmgr.log(ORTE_ERROR_NAME(n), __FILE__, __LINE__)
+    orte_errmgr.log((n), __FILE__, __LINE__)
 
 
 /*
@@ -43,25 +43,60 @@
 
 /**
  * Log an error
- * Log an error that occurred in the runtime environment.
+ * Log an error that occurred in the runtime environment, and call the "error_detected"
+ * interface to see if further action is required.
  * 
  * @code
  * orte_errmgr.log("this is an error", __FILE__, __LINE__);
  * @endcode
  */
-typedef void (*orte_errmgr_base_module_log_fn_t)(char *msg, char *filename, int line);
+typedef void (*orte_errmgr_base_module_log_fn_t)(int error_code, char *filename, int line);
 
 
 /**
  * Alert - process aborted
+ * This function is called when a remote process aborts during execution. Note that local
+ * process errors should always be reported through the error_detected interface and
+ * NOT here. The function is called when a message is received from the universe daemon
+ * indicating that another process in the job failed. For now, this function will
+ * simply cause the local process to gracefully finalize and terminate. 
  */
 typedef void (*orte_errmgr_base_module_proc_aborted_fn_t)(orte_process_name_t *proc);
 
 /**
  * Alert - incomplete start of a job
+ * This function is called when an attempted launch of a job encounters failure of
+ * one or more processes to start. The function decides on the strategy for dealing
+ * with this "incomplete start" situation - for now, it simply orders the resource
+ * manager to terminate the entire job.
+ * 
+ * This function is only called by the respective process launcher, which is responsible
+ * for detecting incomplete starts.
  */
 typedef void (*orte_errmgr_base_module_incomplete_start_fn_t)(orte_jobid_t job);
 
+/**
+ * Alert - internal error detected
+ * This function is called when an internal error is detected within the local process.
+ * It decides what to do about the error - for now, it simply orders the local process
+ * to finalize and terminate.
+ */
+typedef void (*orte_errmgr_base_module_error_detected_fn_t)(int error_code);
+
+/*
+ * Register a job with the error manager
+ * When a job is launched, this function is called so the error manager can register
+ * subscriptions on the job segment so that the error manager will be notified when
+ * problems occur - i.e., when process status entries change to abnormal termination
+ * values. Process status entries are changed by the appropriate state-of-health monitor
+ * and/or the process launcher, depending upon the stage at which the problem occurs.
+ * 
+ * Monitoring of the job begins once the job has reached the "executing" stage. Prior
+ * to that time, failure of processes to start are the responsibility of the respective
+ * process launcher - which is expected to call the error manager via the "incomplete
+ * start" interface to report any problems prior to the job beginning "execution".
+ */
+typedef int (*orte_errmgr_base_module_register_job_fn_t)(orte_jobid_t job);
 
 /*
  * Ver 1.0.0
@@ -70,6 +105,8 @@ struct orte_errmgr_base_module_1_0_0_t {
     orte_errmgr_base_module_log_fn_t log;
     orte_errmgr_base_module_proc_aborted_fn_t proc_aborted;
     orte_errmgr_base_module_incomplete_start_fn_t incomplete_start;
+    orte_errmgr_base_module_error_detected_fn_t error_detected;
+    orte_errmgr_base_module_register_job_fn_t register_job;
 };
 
 typedef struct orte_errmgr_base_module_1_0_0_t orte_errmgr_base_module_1_0_0_t;

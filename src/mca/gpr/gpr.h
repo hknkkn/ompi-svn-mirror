@@ -441,8 +441,9 @@ typedef int (*orte_gpr_base_module_index_nb_fn_t)(char *segment,
  * @param *value (IN) A pointer to an orte_gpr_value_t object that describes the segment,
  * tokens, and keys/values to which a subscription is requested.
  * 
- * @param trigger_level (IN) For subscriptions that begin when reaching a specified level,
- * this value represents the level at which to begin notification. A notification message
+ * @param *trig_value (IN) For subscriptions that begin when reaching a specified level,
+ * this registry value (which will be stored on the indicated segment/container)
+ * provides the trigger level at which to begin notification. A notification message
  * will be sent upon attaining the specified level, and for each event thereafter, as
  * specified by the caller.
  * 
@@ -463,15 +464,16 @@ typedef int (*orte_gpr_base_module_index_nb_fn_t)(char *segment,
  *
  * @code
  * orte_gpr_notify_id_t sub_number;
+ * orte_gpr_value_t value, trig_value;
  * 
- * status_code = orte_gpr.subscribe(addr_mode, action, segment, tokens,
+ * status_code = orte_gpr.subscribe(addr_mode, action, &value, &trig_value,
  *                                       &sub_number, cb_func, user_tag);
  * @endcode
  */
 typedef int (*orte_gpr_base_module_subscribe_fn_t)(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_notify_action_t actions,
                             orte_gpr_value_t *value,
-                            int trigger_level,
+                            orte_gpr_value_t *trig_value,
                             orte_gpr_notify_id_t *sub_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
@@ -541,6 +543,22 @@ typedef int (*orte_gpr_base_module_dump_fn_t)(int output_id);
 typedef int (*orte_gpr_base_module_deliver_notify_msg_fn_t)(orte_gpr_notify_message_t *message);
 
 /*
+ * Increment value
+ * This function increments the stored value of an existing registry entry by one. Failure
+ * to find the entry on the registry will result in an error.
+ */
+typedef int (*orte_gpr_base_module_increment_value_fn_t)(orte_gpr_addr_mode_t addr_mode,
+                                                         orte_gpr_value_t *value);
+
+/*
+ * Decrement value
+ * This function decrements the stored value of an existing registry entry by one. Failure
+ * to find the entry on the registry will result in an error.
+ */
+typedef int (*orte_gpr_base_module_decrement_value_fn_t)(orte_gpr_addr_mode_t addr_mode,
+                                                         orte_gpr_value_t *value);
+
+/*
  * test interface for internal functions - optional to provide
  */
 typedef int (*orte_gpr_base_module_test_internals_fn_t)(int level, ompi_list_t **results);
@@ -567,6 +585,9 @@ struct orte_gpr_base_module_1_0_0_t {
     /* GENERAL OPERATIONS */
     orte_gpr_base_module_preallocate_segment_fn_t preallocate_segment;
     orte_gpr_base_module_deliver_notify_msg_fn_t deliver_notify_msg;
+    /* ARITHMETIC OPERATIONS */
+    orte_gpr_base_module_increment_value_fn_t increment_value;
+    orte_gpr_base_module_decrement_value_fn_t decrement_value;
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_base_module_subscribe_fn_t subscribe;
     orte_gpr_base_module_unsubscribe_fn_t unsubscribe;

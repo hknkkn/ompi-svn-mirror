@@ -62,6 +62,8 @@ orte_rmgr_base_module_t orte_rmgr_urm_module = {
     orte_rmgr_urm_terminate_job,
     orte_rmgr_urm_terminate_proc,
     orte_rmgr_urm_spawn,
+    orte_rmgr_base_proc_stage_gate_init,
+    orte_rmgr_base_proc_stage_gate_mgr,
     NULL, /* finalize */
 };
 

@@ -22,6 +22,7 @@
 
 #include "util/proc_info.h"
 #include "mca/base/mca_base_param.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "mca/ns/base/base.h"
 
@@ -60,7 +61,7 @@ int orte_ns_base_set_my_name(void)
      if (NULL != launcher) {  /* launcher identified */
          for (i=0; i < orte_plsnds_max; i++) {
               if (0 == strcmp(launcher, orte_plsnds[i].launcher)) {
-                    return orte_plsnds[i].discover;
+                    return orte_plsnds[i].discover();
               }
          }
      }
@@ -69,13 +70,16 @@ int orte_ns_base_set_my_name(void)
      * one from the name server in the universe
      */
     if (ORTE_SUCCESS != (rc = orte_ns.create_jobid(&jobid))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     if (ORTE_SUCCESS != (rc = orte_ns.reserve_range(jobid, 1, &vpid))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     if (ORTE_SUCCESS != (rc = orte_ns.create_process_name(&(orte_process_info.my_name),
                                                 0, jobid, vpid))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
 
@@ -83,11 +87,12 @@ int orte_ns_base_set_my_name(void)
 }
 
 int orte_ns_base_get_peers(orte_process_name_t **procs, 
-                           size_t *num_procs)
+                           size_t *num_procs, size_t *self)
 {
-    int i;
+    int i, rc;
     orte_cellid_t mycellid;
     orte_jobid_t myjobid;
+    orte_vpid_t myvpid;
     
     *procs = (orte_process_name_t*)malloc(orte_process_info.num_procs *
                                             sizeof(orte_process_name_t));
@@ -95,12 +100,19 @@ int orte_ns_base_get_peers(orte_process_name_t **procs,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (ORTE_SUCCESS != orte_ns.get_cellid(&mycellid, orte_process_info.my_name)) {
-        return ORTE_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_ns.get_cellid(&mycellid, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
     }
     
     if (ORTE_SUCCESS != orte_ns.get_jobid(&myjobid, orte_process_info.my_name)) {
-        return ORTE_ERROR;
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
+    if (ORTE_SUCCESS != orte_ns.get_vpid(&myvpid, orte_process_info.my_name)) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
     }
     
     for (i=0; i < orte_process_info.num_procs; i++) {
@@ -110,5 +122,7 @@ int orte_ns_base_get_peers(orte_process_name_t **procs,
     }
 
     *num_procs = (size_t)orte_process_info.num_procs;
+    *self = (size_t)myvpid;
+    
     return ORTE_SUCCESS;
 }

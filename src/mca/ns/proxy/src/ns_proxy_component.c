@@ -147,7 +147,7 @@ int orte_ns_proxy_close(void)
     return ORTE_SUCCESS;
 }
 
-mca_ns_base_module_t* orte_ns_proxy_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority)
+mca_ns_base_module_t* orte_ns_proxy_init(int *priority)
 {
     /* If we are NOT to host a replica, then we want to be selected, so do all
        the setup and return the module */
@@ -160,11 +160,6 @@ mca_ns_base_module_t* orte_ns_proxy_init(bool *allow_multi_user_threads, bool *h
         	   return NULL. */
         
         	*priority = 10;
-        
-        	/* We allow multi user threads but don't have any hidden threads */
-        
-        	*allow_multi_user_threads = true;
-        	*have_hidden_threads = false;
         
         	/* define the replica for us to use */
         	/* default to seed for now */
@@ -188,6 +183,9 @@ mca_ns_base_module_t* orte_ns_proxy_init(bool *allow_multi_user_threads, bool *h
 }
 
 
+/*
+ * module init function
+ */
 int orte_ns_proxy_module_init(void)
 {
     return ORTE_SUCCESS;

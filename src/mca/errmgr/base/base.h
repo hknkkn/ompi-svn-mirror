@@ -52,11 +52,15 @@ OMPI_DECLSPEC    int orte_errmgr_base_close(void);
      * Base functions that are common to all implementations - can be overridden
      */
 
-OMPI_DECLSPEC    void orte_errmgr_base_log(char *msg, char *filename, int line);
+OMPI_DECLSPEC    void orte_errmgr_base_log(int error_code, char *filename, int line);
 
 OMPI_DECLSPEC    void orte_errmgr_base_proc_aborted(orte_process_name_t *proc);
 
-OMPI_DECLSPEC    void orte_errmgr_base_incomplete_job(orte_jobid_t job);
+OMPI_DECLSPEC    void orte_errmgr_base_incomplete_start(orte_jobid_t job);
+
+OMPI_DECLSPEC    void orte_errmgr_base_error_detected(int error_code);
+
+OMPI_DECLSPEC    int orte_errmgr_base_register_job(orte_jobid_t job);
 
 /*
  * globals that might be needed

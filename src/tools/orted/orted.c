@@ -168,10 +168,11 @@ int main(int argc, char *argv[])
 /*	    orte_gpr.exec_compound_cmd(); */
 		
 	    /* wait to receive startup message and info distributed */
-	    if (ORTE_SUCCESS != (ret = orte_wait_startup_msg())) {
+/*	    if (ORTE_SUCCESS != (ret = orte_wait_startup_msg())) {
 		    printf("ompid: failed to see all procs register\n");
 		    return ret;
 	    }
+*/
 	}
 	
     /* if i'm the seed, get my contact info and write my setup file for others to find */

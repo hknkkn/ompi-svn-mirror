@@ -62,7 +62,7 @@ int orte_soh_base_select(void)
     	/* If there was a previous best one, finalize */
 
 	   if (NULL != best_module) {
-		  best_module->soh_finalize();
+		  best_module->finalize();
 	   }
 
 	   /* Save the new best one */

@@ -24,8 +24,8 @@ int orte_soh_base_close(void)
 {
   /* If we have a selected component and module, then finalize it */
 
-  if (NULL != orte_soh.soh_finalize) {
-    orte_soh.soh_finalize();
+  if (NULL != orte_soh.finalize) {
+    orte_soh.finalize();
   }
 
   /* after the module, close the component?? */

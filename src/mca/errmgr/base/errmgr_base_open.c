@@ -43,7 +43,9 @@ int orte_errmgr_base_output = -1;
 orte_errmgr_base_module_t orte_errmgr = {
     orte_errmgr_base_log,
     orte_errmgr_base_proc_aborted,
-    orte_errmgr_base_incomplete_job
+    orte_errmgr_base_incomplete_start,
+    orte_errmgr_base_error_detected,
+    orte_errmgr_base_register_job
 };
 bool orte_errmgr_base_selected = false;
 ompi_list_t orte_errmgr_base_components_available;

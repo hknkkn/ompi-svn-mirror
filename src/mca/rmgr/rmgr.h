@@ -34,6 +34,7 @@
 
 #include "mca/mca.h"
 #include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr_types.h"
 
 #include "rmgr_types.h"
 
@@ -149,6 +150,25 @@ typedef int (*orte_rmgr_base_module_spawn_fn_t)(
     orte_jobid_t *jobid,
     orte_rmgr_cb_fn_t *cbfn);
 
+/*
+ * Init the proc stage gate process
+ * A process goes through several stages during its life, each stage being marked by
+ * a barrier function that prevents the process from going any further until all
+ * processes reach that point. This function initializes the callbacks required
+ * to manage that process.
+ */
+typedef int (*orte_rmgr_base_module_proc_stage_gate_init_fn_t)(orte_jobid_t job);
+
+/*
+ * Call the proc stage gate manager
+ * As each process achieves a defined barrier (or "stage gate"), it sets its process
+ * status (via the SOH) to indicate "at stage gate x". When all process have reached
+ * that point, this function is called with a message indicating this has happened.
+ * The stage gate manager then takes the appropriate action for that stage gate -
+ * usually, broadcasting a message to all processes in the job that allows them
+ * to proceed.
+ */
+typedef void (*orte_rmgr_base_module_proc_stage_gate_mgr_fn_t)(orte_gpr_notify_message_t *notify_msg, void *user_tag);
 
 /**
  * Cleanup resources held by rmgr.
@@ -169,6 +189,8 @@ struct orte_rmgr_base_module_1_0_0_t {
     orte_rmgr_base_module_terminate_job_fn_t terminate_job;
     orte_rmgr_base_module_terminate_proc_fn_t terminate_proc;
     orte_rmgr_base_module_spawn_fn_t spawn;
+    orte_rmgr_base_module_proc_stage_gate_init_fn_t stage_gate_init;
+    orte_rmgr_base_module_proc_stage_gate_mgr_fn_t stage_gate_mgr;
     orte_rmgr_base_module_finalize_fn_t finalize;
 };
 

@@ -610,12 +610,10 @@ int mca_oob_tcp_resolve(mca_oob_tcp_peer_t* peer)
  */
 int mca_oob_tcp_init(void)
 {
-    char *keys[2], *jobid, *segment;
+    orte_jobid_t jobid;
     orte_buffer_t *buffer;
-    orte_process_name_t* peers;
-    orte_gpr_value_t *value;
+    orte_gpr_value_t *value, trig_value;
     mca_oob_tcp_subscription_t* subscription;
-    size_t npeers;
     int rc;
     ompi_list_item_t* item;
 
@@ -632,72 +630,33 @@ int mca_oob_tcp_init(void)
         mca_oob_tcp_peer_send_ident(peer);
     }
 
-    rc = orte_ns.get_peers(&peers, &npeers);
-    if(rc != OMPI_SUCCESS) {
-        OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
-        return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobid, orte_process_info.my_name))) {
-       return rc;
-    }
-    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid);
-
     /* register subscribe callback to receive notification when all processes have registered */
     subscription = OBJ_NEW(mca_oob_tcp_subscription_t);
-    subscription->jobid = orte_process_info.my_name->jobid;
+    subscription->jobid = jobid;
     ompi_list_append(&mca_oob_tcp_component.tcp_subscriptions, &subscription->item);
     OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
 
-#if 0
     if(mca_oob_tcp_component.tcp_debug > 1) {
-        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.subscribe(%s,%d)\n", 
-            ORTE_NAME_ARGS(orte_process_info.my_name),
-            segment,
-            npeers);
+        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.subscribe\n", 
+            ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
-    /* put our contact info in registry */
-    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&keys[0], orte_process_info.my_name))) {
-        return rc;
-    }
-    keys[1] = NULL;
-
-    rc = orte_gpr.subscribe(
-        ORTE_GPR_OR,
-        ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA|
-		ORTE_GPR_NOTIFY_ON_SHUTDOWN|ORTE_GPR_NOTIFY_INCLUDE_SHUTDOWN_DATA|
-		ORTE_GPR_NOTIFY_PRE_EXISTING,
-        segment,
-        NULL,
-        keys,
-        &subscription->subid,
-        mca_oob_tcp_registry_callback,
-        NULL);
-    if(rc != OMPI_SUCCESS) {
-        ompi_output(0, "mca_oob_tcp_init: registry subscription failed");
-        return OMPI_ERROR;
-    }
-    free(keys[0]);
-#endif
-
-    buffer = OBJ_NEW(orte_buffer_t);
-    if(buffer == NULL) {
-        return OMPI_ERR_OUT_OF_RESOURCE;
-    }
-    rc = mca_oob_tcp_addr_pack(buffer);
-    if(rc != OMPI_SUCCESS) {
-        OBJ_RELEASE(buffer);
-        return rc;
-    }
-
+    /* setup the subscription description value */
     value = OBJ_NEW(orte_gpr_value_t);
     if (NULL == value) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    
-    value->segment = strdup(segment);
+     
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value->segment), jobid))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+
     value->cnt = 1;
     value->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
     if(NULL == value->keyvals) {
@@ -709,37 +668,92 @@ int mca_oob_tcp_init(void)
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
+    (value->keyvals[0])->key = "oob-tcp";
+    (value->keyvals[0])->type = ORTE_NULL;
+
+    /* setup the trigger value */
+    OBJ_CONSTRUCT(&trig_value, orte_gpr_value_t);
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(trig_value.segment), jobid))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&trig_value);
+        return rc;
+    }
+
+    trig_value.keyvals[0]->type = ORTE_INT;
+    trig_value.keyvals[0]->value.i32 = (int32_t)orte_process_info.num_procs;
+    
+    rc = orte_gpr.subscribe(
+        ORTE_GPR_KEYS_OR,
+        ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_AT_LEVEL |
+        ORTE_GPR_NOTIFY_BEGIN,
+        value,
+        &trig_value,
+        &subscription->subid,
+        mca_oob_tcp_registry_callback,
+        NULL);
+    if(rc != OMPI_SUCCESS) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(value);
+        OBJ_DESTRUCT(&trig_value);
+        return rc;
+    }
+    OBJ_DESTRUCT(&trig_value);  /* done with this one */
+
+    buffer = OBJ_NEW(orte_buffer_t);
+    if(buffer == NULL) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_RELEASE(value);
+        return OMPI_ERR_OUT_OF_RESOURCE;
+    }
+    rc = mca_oob_tcp_addr_pack(buffer);
+    if(rc != OMPI_SUCCESS) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(value);
+        OBJ_RELEASE(buffer);
+        return rc;
+    }
+    
+    /* put our contact info in registry */
+    if (ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&(value->tokens),
+                                &(value->num_tokens), orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(value);
+        return rc;
+    }
     (value->keyvals[0])->type = ORTE_BYTE_OBJECT;
     (value->keyvals[0])->key = "oob-tcp";
-    orte_schema.get_proc_tokens(&value->tokens,NULL,orte_process_info.my_name);
 
     rc = orte_dps.unload(buffer, (void**)&(value->keyvals[0])->value.byteobject.bytes,
                                 &(value->keyvals[0])->value.byteobject.size);
-    if(rc != OMPI_SUCCESS) {
+    if(rc != ORTE_SUCCESS) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(value);
         OBJ_RELEASE(buffer);
         return rc;
     }
 
     if(mca_oob_tcp_component.tcp_debug > 1) {
-        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.put(%s,%s)\n", 
+        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.put(%s)\n", 
             ORTE_NAME_ARGS(orte_process_info.my_name),
-            segment);
+            value->segment);
     }
 
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, &value);
+    rc = orte_gpr.put(ORTE_GPR_OVERWRITE | ORTE_GPR_TOKENS_XAND, 1, &value);
     if(rc != OMPI_SUCCESS) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(value);
         OBJ_RELEASE(buffer);
         return rc;
     }
     OBJ_RELEASE(buffer);
     OBJ_RELEASE(value);
 
-    if(rc != OMPI_SUCCESS) {
-        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: registry put failed with error code %d.",
-            ORTE_NAME_ARGS(orte_process_info.my_name), rc);
+    if(rc != ORTE_SUCCESS) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
-    free(jobid);
+
     return OMPI_SUCCESS;
 }
 
