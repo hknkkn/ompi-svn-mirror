@@ -518,20 +518,13 @@ typedef int (*orte_gpr_base_module_index_nb_fn_t)(char *segment,
  * @param addr_mode (IN) The addressing mode to be used in specifying the objects to be
  * monitored by this subscription.
  * 
- * @param action (IN) The actions which are to trigger a notification message. These can
+ * @param actions (IN) The actions which is to trigger the notification message. These can
  * be OR'd together from the defined registry action flags.
  * 
- * @param *segment (IN) A character string indicating the name of the segment upon which the
- * subscription is being requested. A value of NULL indicates that the subscription
- * is to be placed on the entire registry - this should be done with caution as the
- * subscription will trigger on ALL registry events matching the specified action and
- * addressing, potentially including those from jobs other than the one generating the
- * subscription request.
+ * @param *value (IN) A pointer to an orte_gpr_value_t object that describes the segment,
+ * tokens, and keys/values to which a subscription is requested.
  * 
- * @param **tokens (IN) A NULL-terminated **char list of tokens describing the objects to be
- * monitored. A value of NULL indicates that ALL data on the segment is to be monitored.
- * 
- * @param *sub_number (OUT) The notify id of the resulting subscription is returned in
+ * @param *sub_number (OUT) A notify id for the resulting subscription is returned in
  * the provided memory location. Callers should save this
  * number for later use if (for example) it is desired to temporarily turn "off" the
  * subscription or to permanently remove the subscription from the registry
@@ -554,8 +547,8 @@ typedef int (*orte_gpr_base_module_index_nb_fn_t)(char *segment,
  * @endcode
  */
 typedef int (*orte_gpr_base_module_subscribe_fn_t)(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_notify_action_t action,
-                            char *segment, char **tokens, char **keys,
+                            orte_gpr_notify_action_t actions,
+                            orte_gpr_value_t *value,
                             orte_gpr_notify_id_t *sub_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
@@ -599,23 +592,17 @@ typedef int (*orte_gpr_base_module_unsubscribe_fn_t)(orte_gpr_notify_id_t sub_nu
  * @param addr_mode (IN) The addressing mode to be used in specifying the objects to be
  * counted by this synchro.
  * 
- * @param synchro_mode (IN) The conditions which are to trigger a notification message. These can
+ * @param synchro_mode (IN) The condition which is to trigger the notification message. These can
  * be OR'd together from the defined registry synchro mode flags.
  * 
- * @param *segment (IN) A character string indicating the name of the segment upon which the
- * synchro is being requested. A value of NULL indicates that the synchro
- * is to be placed on the entire registry - this should be done with caution as the
- * synchro will fire based on counting  ALL registry objects matching the specified
- * addressing, potentially including those from jobs other than the one generating the
- * synchro request.
+ * @param *value (IN) A pointer to an orte_gpr_value_t object that describes the segment,
+ * tokens, and keys/values that are to be monitored.
  * 
- * @param **tokens A NULL-terminated **char list of tokens describing the objects to be
- * counted. A value of NULL indicates that ALL objects on the segment are to be counted.
+ * @param trigger (IN) An integer indicating the level at which the
+ * specified synchro is to be triggered.
  * 
- * @param trigger (IN) The level at which the synchro is to be triggered.
- * 
- * @param *sub_number (OUT) The synchro number of this request. Callers should save this
- * number for later use if it is desired to permanently remove the synchro from the registry.
+ * @param synch_number (OUT) A synchro number for the request. Callers should save this
+ * number for later use if it is desired to permanently remove a synchro from the registry.
  * Note: ONE_SHOT synchros are automatically removed from the registry when triggered.
  *
  * @param cb_func (IN) The orte_gpr_notify_cb_fn_t callback function to be called when
@@ -638,7 +625,7 @@ typedef int (*orte_gpr_base_module_unsubscribe_fn_t)(orte_gpr_notify_id_t sub_nu
  */
 typedef int (*orte_gpr_base_module_synchro_fn_t)(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_synchro_mode_t synchro_mode,
-                            char *segment, char **tokens, char **keys, int trigger,
+                            orte_gpr_value_t *values, int trigger,
                             orte_gpr_notify_id_t *synch_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 

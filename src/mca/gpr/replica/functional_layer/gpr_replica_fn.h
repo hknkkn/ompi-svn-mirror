@@ -102,8 +102,7 @@ int orte_gpr_replica_get_nb_fn(orte_gpr_addr_mode_t addr_mode,
  */
 int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
-                            orte_gpr_replica_itag_t *token_tags, int num_tokens,
-                            orte_gpr_replica_itag_t *key_tags, int num_keys,
+                            orte_gpr_value_t *value,
                             orte_gpr_notify_id_t local_idtag);
 
 int orte_gpr_replica_unsubscribe_fn(orte_gpr_notify_id_t sub_number);
@@ -114,8 +113,7 @@ int orte_gpr_replica_unsubscribe_fn(orte_gpr_notify_id_t sub_number);
  */
 int orte_gpr_replica_synchro_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
-                            orte_gpr_replica_itag_t *token_tags, int num_tokens,
-                            orte_gpr_replica_itag_t *key_tags, int num_keys,
+                            orte_gpr_value_t *value,
                             int trigger,
                             orte_gpr_notify_id_t local_idtag);
 

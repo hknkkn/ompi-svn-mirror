@@ -28,16 +28,19 @@
 #include "mca/ns/ns.h"
 #include "mca/errmgr/errmgr.h"
 
+#include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
 #include "gpr_replica_fn.h"
 
 int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
-                            orte_gpr_replica_itag_t *tokentags, int num_tokens,
-                            orte_gpr_replica_itag_t *keytags, int num_keys,
+                            orte_gpr_value_t *value,
                             orte_gpr_notify_id_t local_idtag)
 {
     orte_gpr_replica_triggers_t *trig;
-    int i, rc;
+    orte_gpr_replica_itag_t *itags;
+    orte_gpr_keyval_t *kptr;
+    orte_gpr_replica_itagval_t *iptr;
+    int i, rc, num_tokens;
 
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr replica: subscribe entered: segment %s",
@@ -59,31 +62,64 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
         trig->key_addr_mode = ORTE_GPR_REPLICA_OR;
     }
 
-    if (NULL != tokentags && 0 < num_tokens) {
+    if (NULL != value->tokens && 0 < value->num_tokens) {
+        num_tokens = value->num_tokens; /* indicates non-NULL terminated list */
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg,
+                                value->tokens, &num_tokens))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        
+        }
         if (ORTE_SUCCESS != (rc = orte_value_array_set_size(&(trig->tokentags), (size_t)num_tokens))) {
             ORTE_ERROR_LOG(rc);
             return rc;
         }
         for (i=0; i < num_tokens; i++) {
             ORTE_VALUE_ARRAY_SET_ITEM(&(trig->tokentags), orte_gpr_replica_itag_t,
-                                            i, tokentags[i]);
+                                            i, itags[i]);
         }
+        free(itags);
+        itags = NULL;
     }
     
-    if (NULL != keytags && 0 < num_keys) {
-        if (ORTE_SUCCESS != (rc = orte_value_array_set_size(&(trig->keytags), (size_t)num_keys))) {
-            ORTE_ERROR_LOG(rc);
-            return rc;
-        }
-        for (i=0; i < num_keys; i++) {
-            ORTE_VALUE_ARRAY_SET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t,
-                                            i, keytags[i]);
+    if (NULL != value->keyvals && 0 < value->cnt) {
+        trig->num_keys = value->cnt;
+        for (i=0; i < value->cnt; i++) {
+            kptr = value->keyvals[i];
+            iptr = OBJ_NEW(orte_gpr_replica_itagval_t);
+            if (NULL == iptr) {
+                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                rc = ORTE_ERR_OUT_OF_RESOURCE;
+                goto CLEANUP;
+            }
+            
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&(iptr->itag),
+                                                    seg, kptr->key))) {
+                ORTE_ERROR_LOG(rc);
+                goto CLEANUP;
+            }
+            
+            iptr->type = kptr->type;
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(&(iptr->value),
+                                                       &(kptr->value), kptr->type))) {
+                ORTE_ERROR_LOG(rc);
+                goto CLEANUP;
+            }
+            
+            if (0 > (iptr->index = orte_pointer_array_add(trig->itagvals, (void*)iptr))) {
+                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                rc = ORTE_ERR_OUT_OF_RESOURCE;
+                goto CLEANUP;
+            }
         }
     }
     
     /* need to check the existing data to flag those that fit the new subscription */
     return orte_gpr_replica_init_trigger(seg, trig);
 
+CLEANUP:
+    OBJ_RELEASE(trig);
+    return rc;
 }
 
 

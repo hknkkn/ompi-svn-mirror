@@ -114,7 +114,7 @@ extern "C" {
     OMPI_DECLSPEC int orte_gpr_base_pack_synchro(orte_buffer_t *cmd,
 				  orte_gpr_synchro_mode_t synchro_mode,
 				  orte_gpr_addr_mode_t mode,
-				  char *segment, char **tokens, char **keys, int trigger);
+				  orte_gpr_value_t *value, int trigger);
     OMPI_DECLSPEC int orte_gpr_base_unpack_synchro(orte_buffer_t *buffer,
 				    orte_gpr_notify_id_t *remote_idtag);
 
@@ -125,7 +125,7 @@ extern "C" {
     OMPI_DECLSPEC int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
 				    orte_gpr_addr_mode_t addr_mode,
 				    orte_gpr_notify_action_t action,
-				    char *segment, char **tokens, char **keys);
+				    orte_gpr_value_t *value);
     OMPI_DECLSPEC int orte_gpr_base_unpack_subscribe(orte_buffer_t *buffer,
 				      orte_gpr_notify_id_t *remote_idtag);
 

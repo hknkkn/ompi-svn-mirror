@@ -34,14 +34,12 @@ int orte_gpr_replica_recv_synchro_cmd(orte_process_name_t* sender,
 {
     orte_gpr_cmd_flag_t command=ORTE_GPR_SYNCHRO_CMD;
     orte_gpr_addr_mode_t addr_mode;
-    char *segment=NULL, **tokens=NULL, **keys=NULL;
     orte_gpr_notify_id_t local_idtag=0, idtag=0;
     orte_gpr_replica_segment_t *seg=NULL;
-    orte_gpr_replica_itag_t *key_itags=NULL, *token_itags=NULL;
     size_t n;
-    int num_keys=0, num_tokens=0;
-    int trigger=0, i, rc, ret;
+    int trigger=0, rc, ret;
     orte_gpr_replica_act_sync_t flag;
+    orte_gpr_value_t *value;
     
     if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, &command, 1, ORTE_GPR_CMD))) {
         ORTE_ERROR_LOG(rc);
@@ -61,51 +59,9 @@ int orte_gpr_replica_recv_synchro_cmd(orte_process_name_t* sender,
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &segment, &n, ORTE_STRING))) {
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &value, &n, ORTE_GPR_VALUE))) {
         ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
-    }
-
-    n = 1;
-    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &num_tokens, &n, ORTE_INT))) {
-        ORTE_ERROR_LOG(ret);
-        goto RETURN_ERROR;
-    }
-
-    if (0 < num_tokens) {  /* tokens provided */ 
-        tokens = (char**)malloc(num_tokens*sizeof(char*));
-        if (NULL == tokens) {
-            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-            ret = ORTE_ERR_OUT_OF_RESOURCE;
-            goto RETURN_ERROR;
-        }
-        if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, tokens, (size_t*)&num_tokens, ORTE_STRING))) {
-            ORTE_ERROR_LOG(ret);
-            goto RETURN_ERROR;
-        }
-    } else {  /* no tokens provided - wildcard case */
-        tokens = NULL;
-    }
-
-    n = 1;
-    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &num_keys, &n, ORTE_INT))) {
-        ORTE_ERROR_LOG(ret);
-        goto RETURN_ERROR;
-    }
-
-    if (0 < num_keys) {  /* keys provided */ 
-        keys = (char**)malloc(num_keys*sizeof(char*));
-        if (NULL == keys) {
-            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-            ret = ORTE_ERR_OUT_OF_RESOURCE;
-            goto RETURN_ERROR;
-        }
-        if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, keys, (size_t*)&num_keys, ORTE_STRING))) {
-            ORTE_ERROR_LOG(ret);
-            goto RETURN_ERROR;
-        }
-    } else {  /* no tokens provided - wildcard case */
-        tokens = NULL;
     }
 
     /* unpack the trigger info */
@@ -126,28 +82,12 @@ int orte_gpr_replica_recv_synchro_cmd(orte_process_name_t* sender,
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     /* locate the segment */
-    if (ORTE_SUCCESS != (ret = orte_gpr_replica_find_seg(&seg, true, segment))) {
+    if (ORTE_SUCCESS != (ret = orte_gpr_replica_find_seg(&seg, true, value->segment))) {
         ORTE_ERROR_LOG(ret);
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         goto RETURN_ERROR;
     }
 
-    
-    /* convert tokens to itags */
-    if (ORTE_SUCCESS != (ret = orte_gpr_replica_get_itag_list(&token_itags,
-                         seg, tokens, &num_tokens))) {
-        ORTE_ERROR_LOG(ret);
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        goto RETURN_ERROR;
-    }
-
-    /* convert keys to itags */
-    if (ORTE_SUCCESS != (ret = orte_gpr_replica_get_itag_list(&key_itags,
-                         seg, keys, &num_keys))) {
-        ORTE_ERROR_LOG(ret);
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        goto RETURN_ERROR;
-    }
     
     if (NULL != sender) {  /* remote sender */
 
@@ -162,8 +102,7 @@ int orte_gpr_replica_recv_synchro_cmd(orte_process_name_t* sender,
 
         /* process synchro request */
         if (ORTE_SUCCESS != (ret = orte_gpr_replica_synchro_fn(addr_mode,
-                                    seg, token_itags, num_tokens,
-                                    key_itags, num_keys, trigger, local_idtag))) {
+                                    seg, value, trigger, local_idtag))) {
             ORTE_ERROR_LOG(ret);
             orte_gpr_replica_remove_notify_request(local_idtag, &idtag);
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
@@ -181,8 +120,7 @@ int orte_gpr_replica_recv_synchro_cmd(orte_process_name_t* sender,
 
         /* process synchro request */
         if (ORTE_SUCCESS != (ret = orte_gpr_replica_synchro_fn(addr_mode,
-                                    seg, token_itags, num_tokens,
-                                    key_itags, num_keys, trigger, idtag))) {
+                                    seg, value, trigger, idtag))) {
             ORTE_ERROR_LOG(ret);
             orte_gpr_replica_remove_notify_request(idtag, &idtag);
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
@@ -196,25 +134,6 @@ int orte_gpr_replica_recv_synchro_cmd(orte_process_name_t* sender,
     /******     UNLOCK     ******/
 
  RETURN_ERROR:
-    if (NULL != segment) {
-        free(segment);
-    }
-    if (NULL != tokens) {
-        for (i=0; i<num_tokens; i++) {
-            free(tokens[i]);
-        }
-        free(tokens);
-        free(token_itags);
-    }
-
-    if (NULL != keys) {
-       for (i=0; i<num_keys; i++) {
-            free(keys[i]);
-       }
-       free(keys);
-       free(key_itags);
-    }
-
     if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, &ret, 1, ORTE_INT))) {
         ORTE_ERROR_LOG(rc);
         return rc;

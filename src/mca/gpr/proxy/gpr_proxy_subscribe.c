@@ -29,6 +29,7 @@
 #include "util/proc_info.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/errmgr/errmgr.h"
 #include "mca/oob/oob_types.h"
 #include "mca/rml/rml.h"
 
@@ -37,7 +38,7 @@
 int
 orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
                         orte_gpr_notify_action_t action,
-                        char *segment, char **tokens, char **keys,
+                        orte_gpr_value_t *value,
                         orte_gpr_notify_id_t *sub_number,
                         orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
@@ -51,13 +52,13 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
     flag.trig_action = action;
     
     /* need to protect against errors */
-    if (NULL == segment) {
+    if (NULL == value || NULL == value->segment) {
 	    return ORTE_ERR_BAD_PARAM;
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
 	    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(orte_gpr_proxy_globals.compound_cmd,
-							                         mode, action, segment, tokens, keys))) {
+							                         mode, action, value))) {
             return rc;
         }
 
@@ -65,8 +66,8 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
 	    /* store callback function and user_tag in local list for lookup */
 	    /* generate id_tag to send to replica to identify lookup entry */
-	    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(sub_number,
-                                            segment, ORTE_GPR_SUBSCRIBE_CMD,
+	    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
+                                            value->segment, ORTE_GPR_SUBSCRIBE_CMD,
                                             &flag, cb_func, user_tag))) {
             OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
             return rc;
@@ -74,7 +75,12 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
 	    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
 
-	    return orte_dps.pack(orte_gpr_proxy_globals.compound_cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID);
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(orte_gpr_proxy_globals.compound_cmd,
+                                    &idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+        
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -82,7 +88,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(cmd, mode, action, segment, tokens, keys))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(cmd, mode, action, value))) {
 	    OBJ_RELEASE(cmd);
         return rc;
     }
@@ -91,7 +97,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
     /* store callback function and user_tag in local list for lookup */
     /* generate id_tag to send to replica to identify lookup entry */
-    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(sub_number, segment,
+    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag, value->segment,
                                         ORTE_GPR_SUBSCRIBE_CMD, &flag,
                                         cb_func, user_tag))) {
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
@@ -108,7 +114,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
     if (orte_gpr_proxy_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr proxy subscribe: subscribing to segment %s local idtag %d",
-				ORTE_NAME_ARGS(orte_process_info.my_name), segment, (int)idtag);
+				ORTE_NAME_ARGS(orte_process_info.my_name), value->segment, (int)idtag);
     }
 
 
@@ -150,7 +156,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
         return rc;
     }
 
-    *sub_number = remote_idtag;
+    *sub_number = idtag;
     return rc;
 }
 

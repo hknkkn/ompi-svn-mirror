@@ -236,12 +236,14 @@ static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig
     trig->seg = NULL;
     trig->token_addr_mode = 0;
     trig->key_addr_mode = 0;
+    trig->num_keys = 0;
     
     OBJ_CONSTRUCT(&(trig->tokentags), orte_value_array_t);
     orte_value_array_init(&(trig->tokentags), sizeof(orte_gpr_replica_itag_t));
 
-    OBJ_CONSTRUCT(&(trig->keytags), orte_value_array_t);
-    orte_value_array_init(&(trig->keytags), sizeof(orte_gpr_replica_itag_t));
+    orte_pointer_array_init(&(trig->itagvals), orte_gpr_replica_globals.block_size,
+                            orte_gpr_replica_globals.max_size,
+                            orte_gpr_replica_globals.block_size);
 
     orte_pointer_array_init(&(trig->targets), orte_gpr_replica_globals.block_size,
                             orte_gpr_replica_globals.max_size,
@@ -265,7 +267,7 @@ static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* tri
     }
 
     OBJ_DESTRUCT(&(trig->tokentags));
-    OBJ_DESTRUCT(&(trig->keytags));
+    OBJ_DESTRUCT(&(trig->itagvals));
 
     if (NULL != trig->targets) {
        targets = (orte_gpr_replica_target_t**)((trig->targets)->addr);

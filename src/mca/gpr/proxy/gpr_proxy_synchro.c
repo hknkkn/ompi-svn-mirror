@@ -26,6 +26,7 @@
 #include "include/orte_constants.h"
 #include "dps/dps.h"
 
+#include "mca/errmgr/errmgr.h"
 #include "mca/rml/rml.h"
 
 #include "gpr_proxy.h"
@@ -33,7 +34,7 @@
 int
 orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_synchro_mode_t synchro_mode,
-                            char *segment, char **tokens, char **keys, int trigger,
+                            orte_gpr_value_t *value, int trigger,
                             orte_gpr_notify_id_t *synch_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
@@ -46,9 +47,16 @@ orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
     *synch_number = ORTE_GPR_NOTIFY_ID_MAX;
     flag.trig_synchro = synchro_mode;
     
+    /* need to protect against error */
+    if (NULL == value || NULL == value->segment) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+        return ORTE_ERR_BAD_PARAM;
+    }
+    
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
         	if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_synchro(orte_gpr_proxy_globals.compound_cmd,
-        						      synchro_mode, addr_mode, segment, tokens, keys, trigger))) {
+        						      synchro_mode, addr_mode, value, trigger))) {
+            ORTE_ERROR_LOG(rc);
         	    return rc;
         	}
         
@@ -56,25 +64,34 @@ orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
         	/* store callback function and user_tag in local list for lookup */
         	/* generate id_tag to send to replica to identify lookup entry */
         
-        if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(synch_number,
-                                            segment, ORTE_GPR_SYNCHRO_CMD,
+        if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
+                                            value->segment, ORTE_GPR_SYNCHRO_CMD,
                                             &flag, cb_func, user_tag))) {
+            ORTE_ERROR_LOG(rc);
             OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
             return rc;
         }
         
        	OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         
-        	return orte_dps.pack(orte_gpr_proxy_globals.compound_cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID);
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(orte_gpr_proxy_globals.compound_cmd,
+                                    &idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+        
+        *synch_number = idtag;
+        	return ORTE_SUCCESS;
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
     if (NULL == cmd) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
     if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_synchro(cmd, synchro_mode, addr_mode,
-                                        segment, tokens, keys, trigger))) {
+                                        value, trigger))) {
         OBJ_RELEASE(cmd);
         return rc;
     }
@@ -82,8 +99,8 @@ orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
     OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
     /* store callback function and user_tag in local list for lookup */
     /* generate id_tag to send to replica to identify lookup entry */
-    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(synch_number,
-                                                    segment, ORTE_GPR_SYNCHRO_CMD,
+    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
+                                                    value->segment, ORTE_GPR_SYNCHRO_CMD,
                                                     &flag, cb_func, user_tag))) {
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         OBJ_RELEASE(cmd);
@@ -135,8 +152,8 @@ orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
         return rc;
     }
 
-    *synch_number = remote_idtag;
-    return rc;
+    *synch_number = idtag;
+    return ORTE_SUCCESS;
 }
 
 int orte_gpr_proxy_cancel_synchro(orte_gpr_notify_id_t synch_number)

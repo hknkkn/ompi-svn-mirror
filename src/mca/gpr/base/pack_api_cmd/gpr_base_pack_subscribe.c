@@ -32,11 +32,9 @@
 int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
 				orte_gpr_addr_mode_t mode,
 				orte_gpr_notify_action_t action,
-				char *segment, char **tokens, char **keys)
+                 orte_gpr_value_t *value)
 {
     orte_gpr_cmd_flag_t command;
-    char **ptr;
-    int n;
     int rc;
 
     command = ORTE_GPR_SUBSCRIBE_CMD;
@@ -53,44 +51,8 @@ int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, segment, 1, ORTE_STRING))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &value, 1, ORTE_GPR_VALUE))) {
 	   return rc;
-    }
-
-    /* compute number of tokens */
-    n = 0;
-    if (NULL != tokens) {
-	   ptr = tokens;
-	   while (NULL != ptr[n]) {
-	       n++;
-	   }
-    }
-
-    /* pack the number of tokens - could be zero */
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &n, 1, ORTE_INT))) {
-      return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, tokens, (size_t)n, ORTE_STRING))) {
-	   return rc;
-    }
-
-    /* compute number of keys */
-    n = 0;
-    if (NULL != keys) {
-       ptr = keys;
-       while (NULL != ptr[n]) {
-          n++;
-       }
-    }
-
-    /* pack the number of keys - could be zero */
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &n, 1, ORTE_INT))) {
-      return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keys, (size_t)n, ORTE_STRING))) {
-      return rc;
     }
 
     return ORTE_SUCCESS;

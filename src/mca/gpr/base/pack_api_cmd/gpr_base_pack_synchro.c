@@ -32,17 +32,10 @@
 int orte_gpr_base_pack_synchro(orte_buffer_t *cmd,
 			      orte_gpr_synchro_mode_t synchro_mode,
 			      orte_gpr_addr_mode_t mode,
-			      char *segment, char **tokens, char **keys, int trigger)
+			      orte_gpr_value_t *value, int trigger)
 {
     orte_gpr_cmd_flag_t command;
-    char **ptr;
-    size_t n;
     int rc;
-
-    /* need to protect against errors */
-    if (NULL == segment) {
-	   return ORTE_ERR_BAD_PARAM;
-    }
 
     command = ORTE_GPR_SYNCHRO_CMD;
 
@@ -58,34 +51,8 @@ int orte_gpr_base_pack_synchro(orte_buffer_t *cmd,
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, segment, 1, ORTE_STRING))) {
-	   return rc;
-    }
-
-    /* compute number of tokens */
-    n = 0;
-    if (NULL != tokens) {
-	   ptr = tokens;
-	   while (NULL != ptr[n]) {
-	       n++;
-	   }
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, tokens, n, ORTE_STRING))) {
-	   return rc;
-    }
-
-    /* compute number of keys */
-    n = 0;
-    if (NULL != keys) {
-       ptr = keys;
-       while (NULL != ptr[n]) {
-           n++;
-       }
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keys, n, ORTE_STRING))) {
-      return rc;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &value, 1, ORTE_GPR_VALUE))) {
+       return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &trigger, 1, ORTE_INT))) {

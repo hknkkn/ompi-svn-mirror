@@ -144,6 +144,7 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     char *tmp_out, *token;
     int i, k;
     orte_gpr_replica_target_t **target;
+    orte_gpr_replica_itagval_t **ival;
     
     if (ORTE_GPR_SUBSCRIBE_CMD == trig->cmd) {  /* subscription */
 		asprintf(&tmp_out, "Data for trigger %d on segment %s\tType: SUBSCRIPTION",
@@ -258,7 +259,7 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     
     k = (int)orte_value_array_get_size(&(trig->tokentags));
     if (0 == k) {
-        asprintf(&tmp_out, "\tNULL token");
+        asprintf(&tmp_out, "\tNULL token (wildcard)");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     } else {
         asprintf(&tmp_out, "\tNumber of tokens: %d", k);
@@ -298,21 +299,23 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     
-    k = (int)orte_value_array_get_size(&(trig->keytags));
+    k = (int)((trig->itagvals)->size);
     if (0 == k) {
-        asprintf(&tmp_out, "\tNULL key");
+        asprintf(&tmp_out, "\tNULL key (wildcard)");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     } else {
         asprintf(&tmp_out, "\tNumber of keys: %d", k);
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
+        ival = (orte_gpr_replica_itagval_t**)((trig->itagvals)->addr);
         for (i=0; i < k; i++) {
             if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
-                    ORTE_VALUE_ARRAY_GET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t, i))) {
+                    ival[i]->itag)) {
                 asprintf(&tmp_out, "\t\tKey: %s", token);
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 free(token);
             }
+            orte_gpr_replica_dump_itagval_value(buffer, ival[i]);
         }
     }
     

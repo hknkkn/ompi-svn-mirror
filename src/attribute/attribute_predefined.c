@@ -15,6 +15,7 @@
 #include "ompi_config.h"
 
 #include "mpi.h"
+
 #include "attribute/attribute.h"
 
 #include "errhandler/errclass.h"
@@ -63,20 +64,24 @@ int ompi_attr_create_predefined(void)
 {
     orte_gpr_notify_id_t rc;
     int ret;
+    orte_gpr_value_t value;
+    
+    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+    value.segment = strdup(ORTE_NODE_SEGMENT);
 
      ret = orte_gpr.subscribe(
          ORTE_GPR_TOKENS_OR,
 	     ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA,
-         ORTE_NODE_SEGMENT,
-         NULL,
-         NULL,
+         &value,
          &rc,
          ompi_attr_create_predefined_callback,
          NULL);
      if(ORTE_SUCCESS != ret) {
          ompi_output(0, "ompi_attr_create_predefined: subscribe failed");
+         OBJ_DESTRUCT(&value);
          return OMPI_ERROR;
      }
+     OBJ_DESTRUCT(&value);
      return OMPI_SUCCESS;
 }
 

@@ -310,7 +310,8 @@ static void mca_base_modex_registry_callback(
 static int mca_base_modex_subscribe(orte_process_name_t* name)
 {
     orte_gpr_notify_id_t rctag;
-    char *segment, *jobidstring, *keys[2];
+    orte_gpr_value_t value;
+    orte_jobid_t jobid;
     ompi_list_item_t* item;
     mca_base_modex_subscription_t* subscription;
     int rc;
@@ -329,30 +330,42 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     OMPI_UNLOCK(&mca_base_modex_lock);
 
     /* otherwise - subscribe */
-    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobidstring, name))) {
+    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, name))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
-    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
-    keys[0] = strdup("modex-*");
-    keys[1] = NULL;
+    
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value.segment), jobid))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    
+    value.cnt = 1;
+    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == value.keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    value.keyvals[0]->key = strdup("modex-*");
+    value.keyvals[0]->type = ORTE_NULL;
     
     rc = orte_gpr.subscribe(
-        	ORTE_GPR_TOKENS_OR,
+        ORTE_GPR_KEYS_OR | ORTE_GPR_TOKENS_OR,
         	ORTE_GPR_NOTIFY_ADD_ENTRY|ORTE_GPR_NOTIFY_DELETE_ENTRY|
         	ORTE_GPR_NOTIFY_MODIFICATION|
 		ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA|
 		ORTE_GPR_NOTIFY_PRE_EXISTING,
-        	segment,
-        	NULL,
-         keys,
+        	&value,
          &rctag,
         	mca_base_modex_registry_callback,
         	NULL);
     if(ORTE_SUCCESS != rc) {
         ompi_output(0, "mca_base_modex_exchange: "
 		    "ompi_gpr.subscribe failed with return code %d\n", rc);
-	free(segment);
-	return OMPI_ERROR;
+        OBJ_DESTRUCT(&value);
+	    return OMPI_ERROR;
     }
 
     /* add this jobid to our list of subscriptions */
@@ -361,7 +374,7 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     subscription->jobid = name->jobid;
     ompi_list_append(&mca_base_modex_subscriptions, &subscription->item);
     OMPI_UNLOCK(&mca_base_modex_lock);
-    free(segment);
+    OBJ_DESTRUCT(&value);
     return OMPI_SUCCESS;
 }
 

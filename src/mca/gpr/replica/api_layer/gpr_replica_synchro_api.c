@@ -25,91 +25,91 @@
 
 #include "dps/dps.h"
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "gpr_replica_api.h"
 
 int
 orte_gpr_replica_synchro(orte_gpr_addr_mode_t addr_mode,
              orte_gpr_synchro_mode_t synchro_mode,
-			char *segment, char **tokens, char **keys, int trigger,
+			orte_gpr_value_t *value, int trigger,
              orte_gpr_notify_id_t *local_idtag,
 			orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
     int rc;
     orte_gpr_replica_segment_t *seg;
     orte_gpr_replica_itag_t *token_itags, *key_itags;
-    int num_tokens, num_keys;
-    orte_gpr_notify_id_t remote_idtag;
+    orte_gpr_notify_id_t idtag, remote_idtag;
     orte_gpr_replica_act_sync_t flag;
     
     *local_idtag = ORTE_GPR_NOTIFY_ID_MAX;
     flag.trig_synchro = synchro_mode;
 
     /* protect against errors */
-    if (NULL == segment) {
-	   return ORTE_ERR_BAD_PARAM;
+    if (NULL == value || NULL == value->segment) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+	    return ORTE_ERR_BAD_PARAM;
     }
         
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     /* locate the segment */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, segment))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, value->segment))) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         return rc;
     }
 
     if (orte_gpr_replica_globals.compound_cmd_mode) {
-        	if (ORTE_SUCCESS == (rc = orte_gpr_base_pack_synchro(orte_gpr_replica_globals.compound_cmd,
-        				  synchro_mode, addr_mode,
-        				  segment, tokens, keys, trigger))) {
-
-        	   /* enter request on notify tracking system */
-        	   rc = orte_gpr_replica_enter_notify_request(local_idtag, seg,
-                                     ORTE_GPR_SYNCHRO_CMD, &flag,
-        							   NULL, 0, cb_func, user_tag);
-                
-           if (ORTE_SUCCESS == rc) {
-        	       rc = orte_dps.pack(orte_gpr_replica_globals.compound_cmd, local_idtag,
-                                    1, ORTE_GPR_NOTIFY_ID);
-           }
+        	if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_synchro(orte_gpr_replica_globals.compound_cmd,
+        				  synchro_mode, addr_mode, value, trigger))) {
+            ORTE_ERROR_LOG(rc);
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+            return rc;
         }
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
-    }
 
-    /* convert tokens to itags */
-    num_tokens = 0;  /* indicates NULL-terminated set of strings */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags,
-                         seg, tokens, &num_tokens))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
-    }
 
-    /* convert keys to itags */
-    num_keys = 0;  /* indicates NULL-terminated set of strings */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&key_itags,
-                         seg, keys, &num_keys))) {
+        /* enter request on notify tracking system */
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_enter_notify_request(&idtag, seg,
+                                     ORTE_GPR_SYNCHRO_CMD, &flag,
+        							   NULL, 0, cb_func, user_tag))) {
+            ORTE_ERROR_LOG(rc);
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+            return rc;
+        }
+
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(orte_gpr_replica_globals.compound_cmd,
+                                &idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+            ORTE_ERROR_LOG(rc);
+            OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+            return rc;
+        }
+
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
+        *local_idtag = idtag;
+        return ORTE_SUCCESS;
     }
 
     /* enter request on notify tracking system */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_enter_notify_request(local_idtag,
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_enter_notify_request(&idtag,
                                     seg, ORTE_GPR_SYNCHRO_CMD, &flag,
                                     NULL, 0, cb_func, user_tag))) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
         return rc;
     }
 
     /* process synchro request */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_synchro_fn(addr_mode,
-				    seg, token_itags, num_tokens,
-                     key_itags, num_keys, trigger, *local_idtag))) {
-        orte_gpr_replica_remove_notify_request(*local_idtag, &remote_idtag);
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+				    seg, value, trigger, idtag))) {
+        ORTE_ERROR_LOG(rc);
+        orte_gpr_replica_remove_notify_request(idtag, &remote_idtag);
     }
 
-    orte_gpr_replica_check_synchros(seg);
+    if (ORTE_SUCCESS == rc) {
+        *local_idtag = idtag;
+        orte_gpr_replica_check_synchros(seg);
+    }
 
     if (NULL != key_itags) {
       free(key_itags);

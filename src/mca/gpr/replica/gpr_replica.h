@@ -190,7 +190,8 @@ struct orte_gpr_replica_triggers_t {
     orte_gpr_replica_addr_mode_t token_addr_mode;   /**< Tokens addressing mode */
     orte_gpr_replica_addr_mode_t key_addr_mode;     /**< Keys addressing mode */
     orte_value_array_t tokentags;                   /**< Array of tokens defining which containers are affected */
-    orte_value_array_t keytags;                     /**< Keys defining which key-value pairs are affected */
+    int num_keys;                                   /**< Number of key/values being tracked */
+    orte_pointer_array_t *itagvals;                  /**< Keys/values defining which key-value pairs are affected */
     orte_gpr_cmd_flag_t cmd;                        /**< command that generated the notify msg */
     orte_gpr_replica_act_sync_t flag;
     uint32_t trigger;                               /**< Number of objects that trigger notification */
