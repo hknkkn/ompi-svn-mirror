@@ -1108,6 +1108,8 @@ AC_CONFIG_FILES([
     src/mca/errmgr/base/Makefile
     src/mca/gpr/Makefile
     src/mca/gpr/base/Makefile
+    src/mca/gpr/base/pack_api_cmd/Makefile
+    src/mca/gpr/base/unpack_api_response/Makefile
     src/mca/ns/Makefile
     src/mca/ns/base/Makefile
     src/mca/oob/Makefile

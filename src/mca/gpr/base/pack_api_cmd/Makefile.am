@@ -14,16 +14,14 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-# For VPATH builds, have to specify where static-modules.h will be found
-
-AM_CPPFLAGS = -I$(top_builddir)/src
+noinst_LTLIBRARIES = libmca_gpr_base_pack.la
 
 # Source code files
 
 headers = \
         pack_api_cmd.h
 
-libmca_gpr_base_la_SOURCES = \
+libmca_gpr_base_pack_la_SOURCES = \
         $(headers) \
         gpr_base_pack_cleanup.c \
         gpr_base_pack_del_index.c \
