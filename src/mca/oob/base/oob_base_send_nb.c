@@ -17,7 +17,6 @@
 #include "include/constants.h"
 
 #include "mca/ns/ns_types.h"
-
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
 #include <string.h>
@@ -32,7 +31,7 @@
  */
 
 struct mca_oob_send_cbdata {
-    ompi_buffer_t cbbuf;
+    orte_buffer_t* cbbuf;
     struct iovec cbiov;
     mca_oob_callback_packed_fn_t cbfunc;
     void* cbdata;
@@ -86,7 +85,7 @@ int mca_oob_send_nb(orte_process_name_t* peer, struct iovec* msg, int count, int
 
 int mca_oob_send_packed_nb(
     orte_process_name_t* peer,
-    ompi_buffer_t buffer,
+    orte_buffer_t* buffer,
     int tag,
     int flags,
     mca_oob_callback_packed_fn_t cbfunc,
@@ -98,20 +97,16 @@ int mca_oob_send_packed_nb(
     int rc;
 
     /* first build iovec from buffer information */
-    rc = ompi_buffer_size (buffer, &datalen);
-    if (OMPI_ERROR==rc) { 
-        return (rc); 
-    }
-
-    rc = ompi_buffer_get_ptrs (buffer, NULL, NULL, &dataptr);
-    if (OMPI_ERROR==rc) { 
-        return (rc); 
+    rc = orte_dps.unload(buffer, &dataptr, &datalen);
+    if (rc != OMPI_SUCCESS) {
+        return rc;
     }
 
     /* allocate a struct to pass into callback */
     if(NULL == (oob_cbdata = malloc(sizeof(mca_oob_send_cbdata_t)))) {
         return OMPI_ERR_OUT_OF_RESOURCE;
     }
+    oob_cbdata->cbbuf = buffer;
     oob_cbdata->cbfunc = cbfunc;
     oob_cbdata->cbdata = cbdata;
     oob_cbdata->cbiov.iov_base = dataptr;
@@ -152,7 +147,8 @@ static void mca_oob_send_callback(
         free(oob_cbdata);
         return;
     }
-                                                                                                                                 oob_cbdata->cbfunc(status, peer, oob_cbdata->cbbuf, tag, oob_cbdata->cbdata);
+
+    oob_cbdata->cbfunc(status, peer, oob_cbdata->cbbuf, tag, oob_cbdata->cbdata);
     free(oob_cbdata);
 }
 

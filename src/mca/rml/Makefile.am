@@ -14,25 +14,19 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-    coll \
-    common \
-    gpr \
-    io \
-    mpool \
-    ns \
-    one \
-    oob \
-	pcmclient \
-	pls \
-    pml \
-    ptl \
-    rml \
-	ras \
-	rds \
-	rmaps \
-	rmgr \
-    soh \
-    svc \
-    topo
+SUBDIRS = base $(MCA_rml_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_rml_ALL_SUBDIRS)
+
+
+# Source code files
+
+headers = rml.h
+
+# Conditionally install the header files
+
+if WANT_INSTALL_HEADERS
+ompidir = $(includedir)/openmpi/mca/rml
+ompi_HEADERS = $(headers)
+else
+ompidir = $(includedir)
+endif

@@ -40,15 +40,14 @@
 int mca_oob_xcast(
     orte_process_name_t* root,
     ompi_list_t* peers,
-    ompi_buffer_t buffer,
+    orte_buffer_t* buffer,
     mca_oob_callback_packed_fn_t cbfunc)
 {
     orte_name_services_namelist_t *ptr;
     int rc;
     int tag = MCA_OOB_TAG_XCAST;
-    ompi_buffer_t rbuf;
     int cmpval;
-        
+
     /* check to see if I am the root process name */
     if (ORTE_SUCCESS != (rc = orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, root, ompi_rte_get_self()))) {
         return rc;
@@ -63,12 +62,16 @@ int mca_oob_xcast(
             }
         }
     } else {
-        rc = mca_oob_recv_packed(MCA_OOB_NAME_ANY, &rbuf, &tag);
+        orte_buffer_t rbuf;
+        OBJ_CONSTRUCT(&rbuf, orte_buffer_t);
+        rc = mca_oob_recv_packed(MCA_OOB_NAME_ANY, &rbuf, tag);
         if(rc < 0) {
+            OBJ_DESTRUCT(&rbuf);
             return rc;
         }
         if(cbfunc != NULL)
-            cbfunc(rc, root, rbuf, tag, NULL);
+            cbfunc(rc, root, &rbuf, tag, NULL);
+        OBJ_DESTRUCT(&rbuf);
     }
     return OMPI_SUCCESS;
 }

@@ -21,6 +21,7 @@
 
 #include "orte_config.h"
 
+#include "dps/dps_types.h"
 #include "mca/mca.h"
 #include "mca/ns/ns_types.h"
 #include "mca/oob/oob_types.h"
@@ -172,7 +173,7 @@ OMPI_DECLSPEC int mca_oob_send(
 
 OMPI_DECLSPEC int mca_oob_send_packed(
     orte_process_name_t* peer, 
-    ompi_buffer_t buffer, 
+    orte_buffer_t* buffer, 
     int tag, 
     int flags);
 
@@ -223,16 +224,14 @@ OMPI_DECLSPEC int mca_oob_recv(
 *
 *
 * This version of oob_recv is as above except it does NOT take a iovec list
-* but instead hands back a ompi_buffer_t buffer with the message in it. 
-* The user is responsible for freeing this buffer with ompi_buffer_free()
-* when finished.
-*
+* but instead hands back a orte_buffer_t* buffer with the message in it. 
+* The user is responsible for releasing the buffer when finished w/ it.
 *
 */
 
 OMPI_DECLSPEC int mca_oob_recv_packed (
 	orte_process_name_t* peer, 
-	ompi_buffer_t *buf, 
+	orte_buffer_t* *buf, 
 	int* tag);
 
 /*
@@ -274,7 +273,7 @@ typedef void (*mca_oob_callback_fn_t)(
 typedef void (*mca_oob_callback_packed_fn_t)(
     int status,
     orte_process_name_t* peer, 
-    ompi_buffer_t buffer,
+    orte_buffer_t* buffer,
     int tag,
     void* cbdata);
 
@@ -324,7 +323,7 @@ OMPI_DECLSPEC int mca_oob_send_nb(
 
 OMPI_DECLSPEC int mca_oob_send_packed_nb(
     orte_process_name_t* peer, 
-    ompi_buffer_t buffer,
+    orte_buffer_t* buffer,
     int tag,
     int flags, 
     mca_oob_callback_packed_fn_t cbfunc,
@@ -405,7 +404,7 @@ OMPI_DECLSPEC int mca_oob_recv_packed_nb(
 OMPI_DECLSPEC int mca_oob_xcast(
     orte_process_name_t* root, 
     ompi_list_t* peers,
-    ompi_buffer_t buffer,
+    orte_buffer_t* buffer,
     mca_oob_callback_packed_fn_t cbfunc);
 
 #if defined(c_plusplus) || defined(__cplusplus)

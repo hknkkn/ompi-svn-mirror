@@ -136,7 +136,7 @@ static void mca_oob_recv_callback(
     void* cbdata)
 {
     mca_oob_recv_cbdata_t *oob_cbdata = cbdata;
-    ompi_buffer_t buffer;
+    orte_buffer_t buffer;
 
     /* validate status */
     if(status < 0) {
@@ -146,13 +146,14 @@ static void mca_oob_recv_callback(
     }
 
     /* init a buffer with the received message */
-    ompi_buffer_init_preallocated(&buffer, oob_cbdata->cbiov.iov_base, oob_cbdata->cbiov.iov_len);
+    OBJ_CONSTRUCT(&buffer);
+    orte_dps.load(&buffer,msg[0].iov_base,msg[0].iov_len);
 
     /* call users callback function */
-    oob_cbdata->cbfunc(status, peer, buffer, tag, oob_cbdata->cbdata);
+    oob_cbdata->cbfunc(status, peer, &buffer, tag, oob_cbdata->cbdata);
 
     /* cleanup */
-    ompi_buffer_free(buffer);
+    OBJ_DESTRUCT(&buffer);
     free(oob_cbdata);
 }
 

@@ -20,9 +20,7 @@
 #define _MCA_OOB_TYPES_H_
 
 #include "orte_config.h"
-
 #include "include/orte_constants.h"
-
 #include <limits.h>
 
 /*

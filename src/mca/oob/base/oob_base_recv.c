@@ -39,9 +39,9 @@
 *                     iovec array without removing the message from the queue.
 * @return             OMPI error code (<0) on error or number of bytes actually received.
 */
-int mca_oob_recv(orte_process_name_t* peer, struct iovec *msg, int count, int* tag, int flags)
+int mca_oob_recv(orte_process_name_t* peer, struct iovec *msg, int count, int tag, int flags)
 {
-    return(mca_oob.oob_recv(peer, msg, count, tag, flags));
+    return(mca_oob.oob_recv(peer, msg, count, &tag, flags));
 }
 
 /*
@@ -53,7 +53,7 @@ int mca_oob_recv(orte_process_name_t* peer, struct iovec *msg, int count, int* t
 *                     iovec array without removing the message from the queue.
 * @return             OMPI error code (<0) on error or number of bytes actually received.
 */
-int mca_oob_recv_packed(orte_process_name_t* peer, ompi_buffer_t *buf, int* tag)
+int mca_oob_recv_packed(orte_process_name_t* peer, orte_buffer_t *buf, int tag)
 {
     int rc;
     struct iovec msg[1];
@@ -62,11 +62,11 @@ int mca_oob_recv_packed(orte_process_name_t* peer, ompi_buffer_t *buf, int* tag)
 	msg[0].iov_base = NULL;
 	msg[0].iov_len  = 0;
 
-    rc = mca_oob.oob_recv(peer, msg, 1, tag, MCA_OOB_ALLOC);
+    rc = mca_oob.oob_recv(peer, msg, 1, &tag, MCA_OOB_ALLOC);
     if(rc < 0)
         return rc;
 
     /* initialize buffer */
-	return ompi_buffer_init_preallocated (buf, msg[0].iov_base, msg[0].iov_len);
+	return orte_dps.load(buf, msg[0].iov_base, msg[0].iov_len);
 }
 

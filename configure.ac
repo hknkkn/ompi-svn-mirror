@@ -1141,6 +1141,8 @@ AC_CONFIG_FILES([
     src/mca/pml/base/Makefile
     src/mca/ptl/Makefile
     src/mca/ptl/base/Makefile
+    src/mca/rml/Makefile
+    src/mca/rml/base/Makefile
     src/mca/topo/Makefile
     src/mca/topo/base/Makefile
 
@@ -1166,6 +1168,7 @@ AC_CONFIG_FILES([
     src/dynamic-mca/one/Makefile
     src/dynamic-mca/pml/Makefile
     src/dynamic-mca/ptl/Makefile
+    src/dynamic-mca/rml/Makefile
     src/dynamic-mca/topo/Makefile
 
     src/mpi/Makefile
