@@ -25,12 +25,13 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_BYTE                (orte_data_type_t)    1 /**< a byte of data */
 #define    ORTE_BOOL                (orte_data_type_t)    2 /**< boolean */
 #define    ORTE_STRING              (orte_data_type_t)    3 /**< a NULL terminated string */
+#define    ORTE_SIZE                (orte_data_type_t)    4 /**< the generic size_t */
     /* all the integer flavors */
-#define    ORTE_INT                 (orte_data_type_t)    4 /**< generic integer */
-#define    ORTE_INT8                (orte_data_type_t)    5 /**< an 8-bit integer */
-#define    ORTE_INT16               (orte_data_type_t)    6 /**< a 16-bit integer */
-#define    ORTE_INT32               (orte_data_type_t)    7 /**< a 32-bit integer */
-#define    ORTE_INT64               (orte_data_type_t)    8 /**< a 64-bit integer */
+#define    ORTE_INT                 (orte_data_type_t)    5 /**< generic integer */
+#define    ORTE_INT8                (orte_data_type_t)    6 /**< an 8-bit integer */
+#define    ORTE_INT16               (orte_data_type_t)    7 /**< a 16-bit integer */
+#define    ORTE_INT32               (orte_data_type_t)    8 /**< a 32-bit integer */
+#define    ORTE_INT64               (orte_data_type_t)    9 /**< a 64-bit integer */
     /* all the unsigned integer flavors */
 #define    ORTE_UINT                (orte_data_type_t)   10 /**< generic unsigned integer */
 #define    ORTE_UINT8               (orte_data_type_t)   11 /**< an 8-bit unsigned integer */

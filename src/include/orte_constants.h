@@ -70,7 +70,6 @@ enum {
 #define ORTE_JOB_SEGMENT              "orte-job"
 #define ORTE_NODE_STATUS_SEGMENT      "orte-node-status"
 #define ORTE_RESOURCE_SEGMENT         "orte-resources"
-#define ORTE_NAMESPACE_SEGMENT        "orte-namespace"
 
 #endif /* ORTE_CONSTANTS_H */
 

@@ -17,9 +17,11 @@
 
 #include "include/types.h"
 #include "class/ompi_list.h"
+#include "dps/dps_types.h"
 #include "threads/mutex.h"
+
 #include "mca/ns/ns_types.h"
-#include "util/bufpack.h"
+
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
@@ -92,7 +94,7 @@ ompi_proc_t * ompi_proc_find_and_add ( const orte_process_name_t* name, bool* is
 /**
  * INPUT: ompi_proc_t **proclist : list of process pointers
  * INPUT: int proclistsize       : lenght of the proclist array
- * IN/OUT: ompi_buffer_t *buf    : an ompi_buffer containing the packed names
+ * IN/OUT: orte_buffer_t *buf    : an orte_buffer containing the packed names
  * 
  * The function takes a list of ompi_proc_t pointers (e.g. as given in groups) 
  * and returns a buffer, which contains a list of 'packed' ompi_process_name_t 
@@ -106,12 +108,12 @@ ompi_proc_t * ompi_proc_find_and_add ( const orte_process_name_t* name, bool* is
  *  OMPI_ERROR:                other errors
  */
 int ompi_proc_get_namebuf ( ompi_proc_t **proclist, int proclistsize,
-			    ompi_buffer_t buf);
+			    orte_buffer_t *buf);
 
 
 
 /**
- * INPUT: ompi_buffer_t buf       : ompi_buffer containing the packed names
+ * INPUT: orte_buffer_t *buf       : orte_buffer containing the packed names
  * INPUT: int proclistsize         : number of expected proc-pointres
  * OUTPUT: ompi_proc_t ***proclist : list of process pointers
  *
@@ -127,7 +129,7 @@ int ompi_proc_get_namebuf ( ompi_proc_t **proclist, int proclistsize,
  *   OMPI_ERROR                 else
  */
 
-int ompi_proc_get_proclist (ompi_buffer_t buf, int proclistsize, ompi_proc_t ***proclist);
+int ompi_proc_get_proclist (orte_buffer_t *buf, int proclistsize, ompi_proc_t ***proclist);
 
 
 #if defined(c_plusplus) || defined(__cplusplus)

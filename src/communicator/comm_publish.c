@@ -18,12 +18,11 @@
 #include "mpi.h"
 
 #include "communicator/communicator.h"
-#include "proc/proc.h"
 #include "include/constants.h"
 #include "mca/pml/pml.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
-#include "mca/oob/oob_types.h"
+#include "mca/rml/rml_types.h"
 
 static ompi_mutex_t ompi_port_lock;
 
@@ -62,7 +61,7 @@ int ompi_open_port(char *port_name)
 /* takes a port_name and separates it into the process_name 
    and the tag
 */
-char *ompi_parse_port (char *port_name, int *tag) 
+char *ompi_parse_port (char *port_name, orte_rml_tag_t *tag) 
 {
     char tmp_port[MPI_MAX_PORT_NAME], *tmp_string;
 
@@ -73,7 +72,7 @@ char *ompi_parse_port (char *port_name, int *tag)
 
     strncpy (tmp_port, port_name, MPI_MAX_PORT_NAME);
     strncpy (tmp_string, strtok(tmp_port, ":"), MPI_MAX_PORT_NAME);
-    sscanf( strtok(NULL, ":"),"%d", tag);
+    sscanf( strtok(NULL, ":"),"%d", (int*)tag);
     
     return tmp_string;
 }
@@ -87,7 +86,7 @@ int ompi_comm_namepublish ( char *service_name, char *port_name )
 {
 
     char *token[2];
-    orte_registry_keyval_t keyval;
+    orte_gpr_keyval_t keyval;
     
     token[0] = service_name;
     token[1] = NULL;
@@ -96,15 +95,15 @@ int ompi_comm_namepublish ( char *service_name, char *port_name )
     keyval.type = ORTE_STRING;
     keyval.value.strptr = strdup(port_name);
     
-    return orte_registry.put(ORTE_REGISTRY_AND | ORTE_REGISTRY_OVERWRITE,
-                             ORTE_NAMESPACE_SEGMENT,
+    return orte_gpr.put(ORTE_GPR_AND | ORTE_GPR_OVERWRITE,
+                             OMPI_NAMESPACE_SEGMENT,
                              token, 1, &keyval);
 }
 
 char* ompi_comm_namelookup ( char *service_name )
 {
     char *token[2], *key[2];
-    orte_registry_keyval_t *keyvals=NULL;
+    orte_gpr_keyval_t *keyvals=NULL;
     int32_t cnt=0;
     char *stmp=NULL;
     int ret;
@@ -115,7 +114,7 @@ char* ompi_comm_namelookup ( char *service_name )
     key[0] = strdup("port_name");
     key[1] = NULL;
     
-    ret = orte_registry.get(ORTE_REGISTRY_AND, ORTE_NAMESPACE_SEGMENT,
+    ret = orte_gpr.get(ORTE_GPR_AND, OMPI_NAMESPACE_SEGMENT,
                             token, key, &cnt, keyvals);
     if (ORTE_SUCCESS != ret) {
         return NULL;
@@ -141,7 +140,7 @@ int ompi_comm_nameunpublish ( char *service_name )
     token[0] = service_name;
     token[1] = NULL;
     
-    return orte_registry.delete_entries(ORTE_REGISTRY_AND,
+    return orte_gpr.delete_entries(ORTE_GPR_AND,
                                         "ompi_name_publish",
                                         token, NULL); 
 }

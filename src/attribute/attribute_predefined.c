@@ -16,13 +16,13 @@
 
 #include "mpi.h"
 #include "attribute/attribute.h"
-#include "util/proc_info.h"
-#include "util/bufpack.h"
+
 #include "errhandler/errclass.h"
 #include "communicator/communicator.h"
+#include "util/proc_info.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
-#include "runtime/runtime.h"
+
 
 /*
  * Private functions
@@ -61,12 +61,12 @@ static int attr_impi_host_color = 0;
 
 int ompi_attr_create_predefined(void)
 {
-    orte_registry_notify_id_t rc;
+    orte_gpr_notify_id_t rc;
     int ret;
 
-     ret = orte_registry.subscribe(
-         ORTE_REGISTRY_OR,
-	     ORTE_REGISTRY_NOTIFY_ON_STARTUP|ORTE_REGISTRY_NOTIFY_INCLUDE_STARTUP_DATA,
+     ret = orte_gpr.subscribe(
+         ORTE_GPR_OR,
+	     ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA,
          ORTE_NODE_STATUS_SEGMENT,
          NULL,
          NULL,
@@ -82,19 +82,18 @@ int ompi_attr_create_predefined(void)
 
 
 void ompi_attr_create_predefined_callback(
-	orte_registry_notify_message_t *msg,
+	orte_gpr_notify_message_t *msg,
 	void *cbdata)
 {
     int err;
-    uint32_t i;
-    ompi_list_item_t *item;
-    orte_registry_keyval_t *keyval;
-    orte_registry_value_t *value;
+    uint32_t i, j;
+    orte_gpr_keyval_t **keyval;
+    orte_gpr_value_t **value;
     orte_jobid_t job;
 
     /* Set some default values */
 
-    if (ORTE_SUCCESS != orte_name_services.get_jobid(&job, ompi_rte_get_self())) {
+    if (ORTE_SUCCESS != orte_name_services.get_jobid(&job, orte_process_info.my_name)) {
         return;
     }
 
@@ -103,7 +102,7 @@ void ompi_attr_create_predefined_callback(
      */
     attr_appnum = (int)job;
     
-    /* Query the registry to find out how many CPUs there will be.
+    /* Query the gpr to find out how many CPUs there will be.
        This will only return a non-empty list in a persistent
        universe.  If we don't have a persistent universe, then just
        default to the size of MPI_COMM_WORLD. 
@@ -115,7 +114,7 @@ void ompi_attr_create_predefined_callback(
        where the master is supposed to SPAWN the other processes.
        Perhaps need some integration with the LLM here...?  [shrug] */
 
-    /* RHC: Needed to change this code so it wouldn't issue a registry.get
+    /* RHC: Needed to change this code so it wouldn't issue a gpr.get
      * during the compound command phase of mpi_init. Since all you need
      * is to have the data prior to dtypes etc., and since this function
      * is called right before we send the compound command, I've changed
@@ -125,20 +124,24 @@ void ompi_attr_create_predefined_callback(
      */
 
     attr_universe_size = 0;
-    if (0 == ompi_list_get_size(msg->data)) {  /* no data returned */
+    if (0 == msg->cnt) {  /* no data returned */
         attr_universe_size = ompi_comm_size(MPI_COMM_WORLD);
     } else {
-       while (NULL != (item = ompi_list_remove_first(msg->data))) {
-            value = (orte_registry_value_t*)item;
-            keyval = value->keyvals;
-            for (i=0; i < value->cnt; i++) {
-                if (0 == strncmp(keyval->key, "num_cpus", strlen("num_cpus"))) {
-                    /* Process slot count */
-                    attr_universe_size += keyval->value.i16;
+       for (i=0; i < msg->cnt; i++) {
+            value = msg->values;
+            if (0 < (*value)->cnt) {  /* make sure some data was returned here */
+                keyval = (*value)->keyvals;
+                for (j=0; j < (*value)->cnt; j++) {
+                    if (0 == strncmp((*keyval)->key, "num_cpus", strlen("num_cpus"))) {
+                        /* Process slot count */
+                        attr_universe_size += (*keyval)->value.i16;
+                    }
+                    OBJ_RELEASE(*keyval);
+                    keyval++;
                 }
-                keyval++;
             }
-            OBJ_RELEASE(value);
+            OBJ_RELEASE(*value);
+            value++;
        }
     }
     OBJ_RELEASE(msg);

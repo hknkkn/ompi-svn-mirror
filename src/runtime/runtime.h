@@ -182,15 +182,7 @@ OMPI_DECLSPEC    int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_
      */
 OMPI_DECLSPEC    int ompi_rte_finalize(void);
 
-    /**
-     * Get my name
-     *
-     * @return my name
-     */
-OMPI_DECLSPEC    orte_process_name_t* ompi_rte_get_self(void);
-
-
-    /**
+   /**
      * Get names of peer processes which have been launched
      *
      * @param peers (OUT) Pointer to a pointer of
@@ -227,7 +219,7 @@ OMPI_DECLSPEC    int ompi_rte_set_process_status(ompi_rte_process_status_t *stat
     /**
      * Unpack the process status structure stored on the registry
      */
-OMPI_DECLSPEC    ompi_rte_process_status_t *ompi_rte_unpack_process_status(orte_registry_value_t *value);
+OMPI_DECLSPEC    ompi_rte_process_status_t *ompi_rte_unpack_process_status(orte_gpr_value_t *value);
 
     /**
      * Get virtual machine node status
@@ -242,7 +234,7 @@ OMPI_DECLSPEC   int ompi_rte_set_vm_status(ompi_rte_vm_status_t *status);
     /**
      * Upack the virtual machine node status stored on the registry
      */
-OMPI_DECLSPEC   ompi_rte_vm_status_t *ompi_rte_unpack_vm_status(orte_registry_value_t *value);
+OMPI_DECLSPEC   ompi_rte_vm_status_t *ompi_rte_unpack_vm_status(orte_gpr_value_t *value);
 
     /**
      * Hold for startup message to arrive, then decode it.
@@ -254,9 +246,9 @@ OMPI_DECLSPEC    int ompi_rte_wait_startup_msg(void);
      * Change state as processes complete registration/unregistration
      */
 
-OMPI_DECLSPEC    void ompi_rte_all_procs_registered(orte_registry_notify_message_t* match, void* cbdata);
+OMPI_DECLSPEC    void ompi_rte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdata);
 
-OMPI_DECLSPEC    void ompi_rte_all_procs_unregistered(orte_registry_notify_message_t* match, void* cbdata);
+OMPI_DECLSPEC    void ompi_rte_all_procs_unregistered(orte_gpr_notify_message_t* match, void* cbdata);
 
 OMPI_DECLSPEC	 int ompi_rte_monitor_procs_registered(void);
 

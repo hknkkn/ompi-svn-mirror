@@ -26,6 +26,7 @@
 #include "mca/coll/coll.h"
 #include "mca/topo/topo.h"
 #include "mca/gpr/gpr_types.h"
+#include "mca/oob/oob_types.h"
 #include "request/request.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -336,7 +337,7 @@ struct ompi_communicator_t {
                                        ompi_communicator_t *bridge_comm, 
                                        int local_leader,
                                        int remote_leader,
-                                       int tag,
+                                       orte_rml_tag_t tag,
                                        int rsize);
 
     /**
@@ -372,7 +373,7 @@ struct ompi_communicator_t {
      * takes a port_name and returns the oob-contact information
      * and the tag
      */
-    char * ompi_parse_port (char *port_name, int *tag) ;
+    char * ompi_parse_port (char *port_name, orte_rml_tag_t *tag) ;
 
     /** 
      * routines handling name publishing, lookup and unpublishing
@@ -390,7 +391,7 @@ struct ompi_communicator_t {
     */
     int ompi_comm_connect_accept ( ompi_communicator_t *comm, int root,
                                    orte_process_name_t *port, int send_first,
-                                   ompi_communicator_t **newcomm, int tag);
+                                   ompi_communicator_t **newcomm, orte_rml_tag_t tag);
 
     /* A helper routine for ompi_comm_connect_accept.
      * This routine is necessary, since in the connect/accept case, the processes
@@ -404,7 +405,7 @@ struct ompi_communicator_t {
      */
     orte_process_name_t *ompi_comm_get_rport (orte_process_name_t *port,
                                               int send_first, ompi_proc_t *proc,
-					      int tag);
+					                         orte_rml_tag_t tag);
     
 
 

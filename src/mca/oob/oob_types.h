@@ -23,13 +23,10 @@
 #include "include/orte_constants.h"
 #include <limits.h>
 
+#include "mca/rml/rml_types.h"
 /*
  * Other constants
  */
-
-typedef uint32_t orte_rml_tag_t;
-
-#define ORTE_RML_TAG_MAX UINT32_MAX
 
 /**
  * Service tags

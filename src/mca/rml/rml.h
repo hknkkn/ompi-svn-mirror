@@ -19,15 +19,26 @@
 #ifndef MCA_RML_H_
 #define MCA_RML_H_
 
-#include "ompi_config.h"
-#include "include/types.h"
+#include "orte_config.h"
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+
 #include "mca/mca.h"
 #include "dps/dps_types.h"
 #include "mca/ns/ns_types.h"
+#include "mca/rml/rml_types.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
+
+/*
+ * Well known addresses
+ */
+
+OMPI_DECLSPEC extern orte_process_name_t orte_rml_name_any;
+OMPI_DECLSPEC extern orte_process_name_t orte_rml_name_seed;
+
 
 /*
  * RML Module function prototypes.
@@ -96,7 +107,7 @@ typedef int (*orte_rml_module_send_fn_t)(
 typedef int (*orte_rml_module_send_buffer_fn_t)(
     orte_process_name_t* peer,
     orte_buffer_t* buffer,
-    int tag,
+    orte_rml_tag_t tag,
     int flags);
 
 /**
@@ -116,7 +127,7 @@ typedef int (*orte_rml_module_recv_fn_t)(
     orte_process_name_t* peer,
     struct iovec *msg,
     int count,
-    int tag,
+    orte_rml_tag_t tag,
     int flags);
 
 /**
@@ -137,7 +148,7 @@ typedef int (*orte_rml_module_recv_fn_t)(
 typedef int (*orte_rml_module_recv_buffer_fn_t) (
     orte_process_name_t* peer,
     orte_buffer_t *buf,
-    int tag);
+    orte_rml_tag_t tag);
 
 /**
 *  Callback function on send/recv completion for iovec messages only,
@@ -156,7 +167,7 @@ typedef void (*orte_rml_callback_fn_t)(
     orte_process_name_t* peer,
     struct iovec* msg,
     int count,
-    int tag,
+    orte_rml_tag_t tag,
     void* cbdata);
                                                                                                                          
 /**
@@ -175,7 +186,7 @@ typedef void (*orte_rml_buffer_callback_fn_t)(
     int status,
     orte_process_name_t* peer,
     orte_buffer_t* buffer,
-    int tag,
+    orte_rml_tag_t tag,
     void* cbdata);
                                                                                                                          
 /**
@@ -198,7 +209,7 @@ typedef int (*orte_rml_module_send_nb_fn_t)(
     orte_process_name_t* peer,
     struct iovec* msg,
     int count,
-    int tag,
+    orte_rml_tag_t tag,
     int flags,
     orte_rml_callback_fn_t cbfunc,
     void* cbdata);
@@ -225,7 +236,7 @@ typedef int (*orte_rml_module_send_nb_fn_t)(
 typedef int (*orte_rml_module_send_buffer_nb_fn_t)(
     orte_process_name_t* peer,
     orte_buffer_t buffer,
-    int tag,
+    orte_rml_tag_t tag,
     int flags,
     orte_rml_buffer_callback_fn_t cbfunc,
     void* cbdata);
@@ -248,7 +259,7 @@ typedef int (*orte_rml_module_recv_nb_fn_t)(
     orte_process_name_t* peer,
     struct iovec* msg,
     int count,
-    int tag,
+    orte_rml_tag_t tag,
     int flags,
     orte_rml_callback_fn_t cbfunc,
     void* cbdata);
@@ -273,7 +284,7 @@ typedef int (*orte_rml_module_recv_nb_fn_t)(
 
 typedef int (*orte_rml_module_recv_buffer_nb_fn_t)(
     orte_process_name_t* peer,
-    int tag,
+    orte_rml_tag_t tag,
     int flags,
     orte_rml_buffer_callback_fn_t cbfunc,
     void* cbdata);
@@ -287,7 +298,7 @@ typedef int (*orte_rml_module_recv_buffer_nb_fn_t)(
 * @return             OMPI error code (<0) on error or number of bytes actually received.
 */
 
-typedef int (*orte_rml_module_recv_cancel_fn_t)(orte_process_name_t* peer, int tag);
+typedef int (*orte_rml_module_recv_cancel_fn_t)(orte_process_name_t* peer, orte_rml_tag_t tag);
 
 /**
  * Collective Operations.
@@ -328,22 +339,22 @@ typedef int (*orte_rml_module_fini_fn_t)(void);
  * RML Module
  */
 struct orte_rml_module_t {
-    orte_rml_module_init_fn_t            rml_init;
-    orte_rml_module_fini_fn_t            rml_fini;
-    orte_rml_module_get_uri_fn_t         rml_get_uri;
-    orte_rml_module_set_uri_fn_t         rml_set_uri;
-    orte_rml_module_ping_fn_t            rml_ping;
-    orte_rml_module_send_fn_t            rml_send;
-    orte_rml_module_send_nb_fn_t         rml_send_nb;
-    orte_rml_module_send_buffer_fn_t     rml_send_buffer;
-    orte_rml_module_send_buffer_nb_fn_t  rml_send_buffer_nb;
-    orte_rml_module_recv_fn_t            rml_recv;
-    orte_rml_module_recv_nb_fn_t         rml_recv_nb;
-    orte_rml_module_recv_buffer_fn_t     rml_recv_buffer;
-    orte_rml_module_recv_buffer_nb_fn_t  rml_recv_buffer_nb;
-    orte_rml_module_recv_cancel_fn_t     rml_recv_cancel;
-    orte_rml_module_barrier_fn_t         rml_barrier;
-    orte_rml_module_xcast_fn_t           rml_xcast;
+    orte_rml_module_init_fn_t            init;
+    orte_rml_module_fini_fn_t            fini;
+    orte_rml_module_get_uri_fn_t         get_uri;
+    orte_rml_module_set_uri_fn_t         set_uri;
+    orte_rml_module_ping_fn_t            ping;
+    orte_rml_module_send_fn_t            send;
+    orte_rml_module_send_nb_fn_t         send_nb;
+    orte_rml_module_send_buffer_fn_t     send_buffer;
+    orte_rml_module_send_buffer_nb_fn_t  send_buffer_nb;
+    orte_rml_module_recv_fn_t            recv;
+    orte_rml_module_recv_nb_fn_t         recv_nb;
+    orte_rml_module_recv_buffer_fn_t     recv_buffer;
+    orte_rml_module_recv_buffer_nb_fn_t  recv_buffer_nb;
+    orte_rml_module_recv_cancel_fn_t     recv_cancel;
+    orte_rml_module_barrier_fn_t         barrier;
+    orte_rml_module_xcast_fn_t           xcast;
 };
 typedef struct orte_rml_module_t orte_rml_module_t;
 
@@ -374,7 +385,7 @@ typedef struct orte_rml_component_1_0_0_t orte_rml_component_t;
   /* rml v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* rml v1.0 */ \
-  "rml", 1, 0, 0
+  "orte_rml", 1, 0, 0
 
 
 /*
