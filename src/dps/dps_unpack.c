@@ -53,8 +53,10 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     orte_process_name_t* sn;
     orte_byte_object_t* dbyteptr;
 
-    /* check for errors - if buffer is NULL -or- dst is NOT NULL */
-    if (!buffer || dst) { return (ORTE_ERR_BAD_PARAM); }
+    /* check for errors */
+    if (buffer == NULL || dst == NULL || max_num_vals == NULL) { 
+        return (ORTE_ERR_BAD_PARAM); 
+    }
 
     src = buffer->from_ptr;  /* get location in buffer */
     mem_left = buffer->toend;  /* how much data is left in buffer */
@@ -221,6 +223,7 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
             dstr = (char**)dst;
             for(i=0; i<num_vals; i++) {
                 uint32_t len;
+                char* str;
                 if(mem_left < sizeof(uint32_t)) {
                     return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
                 }
@@ -232,10 +235,11 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
                 if(mem_left < len) {
                     return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
                 }
-                if(NULL == (*dstr = malloc(len+1)))
+                if(NULL == (str = malloc(len+1)))
                     return ORTE_ERR_OUT_OF_RESOURCE;
-                strncpy(*dstr,src,len);
-                dstr++;
+                memcpy(str,src,len);
+                str[len] = '\0';
+                *dstr++ = str;
                 src = (void*)((char*)src + len);
                 mem_left -= len;
             }

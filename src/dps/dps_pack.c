@@ -48,7 +48,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     uint32_t * s32;
     bool *bool_src;
     uint8_t *bool_dst;
-    char * str;
+    char ** str;
     char * dstr;
     orte_process_name_t *dn, *sn;
     orte_byte_object_t *sbyteptr;
@@ -174,17 +174,17 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
             break;
 
         case ORTE_STRING:
-            str = (char *) src;
-            d32 = (uint32_t *) dst;
+            str = (char **) src;
             for (i=0; i<num_vals; i++) {
-                uint32_t len = strlen(str);
+                uint32_t len = strlen(str[i]);
                 /* store string length as uint32_t */
-                *d32++ = htonl(len);
+                d32 = (uint32_t *) dst;
+                *d32 = htonl(len);
+                d32++;
                 /* move the char's over */
                 dstr = (char *)d32;
-                memcpy(dstr, str, len);
+                memcpy(dstr, str[i], len);
                 dst = (void *)(dstr+len);
-                str++;  /* move to next string */
             }
             break;
             
@@ -210,8 +210,8 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
                 dst = (void*)d32;
                 /* pack actual bytes */
                 memcpy(dst, sbyteptr->bytes, sbyteptr->size);
-                sbyteptr++;
                 dst = (void *)((uint8_t*)dst + sbyteptr->size);
+                sbyteptr++;
             }
             break;
             

@@ -39,43 +39,44 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     
     switch(type) {
 
+        case ORTE_BOOL:
         case ORTE_BYTE:
-            return num_vals;
-
-        case ORTE_BYTE_OBJECT:
-            mem_req = 0;
-            sbyteptr = (orte_byte_object_t *) src;
-            for (i=0; i<num_vals; i++) {
-                mem_req += sbyteptr->size + sizeof(sbyteptr->size);
-            }
-            return mem_req;
-            
         case ORTE_INT8:
         case ORTE_UINT8:
             return num_vals;
             
         case ORTE_INT16:
         case ORTE_UINT16:
-            return (size_t)(num_vals * 2);
+            return (size_t)(num_vals * sizeof(uint16_t));
             
         case ORTE_INT32:
         case ORTE_UINT32:
-            return (size_t)(num_vals * 4);
+            return (size_t)(num_vals * sizeof(uint32_t));
             
         case ORTE_INT64:
         case ORTE_UINT64:
-            return (size_t)(num_vals * 8);
+            return (size_t)(num_vals * sizeof(uint64_t));
             
         case ORTE_NAME:
             return (size_t)(num_vals * sizeof(orte_process_name_t));
             
         case ORTE_NULL:
         case ORTE_STRING:
-            mem_req = 0;
+
             strptr = (char *) src;
-            for (i=0; i<num_vals; i++) {
-                mem_req += strlen(strptr);
+            for (i=0; i<num_vals; i++) { 
+                mem_req += sizeof(uint32_t); /* length */
+                mem_req += strlen(strptr);   /* string */
                 strptr++;
+            }
+            return mem_req;
+            
+        case ORTE_BYTE_OBJECT:
+            sbyteptr = (orte_byte_object_t *) src;
+            for (i=0; i<num_vals; i++) {
+                mem_req += sizeof(uint32_t);  /* length */
+                mem_req += sbyteptr->size; /* bytes */
+                sbyteptr++;
             }
             return mem_req;
             
