@@ -28,6 +28,7 @@
 #endif
 
 #include "runtime/orte_wait.h"
+#include "util/output.h"
 #include "class/ompi_object.h"
 #include "class/ompi_list.h"
 #include "event/event.h"
@@ -123,8 +124,6 @@ static volatile int cb_enabled = true;
 static ompi_mutex_t mutex;
 static ompi_list_t pending_pids;
 static ompi_list_t registered_cb;
-static ompi_mutex_t ev_reg_mutex;
-static volatile bool ev_reg_complete = false;
 static struct ompi_event handler;
 
 
@@ -141,7 +140,6 @@ static void trigger_callback(registered_cb_item_t *cb,
                              pending_pids_item_t *pending);
 static int register_callback(pid_t pid, orte_wait_fn_t callback,
                              void *data);
-static void register_sig_event(void);
 static int unregister_callback(pid_t pid);
 void orte_wait_signal_callback(int fd, short event, void *arg);
 static pid_t internal_waitpid(pid_t pid, int *status, int options);
@@ -160,8 +158,12 @@ orte_wait_init(void)
     OBJ_CONSTRUCT(&mutex, ompi_mutex_t);
     OBJ_CONSTRUCT(&pending_pids, ompi_list_t);
     OBJ_CONSTRUCT(&registered_cb, ompi_list_t);
-    OBJ_CONSTRUCT(&ev_reg_mutex, ompi_mutex_t);
 
+    ompi_event_set(&handler, SIGCHLD, OMPI_EV_SIGNAL|OMPI_EV_PERSIST,
+                   orte_wait_signal_callback,
+                   &handler);
+
+    ompi_event_add(&handler, NULL);
     return OMPI_SUCCESS;
 }
 
@@ -173,7 +175,6 @@ orte_wait_finalize(void)
 
     OMPI_THREAD_LOCK(&mutex);
     ompi_event_del(&handler);
-    OMPI_THREAD_UNLOCK(&mutex);
 
     /* clear out the lists */
     while (NULL != (item = ompi_list_remove_first(&pending_pids))) {
@@ -182,6 +183,7 @@ orte_wait_finalize(void)
     while (NULL != (item = ompi_list_remove_first(&registered_cb))) {
         OBJ_RELEASE(item);
     }
+    OMPI_THREAD_UNLOCK(&mutex);
 
     OBJ_DESTRUCT(&mutex);
     OBJ_DESTRUCT(&pending_pids);
@@ -204,8 +206,6 @@ orte_waitpid(pid_t wpid, int *status, int options)
         errno = OMPI_ERR_NOT_IMPLEMENTED;
         return (pid_t) -1;
     }
-
-    if (! ev_reg_complete) register_sig_event();
 
     OMPI_THREAD_LOCK(&mutex);
 
@@ -306,10 +306,9 @@ orte_wait_cb(pid_t wpid, orte_wait_fn_t callback, void *data)
     if (wpid <= 0) return OMPI_ERR_NOT_IMPLEMENTED;
     if (NULL == callback) return OMPI_ERR_BAD_PARAM;
 
-    if (! ev_reg_complete) register_sig_event();
-
     OMPI_THREAD_LOCK(&mutex);
     ret = register_callback(wpid, callback, data);
+    do_waitall(0);
     OMPI_THREAD_UNLOCK(&mutex);
 
     return ret;
@@ -512,7 +511,6 @@ register_callback(pid_t pid, orte_wait_fn_t callback, void *data)
     if (NULL != pending) {
         trigger_callback(reg_cb, pending);
     }
-
     return OMPI_SUCCESS;
 }
 
@@ -531,34 +529,6 @@ unregister_callback(pid_t pid)
     return OMPI_SUCCESS;
 }
 
-
-static void
-register_sig_event(void)
-{
-    OMPI_THREAD_LOCK(&ev_reg_mutex);
-
-    if (true == ev_reg_complete) goto cleanup;
-    ev_reg_complete = true;
-
-    ompi_event_set(&handler, SIGCHLD, OMPI_EV_SIGNAL|OMPI_EV_PERSIST,
-                   orte_wait_signal_callback,
-                   &handler);
-
-    ompi_event_add(&handler, NULL);
-
-    /* it seems that signal events are only added to the queue at the next
-       progress call.  So push the event library */
-#if OMPI_HAVE_THREADS
-    if (ompi_event_progress_thread()) {
-        ompi_event_loop(OMPI_EVLOOP_NONBLOCK);
-    }
-#else
-    ompi_event_loop(OMPI_EVLOOP_NONBLOCK);
-#endif
-
- cleanup:
-    OMPI_THREAD_UNLOCK(&ev_reg_mutex);
-}
 
 
 static pid_t

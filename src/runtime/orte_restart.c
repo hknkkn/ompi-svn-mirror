@@ -92,10 +92,6 @@ int orte_restart(orte_process_name_t *name)
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if (ORTE_SUCCESS != (rc = ompi_event_fini())) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
-    }
 
     /*
      * setup new global state
@@ -111,10 +107,6 @@ int orte_restart(orte_process_name_t *name)
      * Re-open components.
      */
 
-    if (ORTE_SUCCESS != (rc = ompi_event_init())) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
-    }
     if (ORTE_SUCCESS != (rc = orte_wait_init())) {
         ORTE_ERROR_LOG(rc);
         return rc;
