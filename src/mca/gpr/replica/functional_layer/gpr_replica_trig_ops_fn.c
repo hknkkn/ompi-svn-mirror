@@ -128,6 +128,7 @@ int orte_gpr_replica_update_storage_locations(orte_gpr_replica_itagval_t *new_ip
                         if (NULL != old_iptrs[k] && old_iptrs[k] == cntrs[j]->iptr) {
                             if (NULL == new_iptr || replaced) {
                                 orte_pointer_array_set_item(trig[i]->counters, j, NULL);
+                                (trig[i]->num_counters)--;
                             } else if (!replaced) {
                                 cntrs[j]->iptr = new_iptr;
                                 replaced = true;
