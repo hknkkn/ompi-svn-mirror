@@ -82,6 +82,7 @@ struct globals_t {
     ompi_mutex_t lock;
     ompi_condition_t cond;
 } orterun_globals;
+static bool globals_init = false;
 
 
 ompi_cmd_line_init_t cmd_line_init[] = {
@@ -241,12 +242,6 @@ int main(int argc, char *argv[], char* env[])
         OBJ_RELEASE(apps[i]);
     }
     free(apps);
-    apps = (orte_app_context_t**)(apps_pa.addr);
-    for (i=0; i < apps_pa.size; i++) {
-        if (NULL != apps[i]) {
-            OBJ_RELEASE(apps[i]);
-        }
-    }
     OBJ_DESTRUCT(&apps_pa);
     orte_finalize();
     return rc;
@@ -321,9 +316,20 @@ static int init_globals(void)
         NULL
     };
 
+    /* Only CONSTRUCT things once */
+    
+    if (!globals_init) {
+        OBJ_CONSTRUCT(&orterun_globals.lock, ompi_mutex_t);
+        OBJ_CONSTRUCT(&orterun_globals.cond, ompi_condition_t);
+    }
+
+    /* Reset this every time */
+
     orterun_globals = tmp;
-    OBJ_CONSTRUCT(&orterun_globals.lock, ompi_mutex_t);
-    OBJ_CONSTRUCT(&orterun_globals.cond, ompi_condition_t);
+
+    /* All done */
+
+    globals_init = true;
     return ORTE_SUCCESS;
 }
 
