@@ -12,8 +12,12 @@
  * $HEADER$
  */
 
-#ifndef ORTE_NAMES_H
-#define ORTE_NAMES_H
+#ifndef ORTE_SCHEMA_H
+#define ORTE_SCHEMA_H
+
+#include "orte_config.h"
+#include "include/orte_types.h"
+#include "mca/ns/ns_types.h"
 
 /*
  * ORTE_DATA_NAME macro
@@ -69,5 +73,33 @@ extern char *orte_error_strings[];
 #define ORTE_PROC_PID_KEY         "orte-proc-pid"
 #define ORTE_PROC_STATUS_KEY      "orte-proc-status"
 #define ORTE_PROC_EXIT_CODE_KEY   "orte-proc-exit-code"
+
+/*
+ * Convenience functions for accessing ORTE data
+ */
+typedef int (*orte_schema_get_proc_tokens_fn_t)(char ***tokens, orte_process_name_t *proc);
+
+typedef int (*orte_schema_get_node_tokens_fn_t)(char ***tokens, orte_cellid_t cellid, char *nodename);
+
+typedef int (*orte_schema_get_cell_tokens_fn_t)(char ***tokens, orte_cellid_t cellid);
+
+typedef int (*orte_schema_get_job_segment_name_fn_t)(char **name, orte_jobid_t jobid);
+
+/*
+ * Base structure for the convenience functions
+ */
+typedef struct {
+    orte_schema_get_proc_tokens_fn_t get_proc_tokens;
+    orte_schema_get_node_tokens_fn_t get_node_tokens;
+    orte_schema_get_cell_tokens_fn_t get_cell_tokens;
+    orte_schema_get_job_segment_name_fn_t get_job_segment_name;
+} orte_schema_t;
+
+OMPI_DECLSPEC extern orte_schema_t orte_schema;
+
+/*
+ * Open function to ensure orte_schema is loaded
+ */
+int orte_schema_open(void);
 
 #endif
