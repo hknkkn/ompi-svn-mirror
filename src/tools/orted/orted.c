@@ -156,18 +156,18 @@ int main(int argc, char *argv[])
        /* orte_gpr.begin_compound_cmd(); */
     }
 
-    /*
-     * Intialize the Open RTE
-     */
+    /* detach from controlling terminal */
+    if(orted_globals.debug == false) {
+        orte_daemon_init(NULL);
+    }
+
+    /* Intialize the Open RTE */
     if (ORTE_SUCCESS != (ret = orte_init())) {
         fprintf(stderr, "orted: failed to init rte\n");
         return ret;
     }
 
-    /*
-     * Detach from controlling terminal - setup stdin/stdout/stderr 
-     */
-
+    /* setup stdin/stdout/stderr */
     if (orted_globals.debug == false || orted_globals.bootproxy > 0) {
         int fd;
         char log_file[PATH_MAX];
@@ -199,16 +199,10 @@ int main(int argc, char *argv[])
                close(fd);
             }
         }
-
-        /* detach from controlling terminal */
-        if(orted_globals.debug == false) {
-            orte_daemon_init(NULL);
-        }
     }
 
     /* check to see if I'm a bootproxy */
     if (orted_globals.bootproxy) { /* perform bootproxy-specific things */
-        ompi_output(0, "orted: bootproxy(%d)\n", orted_globals.bootproxy);
         if (ORTE_SUCCESS != (ret = orte_daemon_bootproxy())) {
             ORTE_ERROR_LOG(ret);
         }

@@ -81,6 +81,7 @@ int orte_rmgr_base_launch_not_available(orte_jobid_t);
 int orte_rmgr_base_terminate_job_not_available(orte_jobid_t);
 int orte_rmgr_base_terminate_proc_not_available(const orte_process_name_t*);
 int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job);
+int orte_rmgr_base_proc_stage_gate_subscribe(orte_jobid_t job, orte_gpr_notify_cb_fn_t, void*);
 void orte_rmgr_base_proc_stage_gate_mgr(
         orte_gpr_notify_data_t *data,
         void *user_tag);
@@ -91,7 +92,7 @@ int orte_rmgr_base_spawn_not_available(
     orte_app_context_t** app_context, 
     size_t num_context, 
     orte_jobid_t* jobid,
-    orte_rmgr_cb_fn_t* cbfn);
+    orte_rmgr_cb_fn_t cbfn);
 int orte_rmgr_base_finalize_not_available(void);
 
 /*

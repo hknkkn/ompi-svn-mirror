@@ -121,7 +121,7 @@ int orte_pls_rsh_component_open(void)
     mca_pls_rsh_component.num_children = 0;
 
     /* lookup parameters */
-    mca_pls_rsh_component.debug = orte_pls_rsh_param_register_int("debug",1);
+    mca_pls_rsh_component.debug = orte_pls_rsh_param_register_int("debug",0);
     mca_pls_rsh_component.num_concurrent = orte_pls_rsh_param_register_int("num_concurrent",128);
     mca_pls_rsh_component.orted = orte_pls_rsh_param_register_string("orted","orted");
     mca_pls_rsh_component.priority = orte_pls_rsh_param_register_int("priority",10);

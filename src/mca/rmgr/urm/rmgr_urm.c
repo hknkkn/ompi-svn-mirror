@@ -56,7 +56,7 @@ static int orte_rmgr_urm_spawn(
     orte_app_context_t** app_context,
     size_t num_context,
     orte_jobid_t* jobid,
-    orte_rmgr_cb_fn_t* cbfn);
+    orte_rmgr_cb_fn_t cbfn);
 
 orte_rmgr_base_module_t orte_rmgr_urm_module = {
     orte_rds_base_query,
@@ -139,15 +139,65 @@ static int orte_rmgr_urm_terminate_proc(const orte_process_name_t* proc_name)
 
 
 
+static void orte_rmgr_urm_callback(orte_gpr_notify_data_t *data, void *cbdata)
+{
+    orte_rmgr_cb_fn_t cbfunc = (orte_rmgr_cb_fn_t)cbdata;
+    orte_gpr_keyval_t** keyvals;
+    orte_jobid_t jobid;
+    int i, j, rc;
+
+    /* get the jobid from the segment name */
+    if (ORTE_SUCCESS != (rc = orte_schema.extract_jobid_from_segment_name(&jobid, data->segment))) {
+        ORTE_ERROR_LOG(rc);
+        return;
+    }
+
+    /* determine the state change */
+    for(i=0; i<data->cnt; i++) {
+        orte_gpr_value_t* value = data->values[i];
+        keyvals = value->keyvals;
+        for(j=0; j<value->cnt; j++) {
+            orte_gpr_keyval_t* keyval = keyvals[j];
+            if(strcmp(keyval->key, ORTE_PROC_NUM_AT_STG1) == 0) {
+                (*cbfunc)(jobid,ORTE_PROC_STATE_AT_STG1);
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_PROC_NUM_AT_STG2) == 0) {
+                (*cbfunc)(jobid,ORTE_PROC_STATE_AT_STG1);
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_PROC_NUM_AT_STG3) == 0) {
+                (*cbfunc)(jobid,ORTE_PROC_STATE_AT_STG3);
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_PROC_NUM_FINALIZED) == 0) {
+                (*cbfunc)(jobid,ORTE_PROC_STATE_FINALIZED);
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_PROC_NUM_TERMINATED) == 0) {
+                (*cbfunc)(jobid,ORTE_PROC_STATE_TERMINATED);
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_PROC_NUM_ABORTED) == 0) {
+                (*cbfunc)(jobid,ORTE_PROC_STATE_ABORTED);
+                continue;
+            }
+        }
+    }
+    OBJ_RELEASE(data);
+}
+
+
 /*
  *  Shortcut for the multiple steps involved in spawning a new job.
  */
+
 
 static int orte_rmgr_urm_spawn(
     orte_app_context_t** app_context,
     size_t num_context,
     orte_jobid_t* jobid,
-    orte_rmgr_cb_fn_t* cbfn)
+    orte_rmgr_cb_fn_t cbfunc)
 {
     int rc;
     orte_process_name_t* name;
@@ -197,6 +247,17 @@ static int orte_rmgr_urm_spawn(
         return rc;
     }
 
+    /*
+     * setup callback
+     */
+
+    if(NULL != cbfunc) {
+        rc = orte_rmgr_base_proc_stage_gate_subscribe(*jobid, orte_rmgr_urm_callback, (void*)cbfunc);
+        if(ORTE_SUCCESS != rc) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+    }
 
     /*
      * launch the job

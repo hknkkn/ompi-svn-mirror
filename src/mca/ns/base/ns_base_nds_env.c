@@ -54,8 +54,6 @@ int orte_ns_nds_env_get(void)
         id = mca_base_param_register_int("ns", "nds", "cellid", NULL, -1);
         mca_base_param_lookup_int(id, &cellid);
         if (cellid < 0) {
-            char* env = getenv("OMPI_MCA_ns_nds_cellid");
-            ompi_output(0, "OMPI_MCA_ns_nds_cellid=%s\n", env ? env : "NULL");
             ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
             return ORTE_ERR_NOT_FOUND;
         }
@@ -113,7 +111,6 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
     char* value;
     int rc;
     
-    ompi_output(0, "orte_ns_nds_env_put: enter\n");
     if(ORTE_SUCCESS != (rc = orte_ns.get_cellid_string(&cellid, name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
@@ -185,8 +182,6 @@ int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start,
     setenv(param,value,true);
     free(param);
     free(value);
-
-    ompi_output(0, "orte_ns_nds_env_put: exit\n");
     return ORTE_SUCCESS;
 }
 

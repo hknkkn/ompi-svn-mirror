@@ -35,7 +35,7 @@
 #include "mca/mca.h"
 #include "mca/ns/ns_types.h"
 #include "mca/gpr/gpr_types.h"
-
+#include "mca/soh/soh_types.h"
 #include "rmgr_types.h"
 
 /*
@@ -126,7 +126,7 @@ typedef int (*orte_rmgr_base_module_terminate_proc_fn_t)(const orte_process_name
 /*
  * Callback function for resource manager
  */
-typedef void (*orte_rmgr_cb_fn_t)(int *status);
+typedef void (*orte_rmgr_cb_fn_t)(orte_jobid_t jobid, orte_proc_state_t state);
 
 /**
  * Shortcut to spawn an applications. Perform all steps required to 
@@ -148,7 +148,7 @@ typedef int (*orte_rmgr_base_module_spawn_fn_t)(
     orte_app_context_t** app_context, 
     size_t num_context, 
     orte_jobid_t *jobid,
-    orte_rmgr_cb_fn_t *cbfn);
+    orte_rmgr_cb_fn_t cbfn);
 
 /*
  * Init the proc stage gate process

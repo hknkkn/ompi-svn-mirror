@@ -70,12 +70,15 @@ struct globals_t {
     bool help;
     bool version;
     bool verbose;
+    bool exit;
     int num_procs;
     char *hostfile;
     char *env_val;
     char *appfile;
     char *wdir;
     char *path;
+    ompi_mutex_t lock;
+    ompi_condition_t cond;
 } orterun_globals;
 
 
@@ -149,10 +152,11 @@ static void exit_callback(int fd, short event, void *arg);
 static void signal_callback(int fd, short flags, void *arg);
 static int create_app(int argc, char* argv[], orte_app_context_t **app,
                       bool *made_app);
-static int zero_globals(void);
+static int init_globals(void);
 static int parse_globals(int argc, char* argv[]);
 static int parse_locals(int argc, char* argv[]);
 static int parse_appfile(char *filename);
+static void job_state_callback(orte_jobid_t jobid, orte_proc_state_t state);
 
 
 int main(int argc, char *argv[], char* env[])
@@ -202,14 +206,20 @@ int main(int argc, char *argv[], char* env[])
 
     /* Spawn the job */
 
-    rc = orte_rmgr.spawn(apps, num_apps, &jobid, NULL);
+    rc = orte_rmgr.spawn(apps, num_apps, &jobid, job_state_callback);
     if (ORTE_SUCCESS != rc) {
         /* JMS show_help */
         ompi_output(0, "orterun: spawn failed with errno=%d\n", rc);
+    } else {
+        /* Wait for the app to complete */
+        OMPI_THREAD_LOCK(&orterun_globals.lock);
+        while(orterun_globals.exit == false) {
+            ompi_condition_wait(&orterun_globals.cond, &orterun_globals.lock);
+        }
+        OMPI_THREAD_UNLOCK(&orterun_globals.lock);
     }
 
     /* All done */
-
     for (i = 0; i < num_apps; ++i) {
         OBJ_RELEASE(apps[i]);
     }
@@ -219,6 +229,23 @@ int main(int argc, char *argv[], char* env[])
     return rc;
 }
 
+
+/*
+ * signal main thread when application completes
+ */
+
+static void job_state_callback(orte_jobid_t jobid, orte_proc_state_t state)
+{
+    OMPI_THREAD_LOCK(&orterun_globals.lock);
+    switch(state) {
+        case ORTE_PROC_STATE_TERMINATED:
+        case ORTE_PROC_STATE_ABORTED:
+            orterun_globals.exit = true;
+            ompi_condition_signal(&orterun_globals.cond);
+            break;
+    }
+    OMPI_THREAD_UNLOCK(&orterun_globals.lock);
+}
 
 static void exit_callback(int fd, short event, void *arg)
 {
@@ -252,9 +279,10 @@ static void signal_callback(int fd, short flags, void *arg)
 }
 
 
-static int zero_globals(void) 
+static int init_globals(void) 
 {
     struct globals_t tmp = {
+        false,
         false,
         false,
         false,
@@ -267,6 +295,8 @@ static int zero_globals(void)
     };
 
     orterun_globals = tmp;
+    OBJ_CONSTRUCT(&orterun_globals.lock, ompi_mutex_t);
+    OBJ_CONSTRUCT(&orterun_globals.cond, ompi_condition_t);
     return ORTE_SUCCESS;
 }
 
@@ -277,7 +307,7 @@ static int parse_globals(int argc, char* argv[])
 
     /* Setup and parse the command line */
 
-    zero_globals();
+    init_globals();
     ompi_cmd_line_create(&cmd_line, cmd_line_init);
     ompi_cmd_line_parse(&cmd_line, true, argc, argv);
 
@@ -464,7 +494,7 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
        separately so that the user doesn't see it in the --help
        message. */
 
-    zero_globals();
+    init_globals();
     ompi_cmd_line_create(&cmd_line, cmd_line_init);
     cmd_line_made = true;
     ompi_cmd_line_make_opt3(&cmd_line, '\0', NULL, "rawmap", 2,

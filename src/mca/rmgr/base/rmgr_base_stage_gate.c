@@ -334,17 +334,20 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
      * by sending an xcast to all processes
      */
     
-    msg = OBJ_NEW(orte_buffer_t);
+    OBJ_CONSTRUCT(&msg, orte_buffer_t);
     if (ORTE_SUCCESS != (rc = orte_dps.pack(msg, &job, 1, ORTE_JOBID))) {
         ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&msg);
         return;
     }
     
     if (ORTE_SUCCESS != (rc = orte_rml.xcast(orte_process_info.my_name, recipients,
                                         n, msg, NULL))) {
         ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&msg);
         return;
     }
+    OBJ_DESTRUCT(&msg);
     OBJ_RELEASE(data);
     free(recipients);
 }
@@ -363,3 +366,145 @@ void orte_rmgr_base_proc_stage_gate_mgr_abort(orte_gpr_notify_data_t *data,
     
     orte_errmgr.incomplete_start(job);
 }
+
+
+/*
+ * Routine that subscribes to events on all counters.
+ */
+
+int orte_rmgr_base_proc_stage_gate_subscribe(orte_jobid_t job, orte_gpr_notify_cb_fn_t cbfunc, void* cbdata)
+{
+    int i, rc;
+    orte_gpr_value_t trig, *trigs;
+    orte_gpr_subscription_t sub, *subs;
+    char* keys[] = {
+        /* changes to this ordering need to be reflected in code below */
+        ORTE_PROC_NUM_AT_STG1,
+        ORTE_PROC_NUM_AT_STG2,
+        ORTE_PROC_NUM_AT_STG3,
+        ORTE_PROC_NUM_FINALIZED,
+        ORTE_PROC_NUM_TERMINATED
+    };
+    int num_counters = sizeof(keys)/sizeof(keys[0]);
+
+    /* for the trigger, we want the counter values returned to us
+     * setup subscriptions for that purpose. we'll enter the precise data
+     * keys when we are ready to register the subscription - for now,
+     * do all the basic stuff
+     */
+    OBJ_CONSTRUCT(&sub, orte_gpr_subscription_t);
+    sub.addr_mode = ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(sub.segment), job))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&sub);
+        return rc;
+    }
+    sub.tokens = (char**)malloc(sizeof(char*));
+    if (NULL == sub.tokens) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&sub);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    sub.tokens[0] = strdup(ORTE_JOB_GLOBALS); /* the counters are in the job's globals container */
+    sub.num_tokens = 1;
+    sub.keys = (char**)malloc(sizeof(char*)*1);
+    if (NULL == sub.keys) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&sub);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    sub.num_keys = 1;
+    sub.cbfunc = cbfunc;
+    sub.user_tag = cbdata;
+    
+    /* setup the trigger information - initialize the common elements */
+    OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
+    trig.addr_mode = ORTE_GPR_TOKENS_XAND;
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(trig.segment), job))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&trig);
+        return rc;
+    }
+    trig.tokens = (char**)malloc(sizeof(char*));
+    if (NULL == trig.tokens) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.tokens[0] = strdup(ORTE_JOB_GLOBALS);
+    trig.num_tokens = 1;
+    trig.cnt = 2;
+    trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
+    if (NULL == trig.keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == trig.keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[1] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == trig.keyvals[1]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+
+    /* Now do the individual triggers.
+     * First, setup the triggers for the three main stage gates - these all compare
+     * their value to that in ORTE_JOB_SLOTS_KEY
+     */
+    trig.keyvals[0]->key = strdup(ORTE_JOB_SLOTS_KEY);
+    if (NULL == trig.keyvals[0]->key) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    trig.keyvals[0]->type = ORTE_NULL;
+    trig.keyvals[1]->type = ORTE_NULL;
+    
+    /* do the counter subscriptions. */
+    for (i=0; i < num_counters; i++) {
+        sub.keys[0] = strdup(keys[i]);
+        if (NULL == sub.keys[0]) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            OBJ_DESTRUCT(&sub);
+            OBJ_DESTRUCT(&trig);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        trig.keyvals[1]->key = strdup(keys[i]);
+        if (NULL == trig.keyvals[1]->key) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            OBJ_DESTRUCT(&sub);
+            OBJ_DESTRUCT(&trig);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        subs = &sub;
+        trigs = &trig;
+        rc = orte_gpr.subscribe(
+             ORTE_GPR_TRIG_ALL_CMP,
+             1, &subs,
+             1, &trigs,
+             &rc);
+    
+         if(ORTE_SUCCESS != rc) {
+             ORTE_ERROR_LOG(rc);
+             OBJ_DESTRUCT(&sub);
+             OBJ_DESTRUCT(&trig);
+             return rc;
+         }
+         free(sub.keys[0]);
+         sub.keys[0] = NULL;
+         free(trig.keyvals[1]->key);
+         trig.keyvals[1]->key = NULL;
+    }
+    OBJ_DESTRUCT(&sub);
+    OBJ_DESTRUCT(&trig);
+    return ORTE_SUCCESS;
+}
+
+
