@@ -25,85 +25,52 @@
 #ifndef ORTE_DPS_H_
 #define ORTE_DPS_H_
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "dps_types.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
-/**
- * Supported datatypes for conversion operations.
- * NOTE, these have (or should) a one to one match to ompi_pack_type_t
- *
+/*
+ * DPS initialization function
+ * In dynamic libraries, declared objects and functions don't get loaded
+ * until called. We need to ensure that the orte_dps function structure
+ * gets loaded, so we provide an "open" call that is executed as part of
+ * the program startup. It simply checks for debug parameters - good enough
+ * to ensure that the DPS gets loaded!
  */
+OMPI_DECLSPEC int orte_dps_open(void);
 
-typedef uint8_t orte_pack_type_t;
-
-#define ORTE_BYTE               (orte_pack_type_t)   1     /**< a byte of data */
-#define ORTE_INT8               (orte_pack_type_t)   2     /**< an 8-bit integer */
-#define ORTE_INT16              (orte_pack_type_t)   3     /**< a 16 bit integer */
-#define ORTE_INT32              (orte_pack_type_t)   4     /**< a 32 bit integer */
-#define ORTE_STRING             (orte_pack_type_t)   5     /**< a NULL terminated string */
-#define ORTE_NAME               (orte_pack_type_t)   6     /**< an ompi_process_name_t */
-#define ORTE_JOBID              (orte_pack_type_t)   7     /**< a jobid */
-#define ORTE_CELLID             (orte_pack_type_t)   8     /**< a cellid */
-#define ORTE_NODE_STATE         (orte_pack_type_t)   9     /**< node status flag */
-#define ORTE_PROCESS_STATUS     (orte_pack_type_t)  10     /**< process status key */
-#define ORTE_EXIT_CODE          (orte_pack_type_t)  11     /**< process exit code */
-#define ORTE_PACKED             (orte_pack_type_t)  12     /**< already packed data. */
-
-typedef struct orte_buffer_t {
-     /* first member must be the objects parent */
-    ompi_object_t parent;
-    
-     /* now for the real elements of the type */
-
-    void*   base_ptr;  /* start of my memory */
-    void*   data_ptr;  /* location of where next data will go */
-    void*   from_ptr;  /* location of where to get the next data from */
-
-    /* counters */
-
-    size_t    size;      /* total size of this buffer */
-    size_t    len;       /* total amount already packed */
-    size_t    space;     /* how much space we have left */
-                         /* yep, size=len+space */
-
-    size_t    toend;     /* how many bytes till the end when unpacking :) */
-                         /* yep, toend is the opposite of len */
-
-
-    size_t    cnt;     /* temp cnt of buffer usage (debugging) */
-} orte_buffer_t;
-
-/* formalise the declaration */
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION (orte_buffer_t);
+/*
+ * DPS finalize function
+ */
+OMPI_DECLSPEC int orte_dps_close(void);
 
 
 /*
  * DPS interface functions
  */
 
-typedef int (*orte_dps_base_pack_value_fn_t)(void *dest, void *src,
-                                            orte_pack_type_t type,
-                                            int num_values);
+typedef int (*orte_dps_init_buffer_fn_t)(orte_buffer_t **buffer, char *label);
 
-typedef int (*orte_dps_base_unpack_value_fn_t)(void *dest, void *src,
-                                              orte_pack_type_t type,
-                                              int num_values);
+typedef int (*orte_dps_pack_value_fn_t)(orte_buffer_t *buffer, void *src,
+                                        char *description,
+                                        orte_pack_type_t type);
 
-typedef int (*orte_dps_base_pack_object_fn_t)(void *dest, void *src,
-                                             orte_pack_type_t *types);
+typedef int (*orte_dps_unpack_value_fn_t)(orte_buffer_t *buffer, void *dest,
+                                          char *description,
+                                          orte_pack_type_t *type);
 
-typedef int (*orte_dps_base_unpack_object_fn_t)(void *dest, void *src,
-                                             orte_pack_type_t *types);
+typedef int (*orte_dps_pack_object_fn_t)(orte_buffer_t *buffer, void *src,
+                                         char **descriptions,
+                                         orte_pack_type_t *types);
 
-typedef int (*orte_dps_base_pack_buffer_fn_t)(orte_buffer_t *buffer, void *src,
-                                             orte_pack_type_t type, int num_values);
+typedef int (*orte_dps_unpack_object_fn_t)(orte_buffer_t *buffer, void **dest,
+                                           char **descriptions,
+                                           orte_pack_type_t *types);
 
-typedef int (*orte_dps_base_unpack_buffer_fn_t)(orte_buffer_t *buffer, void *src,
-                                               orte_pack_type_t, int num_values);
-
-typedef int (*orte_dps_base_init_buffer_fn_t)(orte_buffer_t **buffer, int size);
+typedef int (*orte_dps_free_buffer_fn_t)(orte_buffer_t **buffer);
 
 
 /**
@@ -113,17 +80,19 @@ typedef int (*orte_dps_base_init_buffer_fn_t)(orte_buffer_t **buffer, int size);
  * pointers to the calling interface. 
  */
 struct orte_dps_t {
-    orte_dps_base_pack_value_fn_t pack_value;
-    orte_dps_base_unpack_value_fn_t unpack_value;
-    orte_dps_base_pack_object_fn_t pack_object;
-    orte_dps_base_unpack_object_fn_t unpack_object;
-    orte_dps_base_pack_buffer_fn_t pack_buffer;
-    orte_dps_base_unpack_buffer_fn_t unpack_buffer;
-    orte_dps_base_init_buffer_fn_t init_buffer;
+    orte_dps_init_buffer_fn_t buffer_init;
+    orte_dps_pack_value_fn_t pack_value;
+    orte_dps_unpack_value_fn_t unpack_value;
+    orte_dps_pack_object_fn_t pack_object;
+    orte_dps_unpack_object_fn_t unpack_object;
+    orte_dps_free_buffer_fn_t buffer_free;
 };
 typedef struct orte_dps_t orte_dps_t;
 
-OMPI_DECLSPEC extern int mca_dps_base_output;
+#if defined(c_plusplus) || defined(__cplusplus)
+}
+#endif
+
 OMPI_DECLSPEC extern orte_dps_t orte_dps;  /* holds dps function pointers */
 
 #endif /* ORTE_DPS_H */
