@@ -152,8 +152,14 @@ int orte_gpr_replica_dict_reverse_lookup(char **name,
     orte_gpr_replica_dict_t **ptr;
     orte_gpr_replica_segment_t **segptr;
 
+
     /* initialize to nothing */
     *name = NULL;
+
+    /* protect against error (shouldn't happen) */
+    if ((ORTE_GPR_REPLICA_ITAG_MAX == itag)||(0 > itag)) {
+        return ORTE_ERR_BAD_PARAM;
+    }
     
     if (NULL == seg) {
 	   /* return the segment name
