@@ -831,9 +831,10 @@ static int param_register(const char *type_name, const char *component_name,
           if (NULL != array[i].mbp_file_value.stringval) {
               free(array[i].mbp_file_value.stringval);
           }
-          if (NULL != array[i].mbp_override_value.stringval) {
-              free(array[i].mbp_override_value.stringval);
-          }
+
+          /* Do *not* free the override value on the found entry here
+             -- we will down below, but only *if* the new entry
+             provides a new override value */
       }
 
       /* Now put in the new value */
@@ -851,19 +852,26 @@ static int param_register(const char *type_name, const char *component_name,
         } else {
           array[i].mbp_file_value.stringval = NULL;
         }
-        if (NULL != param.mbp_override_value.stringval) {
-          array[i].mbp_override_value.stringval =
-            strdup(param.mbp_override_value.stringval);
-        } else {
-          array[i].mbp_override_value.stringval = NULL;
+
+        /* Do we need to replace the override value? */
+
+        if (NULL != override_value && 
+            NULL != param.mbp_override_value.stringval) {
+            if (NULL != array[i].mbp_override_value.stringval) {
+                free(array[i].mbp_override_value.stringval);
+            }
+            array[i].mbp_override_value.stringval =
+                strdup(param.mbp_override_value.stringval);
         }
       } else {
           array[i].mbp_default_value.intval =
             param.mbp_default_value.intval;
           array[i].mbp_file_value.intval =
             param.mbp_file_value.intval;
-          array[i].mbp_override_value.intval =
-            param.mbp_override_value.intval;
+          if (NULL != override_value) {
+              array[i].mbp_override_value.intval =
+                  param.mbp_override_value.intval;
+          }
       }
 
       /* Just in case we changed type */
