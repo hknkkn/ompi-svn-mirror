@@ -94,7 +94,7 @@ AC_DEFUN([MCA_CONFIGURE_STUB],[
     # the LDFLAGS (because xml2-config [incorrectly] lumps them all
     # together into one string.
 
-    WRAPPER_EXTRA_LIBS=
+    WRAPPER_EXTRA_LIBS="-lxml2"
     WRAPPER_EXTRA_LDFLAGS=
     for flag in $EXTRA_LDFLAGS; do
 	case $flag in
@@ -106,4 +106,5 @@ AC_DEFUN([MCA_CONFIGURE_STUB],[
 	    ;;
 	esac
     done
+    echo wrapper extra flags: $WRAPPER_EXTRA_LDFLAGS, $WRAPPER_EXTRA_LIBS
 ])dnl
