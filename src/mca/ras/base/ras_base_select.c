@@ -27,7 +27,7 @@
  */
 
 OBJ_CLASS_INSTANCE(
-    orte_ras_selected_module_t,
+    orte_ras_base_selected_t,
     ompi_list_item_t,
     NULL,
     NULL);

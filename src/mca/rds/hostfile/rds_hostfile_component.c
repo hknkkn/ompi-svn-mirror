@@ -31,7 +31,7 @@ static orte_rds_base_module_t* orte_rds_hostfile_init(
     bool *have_hidden_threads);
 
 
-orte_rds_hostfile_component_t orte_rds_hostfile_component = {
+orte_rds_hostfile_component_t mca_rds_hostfile_component = {
     {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */
@@ -91,7 +91,7 @@ static char* orte_rds_hostfile_param_register_string(
   */
 static int orte_rds_hostfile_open(void)
 {
-    orte_rds_hostfile_component.debug = orte_rds_hostfile_param_register_int("debug",1);
+    mca_rds_hostfile_component.debug = orte_rds_hostfile_param_register_int("debug",1);
     return ORTE_SUCCESS;
 }
 

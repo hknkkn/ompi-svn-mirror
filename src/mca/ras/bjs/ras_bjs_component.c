@@ -31,7 +31,7 @@ static orte_ras_base_module_t* orte_ras_bjs_init(
     bool *have_hidden_threads);
 
 
-orte_ras_bjs_component_t orte_ras_bjs_component = {
+orte_ras_bjs_component_t mca_ras_bjs_component = {
     {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */
@@ -91,7 +91,7 @@ static char* orte_ras_bjs_param_register_string(
   */
 static int orte_ras_bjs_open(void)
 {
-    orte_ras_bjs_component.debug = orte_ras_bjs_param_register_int("debug",1);
+    mca_ras_bjs_component.debug = orte_ras_bjs_param_register_int("debug",1);
     return ORTE_SUCCESS;
 }
 

@@ -54,3 +54,9 @@ orte_rmgr_base_launch_not_available(orte_jobid_t jobid)
 {
     return ORTE_ERR_UNREACH;
 }
+
+int
+orte_rmgr_base_finalize_not_available(void)
+{
+    return ORTE_ERR_UNREACH;
+}

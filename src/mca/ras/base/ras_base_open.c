@@ -46,7 +46,7 @@ int orte_ras_base_open(void)
   /* Open up all available components */
 
   if (ORTE_SUCCESS != 
-      mca_base_components_open("orte_ras", 0, mca_ras_base_static_components, 
+      mca_base_components_open("ras", 0, mca_ras_base_static_components, 
                                &orte_ras_base.ras_components)) {
     return ORTE_ERROR;
   }
