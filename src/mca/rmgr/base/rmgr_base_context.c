@@ -107,13 +107,14 @@ cleanup:
  */
 
 static int orte_rmgr_base_cmp_app_context(
-    orte_app_context_t* app1,
-    orte_app_context_t* app2)
+    orte_app_context_t** app1,
+    orte_app_context_t** app2)
 {
-    if(app1->idx < app2->idx)
+    if ((*app1)->idx < (*app2)->idx) {
         return -1;
-    if(app1->idx > app2->idx)
+    } else if((*app1)->idx > (*app2)->idx) {
         return 1;
+    }
     return 0;
 }
 
@@ -171,7 +172,7 @@ int orte_rmgr_base_get_app_context(
             keyval->value.app_context = NULL;
         }
     }
-    qsort(app_context, *num_context, sizeof(orte_app_context_t*), 
+    qsort(*app_context, *num_context, sizeof(orte_app_context_t*), 
         (int (*)(const void*,const void*))orte_rmgr_base_cmp_app_context);
 
 cleanup:
