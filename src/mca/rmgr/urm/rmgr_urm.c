@@ -47,7 +47,8 @@ static int orte_rmgr_urm_terminate_proc(
 static int orte_rmgr_urm_spawn(
     orte_app_context_t** app_context,
     size_t num_context,
-    orte_jobid_t* jobid);
+    orte_jobid_t* jobid,
+    orte_rmgr_cb_fn_t* cbfn);
 
 orte_rmgr_base_module_t orte_rmgr_urm_module = {
     orte_rds_base_query,
@@ -120,7 +121,8 @@ static int orte_rmgr_urm_terminate_proc(const orte_process_name_t* proc_name)
 static int orte_rmgr_urm_spawn(
     orte_app_context_t** app_context,
     size_t num_context,
-    orte_jobid_t* jobid)
+    orte_jobid_t* jobid,
+    orte_rmgr_cb_fn_t* cbfn)
 {
     int rc;
 

@@ -122,6 +122,10 @@ typedef int (*orte_rmgr_base_module_terminate_job_fn_t)(orte_jobid_t job);
  */
 typedef int (*orte_rmgr_base_module_terminate_proc_fn_t)(const orte_process_name_t* proc_name);
 
+/*
+ * Callback function for resource manager
+ */
+typedef void (*orte_rmgr_cb_fn_t)(int *status);
 
 /**
  * Shortcut to spawn an applications. Perform all steps required to 
@@ -131,17 +135,19 @@ typedef int (*orte_rmgr_base_module_terminate_proc_fn_t)(const orte_process_name
  * (2) Allocated resources to the job.
  * (3) Map processes to allocated resources
  * (4) Launch the job.
+ * (5) Callback function - gets called when job completes (if NULL, then no callback done)
  *
  * @code
  * orte_jobid_t jobid;
  *
- * return_value = orte_rmgr.spawn(app_context, num_context, &jobid);
+ * return_value = orte_rmgr.spawn(app_context, num_context, &jobid, NULL);
  * @endcode
  */
 typedef int (*orte_rmgr_base_module_spawn_fn_t)(
     orte_app_context_t** app_context, 
     size_t num_context, 
-    orte_jobid_t *jobid);
+    orte_jobid_t *jobid,
+    orte_rmgr_cb_fn_t *cbfn);
 
 
 /**
