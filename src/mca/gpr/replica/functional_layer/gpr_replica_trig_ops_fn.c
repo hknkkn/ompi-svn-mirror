@@ -498,13 +498,14 @@ int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_t
 {
     orte_gpr_replica_triggers_t **trig;
     orte_gpr_replica_subscribed_data_t **sptr;
-    int i, j, rc;
+    int i, j, n, rc;
 
     trig = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
     for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
         if (NULL != trig[i]) {
             sptr = (orte_gpr_replica_subscribed_data_t**)((trig[i]->subscribed_data)->addr);
-            for (j=0; j < (trig[i]->subscribed_data)->size; j++) {
+            n = (trig[i]->subscribed_data)->size;
+            for (j=0; j < n; j++) {
                 if (NULL != sptr[j] && seg == sptr[j]->seg) {
                     if (ORTE_GPR_NOTIFY_ANY & trig[i]->action &&
                         !(ORTE_GPR_TRIG_NOTIFY_START & trig[i]->action)) { /* notify exists and is active */
