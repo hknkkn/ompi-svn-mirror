@@ -43,15 +43,19 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     int rc=ORTE_SUCCESS;
     size_t num_vals;
     size_t mem_left;
-    size_t num_bytes;
+    size_t num_bytes, hdr_bytes;
     void *src;
     uint32_t * s32;
     orte_data_type_t stored_type;
+
 
     /* check for errors */
     if (buffer == NULL || dst == NULL || max_num_vals == NULL) { 
         return (ORTE_ERR_BAD_PARAM); 
     }
+
+	num_bytes = 0; /* have not unpacked any yet */
+	hdr_bytes = 0; 
 
     src = buffer->from_ptr;  /* get location in buffer */
     mem_left = buffer->toend;  /* how much data is left in buffer */
@@ -63,10 +67,10 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
 
     /* first thing in the current buffer space must be the type */
     if (ORTE_SUCCESS != (rc =orte_dps_unpack_nobuffer(&stored_type, src, 1,
-                                    ORTE_DATA_TYPE, &mem_left, &num_bytes))) {
+                                    ORTE_DATA_TYPE, &mem_left, &hdr_bytes))) {
         return rc;
     }
-    src = (void*)((char*)src + num_bytes);
+    src = (void*)((char*)src + hdr_bytes);
     
     if(type == ORTE_INT || type == ORTE_UINT) {
         switch(sizeof(int)) {
@@ -108,7 +112,8 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     }
     s32++;
     src = (void *)s32;
-    mem_left -= sizeof(uint32_t);
+    mem_left -= sizeof(uint32_t);	/* we do this here but this is normally a function of unpack_nobuffer */
+	hdr_bytes += sizeof(uint32_t);
 
     /* will check to see if adequate storage in buffer prior
      * to unpacking the item
@@ -117,11 +122,14 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
                                     stored_type, &mem_left, &num_bytes))) {
         return rc;
     }
+/* fflush(stdout); fflush(stderr); */
+/* fprintf(stderr,"unpacked total bytes %d, (hdr %d datatype %d)\n", num_bytes+hdr_bytes, hdr_bytes, num_bytes); */
+/* fflush(stdout); fflush(stderr); */
     
     /* ok, we managed to unpack some stuff, so update all ptrs/cnts */
-    buffer->from_ptr = (void*)((char*)src + num_bytes);
+    buffer->from_ptr = (void*)((char*)src + num_bytes); /* move by data type size only as src is after the header */
     buffer->toend = mem_left; /* closer to the end */
-    buffer->len   -= num_bytes; /* and less data left */
+    buffer->len   -= (num_bytes+hdr_bytes); /* and less data left */
 
     /* return the number of values unpacked */
     *max_num_vals = num_vals;
@@ -135,6 +143,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 {
     int rc;
     size_t i;
+    size_t n;
     uint16_t * d16;
     uint32_t * d32;
     uint16_t * s16;
@@ -319,27 +328,39 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
         
             /* unpack into an array of keyval objects */
             keyval = (orte_gpr_keyval_t**) dst;
+			/* use temp count of unpacked 'n' which we sum to produce correct value later */
             for (i=0; i < num_vals; i++) {
                 keyval[i] = OBJ_NEW(orte_gpr_keyval_t);
                 if (NULL == keyval[i]) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(keyval[i]->key),
-                            src, 1, ORTE_STRING, mem_left, num_bytes))) {
+                            src, 1, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(keyval[i]->type),
-                            src, 1, ORTE_DATA_TYPE, mem_left, num_bytes))) {
+                            src, 1, ORTE_DATA_TYPE, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(keyval[i]->value),
-                            src, 1, keyval[i]->type, mem_left, num_bytes))) {
+                            src, 1, keyval[i]->type, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+				
             }
+			/* must return here for composite unpacks that change mem_left directly */
+            return ORTE_SUCCESS;
             break;
         
         case ORTE_GPR_VALUE:
@@ -352,47 +373,66 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 if (NULL == values[i]) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
+
                 /* unpack the segment name */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->segment),
-                            src, 1, ORTE_STRING, mem_left, num_bytes))) {
+                            src, 1, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
                 /* get the number of tokens */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->num_tokens),
-                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                            src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
                 /* allocate the required space for the char * pointers */
                 values[i]->tokens = (char **)malloc(values[i]->num_tokens * sizeof(char*));
                 if (NULL == values[i]->tokens) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
+
                 /* unpack the tokens */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->tokens,
-                            src, values[i]->num_tokens, ORTE_STRING, mem_left, num_bytes))) {
+                            src, values[i]->num_tokens, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
                 /* get the number of keyval pairs */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->cnt),
-                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                            src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
                 /* allocate the required space for the keyval object pointers */
                 values[i]->keyvals = (orte_gpr_keyval_t**)malloc(values[i]->cnt * sizeof(orte_gpr_keyval_t*));
                 if (NULL == values[i]->keyvals) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
+
                 /* unpack the keyval pairs */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->keyvals,
-                            src, values[i]->cnt, ORTE_KEYVAL, mem_left, num_bytes))) {
+                            src, values[i]->cnt, ORTE_KEYVAL, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
             }
+			/* must return here for composite unpacks that change mem_left directly */
+            return ORTE_SUCCESS;
             break;
             
 #if 0

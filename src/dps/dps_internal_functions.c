@@ -206,6 +206,35 @@ int orte_dps_buffer_extend(orte_buffer_t *bptr, size_t mem_req)
     return (ORTE_SUCCESS);
 }
 
+int orte_dps_dump_buffer_simple (orte_buffer_t *buffer, int outid)
+{
+    void *src;
+    size_t mem_left;
+	char* dptr; 
+	char* sptr;
+    
+    src = buffer->from_ptr;
+    mem_left = buffer->toend;
+
+
+	dptr = (char*) buffer->data_ptr;
+	sptr = (char*) buffer->base_ptr;
+
+    
+    /* output buffer's vitals */
+    ompi_output(outid, "Buffer vitals:\n\tbase_ptr: %p\tdata_ptr %p\tfrom_ptr %p\n",
+                        buffer->base_ptr, buffer->data_ptr, buffer->from_ptr);
+    ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
+                        buffer->pages, buffer->size, buffer->len,
+                        buffer->space, buffer->toend);
+	if (buffer->len != (size_t)(dptr-sptr)) {
+		ompi_output(outid, "data_ptr - base_ptr = %ld length %ld diff %ld\n\n",
+						(dptr-sptr), buffer->len, buffer->len - (dptr-sptr));
+		return (ORTE_ERROR);
+		}
+	return (ORTE_SUCCESS);
+}
+
 int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
 {
     void *src;
@@ -224,6 +253,10 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
     ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
                         buffer->pages, buffer->size, buffer->len,
                         buffer->space, buffer->toend);
+	if (buffer->len != (buffer->data_ptr-buffer->base_ptr)) {
+		ompi_output(outid, "data_ptr - base_ptr = %ld length %ld diff %ld\n\n",
+						(buffer->data_ptr-buffer->base_ptr), buffer->len, buffer->len - (buffer->data_ptr-buffer->base_ptr));
+	}
 
     while (0 < mem_left) {
         /* got enough for type? */
@@ -353,6 +386,11 @@ int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
         ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
                             buffer->pages, buffer->size, buffer->len,
                             buffer->space, buffer->toend);
+	    if (buffer->len != (buffer->data_ptr-buffer->base_ptr)) {
+	   		 ompi_output(outid, "data_ptr - base_ptr = %ld length %ld diff %ld\n\n",
+						(buffer->data_ptr-buffer->base_ptr), buffer->len, buffer->len - (buffer->data_ptr-buffer->base_ptr));
+		} 
+
     }
     return ORTE_SUCCESS;
 }

@@ -67,6 +67,8 @@ int orte_dps_load(orte_buffer_t *buffer,
                   void *payload,
                   size_t size);
 
+int orte_dps_dump_buffer_simple(orte_buffer_t *buffer, int outid);
+
 int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid);
 
 /*

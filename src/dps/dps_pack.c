@@ -44,7 +44,11 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     int rc;
     void *dst;
     int32_t op_size=0;
-    size_t num_bytes;
+    size_t num_bytes, hdr_bytes;
+
+	/* hdr_bytes = header for each packed type. */ 
+	/* num_bytes = packed size of data type. */
+	/* op_size = total size = (num_bytes+hdr_bytes) */
     
     /* check for error */
     if (!buffer || !src || 0 >= num_vals) { return (ORTE_ERROR); }
@@ -55,12 +59,15 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     if (0 == (op_size = orte_dps_memory_required(src, num_vals, type))) {  /* got error */
         return ORTE_ERROR;
     }
-    
-    /* add in the space for the pack type */
-    op_size += sizeof(uint32_t);
+   
+    /* add in the correct space for the pack type */
+    hdr_bytes = orte_dps_memory_required(NULL, 1, ORTE_DATA_TYPE);
     
     /* add in the space to store the number of values */
-    op_size += sizeof(uint32_t);
+    hdr_bytes += sizeof(uint32_t);
+
+	/* total space needed */
+	op_size += hdr_bytes;
 
     /* check to see if current buffer has enough room */
     if (op_size > buffer->space) {  /* need to extend the buffer */
@@ -74,6 +81,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
      * NOTE we convert the generic data type flag to a hard type for storage
      * to handle heterogeneity
      */
+
     if (ORTE_INT == type || ORTE_UINT == type) {
         switch(sizeof(int)) {
             case 1:
@@ -117,6 +125,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
                                         ORTE_DATA_TYPE, &num_bytes))) {
         return rc;
     }
+
     dst = (void *)((char*)dst + num_bytes);
     
     /* store the number of values as uint32_t */
@@ -131,6 +140,16 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
                                         type, &num_bytes))) {
         return rc;
     }
+
+	/* debugging */
+	if (num_bytes+sizeof(uint32_t)+orte_dps_memory_required(NULL, 1, ORTE_DATA_TYPE)!=op_size) {
+		fprintf(stderr,"orte_dps_pack: Ops, num_bytes %d + headers %d = %d, but op_size was %d?!\n", 
+				(int)num_bytes, (int)hdr_bytes,  (int)(num_bytes+hdr_bytes), (int)op_size);
+	}
+/* 	fflush(stdout); fflush(stderr); */
+/* 	fprintf(stderr,"packed total of %d bytes. Hdr %d datatype %d\n", op_size, hdr_bytes, num_bytes); */
+/* 	fflush(stdout); fflush(stderr); */
+
     
     /* ok, we managed to pack some more stuff, so update all ptrs/cnts */
     buffer->data_ptr = (void*)((char*)dst + num_bytes);
@@ -282,25 +301,34 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
         case ORTE_KEYVAL:
             /* array of pointers to keyval objects - need to pack the objects */
             keyval = (orte_gpr_keyval_t**) src;
+			/* use temp count of bytes packed 'n'. Must add these to num_bytes at each stage */
             for (i=0; i < num_vals; i++) {
                 /* pack the key */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(keyval[i]->key)), 1, ORTE_STRING, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the data type so we can read it for unpacking */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst, &(keyval[i]->type), 1,
                                  ORTE_DATA_TYPE, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the value */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst, &(keyval[i]->value), 1,
                                  keyval[i]->type, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
             }
             break;
         
@@ -309,35 +337,49 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             values = (orte_gpr_value_t**) src;
             for (i=0; i<num_vals; i++) {
                 /* pack the segment name */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(values[i]->segment)), 1, ORTE_STRING, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the number of tokens so we can read it for unpacking */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(values[i]->num_tokens)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the tokens */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)((values[i]->tokens)), values[i]->num_tokens, ORTE_STRING, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the number of keyval pairs so we can read it for unpacking */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(values[i]->cnt)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the keyval pairs */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)((values[i]->keyvals)), values[i]->cnt, ORTE_KEYVAL, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
             }
             break;
             
