@@ -13,11 +13,13 @@
  */
 /** @file:
  *
- * The Open RTE Resource Allocation Subsystem (RAS)
+ * The Open RTE Resource Manager (RMGR) Subsystem
+ * 
+ * 
  */
 
-#ifndef MCA_ORTE_RAS_H
-#define MCA_ORTE_RAS_H
+#ifndef ORTE_RMGR_H
+#define ORTE_RMGR_H
 
 /*
  * includes

@@ -15,7 +15,12 @@
 #ifndef ORTE_CONSTANTS_H
 #define ORTE_CONSTANTS_H
 
-/* error codes */
+/* error codes
+ *
+ * ANY CHANGES TO THESE DEFINITIONS MUST BE REFLECTED IN THE TEXT ARRAY
+ * orte_error_strings DEFINED IN src/runtime/ompi_init.c.
+ * 
+ */
 enum {
     ORTE_SUCCESS = 0,
     ORTE_ERROR = -1,

@@ -17,6 +17,9 @@
 
 /**
  * Supported datatypes for messaging and storage operations.
+ * 
+ * ANY CHANGES TO THESE DEFINITIONS MUST BE REFLECTED IN THE TEXT ARRAY
+ * orte_data_strings DEFINED IN src/runtime/ompi_init.c.
  *
  */
 
