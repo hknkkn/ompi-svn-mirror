@@ -77,29 +77,26 @@ static void orte_rmaps_base_map_construct(orte_rmaps_base_map_t* map)
 {
     map->app = NULL;
     map->procs = NULL;
-    map->nodes = NULL;
     map->num_procs = 0;
-    map->num_nodes = 0;
+    OBJ_CONSTRUCT(&map->nodes, ompi_list_t);
 }
 
 static void orte_rmaps_base_map_destruct(orte_rmaps_base_map_t* map)
 {
     size_t i=0;
+    ompi_list_item_t* item;
     for(i=0; i<map->num_procs; i++) {
         OBJ_RELEASE(map->procs[i]);
     }
-    for(i=0; i<map->num_nodes; i++) {
-        OBJ_RELEASE(map->nodes[i]);
-    }
+    while(NULL != (item = ompi_list_remove_first(&map->nodes)))
+        OBJ_RELEASE(item);
     if(NULL != map->procs) {
         free(map->procs);
-    }
-    if(NULL != map->nodes) {
-        free(map->nodes);
     }
     if(NULL != map->app) {
         OBJ_RELEASE(map->app);
     }
+    OBJ_DESTRUCT(&map->nodes);
 }
 
 OBJ_CLASS_INSTANCE(
@@ -156,13 +153,26 @@ static int orte_rmaps_value_compare(orte_gpr_value_t* val1, orte_gpr_value_t* va
 
 
 /**
- * Lookup node (if it exists) in the hash table. If it doesn't exist, create a new
+ * Lookup node (if it exists) in the list. If it doesn't exist, create a new
  * node and append to the table.
  */
 
 static orte_rmaps_base_node_t* 
-orte_rmaps_lookup_node(ompi_hash_table_t* hash, char* node_name, orte_rmaps_base_proc_t* proc)
+orte_rmaps_lookup_node(ompi_list_t* nodes, char* node_name, orte_rmaps_base_proc_t* proc)
 {
+    ompi_list_item_t* item;
+    orte_rmaps_base_node_t *node;
+    for(item =  ompi_list_get_first(nodes);
+        item != ompi_list_get_end(nodes);
+        item =  ompi_list_get_next(item)) {
+        node = (orte_rmaps_base_node_t*)item;
+        if(strcmp(node->node_name, node_name) == 0)
+            return node;
+    }
+    node = OBJ_NEW(orte_rmaps_base_node_t);
+    node->node_name = strdup(node_name);
+    ompi_list_append(&node->node_procs, &proc->super);
+    ompi_list_prepend(nodes, &node->super);
     return NULL;
 }
 
@@ -175,8 +185,8 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
 {
     orte_app_context_t** app_context = NULL;
     orte_rmaps_base_map_t** mapping = NULL;
-    ompi_hash_table_t nodes;
-    size_t i, num_context = 0, num_procs = 0;
+    ompi_list_t nodes;
+    size_t i, num_context = 0;
     char* segment = NULL;
     char* jobid_str = NULL;
     orte_gpr_value_t** values;
@@ -189,8 +199,7 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
         ORTE_NODE_NAME_KEY,
         NULL
     };
-   
-    OBJ_CONSTRUCT(&nodes, ompi_hash_table_t);
+    OBJ_CONSTRUCT(&nodes, ompi_list_t);
 
     /* query the application context */
     if(ORTE_SUCCESS != (rc = orte_rmgr_base_get_app_context(jobid, &app_context, &num_context))) {
@@ -217,12 +226,8 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
         }
         map->num_procs = 0;
         mapping[i] = map;
-        num_procs += app->num_procs;
     }
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid_str);
-
-    /* initialize hash table */
-    ompi_hash_table_init(&nodes, (num_procs>>1)+1);
 
     /* query the process list from the registry */
     rc = orte_gpr.get(
@@ -243,6 +248,7 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
         orte_gpr_value_t* value = values[v];
         orte_rmaps_base_map_t* map;
         orte_rmaps_base_proc_t* proc;
+        char* node_name = NULL;
         int32_t kv;
 
         proc = OBJ_NEW(orte_rmaps_base_proc_t);
@@ -271,7 +277,7 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
                 continue;
             }
             if(strcmp(keyval->key, ORTE_NODE_NAME_KEY) == 0) {
-                proc->proc_node = orte_rmaps_lookup_node(&nodes, keyval->value.strptr, proc); 
+                node_name = keyval->value.strptr;
                 continue;
             }
         }
@@ -281,10 +287,8 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
             continue;
         }
         map->procs[map->num_procs++] = proc;
+        proc->proc_node = orte_rmaps_lookup_node(&map->nodes, node_name, proc); 
     }
-
-    /* build the node list */
-    
 
     /* release temporary variables */
     free(segment);

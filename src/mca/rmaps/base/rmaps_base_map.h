@@ -81,8 +81,7 @@ struct orte_rmaps_base_map_t {
     orte_app_context_t *app;
     orte_rmaps_base_proc_t** procs;
     size_t num_procs;
-    orte_rmaps_base_node_t** nodes;
-    size_t num_nodes;
+    ompi_list_t nodes;
 };
 typedef struct orte_rmaps_base_map_t orte_rmaps_base_map_t;
 
