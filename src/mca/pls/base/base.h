@@ -87,7 +87,7 @@ extern "C" {
     /**
      * Utility routine to set daemon state/pid
      */
-    OMPI_DECLSPEC int orte_pls_base_set_node_pid(char* node_name, orte_process_name_t*, pid_t);
+    OMPI_DECLSPEC int orte_pls_base_set_node_pid(orte_cellid_t cellid, char* node_name, orte_jobid_t jobid, pid_t pid);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

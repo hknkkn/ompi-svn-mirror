@@ -67,23 +67,23 @@ int orte_pls_base_set_proc_pid(orte_process_name_t* name, pid_t pid)
  * the daemons.
  */
 
-int orte_pls_base_set_node_pid(char* node_name, orte_process_name_t* name, pid_t pid)
+int orte_pls_base_set_node_pid(orte_cellid_t cellid, char* node_name, orte_jobid_t jobid, pid_t pid)
 {
     orte_gpr_value_t* values[1];
     orte_gpr_value_t value;
     orte_gpr_keyval_t kv_pid = {{OBJ_CLASS(orte_gpr_keyval_t),0},ORTE_PROC_PID_KEY,ORTE_UINT32};
     orte_gpr_keyval_t* keyvals[1];
-    char* jobid;
+    char* jobid_string;
     int i, rc;
 
-    if(ORTE_SUCCESS != (rc = orte_schema.get_node_tokens(&value.tokens, &value.num_tokens, name->cellid, node_name)))
+    if(ORTE_SUCCESS != (rc = orte_schema.get_node_tokens(&value.tokens, &value.num_tokens, cellid, node_name)))
         return rc;
 
-    if(ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobid, name)))
+    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_string, jobid)))
         goto cleanup;
 
-    asprintf(&kv_pid.key, "%s-%s", ORTE_PROC_PID_KEY, jobid);
-    free(jobid);
+    asprintf(&kv_pid.key, "%s-%s", ORTE_PROC_PID_KEY, jobid_string);
+    free(jobid_string);
 
     kv_pid.value.ui32 = pid;
     keyvals[0] = &kv_pid;
