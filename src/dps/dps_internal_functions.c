@@ -38,7 +38,7 @@
  */
 size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t type)
 {
-    char *strptr=NULL;
+    char **strptr=NULL;
     size_t i=0, mem_req=0;
     orte_byte_object_t *sbyteptr=NULL;
     
@@ -68,11 +68,11 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
         case ORTE_NULL:
         case ORTE_STRING:
 
-            strptr = (char *) src;
+            strptr = (char **) src;
             for (i=0; i<num_vals; i++) { 
                 /* need to reserve sizeof(uint32_t) for length */
                 mem_req += sizeof(uint32_t);
-                mem_req += strlen(strptr);   /* string - null-terminator */
+                mem_req += strlen(*strptr);   /* string - null-terminator */
                 strptr++;
             }
             return mem_req;
