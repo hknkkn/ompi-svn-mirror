@@ -112,9 +112,9 @@ extern "C" {
                                                  char **index);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
-				    orte_gpr_notify_action_t action,
-				    orte_gpr_value_t *value,
-                     orte_gpr_value_t *trig);
+                    orte_gpr_notify_action_t action, int num_subs,
+                    orte_gpr_subscription_t **subscriptions,
+                    int num_trigs, orte_gpr_value_t **trig);
     OMPI_DECLSPEC int orte_gpr_base_unpack_subscribe(orte_buffer_t *buffer, int *ret,
 				      orte_gpr_notify_id_t *remote_idtag);
 

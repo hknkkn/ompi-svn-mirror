@@ -31,9 +31,10 @@
 #include "mca/gpr/base/base.h"
 
 int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
-				orte_gpr_notify_action_t action,
-                 orte_gpr_value_t *value,
-                 orte_gpr_value_t *trig)
+				orte_gpr_notify_action_t action, int num_subs,
+                 orte_gpr_subscription_t **subscriptions,
+                 int num_trigs,
+                 orte_gpr_value_t **trigs)
 {
     orte_gpr_cmd_flag_t command;
     int rc;
@@ -50,12 +51,12 @@ int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
 	    return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &value, 1, ORTE_GPR_VALUE))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, subscriptions, cnt, ORTE_GPR_SUBSCRIPTIONS))) {
         ORTE_ERROR_LOG(rc);
 	    return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &trig, 1, ORTE_GPR_VALUE))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, trigs, num_trigs, ORTE_GPR_VALUE))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
