@@ -165,7 +165,7 @@ void ompi_info::open_components()
   component_map["oob"] = &mca_oob_base_components;
 
   orte_ras_base_open();
-  component_map["ras"] = &orte_ras_base.ras_components;
+  component_map["ras"] = &orte_ras_base.ras_opened;
 
   orte_rds_base_open();
   component_map["rds"] = &orte_rds_base.rds_components;
