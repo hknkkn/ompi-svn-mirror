@@ -186,6 +186,7 @@ static void do_wait_proc(pid_t pid, int status, void *cbdata)
     orte_jobid_t *jobid = (orte_jobid_t *) cbdata;
 
     printf("Child TM proc has exited!\n");
+    fflush(stdout);
 }
 
 

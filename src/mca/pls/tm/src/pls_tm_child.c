@@ -79,6 +79,8 @@ int orte_pls_tm_child_init(void)
 
     /* Re-start us as a new ORTE process */
 
+    ompi_set_using_threads(false);
+    pthread_kill_other_threads_np();
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch:child: starting");
     if (NULL == (uri = orte_rml.get_uri())) {
@@ -373,14 +375,14 @@ int orte_pls_tm_child_wait(orte_jobid_t jobid)
     for (i = 0; i < num_spawned; ++i) {
         tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
         for (j = 0; j < num_spawned; ++j) {
-            if (event == events[i]) {
+            if (event == events[j]) {
                 ompi_output(orte_pls_base.pls_output,
                             "pls:tm:wait:child: caught obit for tid %d",
-                            task_ids[i]);
-                ret = orte_soh.set_proc_soh(&names[i], 
+                            task_ids[j]);
+                ret = orte_soh.set_proc_soh(&names[j], 
                                             ORTE_PROC_STATE_TERMINATED, 
-                                            exit_statuses[i]);
-                events[i] = TM_NULL_EVENT;
+                                            exit_statuses[j]);
+                events[j] = TM_NULL_EVENT;
                 break;
             }
         }
