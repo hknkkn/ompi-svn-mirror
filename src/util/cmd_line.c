@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "include/constants.h"
 #include "class/ompi_object.h"
@@ -27,6 +28,18 @@
 #include "util/output.h"
 #include "mca/base/mca_base_param.h"
 
+
+/*
+ * Some usage message constants
+ *
+ * Max width for param listings before the description will be listed
+ * on the next line
+ */
+#define PARAM_WIDTH 25
+/*
+ * Max length of any line in the usage message
+ */
+#define MAX_WIDTH 76
 
 /*
  * Description of a command line option
@@ -456,9 +469,11 @@ char *ompi_cmd_line_get_usage_msg(ompi_cmd_line_t *cmd)
     int i, len, prev_len;
     int argc;
     char **argv;
-    char *ret, *line, *temp;
+    char *ret, temp[MAX_WIDTH * 2], line[MAX_WIDTH * 2];
+    char *start, *desc, *ptr;
     ompi_list_item_t *item;
     cmd_line_option_t *option;
+    bool filled;
 
     /* Thread serialization */
 
@@ -470,53 +485,41 @@ char *ompi_cmd_line_get_usage_msg(ompi_cmd_line_t *cmd)
     argc = 0;
     argv = NULL;
     ret = NULL;
-    line = NULL;
-    temp = NULL;
     for (item = ompi_list_get_first(&cmd->lcl_options); 
          ompi_list_get_end(&cmd->lcl_options) != item;
          item = ompi_list_get_next(item)) {
         option = (cmd_line_option_t *) item;
         if (NULL != option->clo_description) {
             
-            /* See how much space we need */
-
-            len = 5 + strlen(option->clo_description);
-            if ('\0' != option->clo_short_name) {
-                len += 5;
-            }
-            if (NULL != option->clo_long_name) {
-                len += strlen(option->clo_long_name);
-            }
-            len += option->clo_num_params * 10;
-
-            /* Do we have enough already? */
-
-            if (len > prev_len) {
-                if (NULL != line) {
-                    free(line);
-                }
-                line = (char*) malloc(len * 2);
-                if (NULL == line) {
-                    ompi_mutex_unlock(&cmd->lcl_mutex);
-                    return NULL;
-                }
-                temp = line + len;
-                prev_len = len;
-            }
-
             /* Build up the output line */
 
+            filled = false;
             line[0] = '\0';
             if ('\0' != option->clo_short_name) {
-                snprintf(temp, len, "-%c", option->clo_short_name);
-                strcat(line, temp);
+                line[0] = '-';
+                line[1] = option->clo_short_name;
+                filled = true;
+            } else {
+                line[0] = ' ';
+                line[1] = ' ';
+            }
+            line[2] = '\0';
+            line[3] = '\0';
+            if (NULL != option->clo_single_dash_name) {
+                line[2] = (filled) ? '|' : ' ';
+                strcat(line, "-");
+                strcat(line, option->clo_single_dash_name);
+                filled = true;
             }
             if (NULL != option->clo_long_name) {
-                if ('\0' != option->clo_short_name) {
+                if (filled) {
                     strcat(line, "|");
+                } else {
+                    strcat(line, " ");
                 }
-                snprintf(temp, len, "--%s", option->clo_long_name);
-                strcat(line, temp);
+                strcat(line, "--");
+                strcat(line, option->clo_long_name);
+                filled = true;
             }
             strcat(line, " ");
             for (i = 0; i < option->clo_num_params; ++i) {
@@ -526,15 +529,113 @@ char *ompi_cmd_line_get_usage_msg(ompi_cmd_line_t *cmd)
             if (option->clo_num_params > 0) {
                 strcat(line, " ");
             }
-            strcat(line, option->clo_description);
 
-            /* Save the line */
+            /* If we're less than param width, then start adding the
+               description to this line.  Otherwise, finish this line
+               and start adding the description on the next line. */
 
-            ompi_argv_append(&argc, &argv, line);
+            if (strlen(line) > PARAM_WIDTH) {
+                ompi_argv_append(&argc, &argv, line);
+
+                /* Now reset the line to be all blanks up to
+                   PARAM_WIDTH so that we can start adding the
+                   description */
+
+                memset(line, ' ', PARAM_WIDTH);
+                line[PARAM_WIDTH] = '\0';
+            } else {
+
+                /* Add enough blanks to the end of the line so that we
+                   can start adding the description */
+
+                for (i = strlen(line); i < PARAM_WIDTH; ++i) {
+                    line[i] = ' ';
+                }
+                line[i] = '\0';
+            }
+
+            /* Loop over adding the description to the array, breaking
+               the string at most at MAX_WIDTH characters.  We need a
+               modifyable description (for simplicity), so strdup the
+               clo_description (because it's likely a compiler
+               constant, and may barf if we write temporary \0's in
+               the middle). */
+
+            desc = strdup(option->clo_description);
+            if (NULL == desc) {
+                return strdup("");
+            }
+            start = desc;
+            len = strlen(desc);
+            do {
+
+                /* Trim off leading whitespace */
+
+                while (isspace(*start) && start < desc + len) {
+                    ++start;
+                }
+                if (start >= desc + len) {
+                    break;
+                }
+
+                /* Last line */
+
+                if (strlen(start) < (MAX_WIDTH - PARAM_WIDTH)) {
+                    strcat(line, start);
+                    ompi_argv_append(&argc, &argv, line);
+                    break;
+                }
+
+                /* We have more than 1 line's worth left -- find this
+                   line's worth and add it to the array.  Then reset
+                   and loop around to get the next line's worth. */
+
+                for (ptr = start + (MAX_WIDTH - PARAM_WIDTH); 
+                     ptr > start; --ptr) {
+                    if (isspace(*ptr)) {
+                        *ptr = '\0';
+                        strcat(line, start);
+                        ompi_argv_append(&argc, &argv, line);
+
+                        start = ptr + 1;
+                        memset(line, ' ', PARAM_WIDTH);
+                        line[PARAM_WIDTH] = '\0';
+                        break;
+                    }
+                }
+
+                /* If we got all the way back to the beginning of the
+                   string, then go forward looking for a whitespace
+                   and break there. */
+
+                if (ptr == start) {
+                    for (ptr = start + (MAX_WIDTH - PARAM_WIDTH); 
+                         ptr < start + len; ++ptr) {
+                        if (isspace(*ptr)) {
+                            *ptr = '\0';
+
+                            strcat(line, start);
+                            ompi_argv_append(&argc, &argv, line);
+                            
+                            start = ptr + 1;
+                            memset(line, ' ', PARAM_WIDTH);
+                            line[PARAM_WIDTH] = '\0';
+                            break;
+                        }
+                    }
+
+                    /* If we reached the end of the string with no
+                       whitespace, then just add it on and be done */
+
+                    if (ptr >= start + len) {
+                        strcat(line, start);
+                        ompi_argv_append(&argc, &argv, line);
+                        start = desc + len + 1;
+                    }
+                }
+            } while (start < desc + len);
+            free(desc);
         }
-    }
-    if (NULL != line) {
-        free(line);
     }
     if (NULL != argv) {
         ret = ompi_argv_join(argv, '\n');
