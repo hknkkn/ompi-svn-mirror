@@ -475,8 +475,6 @@ int mca_base_param_build_env(char ***env, int *num_env, bool internal)
 
     /* Iterate through all the registered parameters */
 
-    *env = NULL;
-    *num_env = 0;
     len = ompi_value_array_get_size(&mca_base_params);
     array = OMPI_VALUE_ARRAY_GET_BASE(&mca_base_params, mca_base_param_t);
     for (i = 0; i < len; ++i) {
