@@ -15,5 +15,6 @@
 
 # Specific to this module
 
-PARAM_INIT_FILE=iof_null.c
+PARAM_INIT_FILE=iof_null.h
+PARAM_CONFIG_HEADER_FILE="iof_null_config.h"
 PARAM_CONFIG_FILES="Makefile"
