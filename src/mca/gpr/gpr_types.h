@@ -132,7 +132,7 @@ typedef struct {
 #ifdef HAVE_I64
         int64_t i64;
 #endif
-        orte_byte_object_t *byteobject;
+        orte_byte_object_t byteobject;
         orte_process_name_t proc;
         orte_jobid_t jobid;
         orte_node_state_t node_state;
@@ -155,7 +155,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_keyval_t);
 typedef struct {
     ompi_object_t super;                    /**< Makes this an object */
     uint32_t cnt;                           /**< Number of keyval objects returned */
-    orte_gpr_keyval_t **keyvals;            /**< Array of keyval object pointers */
+    orte_gpr_keyval_t *keyvals;             /**< Contiguous array of keyval object pointers */
     uint32_t num_tokens;                    /**< Number of tokens used to recover data */
     char **tokens;                          /**< List of tokens that described this data */
 } orte_gpr_value_t;
@@ -168,13 +168,13 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_value_t);
 typedef struct {
     ompi_object_t super;                        /**< Make this an object */
     char *segment;                              /**< Name of originating segment */
-    size_t cnt;                                /**< number of registry value objects */
-    orte_gpr_value_t **values;                  /**< array of gpr values */
+    size_t cnt;                                 /**< number of registry value objects */
+    orte_gpr_value_t *values;                   /**< Contiguous array of gpr values */
     orte_gpr_cmd_flag_t cmd;                    /**< command that generated the notify msg */
     union {
         orte_gpr_notify_action_t trig_action;   /**< If subscription, action that triggered message */
         orte_gpr_synchro_mode_t trig_synchro;   /**< If synchro, action that triggered message */
-        orte_exit_code_t exit_code;           /**< status code of command that was executed */
+        orte_exit_code_t exit_code;             /**< status code of command that was executed */
         int32_t cmd_return;                     /**< return value from gpr commands in compound cmd */
     } flag;
 } orte_gpr_notify_message_t;
