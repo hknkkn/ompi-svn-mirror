@@ -55,6 +55,26 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     
     dst = buffer->data_ptr;    /* get location in buffer */
 
+    /* change into to fixed size type for local size */
+    if (ORTE_INT == type || ORTE_UINT == type) {
+        switch(sizeof(int)) {
+            case 1:
+                type = (type == ORTE_INT) ? ORTE_INT8 : ORTE_UINT8;
+                break;
+            case 2:
+                type = (type == ORTE_INT) ? ORTE_INT16 : ORTE_UINT16;
+                break;
+            case 4:
+                type = (type == ORTE_INT) ? ORTE_INT32 : ORTE_UINT32;
+                break;
+            case 8:
+                type = (type == ORTE_INT) ? ORTE_INT64 : ORTE_UINT64;
+                break;
+            default:
+                return ORTE_ERR_NOT_IMPLEMENTED;
+        }
+    }
+
     /* calculate the required memory size for this operation */
     if (0 == (op_size = orte_dps_memory_required(src, num_vals, type))) {  /* got error */
         return ORTE_ERROR;
@@ -82,24 +102,6 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
      * to handle heterogeneity
      */
 
-    if (ORTE_INT == type || ORTE_UINT == type) {
-        switch(sizeof(int)) {
-            case 1:
-                type = (type == ORTE_INT) ? ORTE_INT8 : ORTE_UINT8;
-                break;
-            case 2:
-                type = (type == ORTE_INT) ? ORTE_INT16 : ORTE_UINT16;
-                break;
-            case 4:
-                type = (type == ORTE_INT) ? ORTE_INT32 : ORTE_UINT32;
-                break;
-            case 8:
-                type = (type == ORTE_INT) ? ORTE_INT64 : ORTE_UINT64;
-                break;
-            default:
-                return ORTE_ERR_NOT_IMPLEMENTED;
-        }
-    }
     
     if (ORTE_SIZE == type) {
         switch(sizeof(size_t)) {
@@ -200,6 +202,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
         
         case ORTE_NOTIFY_ACTION:
         case ORTE_SYNCHRO_MODE:
+        case ORTE_GPR_ADDR_MODE:
         case ORTE_GPR_CMD:
         case ORTE_INT16:
         case ORTE_UINT16:

@@ -100,7 +100,7 @@ orte_context_value_names_t orterun_context_tbl[] = {
     /* start with usual help and version stuff */
     {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&orterun_globals.help, (void*)false, NULL},
     {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&orterun_globals.version, (void*)false, NULL},
-    {{NULL, NULL, NULL}, "np", 1, ORTE_INT, (void*)&orterun_globals.num_procs, (void*)0, NULL},
+    {{NULL, NULL, NULL}, "np", 1, ORTE_INT, (void*)&orterun_globals.num_procs, (void*)1, NULL},
     {{"hostfile", NULL, NULL}, "hostfile", 1, ORTE_STRING, (void*)&(orterun_globals.hostfile), NULL, NULL},
     {{NULL, NULL, NULL}, "x", 1, ORTE_STRING, (void*)&(orterun_globals.env_val), NULL, NULL},
     {{NULL, NULL, NULL}, "wd", 1, ORTE_STRING, (void*)&(orterun_globals.wd), NULL, NULL},

@@ -19,6 +19,8 @@
  */
 
 #include "ompi_config.h"
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "include/orte_constants.h"
 #include "util/argv.h"
@@ -37,32 +39,12 @@ const char *mca_pls_rsh_component_version_string =
 
 
 /*
- * Global variable
- */
-char **orte_pls_rsh_agent = NULL;
-
-
-/*
- * Local variables
- */
-static int param_priority = -1;
-static int param_agent = -1;
-
-
-/*
- * Local functions
- */
-static int pls_rsh_open(void);
-static struct orte_pls_base_module_1_0_0_t *pls_rsh_init(int *priority);
-
-
-/*
  * Instantiate the public struct with all of our public information
  * and pointers to our public functions in it
  */
 
-orte_pls_base_component_1_0_0_t mca_pls_rsh_component = {
-
+orte_pls_rsh_component_t mca_pls_rsh_component = {
+    {
     /* First, the mca_component_t struct containing meta information
        about the component itself */
 
@@ -81,8 +63,8 @@ orte_pls_base_component_1_0_0_t mca_pls_rsh_component = {
 
         /* Component open and close functions */
 
-        pls_rsh_open,
-        NULL
+        orte_pls_rsh_component_open,
+        orte_pls_rsh_component_close
     },
 
     /* Next the MCA v1.0.0 component meta data */
@@ -95,48 +77,74 @@ orte_pls_base_component_1_0_0_t mca_pls_rsh_component = {
 
     /* Initialization / querying functions */
 
-    pls_rsh_init
+    orte_pls_rsh_component_init
+    }
 };
 
 
-static int pls_rsh_open(void)
-{
-    /* Use a low priority, but allow other components to be lower */
-    
-    param_priority = 
-        mca_base_param_register_int("pls", "rsh", "priority", NULL, 10);
-    param_agent = 
-        mca_base_param_register_string("pls", "rsh", "agent", NULL, "ssh");
 
+/**
+ *  Convience functions to lookup MCA parameter values.
+ */
+                                                                                                  
+static  int orte_pls_rsh_param_register_int(
+    const char* param_name,
+    int default_value)
+{
+    int id = mca_base_param_register_int("pls","rsh",param_name,NULL,default_value);
+    int param_value = default_value;
+    mca_base_param_lookup_int(id,&param_value);
+    return param_value;
+}
+                                                                                                  
+                                                                                                  
+static char* orte_pls_rsh_param_register_string(
+    const char* param_name,
+    const char* default_value)
+{
+    char *param_value;
+    int id = mca_base_param_register_string("pls","rsh",param_name,NULL,default_value);
+    mca_base_param_lookup_string(id, &param_value);
+    return param_value;
+}
+                                                                                                  
+                                                                                                  
+
+int orte_pls_rsh_component_open(void)
+{
+    char* param;
+
+    /* initialize globals */
+    OBJ_CONSTRUCT(&mca_pls_rsh_component.lock, ompi_mutex_t);
+    OBJ_CONSTRUCT(&mca_pls_rsh_component.cond, ompi_condition_t);
+
+    /* lookup parameters */
+    mca_pls_rsh_component.debug = orte_pls_rsh_param_register_int("debug",1);
+    mca_pls_rsh_component.priority = orte_pls_rsh_param_register_int("priority",1);
+    param = orte_pls_rsh_param_register_string("agent","ssh");
+    mca_pls_rsh_component.argv = ompi_argv_split(param, ' ');
+    mca_pls_rsh_component.argc = ompi_argv_count(mca_pls_rsh_component.argv);
+    return (mca_pls_rsh_component.argc > 0) ? ORTE_SUCCESS : ORTE_ERR_BAD_PARAM;
+}
+
+
+orte_pls_base_module_t *orte_pls_rsh_component_init(int *priority)
+{
+    /* If we didn't find the agent in the path, then don't use this component */
+    mca_pls_rsh_component.path = ompi_path_findv(mca_pls_rsh_component.argv[0], 0, environ, NULL);
+    if (NULL == mca_pls_rsh_component.path) {
+        return NULL;
+    }
+    *priority = mca_pls_rsh_component.priority;
+    return &orte_pls_rsh_module;
+}
+
+
+int orte_pls_rsh_component_close(void)
+{
+    OBJ_DESTRUCT(&mca_pls_rsh_component.lock);
+    OBJ_DESTRUCT(&mca_pls_rsh_component.cond);
+    ompi_argv_free(mca_pls_rsh_component.argv);
     return ORTE_SUCCESS;
 }
 
-
-static struct orte_pls_base_module_1_0_0_t *pls_rsh_init(int *priority)
-{
-    char *agent;
-    extern char **environ;
-
-    /* Check to see if we can find the agent in our $PATH */
-
-    mca_base_param_lookup_string(param_agent, &agent);
-    if (NULL == agent) {
-        return NULL;
-    }
-    orte_pls_rsh_agent = ompi_argv_split(agent, ' ');
-    free(agent);
-
-    agent = ompi_path_findv(orte_pls_rsh_agent[0], 0, environ, NULL);
-
-    /* If we didn't find the agent in the path, then don't use this
-       component */
-
-    if (NULL == agent) {
-        return NULL;
-    }
-    free(agent);
-
-    mca_base_param_lookup_int(param_priority, priority);
-
-    return &orte_pls_rsh_module;
-}

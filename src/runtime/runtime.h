@@ -81,7 +81,7 @@ extern "C" {
         char *name;
         char *host;
         char *uid;
-        bool bootproxy;
+        int  bootproxy;
         bool persistence;
         char *scope;
         bool console;

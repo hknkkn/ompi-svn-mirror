@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     int ret = 0;
     ompi_cmd_line_t *cmd_line = NULL;
     char *contact_file;
-    char *filenm, *segment;
+    char *filenm;
 
     /* setup to check common command line options that just report and die */
     cmd_line = OBJ_NEW(ompi_cmd_line_t);
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
         if (ORTE_SUCCESS != (ret = orte_daemon_bootproxy())) {
             ORTE_ERROR_LOG(ret);
         }
-        orte_finalize();
-        exit(1);
+        ret = orte_finalize();
+        exit(ret);
     }
     
     /* if not debugging or bootproxy, daemonize myself */

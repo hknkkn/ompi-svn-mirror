@@ -63,10 +63,8 @@ int orte_gpr_replica_process_callbacks(void)
 	}
 	OBJ_RELEASE(cb);
     }
-    return ORTE_SUCCESS;
-
 #endif
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    return ORTE_SUCCESS;
 }
 
 

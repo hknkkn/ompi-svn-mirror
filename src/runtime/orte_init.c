@@ -113,7 +113,7 @@ orte_universe_t orte_universe_info = {
     /* .name =                */    NULL,
     /* .host =                */    NULL,
     /* .uid =                 */    NULL,
-    /* .bootproxy =           */    false,
+    /* .bootproxy =           */    0,
     /* .persistence =         */    false,
     /* .scope =               */    NULL,
     /* .console =             */    false,
@@ -200,8 +200,6 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
         return ret;
     }
 
-ompi_output(0, "seed: %d  daemon: %d", (int)orte_process_info.seed, (int)orte_process_info.daemon);  
-  
     /* If I'm a daemon or the seed, then process the daemon context */
     if (orte_process_info.seed || orte_process_info.daemon) {
         if (ORTE_SUCCESS != (ret = orte_parse_daemon_context(cmd_line, argc, argv))) {

@@ -81,6 +81,19 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                             }
                             break;
                         
+                        case ORTE_NAME:
+                            if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, j, k))) {
+                                ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                                return ORTE_ERR_BAD_PARAM;
+                            }
+                            rc = orte_ns.convert_string_to_process_name(
+                                (orte_process_name_t**)context_tbl[i].dest, tmp);
+                            if (ORTE_SUCCESS != rc) {
+                                ORTE_ERROR_LOG(rc);
+                                return rc;
+                            }
+                            break;
+                        
                         case ORTE_INT:
                             if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, j, k))) {
                                 ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
@@ -127,6 +140,29 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                     }
                     break;
                 
+                case ORTE_NAME:
+
+                    if (0 > (id = mca_base_param_register_string(context_tbl[i].name.prime,
+                                                context_tbl[i].name.second,
+                                                context_tbl[i].name.third,
+                                                NULL, (char*)(context_tbl[i].def)))) {
+                        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                        return ORTE_ERR_BAD_PARAM;
+                    }
+                    if (ORTE_SUCCESS != (rc = mca_base_param_lookup_string(id, &tmp))) {
+                        ORTE_ERROR_LOG(rc);
+                        return rc;
+                    }
+                    if (NULL != tmp) {
+                        rc = orte_ns.convert_string_to_process_name(
+                                    (orte_process_name_t**)context_tbl[i].dest, tmp);
+                        if (ORTE_SUCCESS != rc) {
+                            ORTE_ERROR_LOG(rc);
+                            return rc;
+                        }
+                    }
+                    break;
+                        
                 case ORTE_INT:
                 case ORTE_BOOL:
                     if (0 > (id = mca_base_param_register_int(context_tbl[i].name.prime,

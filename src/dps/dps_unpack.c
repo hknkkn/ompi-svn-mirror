@@ -185,6 +185,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             
         case ORTE_NOTIFY_ACTION:
         case ORTE_SYNCHRO_MODE:
+        case ORTE_GPR_ADDR_MODE:
         case ORTE_GPR_CMD:
         case ORTE_INT16:
         case ORTE_UINT16:

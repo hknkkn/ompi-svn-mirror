@@ -32,7 +32,10 @@ orte_context_value_names_t orte_daemon_context_tbl[] = {
     {{"universe", "persistence", NULL}, "persistent", 0, ORTE_BOOL, (void*)&(orte_universe_info.persistence), (void*)false},
     {{"universe", "console", NULL}, "console", 0, ORTE_BOOL, (void*)&(orte_universe_info.console), (void*)false},
     {{"universe", "script", NULL}, "script", 1, ORTE_STRING, (void*)&(orte_universe_info.scriptfile), NULL},
-    {{"bootproxy", NULL, NULL}, "bootproxy", 0, ORTE_BOOL, (void*)&(orte_universe_info.bootproxy), (void*)false},
+    {{"orte", "bootproxy", NULL}, "bootproxy", 0, ORTE_INT, (void*)&(orte_universe_info.bootproxy), (void*)false},
+    {{"orte", "name", NULL}, "name", 1, ORTE_NAME, (void*)&(orte_process_info.my_name), NULL},
+    {{"gpr", "replica", "uri"}, "gprreplica", 1, ORTE_STRING, (void*)&(orte_process_info.gpr_replica_uri), NULL},
+    {{"ns", "replica", "uri"}, "nsreplica", 1, ORTE_STRING, (void*)&(orte_process_info.ns_replica_uri), NULL},
     {{NULL, NULL, NULL}, NULL, ORTE_NULL, NULL} /* SIGNIFIES END OF ARRAY */
 };
 

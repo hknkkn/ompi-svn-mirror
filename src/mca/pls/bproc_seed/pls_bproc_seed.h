@@ -49,7 +49,7 @@ int orte_pls_bproc_seed_terminate_proc(const orte_process_name_t* proc_name);
 
 
 /**
- * RAS Component
+ * PLS Component
  */
 struct orte_pls_bproc_component_t {
     orte_pls_base_component_t super;

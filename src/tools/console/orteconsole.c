@@ -18,6 +18,9 @@
 #include <stdio.h>
 
 #include "include/orte_constants.h"
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "dps/dps.h"
 
@@ -36,7 +39,7 @@
 #include "mca/rml/rml.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
-
+#include "mca/pls/base/base.h"
 #include "tools/orted/orted.h"
 
 #define ORTE_CONSOLE_MAX_LINE_LENGTH 1024
@@ -101,6 +104,9 @@ int main(int argc, char *argv[])
         printf("show_help: ompi_init failed\n");
         return ret;
     }
+
+    /* GPR test code */
+    ret = orte_pls_base_set_proc_pid(orte_process_info.my_name, getpid());
 
     exit_cmd = false;
     while (!exit_cmd) {

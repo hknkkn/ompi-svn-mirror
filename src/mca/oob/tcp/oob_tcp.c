@@ -668,7 +668,7 @@ int mca_oob_tcp_init(void)
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    (value->keyvals[0])->key = "oob-tcp";
+    (value->keyvals[0])->key = strdup("oob-tcp");
     (value->keyvals[0])->type = ORTE_NULL;
 
     /* setup the trigger value */
@@ -694,6 +694,7 @@ int mca_oob_tcp_init(void)
     trig_value.keyvals[0]->type = ORTE_INT;
     trig_value.keyvals[0]->value.i32 = (int32_t)orte_process_info.num_procs;
     
+#if 0
     rc = orte_gpr.subscribe(
         ORTE_GPR_KEYS_OR,
         ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_AT_LEVEL |
@@ -709,6 +710,7 @@ int mca_oob_tcp_init(void)
         OBJ_DESTRUCT(&trig_value);
         return rc;
     }
+#endif
     OBJ_DESTRUCT(&trig_value);  /* done with this one */
 
     buffer = OBJ_NEW(orte_buffer_t);
@@ -726,15 +728,36 @@ int mca_oob_tcp_init(void)
     }
     
     /* put our contact info in registry */
+    value = OBJ_NEW(orte_gpr_value_t);
+    if (NULL == value) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value->segment), jobid))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+
+    value->cnt = 1;
+    value->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    if(NULL == value->keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == value->keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
     if (ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&(value->tokens),
                                 &(value->num_tokens), orte_process_info.my_name))) {
         ORTE_ERROR_LOG(rc);
         OBJ_RELEASE(value);
         return rc;
     }
-    (value->keyvals[0])->type = ORTE_BYTE_OBJECT;
-    (value->keyvals[0])->key = "oob-tcp";
 
+    (value->keyvals[0])->type = ORTE_BYTE_OBJECT;
+    (value->keyvals[0])->key = strdup("oob-tcp");
     rc = orte_dps.unload(buffer, (void**)&(value->keyvals[0])->value.byteobject.bytes,
                                 &(value->keyvals[0])->value.byteobject.size);
     if(rc != ORTE_SUCCESS) {
