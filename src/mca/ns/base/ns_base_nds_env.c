@@ -107,50 +107,86 @@ int orte_ns_nds_env_get(void)
 int orte_ns_nds_env_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
 {
     char* param;
-    orte_cellid_t cellid;
-    orte_jobid_t jobid;
-    orte_vpid_t vpid;
+    char* cellid;
+    char* jobid;
+    char* vpid;
+    char* value;
     int rc;
     
-    if(ORTE_SUCCESS != (rc = orte_ns.get_cellid(&cellid, name))) {
+    ompi_output(0, "orte_ns_nds_env_put: enter\n");
+    if(ORTE_SUCCESS != (rc = orte_ns.get_cellid_string(&cellid, name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if(ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, name))) {
+    if(ORTE_SUCCESS != (rc = orte_ns.get_jobid_string(&jobid, name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if(ORTE_SUCCESS != (rc = orte_ns.get_vpid(&vpid, name))) {
+    if(ORTE_SUCCESS != (rc = orte_ns.get_vpid_string(&vpid, name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
 
-    unsetenv("OMPI_MCA_seed");
-    if(NULL != (param = mca_base_param_environ_string("ns","nds","cellid",NULL,cellid))) {
+    /* set the mode to env */
+    if(NULL == (param = mca_base_param_environ_variable("ns","nds",NULL))) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    putenv(param);
+    setenv(param,"env",true);
+    free(param);
 
-    if(NULL != (param = mca_base_param_environ_string("ns","nds","jobid",NULL,jobid))) {
+    /* not a seed */
+    if(NULL == (param = mca_base_param_environ_variable("seed",NULL,NULL))) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    putenv(param);
+    unsetenv(param);
+    free(param);
 
-    if(NULL != (param = mca_base_param_environ_string("ns","nds","vpid",NULL,vpid))) {
+    /* setup the name */
+    if(NULL == (param = mca_base_param_environ_variable("ns","nds","cellid"))) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    putenv(param);
+    setenv(param,cellid,true);
+    free(param);
+    free(cellid);
 
-    if(NULL != (param = mca_base_param_environ_string("ns","nds","vpid_start",NULL,vpid_start))) {
+    if(NULL == (param = mca_base_param_environ_variable("ns","nds","jobid"))) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    putenv(param);
+    setenv(param,jobid,true);
+    free(param);
+    free(jobid);
 
-    if(NULL != (param = mca_base_param_environ_string("ns","nds","num_procs",NULL,num_procs))) {
+    if(NULL == (param = mca_base_param_environ_variable("ns","nds","vpid"))) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    putenv(param);
+    setenv(param,vpid,true);
+    free(param);
+    free(vpid);
 
+    asprintf(&value, "%d", vpid_start);
+    if(NULL == (param = mca_base_param_environ_variable("ns","nds","vpid_start"))) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    setenv(param,value,true);
+    free(param);
+    free(value);
+
+    asprintf(&value, "%d", num_procs);
+    if(NULL == (param = mca_base_param_environ_variable("ns","nds","num_procs"))) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    setenv(param,value,true);
+    free(param);
+    free(value);
+
+    ompi_output(0, "orte_ns_nds_env_put: exit\n");
     return ORTE_SUCCESS;
 }
 

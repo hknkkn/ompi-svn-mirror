@@ -353,10 +353,9 @@ int mca_base_param_unset(int index)
 /*
  * Make a string suitable for the environment, setting an MCA param
  */
-char *mca_base_param_environ_string(const char *type,
-                                    const char *component,
-                                    const char *param,
-                                    char *svalue, int ivalue)
+char *mca_base_param_environ_variable(const char *type,
+                                      const char *component,
+                                      const char *param)
 {
     size_t len;
     int id;
@@ -370,11 +369,7 @@ char *mca_base_param_environ_string(const char *type,
     id = mca_base_param_find(type, component, param);
     if (OMPI_ERROR != id) {
         array = OMPI_VALUE_ARRAY_GET_BASE(&mca_base_params, mca_base_param_t);
-        if (NULL != svalue) {
-            asprintf(&ret, "%s=%s", array[id].mbp_env_var_name, svalue);
-        } else {
-            asprintf(&ret, "%s=%d", array[id].mbp_env_var_name, ivalue);
-        }
+        ret = strdup(array[id].mbp_env_var_name);
     } else {
         len = strlen(mca_prefix) + strlen(type) + 16;
         if (NULL != component) {
@@ -397,13 +392,7 @@ char *mca_base_param_environ_string(const char *type,
             strcat(name, "_");
             strcat(name, param);
         }
-
-        if (NULL != svalue) {
-            asprintf(&ret, "%s=%s", name, svalue);
-        } else {
-            asprintf(&ret, "%s=%d", name, ivalue);
-        }
-        free(name);
+        ret = name;
     }
 
     /* All done */

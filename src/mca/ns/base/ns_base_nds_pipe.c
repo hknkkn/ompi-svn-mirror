@@ -29,7 +29,7 @@ int orte_ns_nds_pipe_get(void)
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-int orte_ns_nds_pipe_set(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
+int orte_ns_nds_pipe_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

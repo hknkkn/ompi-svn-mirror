@@ -145,16 +145,16 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
     /* application */
     ompi_argv_append(&argc, &argv, mca_pls_rsh_component.orted);
     if (mca_pls_rsh_component.debug) {
-         ompi_argv_append(&argc, &argv, "-debug");
+         ompi_argv_append(&argc, &argv, "--debug");
     }
-    ompi_argv_append(&argc, &argv, "-bootproxy");
+    ompi_argv_append(&argc, &argv, "--bootproxy");
     ompi_argv_append(&argc, &argv, jobid_string);
-    ompi_argv_append(&argc, &argv, "-name");
+    ompi_argv_append(&argc, &argv, "--name");
     proc_name_index = argc;
     ompi_argv_append(&argc, &argv, "");
 
     /* setup ns contact info */
-    ompi_argv_append(&argc, &argv, "-nsreplica");
+    ompi_argv_append(&argc, &argv, "--nsreplica");
     if(NULL != orte_process_info.ns_replica_uri) {
         uri = strdup(orte_process_info.ns_replica_uri);
     } else {
@@ -165,7 +165,7 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
     free(uri);
 
     /* setup gpr contact info */
-    ompi_argv_append(&argc, &argv, "-gprreplica");
+    ompi_argv_append(&argc, &argv, "--gprreplica");
     if(NULL != orte_process_info.gpr_replica_uri) {
         uri = strdup(orte_process_info.gpr_replica_uri);
     } else {

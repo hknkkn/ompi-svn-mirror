@@ -33,6 +33,7 @@
 #include "runtime/orte_wait.h"
 #include "mca/errmgr/errmgr.h"
 #include "mca/iof/iof.h"
+#include "mca/base/mca_base_param.h"
 #include "mca/ns/ns.h"
 #include "mca/ns/base/ns_base_nds.h"
 #include "mca/pls/pls.h"
@@ -128,8 +129,9 @@ static int orte_pls_fork_proc(
         } else {
             uri = orte_rml.get_uri();
         }
-        asprintf(&param, "OMPI_MCA_ns_replica_uri=%s", uri);
-        putenv(param);
+        param = mca_base_param_environ_variable("ns","replica","uri");
+        setenv(param,uri,true);
+        free(param);
         free(uri);
                                                                                                     
         /* setup gpr contact info */
@@ -138,8 +140,9 @@ static int orte_pls_fork_proc(
         } else {
             uri = orte_rml.get_uri();
         }
-        asprintf(&param, "OMPI_MCA_gpr_replica_uri=%s", uri);
-        putenv(param);
+        param = mca_base_param_environ_variable("gpr","replica","uri");
+        setenv(param,uri,true);
+        free(param);
         free(uri);
 
         /* setup stdout/stderr */
