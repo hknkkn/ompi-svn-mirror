@@ -15,8 +15,8 @@
  *
  */
 
-#ifndef ORTE_PLS_BPROC_H_
-#define ORTE_PLS_BPROC_H_
+#ifndef ORTE_PLS_BPROC_PROXY_H_
+#define ORTE_PLS_BPROC_PROXY_H_
 
 #include "ompi_config.h"
 #include "mca/pls/base/base.h"
@@ -26,26 +26,28 @@
 extern "C" {
 #endif
 
-    /*
-     * Module open / close
-     */
-    int orte_pls_bproc_component_open(void);
-    int orte_pls_bproc_component_close(void);
+/*
+ * Module open / close
+ */
+int orte_pls_bproc_proxy_component_open(void);
+int orte_pls_bproc_proxy_component_close(void);
 
-    /*
-     * Startup / Shutdown
-     */
-    orte_pls_base_module_t* orte_pls_bproc_init(
-        int *priority, 
-        bool* have_threads,
-        bool* allow_threads);
+/*
+ * Startup / Shutdown
+ */
+orte_pls_base_module_t* orte_pls_bproc_proxy_init(
+    bool* allow_threads,
+    bool* have_threads,
+    int *priority);
 
-    int orte_pls_bproc_finalize();
+int orte_pls_bproc_proxy_finalize(void);
 
-    /*
-     * Interface
-     */
-    int orte_pls_bproc_launch(orte_jobid_t);
+/*
+ * Interface
+ */
+int orte_pls_bproc_proxy_launch(orte_jobid_t);
+
+extern orte_pls_base_module_t orte_pls_bproc_proxy_module;
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

@@ -264,7 +264,7 @@ typedef struct orte_pls_base_module_1_0_0_t orte_pls_base_module_t;
  *                       select a module.
  *
  */
-typedef const struct orte_pls_base_module_1_0_0_t* 
+typedef struct orte_pls_base_module_1_0_0_t* 
 (*orte_pls_base_component_init_fn_t)(
     bool *allow_multi_user_threads,
     bool *have_hidden_threads,

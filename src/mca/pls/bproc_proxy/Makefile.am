@@ -16,8 +16,8 @@ include $(top_ompi_srcdir)/config/Makefile.options
 
 AM_CPPFLAGS = -I$(top_ompi_builddir)/src/include
 
-noinst_LTLIBRARIES = libmca_pls_bproc.la
-libmca_pls_bproc_la_SOURCES = \
-	pls_bproc.h \
-	pls_bproc.c \
-	pls_bproc_component.c
+noinst_LTLIBRARIES = libmca_pls_bproc_proxy.la
+libmca_pls_bproc_proxy_la_SOURCES = \
+	pls_bproc_proxy.h \
+	pls_bproc_proxy.c \
+	pls_bproc_proxy_component.c
