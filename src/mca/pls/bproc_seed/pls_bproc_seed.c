@@ -24,10 +24,12 @@
 
 #include "util/output.h"
 #include "util/proc_info.h"
+#include "event/event.h"
 #include "runtime/orte_wait.h"
 #include "runtime/runtime.h"
 #include "mca/ns/base/base.h"
 #include "mca/pls/base/base.h"
+#include "mca/iof/iof.h"
 #include "mca/rmgr/base/base.h"
 #include "mca/rml/rml.h"
 #include "mca/ras/base/base.h"
@@ -35,6 +37,7 @@
 
 #include "pls_bproc_seed.h"
 
+extern int ompi_evsignal_restart(void);
 
 
 orte_pls_base_module_t orte_pls_bproc_seed_module = {
@@ -147,28 +150,47 @@ cleanup:
 
 static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, size_t image_len, pid_t* pid)
 {
-    int p_image[2];
     int p_name[2];
+    int p_image[2];
+    int p_stdout[2];
+    int p_stderr[2];
+    int rc;
 
-    if(pipe(p_image) < 0 ||
-       pipe(p_name) < 0) {
+    if(pipe(p_name)   < 0 ||
+       pipe(p_image)  < 0 ||
+       pipe(p_stdout) < 0 ||
+       pipe(p_stderr) < 0) {
        return ORTE_ERR_OUT_OF_RESOURCE;
     }
-
-    /* connect the app to the IOF framework */
 
     /* fork a child process which is overwritten with the process image */
     *pid = fork();
     if (*pid == 0) {
-        close(p_image[1]);  /* child is read only */
+        /* child is read-only */
         close(p_name[1]);
+        close(p_image[1]); 
+        
+        /* child is write-only */
+        close(p_stdout[0]);
+        close(p_stderr[0]);
 
+        /* setup stdout/stderr */
+        dup2(p_stdout[1], 1);
+        close(p_stdout[1]);
+        dup2(p_stderr[1], 2);
+        close(p_stderr[1]);
+
+        /* verify that the name file descriptor is free */
         if(p_image[0] == mca_pls_bproc_seed_component.name_fd) {
             int fd = dup(p_image[0]);
             close(p_image[0]);
             p_image[0] = fd;
         }
-        dup2(p_name[0], mca_pls_bproc_seed_component.name_fd);
+        if(p_name[0] != mca_pls_bproc_seed_component.name_fd) {
+            dup2(p_name[0], mca_pls_bproc_seed_component.name_fd);
+            close(p_name[0]);
+        }
+
         bproc_undump(p_image[0]);  /* child is now executing */
         exit(1);
     }
@@ -177,13 +199,30 @@ static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, s
     close(p_image[0]); 
     close(p_name[0]); 
 
+    /* parent is read-only */
+    close(p_stdout[1]); 
+    close(p_stderr[1]); 
+
     if(*pid < 0) {
         close(p_image[1]);
         close(p_name[1]);
+        close(p_stdout[0]);
+        close(p_stderr[0]);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    /* write the process image to the app */
+    /* connect the app to the IOF framework */
+    rc = orte_iof.iof_publish(&proc->proc_name, ORTE_IOF_SOURCE, ORTE_IOF_STDOUT, p_stdout[0]);
+    if(ORTE_SUCCESS != rc) {
+        return rc;
+    }
+
+    rc = orte_iof.iof_publish(&proc->proc_name, ORTE_IOF_SOURCE, ORTE_IOF_STDERR, p_stderr[0]);
+    if(ORTE_SUCCESS != rc) {
+        return rc;
+    }
+
+    /* write the process name and image to the app */
     write(p_name[1], &proc->proc_name, sizeof(proc->proc_name));
     close(p_name[1]);
     write(p_image[1], image, image_len);
@@ -198,8 +237,9 @@ static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, s
 
 static void orte_pls_bproc_wait_proc(pid_t pid, int status, void* cbdata)
 {
+    ompi_output(0, "orte_pls_bproc_wait_proc\n");
     OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
-    mca_pls_bproc_seed_component.num_completed++;
+    mca_pls_bproc_seed_component.num_children--;
     ompi_condition_signal(&mca_pls_bproc_seed_component.condition);
     OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
 
@@ -213,12 +253,20 @@ static void orte_pls_bproc_wait_node(pid_t pid, int status, void* cbdata)
 {
     orte_rmaps_base_node_t* node = (orte_rmaps_base_node_t*)cbdata;
     ompi_list_item_t* item;
+
+    OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
+    mca_pls_bproc_seed_component.num_children--;
+    ompi_condition_signal(&mca_pls_bproc_seed_component.condition);
+    OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
+
+#if 0
     for(item =  ompi_list_get_first(&node->node_procs);
         item != ompi_list_get_end(&node->node_procs);
         item =  ompi_list_get_next(item)) {
 
         /* notify SOH all of the procs have exited */
     }
+#endif
 }
 
 
@@ -279,16 +327,19 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
  
         ompi_list_item_t* item;
         orte_rmaps_base_node_t* node = NULL;
-        size_t num_procs;
         orte_process_name_t* daemon_name;
+        int fd;
+
+        /* disable threading */
+        ompi_set_using_threads(false);
 
         /* connect stdout/stderr to a file */
-        int fd = open("/tmp/orte.log", O_CREAT|O_RDWR|O_TRUNC, 0666);
+        fd = open("/tmp/orte.log", O_CREAT|O_RDWR|O_TRUNC, 0666);
         if(fd > 0) {
             dup2(fd,1);
             dup2(fd,2);
         } else {
-            exit(-1);
+            _exit(-1);
         }
 
         /* find this node */
@@ -304,7 +355,7 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         ompi_output(0, "orte_pls_bproc: node=%s\n", node ? node->node_name : NULL);
         if(NULL == node) {
             ompi_output(0, "orte_pls_bproc: unable to locate node for index %d\n", rc);
-            exit(1);
+            _exit(-1);
         }
 
         /* restart the daemon w/ the new process name */
@@ -314,21 +365,20 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             &daemon_name, orte_process_info.my_name->cellid, 0, daemon_vpid_start + rc);
         if(ORTE_SUCCESS != rc) {
             ompi_output(0, "orte_pls_bproc: unable to set daemon process name\n");
-            exit(1);
+            _exit(-1);
         }
+
         ompi_output(0, "orte_pls_bproc: calling orte_restart\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
         orte_restart(daemon_name);
-        ompi_output(0, "orte_pls_bproc: return from orte_restart\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
         
         /* setup contact info to the process that launched us */
         rc = orte_rml.set_uri(uri);
         if(ORTE_SUCCESS != rc) {
             ompi_output(0, "orte_pls_bproc: unable to set daemon contact info\n");
-            exit(1);
+            _exit(-1);
         }
 
         /* connect the daemons stdout/stderr to IOF framework */
-
 
         /* start the required number of copies of the application */
         index = 0;
@@ -338,10 +388,17 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
             orte_rmaps_base_proc_t* proc = (orte_rmaps_base_proc_t*)item;
             pid_t pid;
 
+            ompi_output(0, "orte_pls_bproc: starting: %d.%d.%d\n",
+                ORTE_NAME_ARGS(&proc->proc_name));
             rc = orte_pls_bproc_undump(proc, image, image_len, &pid);
             if(ORTE_SUCCESS != rc) {
-                exit(1);
+                _exit(1);
             }
+            ompi_output(0, "orte_pls_bproc: started: %d.%d.%d\n",
+                ORTE_NAME_ARGS(&proc->proc_name));
+            OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
+            mca_pls_bproc_seed_component.num_children++;
+            OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
             orte_wait_cb(pid, orte_pls_bproc_wait_proc, proc);
         }
 
@@ -350,8 +407,7 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
 
         /* wait for all children to complete */
         OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
-        num_procs = ompi_list_get_size(&node->node_procs);
-        while(mca_pls_bproc_seed_component.num_completed < num_procs) {
+        while(mca_pls_bproc_seed_component.num_children > 0) {
             ompi_condition_wait(
                 &mca_pls_bproc_seed_component.condition,
                 &mca_pls_bproc_seed_component.lock);
@@ -359,21 +415,24 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
 
         /* daemon is done when all children have completed */
-        exit(0);
+        orte_finalize();
+        _exit(0);
 
     } else {
         ompi_list_item_t* item;
 
-        /* wait for the daemon pids to complete */
-        rc = ORTE_SUCCESS;
-
+        /* post wait callback the daemons to complete */
         index = 0;
-        for(item =  ompi_list_get_first(&map->nodes);
-            item != ompi_list_get_end(&map->nodes);
-            item =  ompi_list_get_next(item)) {
-            orte_rmaps_base_node_t* node = (orte_rmaps_base_node_t*)
+        while(NULL != (item = ompi_list_remove_first(&map->nodes))) {
+            orte_rmaps_base_node_t* node = (orte_rmaps_base_node_t*)item;
+
+            OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
+            mca_pls_bproc_seed_component.num_children++;
+            OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
+
             orte_wait_cb(daemon_pids[index++], orte_pls_bproc_wait_node, node);
         }
+        rc = ORTE_SUCCESS;
     }
    
 cleanup:
@@ -387,11 +446,10 @@ cleanup:
 }
 
 /*
- * Query for the default mapping.  Launch each application context 
- * w/ a distinct set of daemons.
+ * Launch 
  */
 
-int orte_pls_bproc_seed_launch(orte_jobid_t jobid)
+static int orte_pls_bproc_seed_launch_internal(orte_jobid_t jobid)
 {
     ompi_list_item_t* item;
     ompi_list_t mapping;
@@ -418,6 +476,82 @@ cleanup:
         OBJ_RELEASE(item);
     OBJ_DESTRUCT(&mapping);
     return rc;
+}
+
+
+
+/*
+ * Query for the default mapping.  Launch each application context 
+ * w/ a distinct set of daemons.
+ */
+
+#if OMPI_THREADS_HAVE_DIFFERENT_PIDS
+
+struct orte_pls_bproc_stack_t {
+    ompi_condition_t cond;
+    ompi_mutex_t mutex;
+    bool complete;
+    orte_jobid_t jobid;
+    int rc;
+};
+typedef struct orte_pls_bproc_stack_t orte_pls_bproc_stack_t;
+
+static void orte_pls_bproc_stack_construct(orte_pls_bproc_stack_t* stack)
+{
+    OBJ_CONSTRUCT(&stack->mutex, ompi_mutex_t);
+    OBJ_CONSTRUCT(&stack->cond, ompi_condition_t);
+    stack->rc = 0;
+    stack->complete = false;
+}
+
+static void orte_pls_bproc_stack_destruct(orte_pls_bproc_stack_t* stack)
+{
+    OBJ_DESTRUCT(&stack->mutex);
+    OBJ_DESTRUCT(&stack->cond);
+}
+
+static OBJ_CLASS_INSTANCE(
+    orte_pls_bproc_stack_t,
+    ompi_object_t,
+    orte_pls_bproc_stack_construct,
+    orte_pls_bproc_stack_destruct);
+
+
+static void orte_pls_bproc_seed_launch_cb(int fd, short event, void* args)
+{
+    orte_pls_bproc_stack_t *stack = (orte_pls_bproc_stack_t*)args;
+    OMPI_THREAD_LOCK(&stack->mutex);
+    stack->rc = orte_pls_bproc_seed_launch_internal(stack->jobid);
+    stack->complete = true; 
+    ompi_condition_signal(&stack->cond);
+    OMPI_THREAD_UNLOCK(&stack->mutex);
+}
+
+#endif
+
+
+int orte_pls_bproc_seed_launch(orte_jobid_t jobid)
+{
+#if OMPI_THREADS_HAVE_DIFFERENT_PIDS
+    struct timeval tv = { 0, 0 };
+    struct ompi_event event;
+    struct orte_pls_bproc_stack_t stack;
+
+    OBJ_CONSTRUCT(&stack, orte_pls_bproc_stack_t);
+
+    stack.jobid = jobid;
+    ompi_evtimer_set(&event, orte_pls_bproc_seed_launch_cb, &stack);
+    ompi_evtimer_add(&event, &tv);
+   
+    OMPI_THREAD_LOCK(&stack.mutex);
+    while(stack.complete == false)
+         ompi_condition_wait(&stack.cond, &stack.mutex);
+    OMPI_THREAD_UNLOCK(&stack.mutex);
+    OBJ_DESTRUCT(&stack);
+    return stack.rc;
+#else
+    return orte_pls_bproc_seed_launch_internal(jobid);
+#endif
 }
 
 

@@ -23,6 +23,8 @@
 #include "mca/oob/oob.h"
 #include "mca/ns/base/base.h"
 #include "mca/gpr/base/base.h"
+#include "mca/iof/base/base.h"
+#include "mca/rmgr/base/base.h"
 #include "util/session_dir.h"
 
 /**
@@ -35,7 +37,10 @@
  */
 int orte_finalize(void)
 {
+    /* rmgr close depends on wait/iof */
+    orte_rmgr_base_close();
     orte_wait_finalize();
+    orte_iof_base_close();
 
     orte_ns_base_close();
     orte_gpr_base_close();

@@ -22,10 +22,12 @@
 #include "include/constants.h"
 #include "event/event.h"
 #include "util/output.h"
+#include "event/event.h"
 #include "threads/mutex.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
+#include "mca/iof/base/base.h"
 #include "mca/rml/base/base.h"
 #include "mca/errmgr/base/base.h"
 #include "mca/ns/base/base.h"
@@ -58,8 +60,22 @@ int orte_restart(orte_process_name_t *name)
     }
 
     /*
+     * Restart event library
+     */
+
+    if (ORTE_SUCCESS != (rc = ompi_event_restart())) {
+        ORTE_ERROR_LOG(rc);
+	return rc;
+    }
+
+    /*
      * Close selected components.
      */
+
+    if (ORTE_SUCCESS != (rc = orte_iof_base_close())) {
+        ORTE_ERROR_LOG(rc);
+	return rc;
+    }
     if (ORTE_SUCCESS != (rc = orte_gpr_base_close())) {
         ORTE_ERROR_LOG(rc);
 	return rc;
@@ -68,11 +84,15 @@ int orte_restart(orte_process_name_t *name)
         ORTE_ERROR_LOG(rc);
 	return rc;
     }
-    if (OMPI_SUCCESS != (rc = orte_ns_base_close())) {
+    if (ORTE_SUCCESS != (rc = orte_ns_base_close())) {
         ORTE_ERROR_LOG(rc);
 	return rc;
     }
     if (ORTE_SUCCESS != (rc = orte_wait_finalize())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = ompi_event_fini())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
@@ -88,17 +108,22 @@ int orte_restart(orte_process_name_t *name)
     orte_process_info.my_name = new_name;
 
     /*
-     * Re-start components.
+     * Re-open components.
      */
-    if (OMPI_SUCCESS != (rc = orte_wait_init())) {
-            ORTE_ERROR_LOG(rc);
-            return rc;
-    }
-    if (OMPI_SUCCESS != (rc = orte_ns_base_open())) {
+
+    if (ORTE_SUCCESS != (rc = ompi_event_init())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if (OMPI_SUCCESS != (rc = orte_rml_base_open())) {
+    if (ORTE_SUCCESS != (rc = orte_wait_init())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_ns_base_open())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_rml_base_open())) {
         ORTE_ERROR_LOG(rc);
             return rc;
     }
@@ -107,17 +132,47 @@ int orte_restart(orte_process_name_t *name)
         return rc;
     }
 
+    /*
+     * Select new modules.
+     */
+
+    if (ORTE_SUCCESS != (rc = orte_rml_base_select())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
     if (ORTE_SUCCESS != (rc = orte_ns_base_select())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
- 
     if (ORTE_SUCCESS != (rc = orte_gpr_base_select())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
- 
-    if (ORTE_SUCCESS != (rc = orte_rml_base_select())) {
+
+    /*
+     * Re-init selected modules.
+     */
+    if (ORTE_SUCCESS != (rc = orte_rml.init())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_ns.init())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_gpr.init())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+
+    /*
+     * Complete restart
+     */
+    if (ORTE_SUCCESS != (rc = orte_iof_base_open())) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_iof_base_select())) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }

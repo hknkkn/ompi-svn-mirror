@@ -89,7 +89,6 @@ ompi_evsignal_init(sigset_t *evsigmask)
         return;
     }
     ompi_event_signal_count = 0;
-
     sigemptyset(evsigmask);
 }
 
@@ -118,6 +117,25 @@ ompi_evsignal_add(sigset_t *evsigmask, struct ompi_event *ev)
 	sigaddset(evsigmask, evsignal);
 	
 	return (0);
+}
+
+int 
+ompi_evsignal_restart(void)
+{
+    if(initialized) {
+        int rc;
+        ompi_event_del_i(&ompi_event_signal_pipe_event);
+        if ((rc = pipe(ompi_event_signal_pipe)) != 0) {
+            return rc;
+        }
+    	ompi_event_set(&ompi_event_signal_pipe_event,
+                        ompi_event_signal_pipe[0],
+	                OMPI_EV_READ|OMPI_EV_PERSIST,
+	                ompi_event_signal_pipe_handler,
+	                0);
+	ompi_event_add_i(&ompi_event_signal_pipe_event, 0);
+    }
+    return (0);
 }
 
 /*

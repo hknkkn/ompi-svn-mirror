@@ -49,7 +49,8 @@ OBJ_CLASS_DECLARATION(orte_iof_base_frag_t);
  * Send an acknowledgment to the peer that this fragment has been received.
  */
 
-int orte_iof_base_frag_ack(orte_iof_base_frag_t*);
+#define orte_iof_base_frag_ack(frag) _orte_iof_base_frag_ack(frag,__FILE__,__LINE__)
+int _orte_iof_base_frag_ack(orte_iof_base_frag_t*, const char*, int);
 
 
 #endif

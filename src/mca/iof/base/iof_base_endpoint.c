@@ -34,6 +34,9 @@ static void orte_iof_base_endpoint_construct(orte_iof_base_endpoint_t* endpoint)
 
 static void orte_iof_base_endpoint_destruct(orte_iof_base_endpoint_t* endpoint)
 {
+    if(endpoint->ep_fd > 0) {
+        ompi_event_del(&endpoint->ep_event);
+    }
     OBJ_DESTRUCT(&endpoint->ep_frags);
 }
 
@@ -143,7 +146,6 @@ static void orte_iof_base_endpoint_write_handler(int sd, short flags, void *user
     OMPI_THREAD_LOCK(&orte_iof_base.iof_lock);
     while(ompi_list_get_size(&endpoint->ep_frags)) {
         orte_iof_base_frag_t* frag = (orte_iof_base_frag_t*)ompi_list_get_first(&endpoint->ep_frags);
-        
         int rc = write(endpoint->ep_fd, frag->frag_ptr, frag->frag_len);
         if(rc < 0) {
             if(errno == EAGAIN)
@@ -292,6 +294,7 @@ int orte_iof_base_endpoint_close(orte_iof_base_endpoint_t* endpoint)
 
 void orte_iof_base_endpoint_closed(orte_iof_base_endpoint_t* endpoint)
 {
+    orte_iof_base_endpoint_close(endpoint);
 }
 
 /*

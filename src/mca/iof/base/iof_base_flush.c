@@ -51,6 +51,7 @@ int orte_iof_base_flush(void)
     /* force all file descriptors to be progressed at least once,
      * wait on a timer callback to be called out of the event loop
     */
+
     OMPI_THREAD_LOCK(&orte_iof_base.iof_lock);
     orte_iof_base.iof_waiting++;
 
@@ -61,7 +62,7 @@ int orte_iof_base_flush(void)
                                                                                                                               
     /* wait for all of the endpoints to reach an idle state */
     pending = ompi_list_get_size(&orte_iof_base.iof_endpoints);
-    while(pending > 0 && pending == ompi_list_get_size(&orte_iof_base.iof_endpoints)) {
+    while(pending > 0) {
         pending = 0;
         for(item = ompi_list_get_first(&orte_iof_base.iof_endpoints);
             item != ompi_list_get_end(&orte_iof_base.iof_endpoints);

@@ -36,6 +36,7 @@
 #include "util/output.h"
 #include "util/universe_setup_file_io.h"
 #include "util/show_help.h"
+#include "threads/condition.h"
 
 #include "mca/base/base.h"
 #include "mca/ns/ns.h"
@@ -51,6 +52,11 @@ struct ompi_event term_handler;
 struct ompi_event int_handler;
 struct ompi_event exit_handler;
 orte_jobid_t jobid = ORTE_JOBID_MAX;
+
+/* enable orterun to block until app completes */
+ompi_condition_t orterun_cond;
+ompi_mutex_t orterun_lock;
+bool orterun_complete = false;
 
 
 static void
@@ -162,6 +168,7 @@ main(int argc, char *argv[], char* env[])
 	return rc;
     }
 
+
     /*****    PREP TO START THE APPLICATION    *****/
     ompi_event_set(&term_handler, SIGTERM, OMPI_EV_SIGNAL,
                    signal_callback, NULL);
@@ -191,8 +198,29 @@ main(int argc, char *argv[], char* env[])
         return 1;
     }
 
-    rc = orte_rmgr.spawn(apps, 1, &jobid, NULL);
 
+    /* setup to block until app completes */
+    OBJ_CONSTRUCT(&orterun_lock, ompi_mutex_t);
+    OBJ_CONSTRUCT(&orterun_cond, ompi_condition_t);
+
+    /* spawn it */
+    rc = orte_rmgr.spawn(apps, 1, &jobid, NULL);
+    if(ORTE_SUCCESS != rc) {
+        ompi_output(0, "orterun: spawn failed with errno=%d\n", rc);
+    } else {
+#if 0
+        /* block until completion */
+        OMPI_THREAD_LOCK(&orterun_lock);
+        while(orterun_complete == false) {
+            ompi_condition_wait(&orterun_cond, &orterun_lock);
+        }
+        OMPI_THREAD_UNLOCK(&orterun_lock);
+#endif
+        orte_finalize();
+    }
+
+    OBJ_DESTRUCT(&orterun_lock);
+    OBJ_DESTRUCT(&orterun_cond);
     OBJ_DESTRUCT(&app);
     OBJ_DESTRUCT(&cmd_line);
     return rc;

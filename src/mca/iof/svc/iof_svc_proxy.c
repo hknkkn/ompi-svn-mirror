@@ -111,7 +111,7 @@ static void orte_iof_svc_proxy_msg(
 {
     ompi_list_item_t* item;
     if(mca_iof_svc_component.svc_debug > 1) {
-        ompi_output(0, "orte_iof_svc_proxy_msg");
+        ompi_output(0, "orte_iof_svc_proxy_msg: tag %d seq %d\n",hdr->msg_tag,hdr->msg_seq);
     }
 
     /* dispatch based on subscription list */
@@ -127,6 +127,10 @@ static void orte_iof_svc_proxy_msg(
 
         /* source match */
         if(orte_ns.compare(sub->src_mask,&sub->src_name,&hdr->msg_src) == 0) {
+            if(mca_iof_svc_component.svc_debug > 1) {
+                ompi_output(0, "[%d,%d,%d] orte_iof_svc_proxy_msg: tag %d sequence %d\n",
+                    ORTE_NAME_ARGS(&sub->src_name),hdr->msg_tag,hdr->msg_seq);
+            }
             orte_iof_svc_subscript_forward(sub,src,hdr,data);
         }
     }

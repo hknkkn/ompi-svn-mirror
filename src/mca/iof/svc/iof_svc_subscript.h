@@ -9,11 +9,11 @@
 
 struct orte_iof_svc_subscript_t {
     ompi_list_item_t super;
-    orte_process_name_t          src_name;
-    orte_ns_cmp_bitmask_t        src_mask;
+    orte_process_name_t           src_name;
+    orte_ns_cmp_bitmask_t         src_mask;
     orte_iof_base_tag_t           src_tag;
-    orte_process_name_t          dst_name;
-    orte_ns_cmp_bitmask_t        dst_mask;
+    orte_process_name_t           dst_name;
+    orte_ns_cmp_bitmask_t         dst_mask;
     orte_iof_base_tag_t           dst_tag;
     orte_iof_base_endpoint_t*     sub_endpoint;
 };

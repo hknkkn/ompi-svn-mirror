@@ -34,21 +34,18 @@ void ompi_progress(void)
 {
     /* progress any outstanding communications */
     int ret, events = 0;
-#if OMPI_HAVE_THREADS == 0
-    if (ompi_progress_event_flag != 0) {
+    if (ompi_using_threads() == false && ompi_progress_event_flag != 0) {
         ret = ompi_event_loop(ompi_progress_event_flag);
         if (ret > 0) {
             events += ret;
         }
     }
-#endif
     ret = mca_pml.pml_progress();
     if (ret > 0) {
         events += ret;
     }
 
     /* Progress IO requests, if there are any */
-
     if (ompi_progress_pending_io_reqs > 0) {
         ret = mca_io_base_progress();
         if (ret > 0) {

@@ -14,6 +14,7 @@
 #include "ompi_config.h"
 
 #include "class/ompi_proc_table.h"
+#include "include/constants.h"
 #include "mca/ns/ns.h"
 #include "mca/oob/tcp/oob_tcp.h"
 #include "mca/oob/tcp/oob_tcp_msg.h"
@@ -179,7 +180,8 @@ bool mca_oob_tcp_msg_send_handler(mca_oob_tcp_msg_t* msg, struct mca_oob_tcp_pee
                     ORTE_NAME_ARGS(&(peer->peer_name)), 
                     ompi_errno);
                 mca_oob_tcp_peer_close(peer);
-                return false;
+                msg->msg_rc = OMPI_ERR_CONNECTION_FAILED;
+                return true;
             }
         }
 

@@ -24,6 +24,7 @@
 #include "mca/rmgr/base/base.h"
 #include "mca/pls/base/base.h"
 #include "mca/gpr/gpr.h"
+#include "mca/iof/iof.h"
 #include "mca/ns/ns.h"
 #include "rmgr_urm.h"
 
@@ -126,7 +127,11 @@ static int orte_rmgr_urm_spawn(
     orte_rmgr_cb_fn_t* cbfn)
 {
     int rc;
-
+    orte_process_name_t* name;
+ 
+    /*
+     * Initialize job segment and allocate resources
+     */
     if (ORTE_SUCCESS != 
         (rc = orte_rmgr_urm_create(app_context,num_context,jobid))) {
         ORTE_ERROR_LOG(rc);
@@ -140,10 +145,34 @@ static int orte_rmgr_urm_spawn(
         ORTE_ERROR_LOG(rc);
         return rc;
     }
+
+    /*
+     * setup I/O forwarding 
+     */
+
+    if (ORTE_SUCCESS != (rc = orte_ns.create_process_name(&name, 0, *jobid, 0))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_iof.iof_pull(name, ORTE_NS_CMP_JOBID, ORTE_IOF_STDOUT, 1))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_iof.iof_pull(name, ORTE_NS_CMP_JOBID, ORTE_IOF_STDERR, 2))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+
+
+    /*
+     * launch the job
+     */
     if (ORTE_SUCCESS != (rc = orte_rmgr_urm_launch(*jobid))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
+
+    orte_ns.free_name(&name);
     return ORTE_SUCCESS;
 }
 

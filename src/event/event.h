@@ -150,6 +150,7 @@ OMPI_DECLSPEC int ompi_event_loop(int);
 OMPI_DECLSPEC int ompi_event_enable(void);
 OMPI_DECLSPEC int ompi_event_disable(void);
 OMPI_DECLSPEC bool ompi_event_progress_thread(void);
+OMPI_DECLSPEC int ompi_event_restart(void);
 
 #define ompi_evtimer_add(ev, tv)		ompi_event_add(ev, tv)
 #define ompi_evtimer_set(ev, cb, arg)	ompi_event_set(ev, -1, 0, cb, arg)

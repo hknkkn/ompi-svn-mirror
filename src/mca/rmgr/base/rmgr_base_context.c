@@ -211,7 +211,7 @@ int orte_rmgr_base_get_job_slots(orte_jobid_t jobid, size_t* proc_slots)
     keys[1] = NULL;
 
     rc = orte_gpr.get(
-        ORTE_GPR_TOKENS_OR,
+        ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_OR,
         segment,
         tokens,
         keys,

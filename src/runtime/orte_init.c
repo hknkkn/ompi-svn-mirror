@@ -211,7 +211,7 @@ ompi_output(0, "seed: %d  daemon: %d", (int)orte_process_info.seed, (int)orte_pr
     }
     
     /* check for debug flag */
-    if (0 > (ret =  mca_base_param_register_int("orte", "debug", NULL, NULL, 1))) {
+    if (0 > (ret =  mca_base_param_register_int("orte", "debug", NULL, NULL, 0))) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }

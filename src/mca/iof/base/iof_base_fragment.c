@@ -69,23 +69,26 @@ static void orte_iof_base_frag_send_cb(
  *
  */
 
-int orte_iof_base_frag_ack(orte_iof_base_frag_t* frag)
+int _orte_iof_base_frag_ack(orte_iof_base_frag_t* frag, const char* file, int line)
 {
     int rc;
-    frag->frag_hdr.hdr_common.hdr_type = ORTE_IOF_BASE_HDR_ACK;
-    ORTE_IOF_BASE_HDR_MSG_HTON(frag->frag_hdr.hdr_msg);
+  
+    if(frag->frag_hdr.hdr_msg.msg_len > 0) {
+        frag->frag_hdr.hdr_common.hdr_type = ORTE_IOF_BASE_HDR_ACK;
+        ORTE_IOF_BASE_HDR_MSG_HTON(frag->frag_hdr.hdr_msg);
 
-    /* start non-blocking OOB call to forward header */
-    rc = orte_rml.send_nb(
-        &frag->frag_src,
-        frag->frag_iov,
-        1,
-        ORTE_RML_TAG_IOF_SVC,
-        0,
-        orte_iof_base_frag_send_cb,
-        frag);
-    if(rc != OMPI_SUCCESS) {
-        ompi_output(0, "orte_iof_base_frag_ack: orte_oob_send failed with status=%d\n", rc);
+        /* start non-blocking OOB call to forward header */
+        rc = orte_rml.send_nb(
+            &frag->frag_src,
+            frag->frag_iov,
+            1,
+            ORTE_RML_TAG_IOF_SVC,
+            0,
+            orte_iof_base_frag_send_cb,
+            frag);
+        if(rc != OMPI_SUCCESS) {
+            ompi_output(0, "orte_iof_base_frag_ack: orte_oob_send failed with status=%d\n", rc);
+        }
     }
     return rc;
 }

@@ -70,10 +70,11 @@ int orte_pls_bproc_seed_component_open(void)
     /* init globals */
     OBJ_CONSTRUCT(&mca_pls_bproc_seed_component.lock, ompi_mutex_t);
     OBJ_CONSTRUCT(&mca_pls_bproc_seed_component.condition, ompi_condition_t);
-    mca_pls_bproc_seed_component.num_completed = 0;
+    mca_pls_bproc_seed_component.num_children = 0;
 
     /* init parameters */
     mca_pls_bproc_seed_component.debug = orte_pls_bproc_param_register_int("debug", 1);
+    mca_pls_bproc_seed_component.reap = orte_pls_bproc_param_register_int("reap", 1);
     mca_pls_bproc_seed_component.image_frag_size = orte_pls_bproc_param_register_int("image_frag_size", 256*1024);
     mca_pls_bproc_seed_component.name_fd = orte_pls_bproc_param_register_int("name_fd", 3);
     mca_pls_bproc_seed_component.priority = orte_pls_bproc_param_register_int("priority", 20);
@@ -84,6 +85,14 @@ int orte_pls_bproc_seed_component_open(void)
 
 int orte_pls_bproc_seed_component_close(void)
 {
+    if(mca_pls_bproc_seed_component.reap) {
+        OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
+        while(mca_pls_bproc_seed_component.num_children > 0) {
+            ompi_condition_wait(&mca_pls_bproc_seed_component.condition, 
+                &mca_pls_bproc_seed_component.lock);
+        }
+    }
+    OMPI_THREAD_UNLOCK(&mca_pls_bproc_seed_component.lock);
     return ORTE_SUCCESS;
 }
 
