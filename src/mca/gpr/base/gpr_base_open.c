@@ -108,6 +108,55 @@ OBJ_CLASS_INSTANCE(
 		   orte_gpr_value_destructor); /* destructor */
 
 
+/* constructor - used to initialize state of registry subscription instance */
+static void orte_gpr_subscription_construct(orte_gpr_subscription_t* sub)
+{
+    sub->addr_mode = 0;
+    sub->segment = NULL;
+    sub->num_tokens = 0;
+    sub->tokens = NULL;
+    sub->num_keys = 0;
+    sub->keys = NULL;
+    sub->cbfunc = NULL;
+    sub->user_tag = NULL;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_gpr_subscription_destructor(orte_gpr_subscription_t* sub)
+{
+    char **tokens;
+    int32_t i;
+
+    if (NULL != sub->segment) free(sub->segment);
+    
+    if (0 < sub->num_tokens && NULL != sub->tokens) {
+        tokens = sub->tokens;
+        for (i=0; i < sub->num_tokens; i++) {
+            if(NULL != tokens[i])
+                free(tokens[i]);
+        }
+        free(sub->tokens);
+    }
+    
+    if (0 < sub->num_keys && NULL != sub->keys) {
+        tokens = sub->keys;
+        for (i=0; i < sub->num_keys; i++) {
+            if(NULL != tokens[i])
+                free(tokens[i]);
+        }
+        free(sub->keys);
+    }
+    
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+         orte_gpr_subscription_t,  /* type name */
+         ompi_object_t, /* parent "class" name */
+         orte_gpr_subscription_construct, /* constructor */
+         orte_gpr_subscription_destructor); /* destructor */
+
+
 /* constructor - used to initialize state of test results instance */
 static void orte_gpr_internal_test_results_construct(orte_gpr_internal_test_results_t* results)
 {
