@@ -29,6 +29,7 @@
 #include "runtime/runtime.h"
 #include "mca/ns/base/base.h"
 #include "mca/pls/base/base.h"
+#include "mca/base/mca_base_param.h"
 #include "mca/iof/iof.h"
 #include "mca/rmgr/base/base.h"
 #include "mca/rml/rml.h"
@@ -325,7 +326,7 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
 
     /* convert node names to bproc nodelist */
     if(ORTE_SUCCESS != (rc = orte_pls_bproc_nodelist(map, &node_list, &num_nodes))) {
-        ompi_output(0, "orte_pls_bproc_seed: insufficient resources\n", errno);
+        ORTE_ERROR_LOG(rc);
         goto cleanup;
     }
 
@@ -333,27 +334,34 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         goto cleanup;
     }
 
+    /* append mca parameters to our environment */
+    if(ORTE_SUCCESS != (rc = mca_base_param_build_env(&map->app->env, &map->app->num_env, true))) { 
+        ORTE_ERROR_LOG(rc);
+        goto cleanup;
+    }
+
     /* read process image */
     if(ORTE_SUCCESS != (rc = orte_pls_bproc_dump(map->app, &image, &image_len))) {
-        ompi_output(0, "orte_pls_bproc_seed: unable to execute: %s\n", map->app->app);
+        ORTE_ERROR_LOG(rc);
         goto cleanup;
     }
     
     /* allocate a range of vpids for the daemons */
     if(ORTE_SUCCESS != (rc = orte_ns.reserve_range(0, num_nodes, &daemon_vpid_start))) {
-        ompi_output(0, "orte_pls_bproc_seed: unable to allocate name: %d\n", rc);
+        ORTE_ERROR_LOG(rc);
         goto cleanup;
     }
 
+    /* save our contact information - push out to daemons */
     if(NULL == (uri = orte_rml.get_uri())) {
-        ompi_output(0, "orte_pls_bproc_seed: unable to determine uri: %d\n", rc);
+        ORTE_ERROR_LOG(rc);
         goto cleanup;
     }
 
     /* replicate the process image to all nodes */
     rc = bproc_vrfork(num_nodes, node_list, daemon_pids);
     if(rc < 0) {
-        ompi_output(0, "orte_pls_bproc_seed: bproc_vrfork failed, errno=%d\n", errno);
+        ORTE_ERROR_LOG(rc);
         return OMPI_ERROR;
     }
 
