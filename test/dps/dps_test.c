@@ -52,6 +52,7 @@ static bool test9(void);        /* verify GPR_KEYVAL */
 static bool test10(void);        /* verify GPR_VALUE */
 static bool test11(void);        /* verify APP_INFO (right now ??!!) */
 static bool test12(void);        /* verify APP_CONTEXT */
+static bool test13(void);        /* verify ORTE_GPR_SUBSCRIPTION */
 
 FILE *test_out;
 
@@ -167,6 +168,14 @@ int main (int argc, char* argv[])
     }
     else {
       test_failure("orte_dps test12 failed");
+    }
+
+    fprintf(test_out, "executing test13\n");
+    if (test13()) {
+        test_success();
+    }
+    else {
+      test_failure("orte_dps test13 failed");
     }
 
     test_finalize();
@@ -1193,6 +1202,110 @@ static bool test12(void)
                 if (0 != strcmp((src[j]->map_data[k])->map_data,
                                 (dst[j]->map_data[k])->map_data)) {
                     test_comment ("test12: invalid results (map_data data) from unpack");
+                    return(false);
+                }
+            }
+        }
+    }
+         
+    OBJ_RELEASE(bufA);
+    if (NULL != bufA) {
+        test_comment("OBJ_RELEASE did not NULL the buffer pointer");
+        fprintf(test_out, "OBJ_RELEASE did not NULL the buffer pointer");
+        return false;
+    }
+
+    return (true);
+}
+
+/* ORTE_GPR_SUBSCRIPTION */
+static bool test13(void)
+{
+    orte_buffer_t *bufA;
+    int rc;
+    int32_t i, j, k;
+    orte_gpr_subscription_t *src[NUM_ELEMS];
+    orte_gpr_subscription_t *dst[NUM_ELEMS];
+
+    for(i=0; i<NUM_ELEMS; i++) {
+        src[i] = OBJ_NEW(orte_gpr_subscription_t);
+		src[i]->addr_mode = (uint16_t) i; 
+        src[i]->segment = strdup("test-segment-name");
+
+		/* test token counts of 0! to NUM_ELEMS */
+		src[i]->num_tokens = i;
+		if (src[i]->num_tokens) { /* if to allow testing of token count of zero */
+        	src[i]->tokens = (char**)malloc(src[i]->num_tokens * sizeof(char*));
+        	for (j=0; j < src[i]->num_tokens; j++) {
+            	src[i]->tokens[j] = strdup("test-token");
+        	}
+		}
+
+		/* test key counts of 0 to NUM_ELEMS */
+		src[i]->num_keys = i;
+		if (src[i]->num_keys) { /* if to allow testing of num_keys count of zero */
+        	src[i]->keys = (char**)malloc(src[i]->num_keys * sizeof(char*));
+        	for (j=0; j < src[i]->num_keys; j++) {
+            	src[i]->keys[j] = strdup("test-key");
+        	}
+		}
+                /* skip the pointers for cb_func and user_tag */
+	}
+
+	/* source data set, now create buffer and pack source data */
+
+    bufA = OBJ_NEW(orte_buffer_t);
+    if (NULL == bufA) {
+        test_comment("orte_buffer failed init in OBJ_NEW");
+        fprintf(test_out, "OBJ_NEW failed\n");
+        return false;
+    }
+
+    
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_GPR_SUBSCRIPTION);
+        if (ORTE_SUCCESS != rc) {
+            test_comment ("orte_dps.pack failed");
+            fprintf(test_out, "orte_pack_value (ORTE_GPR_SUBSCRIPTION) failed with return code %d\n", rc);
+            return(false);
+        }
+    }
+    
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
+        memset(dst,-1,sizeof(dst));
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_GPR_SUBSCRIPTION);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("orte_dps.unpack failed");
+            fprintf(test_out, "orte_unpack_value (ORTE_GPR_SUBSCRIPTION) failed with return code %d (count=%d)\n", rc, count);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+
+            if ( 
+				src[j]->addr_mode != dst[j]->addr_mode ||
+				0 != strcmp(src[j]->segment, dst[j]->segment) ||
+                src[j]->num_tokens != dst[j]->num_tokens ||
+                src[j]->num_keys != dst[j]->num_keys
+				) {
+                test_comment ("test13: invalid results from unpack");
+                return(false);
+            }
+
+			/* now compare each of the size/cnt depedant values */
+            for (k=0; k<src[j]->num_tokens; k++) {
+                if (0 != strcmp(src[j]->tokens[k], dst[j]->tokens[k])) {
+                   test_comment ("test13: invalid results (tokens) from unpack");
+                    return(false);
+                }
+            }
+
+            for (k=0; k< src[j]->num_keys; k++) {
+                if (0 != strcmp(src[j]->keys[k], dst[j]->keys[k])) {
+                    test_comment ("test13: invalid results (keys) from unpack");
                     return(false);
                 }
             }
