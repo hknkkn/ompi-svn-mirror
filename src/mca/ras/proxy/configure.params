@@ -1,3 +1,4 @@
+# -*- shell-script -*-
 #
 # Copyright (c) 2004-2005 The Trustees of Indiana University.
 #                         All rights reserved.
@@ -12,13 +13,7 @@
 # $HEADER$
 #
 
-include $(top_srcdir)/config/Makefile.options
+# Specific to this module
 
-SUBDIRS			= $(MCA_svc_DSO_SUBDIRS)
-DISTCLEANFILES		= $(SUBDIRS)
-
-# Every directory under here is a sym link to something in the main
-# src/mca tree.  Hence, we don't want to distribute anything under
-# here.
-
-DIST_SUBDIRS		=
+PARAM_INIT_FILE=ras_proxy.c
+PARAM_CONFIG_FILES="Makefile"

@@ -50,7 +50,7 @@ orte_soh_base_module_t orte_soh = {
 	/* slave soh */
 	orte_soh_base_module_slave_init_not_available,
 	orte_soh_base_module_slave_poll_not_available,
-	orte_soh_base_module_slave_do_heatbeat_not_available,
+	orte_soh_base_module_slave_do_heartbeat_not_available,
 	orte_soh_base_module_slave_request_monitor_not_available,
 	orte_soh_base_module_slave_end_monitor_not_available,
 	orte_soh_base_module_slave_finalise_not_available,
@@ -79,8 +79,8 @@ orte_soh_base_module_t orte_soh = {
 	orte_soh_base_module_master_finalise_not_available,
 
 	/* soh query */
-	orte_soh_base_get_proc_soh_not_available,
-    orte_soh_base_set_proc_soh_not_available,
+	orte_soh_base_get_proc_soh,
+    orte_soh_base_set_proc_soh,
 	orte_soh_base_get_node_soh_not_available,
     orte_soh_base_set_node_soh_not_available,
 

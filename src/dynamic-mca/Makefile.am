@@ -33,5 +33,4 @@ SUBDIRS = \
 	rmaps \
 	rmgr \
         soh \
-        svc \
         topo

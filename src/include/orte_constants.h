@@ -18,7 +18,7 @@
 /* error codes
  *
  * ANY CHANGES TO THESE DEFINITIONS MUST BE REFLECTED IN THE TEXT ARRAY
- * orte_error_strings DEFINED IN src/runtime/ompi_init.c.
+ * orte_error_strings DEFINED IN src/runtime/orte_init.c.
  * 
  */
 enum {
@@ -65,7 +65,8 @@ enum {
     ORTE_ERR_COMM_FAILURE = -40,
     ORTE_UNPACK_INADEQUATE_SPACE = -41,
     ORTE_UNPACK_READ_PAST_END_OF_BUFFER = -42,
-    ORTE_ERR_NOT_AVAILABLE = -43
+    ORTE_ERR_NOT_AVAILABLE = -43,
+    ORTE_ERR_GPR_DATA_CORRUPT = -44
 };
 
 #endif /* ORTE_CONSTANTS_H */

@@ -1149,8 +1149,6 @@ AC_CONFIG_FILES([
     src/mca/rmgr/base/Makefile
     src/mca/soh/Makefile
     src/mca/soh/base/Makefile
-    src/mca/svc/Makefile
-    src/mca/svc/base/Makefile
 
     src/mca/allocator/Makefile
     src/mca/allocator/base/Makefile
@@ -1183,7 +1181,6 @@ AC_CONFIG_FILES([
     src/dynamic-mca/rmaps/Makefile
     src/dynamic-mca/rmgr/Makefile
     src/dynamic-mca/soh/Makefile
-    src/dynamic-mca/svc/Makefile
 
     src/dynamic-mca/Makefile
     src/dynamic-mca/allocator/Makefile

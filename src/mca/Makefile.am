@@ -36,7 +36,6 @@ SUBDIRS = \
 	rmaps \
 	rmgr \
 	soh \
-	svc \
 	topo
 
 # Source code files

@@ -17,15 +17,14 @@
 /*
  * includes
  */
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include "class/ompi_list.h"
 #include "mca/mca.h"
 
 #include "mca/soh/base/base.h"
 
-/* needed to get OMPI_ERR_NOT_IMPLEMENTED.. */
-#include "include/constants.h"
+#include "include/orte_constants.h"
 
 
 /*
@@ -42,7 +41,7 @@ int orte_soh_base_module_slave_poll_not_available (void)
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-int orte_soh_base_module_slave_do_heatbeat_not_available (void)
+int orte_soh_base_module_slave_do_heartbeat_not_available (void)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
@@ -181,20 +180,6 @@ int orte_soh_base_module_master_finalise_not_available (void)
  * 3. query SOH 
  *
  */
-int orte_soh_base_get_proc_soh_not_available(orte_proc_state_t *state,
-                                             int *status,
-                                             orte_process_name_t *proc)
-{
-    return ORTE_ERR_NOT_IMPLEMENTED;
-}
-
-int orte_soh_base_set_proc_soh_not_available(orte_process_name_t *proc,
-                                             orte_proc_state_t state,
-                                             int status)
-{
-    return ORTE_ERR_NOT_IMPLEMENTED;
-}
-
 int orte_soh_base_get_node_soh_not_available(orte_node_state_t *state,
                                                       orte_cellid_t cell,
                                                       char *nodename)
