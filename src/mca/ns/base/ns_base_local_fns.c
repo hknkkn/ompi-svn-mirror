@@ -238,7 +238,7 @@ int orte_ns_base_convert_string_to_process_name(orte_process_name_t **name,
 
 int orte_ns_base_get_vpid_string(char **vpid_string, const orte_process_name_t* name)
 {
-    vpid_string = NULL;
+    *vpid_string = NULL;
     
     if (NULL == name) { /* got an error */
 	   return ORTE_ERR_BAD_PARAM;
