@@ -198,7 +198,7 @@ char* mca_oob_get_contact_info()
     size_t size = strlen(proc_name) + 1 + strlen(proc_addr) + 1;
     char *contact_info = malloc(size);
     
-    if (ORTE_SUCCESS != orte_ns.get_proc_name_string(proc_name, orte_process_info.my_name)) {
+    if (ORTE_SUCCESS != orte_ns.get_proc_name_string(&proc_name, orte_process_info.my_name)) {
         return NULL;
     }
     sprintf(contact_info, "%s;%s", proc_name, proc_addr);

@@ -35,7 +35,7 @@ int mca_oob_tcp_ping(
 
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_ping: timout %d secs %d usecs\n",
-            ORTE_NAME_ARGS(mca_oob_name_self),
+            ORTE_NAME_ARGS(*orte_process_info.my_name),
             ORTE_NAME_ARGS(peer->peer_name),
             timeout->tv_sec, timeout->tv_usec);
     }
@@ -50,7 +50,7 @@ int mca_oob_tcp_ping(
     msg->msg_hdr.msg_type = MCA_OOB_TCP_PING;
     msg->msg_hdr.msg_size = 0;
     msg->msg_hdr.msg_tag = 0;
-    msg->msg_hdr.msg_src = mca_oob_name_self;
+    msg->msg_hdr.msg_src = *orte_process_info.my_name;
     msg->msg_hdr.msg_dst = *name;
     MCA_OOB_TCP_HDR_HTON(&msg->msg_hdr);
 

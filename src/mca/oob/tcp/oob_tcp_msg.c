@@ -13,6 +13,7 @@
  */
 #include "ompi_config.h"
 
+#include "class/ompi_proc_table.h"
 #include "mca/ns/ns.h"
 #include "mca/oob/tcp/oob_tcp.h"
 #include "mca/oob/tcp/oob_tcp_msg.h"
@@ -174,7 +175,7 @@ bool mca_oob_tcp_msg_send_handler(mca_oob_tcp_msg_t* msg, struct mca_oob_tcp_pee
                 return false;
             else {
                 ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_send_handler: writev failed with ompi_errno=%d", 
-                    ORTE_NAME_ARGS(mca_oob_name_self), 
+                    ORTE_NAME_ARGS(*orte_process_info.my_name), 
                     ORTE_NAME_ARGS(peer->peer_name), 
                     ompi_errno);
                 mca_oob_tcp_peer_close(peer);
@@ -220,7 +221,7 @@ bool mca_oob_tcp_msg_recv_handler(mca_oob_tcp_msg_t* msg, struct mca_oob_tcp_pee
              msg->msg_rwbuf = malloc(msg->msg_hdr.msg_size);
              if(NULL == msg->msg_rwbuf) {
                  ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_recv_handler: malloc(%d) failed\n", 
-                     ORTE_NAME_ARGS(mca_oob_name_self),
+                     ORTE_NAME_ARGS(*orte_process_info.my_name),
                      ORTE_NAME_ARGS(peer->peer_name),
                      msg->msg_hdr.msg_size);
                  mca_oob_tcp_peer_close(peer);
@@ -264,7 +265,7 @@ static bool mca_oob_tcp_msg_recv(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* pee
                 return false;
             else {
                 ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_recv: readv failed with ompi_errno=%d", 
-                    ORTE_NAME_ARGS(mca_oob_name_self),
+                    ORTE_NAME_ARGS(*orte_process_info.my_name),
                     ORTE_NAME_ARGS(peer->peer_name),
                     ompi_errno);
                 mca_oob_tcp_peer_close(peer);
@@ -273,7 +274,7 @@ static bool mca_oob_tcp_msg_recv(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* pee
         } else if (rc == 0)  {
             if(mca_oob_tcp_component.tcp_debug > 3) {
                 ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_recv: peer closed connection", 
-                   ORTE_NAME_ARGS(mca_oob_name_self),
+                   ORTE_NAME_ARGS(*orte_process_info.my_name),
                    ORTE_NAME_ARGS(peer->peer_name),
                    ompi_errno);
             }
@@ -316,7 +317,7 @@ void mca_oob_tcp_msg_recv_complete(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* p
             break;
         default:
             ompi_output(0, "[%d,%d,%d] mca_oob_tcp_msg_recv_complete: invalid message type: %d\n",
-                 ORTE_NAME_ARGS(mca_oob_name_self), msg->msg_hdr.msg_type);
+                 ORTE_NAME_ARGS(*orte_process_info.my_name), msg->msg_hdr.msg_type);
             MCA_OOB_TCP_MSG_RETURN(msg);
             break;
     }
@@ -328,17 +329,13 @@ void mca_oob_tcp_msg_recv_complete(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* p
 
 static void mca_oob_tcp_msg_ident(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* peer)
 {
-    int cmpval;
     orte_process_name_t src = msg->msg_hdr.msg_src;
     
     OMPI_THREAD_LOCK(&mca_oob_tcp_component.tcp_lock);
-    if (ORTE_SUCCESS != orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, &peer->peer_name, &src)) {
-        return;
-    }
-    if (cmpval != 0) {
-        ompi_rb_tree_delete(&mca_oob_tcp_component.tcp_peer_tree, &peer->peer_name);
+    if (orte_ns.compare(ORTE_NS_CMP_ALL, &peer->peer_name, &src) != 0) {
+        ompi_hash_table_remove_proc(&mca_oob_tcp_component.tcp_peers, &peer->peer_name);
         peer->peer_name = src;
-        ompi_rb_tree_insert(&mca_oob_tcp_component.tcp_peer_tree, &peer->peer_name, peer);
+        ompi_hash_table_set_proc(&mca_oob_tcp_component.tcp_peers, &peer->peer_name, peer);
     }
     OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
 }
@@ -476,20 +473,14 @@ int mca_oob_tcp_msg_copy(mca_oob_tcp_msg_t* msg, struct iovec* iov, int count)
 mca_oob_tcp_msg_t* mca_oob_tcp_msg_match_recv(orte_process_name_t* name, int tag)
 {
     mca_oob_tcp_msg_t* msg;
-    int cmpval1, cmpval2;
-    
     for(msg =  (mca_oob_tcp_msg_t*) ompi_list_get_first(&mca_oob_tcp_component.tcp_msg_recv);
         msg != (mca_oob_tcp_msg_t*) ompi_list_get_end(&mca_oob_tcp_component.tcp_msg_recv);
         msg =  (mca_oob_tcp_msg_t*) ompi_list_get_next(msg)) {
 
-        if (ORTE_SUCCESS != orte_name_services.compare(&cmpval1, ORTE_NS_CMP_ALL, name, MCA_OOB_NAME_ANY)) {
-            return NULL;
-        }
-        if (ORTE_SUCCESS != orte_name_services.compare(&cmpval2, ORTE_NS_CMP_ALL, name, &msg->msg_peer)) {
-            return NULL;
-        }
+        int cmpval1 = orte_ns.compare(ORTE_NS_CMP_ALL, name, MCA_OOB_NAME_ANY);
+        int cmpval2 = orte_ns.compare(ORTE_NS_CMP_ALL, name, &msg->msg_peer);
         if((0 == cmpval1) || (0 == cmpval2)) {
-            if (tag == MCA_OOB_TAG_ANY || tag == msg->msg_hdr.msg_tag) {
+            if (tag == msg->msg_hdr.msg_tag) {
                 return msg;
             }
         }
@@ -508,22 +499,16 @@ mca_oob_tcp_msg_t* mca_oob_tcp_msg_match_recv(orte_process_name_t* name, int tag
                                                                                                                     
 mca_oob_tcp_msg_t* mca_oob_tcp_msg_match_post(orte_process_name_t* name, int tag, bool peek)
 {
-    int cmpval1, cmpval2;
     mca_oob_tcp_msg_t* msg;
-    
     for(msg =  (mca_oob_tcp_msg_t*) ompi_list_get_first(&mca_oob_tcp_component.tcp_msg_post);
         msg != (mca_oob_tcp_msg_t*) ompi_list_get_end(&mca_oob_tcp_component.tcp_msg_post);
         msg =  (mca_oob_tcp_msg_t*) ompi_list_get_next(msg)) {
 
-        if (ORTE_SUCCESS != orte_name_services.compare(&cmpval1, ORTE_NS_CMP_ALL, &msg->msg_peer, MCA_OOB_NAME_ANY)) {
-            return NULL;
-        }
-        if (ORTE_SUCCESS != orte_name_services.compare(&cmpval2, ORTE_NS_CMP_ALL, name, &msg->msg_peer)) {
-            return NULL;
-        }
+        int cmpval1 = orte_ns.compare(ORTE_NS_CMP_ALL, &msg->msg_peer, MCA_OOB_NAME_ANY);
+        int cmpval2 = orte_ns.compare(ORTE_NS_CMP_ALL, name, &msg->msg_peer);
 
         if((0 == cmpval1) || (0 == cmpval2)) {
-            if (msg->msg_hdr.msg_tag == MCA_OOB_TAG_ANY || msg->msg_hdr.msg_tag == tag) {
+            if (msg->msg_hdr.msg_tag == tag) {
                 if((msg->msg_flags & MCA_OOB_PEEK) == 0 || peek) {
                     ompi_list_remove_item(&mca_oob_tcp_component.tcp_msg_post, &msg->super);
                     return msg;

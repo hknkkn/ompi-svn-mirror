@@ -26,8 +26,8 @@
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
+#include "dps/dps.h"
 #include "class/ompi_object.h"
-#include "util/bufpack.h"
 #include "mca/ns/ns_types.h"
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -51,14 +51,14 @@ OBJ_CLASS_DECLARATION(mca_oob_tcp_addr_t);
  * Unpack the contact information posted by the peer.
  */
 
-mca_oob_tcp_addr_t* mca_oob_tcp_addr_unpack(ompi_buffer_t);
+mca_oob_tcp_addr_t* mca_oob_tcp_addr_unpack(orte_buffer_t*);
 
 /**
  * Pack this hosts addressing info into a buffer for posting
  * into the registry.
  */
 
-void mca_oob_tcp_addr_pack(ompi_buffer_t);
+int mca_oob_tcp_addr_pack(orte_buffer_t*);
 
 /**
  *

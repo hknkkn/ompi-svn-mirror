@@ -24,7 +24,7 @@
 #include "mca/base/base.h"
 #include "mca/ns/ns_types.h"
 #include "class/ompi_free_list.h"
-#include "class/ompi_rb_tree.h"
+#include "class/ompi_hash_table.h"
 #include "event/event.h"
 #include "threads/mutex.h"
 #include "threads/condition.h"
@@ -149,7 +149,7 @@ int mca_oob_tcp_recv(
     orte_process_name_t* peer, 
     struct iovec * msg, 
     int count, 
-    int* tag,
+    int tag,
     int flags);
 
 
@@ -232,7 +232,7 @@ int mca_oob_tcp_parse_uri(
  * Callback from registry on change to subscribed segments
  */
 void mca_oob_tcp_registry_callback(
-     ompi_registry_notify_message_t* msg,
+     orte_gpr_notify_message_t* msg,
      void* cbdata);
 
 
@@ -245,8 +245,8 @@ struct mca_oob_tcp_component_t {
     unsigned short     tcp_listen_port;      /**< listen port */
     ompi_list_t        tcp_subscriptions;    /**< list of registry subscriptions */
     ompi_list_t        tcp_peer_list;        /**< list of peers sorted in mru order */
-    ompi_rb_tree_t     tcp_peer_tree;        /**< tree of peers sorted by name */
-    ompi_rb_tree_t     tcp_peer_names;       /**< cache of peer contact info sorted by name */
+    ompi_hash_table_t  tcp_peers;            /**< peers sorted by name */
+    ompi_hash_table_t  tcp_peer_names;       /**< cache of peer contact info sorted by name */
     ompi_free_list_t   tcp_peer_free;        /**< free list of peers */
     int                tcp_peer_limit;       /**< max size of tcp peer cache */
     int                tcp_peer_retries;     /**< max number of retries before declaring peer gone */

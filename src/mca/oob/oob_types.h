@@ -51,7 +51,7 @@
 /**
  * Process name of self
  */
-#define MCA_OOB_NAME_SELF &mca_oob_name_self
+#define MCA_OOB_NAME_SELF orte_process_info.my_name
 /**
  * Process name of seed
  */

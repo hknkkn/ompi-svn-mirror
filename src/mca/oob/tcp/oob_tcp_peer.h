@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "class/ompi_list.h"
-#include "class/ompi_rb_tree.h"
 #include "threads/mutex.h"
 #include "mca/ns/ns_types.h"
 #include "oob_tcp_msg.h"
@@ -90,7 +89,7 @@ OBJ_CLASS_DECLARATION(mca_oob_tcp_peer_t);
 #define MCA_OOB_TCP_PEER_RETURN(peer) \
     { \
     mca_oob_tcp_peer_close(peer); \
-    ompi_rb_tree_delete(&mca_oob_tcp_component.tcp_peer_tree, &peer->peer_name); \
+    ompi_hash_table_remove_proc(&mca_oob_tcp_component.tcp_peers, &peer->peer_name); \
     OMPI_FREE_LIST_RETURN(&mca_oob_tcp_component.tcp_peer_free, (ompi_list_item_t*)peer); \
     }
 

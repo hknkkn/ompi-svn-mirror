@@ -115,7 +115,7 @@ typedef int (*mca_oob_base_module_recv_fn_t)(
     orte_process_name_t* peer,
     struct iovec *msg,
     int count,
-    int* tag,
+    int tag,
     int flags);
 
 /**
