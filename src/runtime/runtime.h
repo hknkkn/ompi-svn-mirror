@@ -135,6 +135,13 @@ OMPI_DECLSPEC    int ompi_abort(int status, char *fmt, ...);
 OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads);
 
     /**
+     * Re-init the Open run time environment.
+     *
+     * Restart selected components with a new process name.
+     */
+OMPI_DECLSPEC    int orte_restart(orte_process_name_t* name);
+
+    /**
      * Finalize the Open run time environment
      *
      */

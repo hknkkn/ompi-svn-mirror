@@ -46,6 +46,7 @@ libruntime_la_SOURCES = \
     orte_parse_environ.c \
     orte_parse_cmd_line.c \
     orte_parse_daemon_cmd_line.c \
+    orte_restart.c \
     orte_schema.c \
     orte_wait.c
 
