@@ -103,7 +103,7 @@ typedef orte_rmaps_base_component_1_0_0_t orte_rmaps_base_component_t;
 /*
  * Macro for use in components that are of type rmaps v1.0.0
  */
-#define MCA_ORTE_RMAPS_BASE_VERSION_1_0_0 \
+#define ORTE_RMAPS_BASE_VERSION_1_0_0 \
   /* ras v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* ras v1.0 */ \

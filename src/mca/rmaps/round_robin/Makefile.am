@@ -17,7 +17,9 @@
 include $(top_ompi_srcdir)/config/Makefile.options
 
 sources = \
-        round_robin.c
+        rmaps_rr.c \
+        rmaps_rr.h \
+        rmaps_rr_component.c
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
