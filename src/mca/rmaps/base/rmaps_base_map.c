@@ -185,7 +185,6 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
 {
     orte_app_context_t** app_context = NULL;
     orte_rmaps_base_map_t** mapping = NULL;
-    ompi_list_t nodes;
     size_t i, num_context = 0;
     char* segment = NULL;
     char* jobid_str = NULL;
@@ -199,7 +198,6 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
         ORTE_NODE_NAME_KEY,
         NULL
     };
-    OBJ_CONSTRUCT(&nodes, ompi_list_t);
 
     /* query the application context */
     if(ORTE_SUCCESS != (rc = orte_rmgr_base_get_app_context(jobid, &app_context, &num_context))) {
@@ -241,7 +239,8 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
         goto cleanup;
 
     /* sort the response */
-    qsort(values, num_values, sizeof(orte_gpr_value_t*), (int (*)(const void*,const void*))orte_rmaps_value_compare);
+    qsort(values, num_values, sizeof(orte_gpr_value_t*), 
+        (int (*)(const void*,const void*))orte_rmaps_value_compare);
 
     /* build the proc list */
     for(v=0; v<num_values; v++) {
@@ -294,7 +293,9 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
     free(segment);
     free(jobid_str);
     free(app_context);
-    OBJ_DESTRUCT(&nodes);
+
+    *mapping_out = mapping;
+    *num_mapping_out = num_context;
     return ORTE_SUCCESS;
 
 cleanup:
@@ -315,7 +316,6 @@ cleanup:
         }
         free(mapping);
     }
-    OBJ_DESTRUCT(&nodes);
     return rc;
 }
 
@@ -323,9 +323,89 @@ cleanup:
  * Set the process mapping in the registry.
  */
 
-int orte_rmaps_base_set_map(orte_jobid_t jobid, orte_rmaps_base_map_t** map, size_t num_maps)
+int orte_rmaps_base_set_map(orte_jobid_t jobid, orte_rmaps_base_map_t** mapping, size_t num_maps)
 {
-    return ORTE_SUCCESS;
+    size_t i;
+    size_t index=0;
+    size_t num_procs = 0;
+    size_t size;
+    int rc = ORTE_SUCCESS;
+
+    orte_gpr_value_t** values;
+    for(i=0; i<num_maps; i++) {
+        num_procs += mapping[i]->num_procs;
+    }
+    if(num_procs == 0)
+        return ORTE_ERR_BAD_PARAM;
+
+    /* allocate value array */
+    size = sizeof(orte_gpr_value_t*) * num_procs;
+    values = (orte_gpr_value_t**)malloc(size);
+    if(NULL == values) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    for(i=0; i<num_procs; i++) {
+         values[i] = OBJ_NEW(orte_gpr_value_t);
+         if(NULL == values[i]) {
+             size_t j;
+             for(j=0; j<i; j++) {
+                 OBJ_RELEASE(values[j]);
+             }
+             free(values);
+             return ORTE_ERR_OUT_OF_RESOURCE;
+         }
+    }
+
+    /* iterate through all processes and initialize value array */
+    for(i=0; i<num_maps; i++) {
+        size_t p;
+        orte_rmaps_base_map_t* map = mapping[i];
+        for(p=0; p<map->num_procs; p++) {
+            orte_rmaps_base_proc_t* proc = map->procs[p];
+            orte_gpr_value_t* value = values[index++];
+            orte_gpr_keyval_t** keyvals;
+            size_t kv;
+
+            /* allocate keyval array */
+            size = sizeof(orte_gpr_keyval_t*) * 4;
+            keyvals = (orte_gpr_keyval_t**)malloc(size);
+            if(NULL == keyvals) {
+                rc = ORTE_ERR_OUT_OF_RESOURCE;
+                goto cleanup;
+            }
+
+            /* allocate keyvals */
+            for(kv=0; kv < 4; kv++) {
+                orte_gpr_keyval_t* value = OBJ_NEW(orte_gpr_keyval_t);
+                if(value == NULL) {
+                    rc = ORTE_ERR_OUT_OF_RESOURCE;
+                    goto cleanup;
+                }
+                keyvals[kv] = value;
+            } 
+
+            /* initialize keyvals */
+            keyvals[0]->key = strdup(ORTE_PROC_RANK_KEY);
+            keyvals[0]->type = ORTE_INT32;
+            keyvals[0]->value.i32 = proc->proc_rank;
+
+            /* and so on.... */
+
+            value->keyvals = keyvals;
+        }
+    }
+
+    /* insert all values in one call */
+    rc = orte_gpr.put(ORTE_GPR_AND, num_procs, values);
+
+cleanup:
+    for(i=0; i<num_procs; i++) {
+        if(NULL != values[i]) {
+            OBJ_RELEASE(values[i]);
+        }
+    }
+    free(values);
+    return rc;
 }
 
 
