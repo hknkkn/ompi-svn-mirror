@@ -72,6 +72,7 @@ struct globals_t {
     bool verbose;
     bool exit;
     bool no_wait_for_job_completion;
+    bool debug;
     int num_procs;
     char *hostfile;
     char *env_val;
@@ -91,6 +92,9 @@ ompi_cmd_line_init_t cmd_line_init[] = {
     { NULL, NULL, NULL, '\0', NULL, "version", 0,
       &orterun_globals.version, OMPI_CMD_LINE_TYPE_BOOL,
       "Show the orterun version" },
+    { "orte", "debug", NULL, 'd', NULL, "debug", 0,
+      &orterun_globals.debug, OMPI_CMD_LINE_TYPE_BOOL,
+      "Enable debugging" },
     { NULL, NULL, NULL, 'v', NULL, "verbose", 0,
       &orterun_globals.verbose, OMPI_CMD_LINE_TYPE_BOOL,
       "Be verbose" },
@@ -299,6 +303,7 @@ static int init_globals(void)
         false,
         false,
         false,
+        false,
         -1,
         NULL,
         NULL,
@@ -350,6 +355,11 @@ static int parse_globals(int argc, char* argv[])
         wait_for_job_completion = false;
     }
 
+    /* debug */
+    if (orterun_globals.debug) {
+        int id = mca_base_param_register_int("debug",NULL,NULL,NULL,0);
+        mca_base_param_set_int(id,orterun_globals.debug);
+    }
     OBJ_DESTRUCT(&cmd_line);
     return ORTE_SUCCESS;
 }
