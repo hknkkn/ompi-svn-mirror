@@ -34,9 +34,9 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode, char *segment,
 {
     int rc;
     int8_t action_taken;
-    orte_gpr_replica_segment_t *seg;
-    orte_gpr_replica_itag_t *itags;
-    int num_tokens;
+    orte_gpr_replica_segment_t *seg=NULL;
+    orte_gpr_replica_itag_t *itags=NULL;
+    int num_tokens=0;
 
     /* protect ourselves against errors */
     if (NULL == segment || NULL == keyvals || 0 == cnt ||
@@ -109,15 +109,13 @@ int orte_gpr_replica_get(orte_gpr_addr_mode_t addr_mode,
                          char *segment, char **tokens, char **keys,
                          size_t *cnt, orte_gpr_keyval_t **keyvals)
 {
-#if 0
-    ompi_list_t* list;
-    orte_gpr_replica_segment_t *seg;
-    orte_gpr_replica_itag_t *tokentags, *keytags;
-    orte_gpr_replica_itagval_t *itagvals;
-    int num_tokens, num_keys;
+    orte_gpr_replica_segment_t *seg=NULL;
+    orte_gpr_replica_itag_t *tokentags=NULL, *keytags=NULL;
+    int num_tokens=0, num_keys=0, rc;
 
-    list = OBJ_NEW(ompi_list_t);
-
+    *keyvals = NULL;
+    *cnt = 0;
+    
     /* protect against errors */
     if (NULL == segment) {
 	   return ORTE_ERR_BAD_PARAM;
@@ -139,27 +137,34 @@ int orte_gpr_replica_get(orte_gpr_addr_mode_t addr_mode,
     /* convert tokens to array of itags */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&tokentags, seg,
                                                         tokens, &num_tokens))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
+        goto CLEANUP;
     }
 
     /* convert keys to array of itags */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&keytags, seg,
                                                         keys, &num_keys))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-        return rc;
+        goto CLEANUP;
     }
 
-    orte_gpr_replica_get_nl(list, addr_mode, seg, keys, num_keys);
-
-    if (NULL != keys) {
-	   free(keys);
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(addr_mode, seg,
+                                            tokentags, num_tokens,
+                                            keytags, num_keys,
+                                            cnt, keyvals))) {
+        goto CLEANUP;
+    }
+    
+CLEANUP:
+    if (NULL != tokentags) {
+	   free(tokentags);
     }
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
-    return list;
-#endif
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    if (NULL != keytags) {
+      free(keytags);
+    }
+
+    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
+    return rc;
+
 }
 
 

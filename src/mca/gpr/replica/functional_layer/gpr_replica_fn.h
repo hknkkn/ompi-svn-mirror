@@ -85,13 +85,15 @@ int orte_gpr_replica_put_nb_fn(orte_gpr_addr_mode_t addr_mode,
                 orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
                       
 int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
-                            char *segment, char **tokens, char **itags,
-                            orte_gpr_replica_itag_t *key_tags, int num_keys,
-                            size_t *cnt, orte_gpr_replica_itagval_t **itagvals);
+                            orte_gpr_replica_segment_t *seg,
+                            orte_gpr_replica_itag_t *tokentags, int num_tokens,
+                            orte_gpr_replica_itag_t *keytags, int num_keys,
+                            size_t *cnt, orte_gpr_keyval_t **keyvals);
 
 int orte_gpr_replica_get_nb_fn(orte_gpr_addr_mode_t addr_mode,
-                                char *segment, char **tokens, char **itags,
-                                orte_gpr_replica_itag_t *key_tags, int num_keys,
+                                orte_gpr_replica_segment_t *seg,
+                                orte_gpr_replica_itag_t *tokentags, int num_tokens,
+                                orte_gpr_replica_itag_t *keytags, int num_keys,
                                 orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
 
 
