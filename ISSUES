@@ -1,0 +1,5 @@
+- if an MPI process fails (e.g., it seg faults), it causes orterun to
+  hang.  This is with the rsh pls.
+
+- if the daemon is not found or fails to start, orterun will hang.  No
+  indication is given to the users that something went wrong.
