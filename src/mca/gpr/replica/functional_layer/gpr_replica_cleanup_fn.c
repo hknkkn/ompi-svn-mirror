@@ -23,6 +23,8 @@
 
 #include "orte_config.h"
 
+#include "include/orte_names.h"
+
 #include "class/orte_pointer_array.h"
 #include "util/output.h"
 #include "util/proc_info.h"

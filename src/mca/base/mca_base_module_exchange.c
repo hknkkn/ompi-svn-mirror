@@ -13,6 +13,9 @@
  */
 
 #include "ompi_config.h"
+
+#include "include/orte_names.h"
+
 #include <string.h>
 #include "class/ompi_hash_table.h"
 #include "threads/condition.h"

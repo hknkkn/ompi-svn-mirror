@@ -118,7 +118,7 @@ char* ompi_comm_namelookup ( char *service_name )
     key[1] = NULL;
     
     ret = orte_gpr.get(ORTE_GPR_AND, OMPI_NAMESPACE_SEGMENT,
-                            token, key, &cnt, values);
+                            token, key, &cnt, &values);
     if (ORTE_SUCCESS != ret) {
         return NULL;
     }

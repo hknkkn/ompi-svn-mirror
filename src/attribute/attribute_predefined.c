@@ -14,6 +14,8 @@
 
 #include "ompi_config.h"
 
+#include "include/orte_names.h"
+
 #include "mpi.h"
 #include "attribute/attribute.h"
 

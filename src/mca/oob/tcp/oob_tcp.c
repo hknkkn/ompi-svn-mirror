@@ -14,6 +14,7 @@
 
 #include "ompi_config.h"
 
+#include "include/orte_names.h"
 #include "include/orte_types.h"
 
 #ifdef HAVE_UNISTD_H

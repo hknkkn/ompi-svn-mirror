@@ -61,7 +61,10 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_GPR_CMD             (orte_data_type_t)   33 /**< registry command */
 #define    ORTE_GPR_NOTIFY_ID       (orte_data_type_t)   34 /**< registry notify id tag */
 #define    ORTE_GPR_VALUE           (orte_data_type_t)   35 /**< registry return value */
-#define    ORTE_NULL                (orte_data_type_t)   36 /**< don't interpret data type */
+#define    ORTE_DATA_TYPE           (orte_data_type_t)   36 /**< data type */
+#define    ORTE_APP_INFO            (orte_data_type_t)   37 /**< application info for launchers */
+#define    ORTE_APP_CONTEXT         (orte_data_type_t)   38 /**< argv and enviro arrays */
+#define    ORTE_NULL                (orte_data_type_t)   39 /**< don't interpret data type */
 
 typedef struct {
     size_t size;
@@ -71,6 +74,5 @@ typedef struct {
 typedef int8_t orte_exit_code_t;
 typedef int8_t orte_status_key_t;
 typedef int8_t orte_node_state_t;
-
 
 #endif  /* ORTE_TYPES_H */

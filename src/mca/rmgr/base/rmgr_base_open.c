@@ -45,6 +45,71 @@ orte_rmgr_base_module_t orte_rmgr = {
     orte_rmgr_base_finalize_not_available
 };
 
+/*
+ * Object class instantiations
+ */
+/* constructor - used to initialize state of app_info instance */
+static void orte_rmgr_app_info_construct(orte_rmgr_app_info_t* ptr)
+{
+    ptr->application = NULL;
+    ptr->num_procs = 0;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_rmgr_app_info_destructor(orte_rmgr_app_info_t* ptr)
+{
+    if (NULL != ptr->application) {
+        free(ptr->application);
+    }
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+    orte_rmgr_app_info_t,              /* type name */
+    ompi_object_t,                  /* parent "class" name */
+    orte_rmgr_app_info_construct,      /* constructor */
+    orte_rmgr_app_info_destructor);    /* destructor */
+
+
+/* constructor - used to initialize state of app_context instance */
+static void orte_rmgr_app_context_construct(orte_rmgr_app_context_t* ptr)
+{
+    ptr->argc = 0;
+    ptr->argv = NULL;
+    ptr->num_enviro = 0;
+    ptr->enviro = NULL;
+}
+
+/* destructor - used to free any resources held by instance */
+static void orte_rmgr_app_context_destructor(orte_rmgr_app_context_t* ptr)
+{
+    int i;
+    
+    if (NULL != ptr->argv) {
+        for (i=0; i < ptr->argc; i++) {
+            if (NULL != ptr->argv[i]) {
+                free(ptr->argv[i]);
+            }
+        }
+    }
+    if (NULL != ptr->enviro) {
+        for (i=0; i < ptr->num_enviro; i++) {
+            if (NULL != ptr->enviro[i]) {
+                free(ptr->enviro[i]);
+            }
+        }
+    }
+    
+}
+
+/* define instance of ompi_class_t */
+OBJ_CLASS_INSTANCE(
+    orte_rmgr_app_context_t,              /* type name */
+    ompi_object_t,                  /* parent "class" name */
+    orte_rmgr_app_context_construct,      /* constructor */
+    orte_rmgr_app_context_destructor);    /* destructor */
+
+
 /**
  * Function for finding and opening either all MCA components, or the one
  * that was specifically requested via a MCA parameter.

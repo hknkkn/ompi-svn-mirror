@@ -63,13 +63,5 @@ enum {
     ORTE_ERR_NOT_AVAILABLE = -43
 };
 
-
-/* constants defining runtime-related segment naming conventions for the
- * registry
- */
-#define ORTE_JOB_SEGMENT              "orte-job"
-#define ORTE_NODE_STATUS_SEGMENT      "orte-node-status"
-#define ORTE_RESOURCE_SEGMENT         "orte-resources"
-
 #endif /* ORTE_CONSTANTS_H */
 

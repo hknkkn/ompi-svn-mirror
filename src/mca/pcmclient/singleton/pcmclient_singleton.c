@@ -15,6 +15,8 @@
 
 #include "ompi_config.h"
 
+#include "include/orte_names.h"
+
 #include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>

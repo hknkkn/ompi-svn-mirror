@@ -25,7 +25,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "include/constants.h"
+#include "include/orte_constants.h"
+#include "include/orte_names.h"
 
 #include "support.h"
 

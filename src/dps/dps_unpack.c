@@ -42,6 +42,7 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     size_t num_bytes;
     void *src;
     uint32_t * s32;
+    uint8_t * s8;
     orte_data_type_t stored_type;
 
     /* check for errors */
@@ -58,11 +59,11 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     }
 
     /* first thing in the current buffer space must be the type */
-    s32 = (uint32_t *) src;
-    stored_type = (orte_data_type_t)ntohl(*s32);
-    s32 ++;
-    src = (void *) s32;
-    mem_left -= sizeof(uint32_t);
+    s8 = (uint8_t *) src;
+    stored_type = (orte_data_type_t)*s8;
+    s8 ++;
+    src = (void *) s8;
+    mem_left -= sizeof(uint8_t);
 
     if(type == ORTE_INT || type == ORTE_UINT) {
         switch(sizeof(int)) {
@@ -151,6 +152,9 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     
     switch(type) {
        
+        case ORTE_NODE_STATE:
+        case ORTE_STATUS_KEY:
+        case ORTE_EXIT_CODE:
         case ORTE_BYTE:
         case ORTE_INT8:
         case ORTE_UINT8:
@@ -163,6 +167,9 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             *num_bytes = num_vals * sizeof(uint8_t);
             break;
             
+        case ORTE_NOTIFY_ACTION:
+        case ORTE_SYNCHRO_MODE:
+        case ORTE_GPR_CMD:
         case ORTE_INT16:
         case ORTE_UINT16:
        
@@ -180,6 +187,10 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             *num_bytes = num_vals * sizeof(uint16_t);
             break;
             
+        case ORTE_VPID:
+        case ORTE_JOBID:
+        case ORTE_CELLID:
+        case ORTE_GPR_NOTIFY_ID:
         case ORTE_INT32:
         case ORTE_UINT32:
 
@@ -298,6 +309,12 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             return ORTE_SUCCESS;
             break;
 
+        case ORTE_KEYVAL:
+            break;
+        
+        case ORTE_GPR_VALUE:
+            break;
+            
         case ORTE_NULL:
             break;
 

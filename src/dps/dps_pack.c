@@ -27,6 +27,7 @@
 
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
+#include "mca/gpr/gpr_types.h"
 #include "mca/ns/ns_types.h"
 #include "dps_internal.h"
 
@@ -42,7 +43,6 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     void *dst;
     int32_t op_size=0;
     size_t num_bytes;
-    uint32_t * d32;
     
     /* check for error */
     if (!buffer || !src || 0 >= num_vals) { return (ORTE_ERROR); }
@@ -92,17 +92,38 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
         }
     }
     
-    /* store the data type  as uint32_t */
-    d32 = (uint32_t *) dst;
-    *d32 = htonl(type);
-    d32++;
-    dst = (void *)d32;
+    if (ORTE_SIZE == type) {
+        switch(sizeof(size_t)) {
+            case 1:
+                type = (type == ORTE_SIZE) ? ORTE_INT8 : ORTE_UINT8;
+                break;
+            case 2:
+                type = (type == ORTE_SIZE) ? ORTE_INT16 : ORTE_UINT16;
+                break;
+            case 4:
+                type = (type == ORTE_SIZE) ? ORTE_INT32 : ORTE_UINT32;
+                break;
+            case 8:
+                type = (type == ORTE_SIZE) ? ORTE_INT64 : ORTE_UINT64;
+                break;
+            default:
+                return ORTE_ERR_NOT_IMPLEMENTED;
+        }
+    }
+    
+    /* store the data type */
+    if (ORTE_SUCCESS != (rc = orte_dps_pack_nobuffer(dst, &type, 1,
+                                        ORTE_DATA_TYPE, &num_bytes))) {
+        return rc;
+    }
+    dst = (void *)((char*)dst + num_bytes);
     
     /* store the number of values as uint32_t */
-    d32 = (uint32_t *) dst;
-    *d32 = htonl((uint32_t)num_vals);
-    d32++;
-    dst = (void *)d32;
+    if (ORTE_SUCCESS != (rc = orte_dps_pack_nobuffer(dst, &num_vals, 1,
+                                        ORTE_UINT32, &num_bytes))) {
+        return rc;
+    }
+    dst = (void *)((char*)dst + num_bytes);
 
     /* pack the data */
     if (ORTE_SUCCESS != (rc = orte_dps_pack_nobuffer(dst, src, num_vals,
@@ -123,7 +144,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
 int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                     orte_data_type_t type, size_t *num_bytes)
 {
-    size_t i, len;
+    size_t i, len, n;
     uint16_t * d16;
     uint16_t * s16;
     uint32_t * d32;
@@ -135,12 +156,19 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
     char * dstr;
     orte_process_name_t *dn, *sn;
     orte_byte_object_t *sbyteptr;
+    orte_gpr_keyval_t **keyval;
+    orte_gpr_value_t **values;
 
     /* initialize the number of bytes */
     *num_bytes = 0;
     
     /* pack the data */
     switch(type) {
+
+        case ORTE_DATA_TYPE:
+        case ORTE_NODE_STATE:
+        case ORTE_STATUS_KEY:
+        case ORTE_EXIT_CODE:
         case ORTE_BYTE:
         case ORTE_INT8:
         case ORTE_UINT8:
@@ -149,6 +177,9 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             *num_bytes = num_vals;
             break;
         
+        case ORTE_NOTIFY_ACTION:
+        case ORTE_SYNCHRO_MODE:
+        case ORTE_GPR_CMD:
         case ORTE_INT16:
         case ORTE_UINT16:
             d16 = (uint16_t *) dst;
@@ -160,7 +191,11 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             }
             *num_bytes = num_vals * sizeof(uint16_t);
             break;
-            
+        
+        case ORTE_VPID:
+        case ORTE_JOBID:
+        case ORTE_CELLID:
+        case ORTE_GPR_NOTIFY_ID:
         case ORTE_INT32:
         case ORTE_UINT32:
             d32 = (uint32_t *) dst;
@@ -241,6 +276,58 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 *num_bytes += sbyteptr->size;
                 sbyteptr++;
             }
+            break;
+
+        case ORTE_KEYVAL:
+            /* array of pointers to keyval objects - need to pack the objects */
+            keyval = (orte_gpr_keyval_t**) src;
+            for (i=0; i < num_vals; i++) {
+                /* pack the key */
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(keyval[i]->key)), 1, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                /* pack the value - let the associated data type carry the type field */
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst, &(keyval[i]->value), 1,
+                                 keyval[i]->type, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+            }
+            break;
+        
+        case ORTE_GPR_VALUE:
+            /* array of pointers to value objects - need to pack the objects */
+            values = (orte_gpr_value_t**) src;
+            for (i=0; i<num_vals; i++) {
+                /* pack the segment name */
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(values[i]->segment)), 1, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                /* pack the tokens - let num_tokens be carried in the num_vals field */
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)((values[i]->tokens)), values[i]->num_tokens, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                /* pack the keyval pairs */
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)((values[i]->keyvals)), values[i]->cnt, ORTE_KEYVAL, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+            }
+            break;
+            
+        case ORTE_APP_INFO:
+            /* array of pointers to rmgr_app_info objects - need to pack the objects */
+            break;
+            
+        case ORTE_APP_CONTEXT:
+            /* array of pointers to rmgr_app_context objects - need to pack the objects */
             break;
             
         case ORTE_NULL:
