@@ -34,6 +34,7 @@
 #include "util/os_path.h"
 #include "util/cmd_line.h"
 #include "util/sys_info.h"
+#include "util/univ_info.h"
 #include "util/output.h"
 #include "util/universe_setup_file_io.h"
 #include "util/show_help.h"

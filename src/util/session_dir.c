@@ -67,6 +67,7 @@
 
 #include "include/constants.h"
 
+#include "util/univ_info.h"
 #include "util/sys_info.h"
 #include "util/proc_info.h"
 #include "util/output.h"

@@ -23,6 +23,7 @@
 
 #include "mca/errmgr/errmgr.h"
 #include "util/proc_info.h"
+#include "util/univ_info.h"
 
 #include "runtime/orte_context_value_tbl.h"
 #include "runtime/runtime.h"

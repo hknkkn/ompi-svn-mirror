@@ -30,6 +30,7 @@
 #include "include/orte_constants.h"
 
 #include "util/output.h"
+#include "util/univ_info.h"
 #include "runtime/runtime.h"
 #include "util/universe_setup_file_io.h"
 

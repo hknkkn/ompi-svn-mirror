@@ -31,6 +31,7 @@
 
 #include "util/cmd_line.h"
 #include "util/output.h"
+#include "util/univ_info.h"
 
 #include "runtime/orte_context_value_tbl.h"
 #include "runtime/runtime.h"

@@ -41,6 +41,7 @@
 #include "util/os_path.h"
 #include "util/cmd_line.h"
 #include "util/proc_info.h"
+#include "util/univ_info.h"
 #include "util/session_dir.h"
 #include "util/printf.h"
 #include "util/daemon_init.h"
