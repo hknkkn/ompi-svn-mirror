@@ -131,7 +131,8 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
     ompi_list_t mapping;
     bool mapping_valid = false;
     ompi_list_item_t *item;
-    char **mca_env, **tmp_env, **local_env;
+    char **mca_env = NULL, **tmp_env, **local_env;
+    char *path, *new_path;
     int num_mca_env;
     orte_rmaps_base_proc_t *proc;
     orte_app_context_t *app;
@@ -178,6 +179,12 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
     names = (orte_process_name_t*) (task_ids + i);
     memset(names, 0, sizeof(orte_process_name_t) * i);
 
+    /* Make up an environment for all the job processes. */
+
+    mca_env = NULL;
+    num_mca_env = 0;
+    mca_base_param_build_env(&mca_env, &num_mca_env, true);
+
     /* While we're traversing these data structures, also setup the
        proc_status array for later a "put" to the registry */
 
@@ -192,8 +199,7 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
         /* See if the app cwd exists; try changing to the cwd and then
            changing back */
 
-        if (0 != chdir(app->cwd) ||
-            0 != chdir(old_cwd)) {
+        if (0 != chdir(app->cwd)) {
             ret = ORTE_ERR_NOT_FOUND;
             ORTE_ERROR_LOG(ret);
             goto cleanup; 
@@ -202,20 +208,41 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
                     "pls:tm:launch:child: app %d cwd (%s) exists", 
                     i, app->cwd);
 
-        /* A few things global to the app */
+        /* Get a full pathname for argv[0] -- tm won't spawn without
+           an absolute pathname.  :-( app->app is already an absolute
+           pathname, so don't even bother to check -- just replace
+           argv[0] with app->app. */
 
+        free(app->argv[0]);
+        app->argv[0] = strdup(app->app);
         flat = ompi_argv_join(app->argv, ' ');
 
-        num_mca_env = 0;
-        mca_env = ompi_argv_copy(environ);
-        mca_base_param_build_env(&mca_env, &num_mca_env, true);
+        /* Make a global env for the app */
+
         tmp_env = ompi_environ_merge(app->env, mca_env);
         local_env = ompi_environ_merge(environ, tmp_env);
-        if (NULL != mca_env) {
-            ompi_argv_free(mca_env);
-        }
         if (NULL != tmp_env) {
             ompi_argv_free(tmp_env);
+        }
+
+        /* Ensure "." is in the PATH.  If it's not there, add it at
+           the end */
+
+        for (j = 0; NULL != local_env[j]; ++j) {
+            if (0 == strncmp("PATH=", local_env[j], 5)) {
+                path = local_env[j] + 5;
+                if (0 != strcmp(".", path) &&
+                    0 != strncmp(".:", path, 2) &&
+                    NULL == strstr(":.:", path) &&
+                    0 != strncmp(":.", path + strlen(path) - 2, 2)) {
+                    asprintf(&new_path, "PATH=%s:.", path);
+                    free(local_env[j]);
+                    local_env[j] = new_path;
+                    ompi_output(orte_pls_base.pls_output,
+                                "pls:tm:launch:child: appended \".\" to PATH");
+                    break;
+                }
+            }
         }
 
         /* Now iterate through all the procs in this app and launch them */
@@ -257,7 +284,6 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
                 ORTE_ERROR_LOG(ret);
                 goto loop_error;
             }
-
             ompi_output(orte_pls_base.pls_output,
                         "pls:tm:launch:child: launch successful; posting to registry");
 
@@ -296,6 +322,14 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
             break;
         }
 
+        /* Now go back to the original cwd */
+
+        if (0 != chdir(old_cwd)) {
+            ret = ORTE_ERR_NOT_FOUND;
+            ORTE_ERROR_LOG(ret);
+            goto cleanup; 
+        }
+
         /* Free things from the last app */
 
         ompi_argv_free(local_env);
@@ -308,6 +342,9 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch:child: launched %d processes", num_spawned);
 
+    if (NULL != mca_env) {
+        ompi_argv_free(mca_env);
+    }
     if (mapping_valid) {
         while (NULL != (item = ompi_list_remove_first(&mapping))) {
             OBJ_RELEASE(item);
