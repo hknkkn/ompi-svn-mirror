@@ -360,6 +360,12 @@ int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
         ORTE_ERROR_LOG(ret);
         return ret;
     }
+    if (NULL != jobid_str) {
+        free(jobid_str);
+    }
+    if (NULL != procid_str) {
+        free(procid_str);
+    }
 
     /* set contact info for ns/gpr */
     if(NULL != orte_process_info.ns_replica_uri) {

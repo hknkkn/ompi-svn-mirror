@@ -52,6 +52,8 @@ int orte_finalize(void)
     orte_session_dir_finalize();
 #endif
 
+    ompi_malloc_finalize();
+
     return ORTE_SUCCESS;
 }
 
