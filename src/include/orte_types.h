@@ -84,7 +84,7 @@ typedef struct {
     ompi_object_t super;
     /** Unique index when multiple apps per job */
     int32_t idx;
-    /** Application name; usually same as argv[0] */
+    /** Absolute pathname of argv[0] */
     char   *app;
     /** Number of copies of this process that are to be launched */
     int32_t num_procs;
@@ -92,11 +92,11 @@ typedef struct {
     int32_t argc;
     /** Standard argv-style array, including a final NULL pointer */
     char  **argv;
-    /** Length of the env array */
+    /** Length of the env array, not including the final NULL entry */
     int32_t num_env;
     /** Standard environ-style array, including a final NULL pointer */
     char  **env;
-    /** String for the current working directory */
+    /** Current working directory for this app */
     char   *cwd;
 } orte_app_context_t;
 
