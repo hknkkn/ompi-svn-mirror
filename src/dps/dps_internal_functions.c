@@ -45,6 +45,7 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     orte_byte_object_t *sbyteptr=NULL;
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
+    orte_app_context_t **app_context;
 
     switch(type) {
 
@@ -130,22 +131,26 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             }
             return mem_req;
             
-#if 0
         case ORTE_APP_CONTEXT:
             mem_req = 0;
-            app_context = (orte_rmgr_app_context_t**) src;
+            app_context = (orte_app_context_t**) src;
             for (i=0; i < num_vals; i++) {
+                mem_req += sizeof(int32_t); /* app index number */
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(app_context[i]->app)), 1, ORTE_STRING); /* application name */
+                mem_req += sizeof(int32_t); /* number or processes */
                 mem_req += sizeof(int32_t); /* number of argv entries */
                 mem_req += orte_dps_memory_required(
                                 (void*)(app_context[i]->argv),
-                                app_context[i]->argc, ORTE_STRING);
-                mem_req += sizeof(int32_t); /* number of enviro entries */
+                                app_context[i]->argc, ORTE_STRING); /* length of all argvs */
+                mem_req += sizeof(int32_t); /* number of env entries */
                 mem_req += orte_dps_memory_required(
-                                (void*)(app_context[i]->enviro),
-                                app_context[i]->num_enviro, ORTE_STRING);
+                                (void*)(app_context[i]->env),
+                                app_context[i]->num_env, ORTE_STRING); /* length of all envs */
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(app_context[i]->cwd)), 1, ORTE_STRING); /* cwd string */
             }
             return mem_req;
-#endif
 
         default:
             return 0;  /* unrecognized type */

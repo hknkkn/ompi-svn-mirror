@@ -388,6 +388,15 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             /* array of pointers to orte_app_context objects - need to pack the objects a set of fields at a time */
             app_context = (orte_app_context_t**) src;
             for (i=0; i < num_vals; i++) {
+
+                /* pack the application index (for multiapp jobs) */
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(app_context[i]->idx)), 1, ORTE_INT32, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the application name */
 				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,

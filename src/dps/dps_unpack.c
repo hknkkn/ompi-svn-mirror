@@ -448,6 +448,14 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
 
+                /* get the app index number */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->idx),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
                 /* unpack the application name */
 				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->app),
