@@ -31,7 +31,6 @@
 
 #include "runtime/runtime_types.h"
 #include "mca/ns/ns.h"
-#include "runtime/orte_context_value_tbl.h"
 
 /* For backwards compatibility.  If you only need MPI stuff, please include
    mpiruntime/mpiruntime.h directly */
@@ -120,33 +119,6 @@ OMPI_DECLSPEC    void orte_all_procs_unregistered(orte_gpr_notify_message_t* mat
 OMPI_DECLSPEC	 int orte_monitor_procs_registered(void);
 
 OMPI_DECLSPEC    int orte_monitor_procs_unregistered(void);
-
-    /**
-     * Parse the rte command line for options
-     *
-     * Parses the specified command line for rte specific options.
-     * Fills the relevant global structures with the information obtained.
-     *
-     * @param cmd_line Command line to be parsed.
-     * @retval None
-     */
-OMPI_DECLSPEC    int orte_parse_context(orte_context_value_names_t *context_tbl,
-                                        ompi_cmd_line_t *cmd_line,
-                                        int argc, char **argv);
-
-    /**
-     * Parse the rte command line for daemon-specific options
-     *
-     * Parses the specified command line for rte daemon-specific options.
-     * Fills the relevant global structures with the information obtained.
-     *
-     * @param cmd_line Command line to be parsed.
-     * @retval None
-     */
-OMPI_DECLSPEC    int orte_parse_proc_context(ompi_cmd_line_t *cmd_line,
-                                        int argc, char **argv);
-OMPI_DECLSPEC    int orte_parse_daemon_context(ompi_cmd_line_t *cmd_line,
-                                        int argc, char **argv);
 
     /**
      * Check for universe existence

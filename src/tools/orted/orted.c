@@ -11,7 +11,6 @@
  * 
  * $HEADER$
  */
-/** @file **/
 
 #include "orte_config.h"
 
@@ -67,12 +66,22 @@ static void orte_daemon_recv(int status, orte_process_name_t* sender,
 /*
  * define the orted context table for obtaining parameters
  */
-orte_context_value_names_t orted_context_tbl[] = {
-    /* start with usual help and version stuff */
-    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&(orted_globals.help), (void*)false, NULL},
-    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&(orted_globals.version), (void*)false, NULL},
-    {{"daemon", "debug", NULL}, "debug", 0, ORTE_BOOL, (void*)&(orted_globals.debug), (void*)false, NULL},
-    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL, NULL} /* terminate the table */
+ompi_cmd_line_init_t orte_cmd_line_opts[] = {
+    /* Various "obvious" options */
+    { NULL, NULL, NULL, 'h', NULL, "help", 0, 
+      &orted_globals.help, OMPI_CMD_LINE_TYPE_BOOL,
+      "This help message" },
+    { NULL, NULL, NULL, '\0', NULL, "version", 0,
+      &orted_globals.version, OMPI_CMD_LINE_TYPE_BOOL,
+      "Show the orted version" },
+
+    { NULL, NULL, NULL, 'd', NULL, "debug", 0,
+      &orted_globals.debug, OMPI_CMD_LINE_TYPE_BOOL,
+      "Run in debug mode (not generally intended for users)" },
+
+    /* End of list */
+    { NULL, NULL, NULL, '\0', NULL, NULL, 0,
+      NULL, OMPI_CMD_LINE_TYPE_NULL, NULL }
 };
 
 
@@ -85,9 +94,9 @@ int main(int argc, char *argv[])
 
     /* setup to check common command line options that just report and die */
     cmd_line = OBJ_NEW(ompi_cmd_line_t);
-
-    /* parse my context */
-    if (ORTE_SUCCESS != (ret = orte_parse_context(orted_context_tbl, cmd_line, argc, argv))) {
+    ompi_cmd_line_create(cmd_line, orte_cmd_line_opts);
+    if (OMPI_SUCCESS != (ret = ompi_cmd_line_parse(cmd_line, true, 
+                                                   argc, argv))) {
         return ret;
     }
     

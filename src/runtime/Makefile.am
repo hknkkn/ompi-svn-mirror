@@ -26,8 +26,7 @@ headers = \
     runtime_types.h \
     runtime_internal.h \
     ompi_progress.h \
-    orte_wait.h \
-    orte_context_value_tbl.h
+    orte_wait.h
 
 libruntime_la_SOURCES = \
 	$(headers) \
@@ -37,9 +36,6 @@ libruntime_la_SOURCES = \
     orte_init.c \
     orte_monitor.c \
     orte_universe_exists.c \
-    orte_parse_context.c \
-    orte_proc_context.c \
-    orte_daemon_context.c \
     orte_restart.c \
     orte_schema.c \
     orte_wait.c
