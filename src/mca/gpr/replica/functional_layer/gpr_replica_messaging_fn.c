@@ -155,6 +155,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
+
     cb->message->idtag = trig->index;
 
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_construct_notify_message(&(cb->message), trig))) {
@@ -349,6 +350,7 @@ MOVEON:
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
                 (*value)->cnt = n;
+                kptr = &((*value)->keyvals[n-cnt]);
             } else {
                 (*value)->keyvals = (orte_gpr_keyval_t**)malloc(cnt * sizeof(orte_gpr_keyval_t*));
                 if (NULL == (*value)->keyvals) {
@@ -356,8 +358,9 @@ MOVEON:
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
                 (*value)->cnt = cnt;
+                kptr = (*value)->keyvals;
             }
-            kptr = (*value)->keyvals;
+            
             iptr = (orte_gpr_replica_itagval_t**)((targets[i]->ivals)->addr);
             for (n=0, p=0; n < (targets[i]->ivals)->size; n++) {
                 if (NULL != iptr[n]) {
