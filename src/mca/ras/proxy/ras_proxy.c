@@ -12,15 +12,9 @@
  * $HEADER$
  */
 #include "orte_config.h"
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/bproc.h>
-
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
-#include "util/argv.h"
-#include "util/output.h"
+
 #include "mca/ras/base/base.h"
 #include "mca/ras/base/ras_base_node.h"
 #include "ras_proxy.h"
