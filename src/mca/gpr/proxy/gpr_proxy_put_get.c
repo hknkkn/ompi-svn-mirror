@@ -89,14 +89,14 @@ int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
 
 int orte_gpr_proxy_get(orte_gpr_addr_mode_t mode,
                                 char *segment, char **tokens, char **keys,
-                                int *cnt, orte_gpr_keyval_t **keyvals)
+                                int *cnt, orte_gpr_value_t **values)
 
 {
     orte_buffer_t *cmd;
     orte_buffer_t *answer;
     int rc;
 
-    *keyvals = NULL;
+    *values = NULL;
     *cnt = 0;
     
     /* need to protect against errors */
@@ -130,7 +130,7 @@ int orte_gpr_proxy_get(orte_gpr_addr_mode_t mode,
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
-    rc = orte_gpr_base_unpack_get(answer, cnt, keyvals);
+    rc = orte_gpr_base_unpack_get(answer, cnt, values);
     OBJ_RELEASE(answer);
 
     return rc;

@@ -37,7 +37,7 @@
  * typedefs needed in replica component
  */
 
-#define ORTE_GPR_REPLICA_MAX_SIZE UINT32_MAX
+#define ORTE_GPR_REPLICA_MAX_SIZE INT32_MAX
 #define ORTE_GPR_REPLICA_BLOCK_SIZE 100
 
 typedef int32_t orte_gpr_replica_itag_t;
@@ -45,8 +45,8 @@ typedef int32_t orte_gpr_replica_itag_t;
 
 typedef struct {
     int debug;
-    uint32_t block_size;
-    uint32_t max_size;
+    int32_t block_size;
+    int32_t max_size;
     ompi_mutex_t mutex;
     bool compound_cmd_mode;
     bool exec_compound_cmd_mode;
@@ -223,6 +223,18 @@ struct orte_gpr_replica_notify_off_t {
 typedef struct orte_gpr_replica_notify_off_t orte_gpr_replica_notify_off_t;
 
 OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_off_t);
+
+/*
+ * List of itagvals found during a get operation
+ */
+typedef struct {
+    ompi_list_item_t item;
+    orte_gpr_replica_itagval_t itagval;     /**< itagval storage */
+    uint32_t num_tokens;                    /**< Number of tokens on the container */
+    char **tokens;                          /**< List of tokens that described the container */
+} orte_gpr_replica_val_list_t;
+
+OBJ_CLASS_DECLARATION(orte_gpr_replica_val_list_t);
 
 /** List of replicas that hold a stored entry.
  * Each entry can have an arbitrary number of replicas that hold a copy

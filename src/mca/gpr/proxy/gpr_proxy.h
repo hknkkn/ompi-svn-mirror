@@ -135,7 +135,7 @@ int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
                       
 int orte_gpr_proxy_get(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
-                                int *cnt, orte_gpr_keyval_t **keyvals);
+                                int *cnt, orte_gpr_value_t **values);
 
 int orte_gpr_proxy_get_nb(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,

@@ -142,16 +142,20 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
                             orte_gpr_replica_itag_t *tokentags, int num_tokens,
                             orte_gpr_replica_itag_t *keytags, int num_keys,
-                            int *cnt, orte_gpr_keyval_t **keyvals)
+                            int *cnt, orte_gpr_value_t **values)
 {
 #if 0
     orte_gpr_value_t *ans=NULL;
-    orte_gpr_replica_core_t *reg=NULL;
+    ompi_list_t *list;
+    orte_gpr_replica_val_list_t *valptr;
 
     if (orte_gpr_replica_globals.debug) {
 	ompi_output(0, "[%d,%d,%d] gpr replica: get entered", ORTE_NAME_ARGS(*(orte_process_info.my_name)));
     }
 
+    /* initialize the list of findings */
+    list = OBJ_NEW(ompi_list_t);
+    
     /* find all containers that meet search criteria */
     none_found = true;
     cptr = (orte_gpr_replica_container_t*)((seg->containers)->addr);
@@ -165,7 +169,20 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
                 if (NULL != iptr[i] && orte_gpr_replica_check_itag(iptr[i]->itag,
                                              num_keys, keytags)) {
                     /* match found - copy result into list */
-                    
+                    valptr = OBJ_NEW(orte_gpr_replica_val_lisst_t);
+                    if (NULL == valptr) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+                    (valptr->itagval).itag = iptr[i]->itag;
+                    (valptr->itagval).type = iptr[i]->type;
+                    if (ORTE_SUCCESS != orte_gpr_replica_xfer_payload(
+                                                &(valptr->itagval).value,
+                                                &(iptr[i]->value),
+                                                iptr[i]->type)) {
+                        return ORTE_ERROR;
+                    }
+                    ompi_list_append(list, &valptr->item);
+                    none_found = false;
                 }
             }
         }

@@ -345,8 +345,9 @@ typedef int (*orte_gpr_base_module_delete_segment_nb_fn_t)(char *segment,
  *
  * @param cnt The number of key-value pair structures to be stored.
  * 
- * @param *keyval An orte_gpr_keyval_t pointer to a contiguous array of one or more key_value pair
- * structures to be stored. The registry will copy this data onto the specified segment - the
+ * @param *keyval A pointer to the start of a contiguous array of one or more
+ * pointers to key_value pair
+ * objects to be stored. The registry will copy this data onto the specified segment - the
  * calling program is responsible for freeing any memory, if appropriate.
  *
  * @retval ORTE_SUCCESS The data has been stored on the specified segment, or the
@@ -399,8 +400,10 @@ typedef int (*orte_gpr_base_module_put_nb_fn_t)(orte_gpr_addr_mode_t addr_mode, 
  * described by the segment/token combination are to be returned.
  * 
  * @param *cnt (OUT) A pointer to the number of objects returned by the request.
- * @param **keyvals (OUT) A pointer to an array of keyvals containing the data
- * returned by the specified search.
+ * @param **values (OUT) A pointer to an array of orte_gpr_value_t object pointers
+ * containing the data
+ * returned by the specified search, including the segment and container id info
+ * for each keyval pair.
  *
  * @retval ORTE_SUCCESS Operation was successfully completed.
  * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
@@ -413,7 +416,7 @@ typedef int (*orte_gpr_base_module_put_nb_fn_t)(orte_gpr_addr_mode_t addr_mode, 
  */
 typedef int (*orte_gpr_base_module_get_fn_t)(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
-                                int *cnt, orte_gpr_keyval_t **keyvals);
+                                int *cnt, orte_gpr_value_t **values);
 
 /*
  * Get data from the registry (NON-BLOCKING)

@@ -380,11 +380,11 @@ int orte_gpr_replica_open(void)
     
     id = mca_base_param_register_int("gpr", "replica", "maxsize", NULL,
                                      ORTE_GPR_REPLICA_MAX_SIZE);
-    mca_base_param_lookup_int(id, (int*)&orte_gpr_replica_globals.max_size);
+    mca_base_param_lookup_int(id, &orte_gpr_replica_globals.max_size);
 
     id = mca_base_param_register_int("gpr", "replica", "blocksize", NULL,
                                      ORTE_GPR_REPLICA_BLOCK_SIZE);
-    mca_base_param_lookup_int(id, (int*)&orte_gpr_replica_globals.block_size);
+    mca_base_param_lookup_int(id, &orte_gpr_replica_globals.block_size);
 
     return ORTE_SUCCESS;
 }

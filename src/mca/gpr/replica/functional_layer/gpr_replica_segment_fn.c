@@ -46,7 +46,9 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
         return rc;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(iptr, *kptr))) {
+    iptr->type = (*kptr)->type;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(&(iptr->value),
+                                               &((*kptr)->value), (*kptr)->type))) {
         OBJ_RELEASE(iptr);
         return rc;
     }
@@ -65,87 +67,90 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
 int orte_gpr_replica_update_keyval(orte_gpr_replica_itagval_t *iptr,
                                    orte_gpr_keyval_t *kptr)
 {
-    return orte_gpr_replica_xfer_payload(iptr, kptr);
+    iptr->type = kptr->type;
+    
+    return orte_gpr_replica_xfer_payload(&(iptr->value), &(kptr->value), iptr->type);
 }
 
 
-int orte_gpr_replica_xfer_payload(orte_gpr_replica_itagval_t *iptr,
-                                  orte_gpr_keyval_t *kptr)
+int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
+                                  orte_gpr_value_union_t *src,
+                                  orte_data_type_t type)
 {
-    iptr->type = kptr->type;
     
-    switch(iptr->type) {
+    switch(type) {
 
         case ORTE_STRING:
-            (iptr->value).strptr = strdup((kptr->value).strptr);
+            dest->strptr = strdup(src->strptr);
             break;
             
         case ORTE_UINT8:
-            (iptr->value).ui8 = (kptr->value).ui8;
+            dest->ui8 = src->ui8;
             break;
             
         case ORTE_UINT16:
-            (iptr->value).ui16 = (kptr->value).ui16;
+            dest->ui16 = src->ui16;
             break;
             
         case ORTE_UINT32:
-            (iptr->value).ui32 = (kptr->value).ui32;
+            dest->ui32 = src->ui32;
             break;
             
 #ifdef HAVE_I64
         case ORTE_UINT64:
-            (iptr->value).ui64 = (kptr->value).ui64;
+            dest->ui64 = src->ui64;
             break;
 #endif
 
         case ORTE_INT8:
-            (iptr->value).i8 = (kptr->value).i8;
+            dest->i8 = src->i8;
             break;
         
         case ORTE_INT16:
-            (iptr->value).i16 = (kptr->value).i16;
+            dest->i16 = src->i16;
             break;
         
         case ORTE_INT32:
-            (iptr->value).i32 = (kptr->value).i32;
+            dest->i32 = src->i32;
             break;
         
 #ifdef HAVE_I64
         case ORTE_INT64:
-            (iptr->value).i64 = (kptr->value).i64;
+            dest->i64 = src->i64;
             break;
 #endif
 
         case ORTE_BYTE_OBJECT:
-            ((iptr->value).byteobject).size = ((kptr->value).byteobject).size;
-            ((iptr->value).byteobject).bytes = ((kptr->value).byteobject).bytes;
-            ((kptr->value).byteobject).bytes = NULL;
+            (dest->byteobject).size = (src->byteobject).size;
+            (dest->byteobject).bytes = (src->byteobject).bytes;
+            (src->byteobject).bytes = NULL;
             break;
             
         case ORTE_NAME:
-            (iptr->value).proc = (kptr->value).proc;;
+            dest->proc = src->proc;;
             break;
             
         case ORTE_JOBID:
-            (iptr->value).jobid = (kptr->value).jobid;
+            dest->jobid = src->jobid;
             break;
             
         case ORTE_NODE_STATE:
-            (iptr->value).node_state = (kptr->value).node_state;
+            dest->node_state = src->node_state;
             break;
             
         case ORTE_STATUS_KEY:
-            (iptr->value).proc_status = (kptr->value).proc_status;
+            dest->proc_status = src->proc_status;
             break;
             
         case ORTE_EXIT_CODE:
-            (iptr->value).exit_code = (kptr->value).exit_code;
+            dest->exit_code = src->exit_code;
             break;
             
         default:
             return ORTE_ERR_BAD_PARAM;
             break;
     }
+    return ORTE_SUCCESS;
 }
 
 

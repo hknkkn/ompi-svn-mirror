@@ -157,6 +157,7 @@ typedef struct {
     ompi_object_t super;                    /**< Makes this an object */
     uint32_t cnt;                           /**< Number of keyval objects returned */
     orte_gpr_keyval_t *keyvals;             /**< Contiguous array of keyval object pointers */
+    char *segment;                          /**< Name of the segment this came from */
     uint32_t num_tokens;                    /**< Number of tokens used to recover data */
     char **tokens;                          /**< List of tokens that described this data */
 } orte_gpr_value_t;
