@@ -35,7 +35,7 @@
 #include "../src/mca/ns/ns_types.h"
 
 #define NUM_ITERS 1
-#define NUM_ELEMS 1
+#define NUM_ELEMS 4
 
 static bool test1(void);        /* verify different buffer inits */
 static bool test2(void);        /* verify we can pack ok */
@@ -326,6 +326,7 @@ static bool test4(void)
         for(j=0; j<NUM_ELEMS; j++) {
             if(strcmp(src[j],dst[j]) != 0) {
                 test_comment ("test4: invalid results from unpack");
+                fprintf(test_out, "item %d src=[%s] len=%d dst=[%s] len=%d\n", j, src[j], strlen(src[j]), dst[j], strlen(dst[j]));
                 return(false);
             }
         }
@@ -497,7 +498,7 @@ static bool test7(void)
         rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_BYTE_OBJECT);
         if (ORTE_SUCCESS != rc) {
             test_comment ("orte_dps.pack failed");
-            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            fprintf(test_out, "orte_dps.pack failed with return code %d\n", rc);
             return(false);
         }
     }
@@ -511,7 +512,7 @@ static bool test7(void)
         rc = orte_dps.unpack(bufA, dst, &count, ORTE_BYTE_OBJECT);
         if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
             test_comment ("test7: orte_dps.unpack failed");
-            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            fprintf(test_out, "orte_dps.unpack failed with return code %d\n", rc);
             return(false);
         }
 
@@ -519,6 +520,7 @@ static bool test7(void)
             if(src[j].size != dst[j].size ||
                memcmp(src[j].bytes,dst[j].bytes,src[j].size) != 0) {
                 test_comment ("test7: invalid results from unpack");
+                fprintf(test_out, "test7: element %d has incorrect unpacked value\n", j);
                 return(false);
             }
         }
