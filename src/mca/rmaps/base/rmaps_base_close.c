@@ -27,21 +27,26 @@
 int orte_rmaps_base_close(void)
 {
     ompi_list_item_t* item;
-                                                                                                        
-    /* Finalize all selected modules */
-    while((item = ompi_list_remove_first(&orte_rmaps_base.rmaps_selected)) != NULL) {
-        orte_rmaps_base_selected_t* selected = (orte_rmaps_base_selected_t*)item;
-        selected->module->finalize();
-        OBJ_RELEASE(selected);
+
+    /* Finalize all available modules */
+
+    while (NULL != 
+           (item = ompi_list_remove_first(&orte_rmaps_base.rmaps_available))) {
+        orte_rmaps_base_cmp_t* cmp = (orte_rmaps_base_cmp_t*) item;
+        ompi_output(orte_rmaps_base.rmaps_output,
+                    "orte:base:close: finalizing module %s",
+                    cmp->component->rmaps_version.mca_component_name);
+        if (NULL != cmp->module->finalize) {
+            cmp->module->finalize();
+        }
+        OBJ_RELEASE(cmp);
     }
 
-    /* Close all remaining available components (may be one if this is a
-       Open RTE program, or [possibly] multiple if this is ompi_info) */
+    /* Close all remaining open components */
 
     mca_base_components_close(orte_rmaps_base.rmaps_output, 
-                              &orte_rmaps_base.rmaps_components, NULL);
+                              &orte_rmaps_base.rmaps_opened, NULL);
 
-    OBJ_DESTRUCT(&orte_rmaps_base.rmaps_selected);
     return ORTE_SUCCESS;
 }
 
