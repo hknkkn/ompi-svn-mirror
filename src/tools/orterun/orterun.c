@@ -241,6 +241,12 @@ int main(int argc, char *argv[], char* env[])
         OBJ_RELEASE(apps[i]);
     }
     free(apps);
+    apps = (orte_app_context_t**)(apps_pa.addr);
+    for (i=0; i < apps_pa.size; i++) {
+        if (NULL != apps[i]) {
+            OBJ_RELEASE(apps[i]);
+        }
+    }
     OBJ_DESTRUCT(&apps_pa);
     orte_finalize();
     return rc;
