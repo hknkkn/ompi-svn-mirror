@@ -361,8 +361,10 @@ int ompi_event_restart(void)
         ompi_event_pipe[0] = -1;
         ompi_event_pipe[1] = -1;
     }
+    ompi_event_enabled = false;
     OMPI_THREAD_UNLOCK(&ompi_event_lock);
 #endif
+
     ompi_event_enable();
     if((rc = ompi_evsignal_restart()) != 0)
         return OMPI_ERROR;
