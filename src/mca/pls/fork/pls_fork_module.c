@@ -111,13 +111,37 @@ static int orte_pls_fork_proc(
     }
 
     if(pid == 0) {
+        char* param;
+        char* uri;
 
         /* set working directory */
         if(chdir(context->cwd) != 0) {
             ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         }
 
-#if 0
+        /* push name into environment */
+        orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range);
+
+        /* setup ns contact info */
+        if(NULL != orte_process_info.ns_replica_uri) {
+            uri = strdup(orte_process_info.ns_replica_uri);
+        } else {
+            uri = orte_rml.get_uri();
+        }
+        asprintf(&param, "OMPI_MCA_ns_replica_uri=%s", uri);
+        putenv(param);
+        free(uri);
+                                                                                                    
+        /* setup gpr contact info */
+        if(NULL != orte_process_info.gpr_replica_uri) {
+            uri = strdup(orte_process_info.gpr_replica_uri);
+        } else {
+            uri = orte_rml.get_uri();
+        }
+        asprintf(&param, "OMPI_MCA_gpr_replica_uri=%s", uri);
+        putenv(param);
+        free(uri);
+
         /* setup stdout/stderr */
         close(p_stdout[0]);
         close(p_stderr[0]);
@@ -129,12 +153,9 @@ static int orte_pls_fork_proc(
             dup2(p_stderr[1], STDERR_FILENO);
             close(p_stderr[1]);
         }
-#endif
 
-        /* push name into environment */
-        orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range);
-  
         /* execute application */
+        ompi_argv_insert(&context->env, 0, environ);
         execve(context->app, context->argv, context->env);
         ompi_output(0, "orte_pls_fork: execv failed with errno=%d\n", errno);
         exit(-1);
