@@ -110,14 +110,14 @@ int orte_gpr_replica_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
 
 int orte_gpr_replica_get(orte_gpr_addr_mode_t addr_mode,
                          char *segment, char **tokens, char **keys,
-                         int *cnt, orte_gpr_value_t **values)
+                         int *cnt, orte_gpr_value_t ***values)
 {
     orte_gpr_replica_segment_t *seg=NULL;
     orte_gpr_replica_itag_t *tokentags=NULL, *keytags=NULL;
     int num_tokens=0, num_keys=0, rc;
 
-    *values = NULL;
     *cnt = 0;
+    *values = NULL;
     
     /* protect against errors */
     if (NULL == segment) {

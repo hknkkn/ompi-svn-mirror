@@ -416,7 +416,7 @@ typedef int (*orte_gpr_base_module_put_nb_fn_t)(orte_gpr_addr_mode_t addr_mode, 
  */
 typedef int (*orte_gpr_base_module_get_fn_t)(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
-                                int *cnt, orte_gpr_value_t **values);
+                                int *cnt, orte_gpr_value_t ***values);
 
 /*
  * Get data from the registry (NON-BLOCKING)

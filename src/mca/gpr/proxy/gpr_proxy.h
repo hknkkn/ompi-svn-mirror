@@ -135,7 +135,7 @@ int orte_gpr_proxy_put_nb(orte_gpr_addr_mode_t addr_mode, char *segment,
                       
 int orte_gpr_proxy_get(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
-                                int *cnt, orte_gpr_value_t **values);
+                                int *cnt, orte_gpr_value_t ***values);
 
 int orte_gpr_proxy_get_nb(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
@@ -216,5 +216,8 @@ orte_gpr_proxy_remove_notify_request(orte_gpr_notify_id_t local_idtag,
 
 int orte_gpr_proxy_set_remote_idtag(orte_gpr_notify_id_t local_idtag,
 				   orte_gpr_notify_id_t remote_idtag);
+
+int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_action_t state,
+                    orte_gpr_notify_message_t *message);
 
 #endif

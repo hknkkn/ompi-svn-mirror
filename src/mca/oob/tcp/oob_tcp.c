@@ -471,7 +471,7 @@ void mca_oob_tcp_registry_callback(
     orte_gpr_notify_message_t* msg,
     void* cbdata)
 {
-    size_t i;
+    int32_t i;
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_registry_callback\n",
             ORTE_NAME_ARGS(*orte_process_info.my_name));
@@ -480,16 +480,16 @@ void mca_oob_tcp_registry_callback(
     /* process the callback */
     OMPI_THREAD_LOCK(&mca_oob_tcp_component.tcp_lock);
     for(i = 0; i < msg->cnt; i++) {
-        orte_gpr_value_t* value = &msg->values[i];
+        orte_gpr_value_t* value = msg->values[i];
         orte_buffer_t buffer;
         mca_oob_tcp_addr_t* addr, *existing;
         mca_oob_tcp_peer_t* peer;
-        size_t j;
+        int32_t j;
 
-        for(j = 0; j<value->cnt; j++) {
+        for(j = 0; j < value->cnt; j++) {
 
             /* check to make sure this is the requested key */
-            orte_gpr_keyval_t* keyval = &value->keyvals[j];
+            orte_gpr_keyval_t* keyval = value->keyvals[j];
             if(strcmp(keyval->key,"oob-tcp") != 0)
                 continue;
 
@@ -618,7 +618,7 @@ int mca_oob_tcp_init(void)
     size_t npeers;
     int rc;
     ompi_list_item_t* item;
-    orte_gpr_keyval_t keyval;
+    orte_gpr_keyval_t *keyval;
 
     /* iterate through the open connections and send an ident message to all peers -
      * note that we initially come up w/out knowing our process name - and are assigned
@@ -695,10 +695,10 @@ int mca_oob_tcp_init(void)
         return rc;
     }
 
-    OBJ_CONSTRUCT(&keyval, orte_gpr_keyval_t);
-    keyval.type = ORTE_BYTE;
-    keyval.key = "oob-tcp";
-    rc = orte_dps.unload(buffer, (void**)&keyval.value.byteobject.bytes, &keyval.value.byteobject.size);
+    keyval = OBJ_NEW(orte_gpr_keyval_t);
+    keyval->type = ORTE_BYTE;
+    keyval->key = "oob-tcp";
+    rc = orte_dps.unload(buffer, (void**)&keyval->value.byteobject.bytes, &keyval->value.byteobject.size);
     if(rc != OMPI_SUCCESS) {
         OBJ_RELEASE(buffer);
         return rc;
@@ -710,7 +710,7 @@ int mca_oob_tcp_init(void)
         return rc;
     }
     OBJ_RELEASE(buffer);
-    OBJ_DESTRUCT(&keyval);
+    OBJ_RELEASE(keyval);
 
     if(rc != OMPI_SUCCESS) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: registry put failed with error code %d.",

@@ -141,7 +141,7 @@ extern "C" {
 			      orte_gpr_addr_mode_t mode,
 			      char *segment, char **tokens, char **keys);
     OMPI_DECLSPEC int orte_gpr_base_unpack_get(orte_buffer_t *buffer,
-                   int *cnt, orte_gpr_value_t **values);
+                   int *cnt, orte_gpr_value_t ***values);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_dump(orte_buffer_t *cmd);
     OMPI_DECLSPEC int orte_gpr_base_print_dump(orte_buffer_t *buffer, int output_id);

@@ -88,7 +88,7 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
                             orte_gpr_replica_itag_t *tokentags, int num_tokens,
                             orte_gpr_replica_itag_t *keytags, int num_keys,
-                            int *cnt, orte_gpr_value_t **values);
+                            int *cnt, orte_gpr_value_t ***values);
 
 int orte_gpr_replica_get_nb_fn(orte_gpr_addr_mode_t addr_mode,
                                 orte_gpr_replica_segment_t *seg,

@@ -55,7 +55,7 @@ int orte_gpr_base_unpack_put(orte_buffer_t *buffer)
 }
 
 
-int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *cnt, orte_gpr_value_t **values)
+int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *cnt, orte_gpr_value_t ***values)
 {
     orte_gpr_cmd_flag_t command;
     int rc;
@@ -80,7 +80,7 @@ int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *cnt, orte_gpr_value_t *
         return ORTE_ERR_COMM_FAILURE;
     }
     
-    *values = (orte_gpr_value_t*)malloc(n*sizeof(orte_gpr_value_t*));
+    *values = (orte_gpr_value_t**)malloc(n*sizeof(orte_gpr_value_t*));
     if (NULL == *values) {
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
