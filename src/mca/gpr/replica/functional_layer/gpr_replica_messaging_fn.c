@@ -65,7 +65,6 @@ int orte_gpr_replica_process_callbacks(void)
 	        if (orte_gpr_replica_globals.debug) {
 		      ompi_output(0, "process_callbacks: local");
 	        }
-orte_gpr.dump_notify_msg(cb->message, 0);
             data = (cb->message)->data;
             sdata = (orte_gpr_replica_subscribed_data_t**)((trig->subscribed_data)->addr);
             for (i=0; i < (cb->message)->cnt; i++) {
@@ -82,7 +81,6 @@ orte_gpr.dump_notify_msg(cb->message, 0);
     		      ompi_output(0, "process_callbacks: remote to [%d,%d,%d]",
                         ORTE_NAME_ARGS(cb->requestor));
     	       }
-orte_gpr.dump_notify_msg(cb->message, 0);
     	       orte_gpr_replica_remote_notify(cb->requestor, cb->remote_idtag, cb->message);
         }
 CLEANUP:
@@ -126,6 +124,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
+
     /* queue the callback */
     if (NULL == trig->requestor) {  /* local request - queue local callback */
         cb->requestor = NULL;
@@ -156,6 +155,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
+    cb->message->idtag = trig->index;
 
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_construct_notify_message(&(cb->message), trig))) {
         ORTE_ERROR_LOG(rc);

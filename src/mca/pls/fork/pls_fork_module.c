@@ -124,11 +124,6 @@ static int orte_pls_fork_proc(
             ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         }
 
-        /* push name into environment */
-        environ_copy = ompi_argv_copy(environ);
-        orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range, 
-                            &environ_copy);
-
         /* setup ns contact info */
         if(NULL != orte_process_info.ns_replica_uri) {
             uri = strdup(orte_process_info.ns_replica_uri);
@@ -150,6 +145,11 @@ static int orte_pls_fork_proc(
         setenv(param,uri,true);
         free(param);
         free(uri);
+
+        /* push name into environment */
+        environ_copy = ompi_argv_copy(environ);
+        orte_ns_nds_env_put(&proc->proc_name, vpid_start, vpid_range, 
+                            &environ_copy);
 
         /* setup stdout/stderr */
         close(p_stdout[0]);
