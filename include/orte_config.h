@@ -19,6 +19,6 @@
 #define ORTE_CONFIG_H_
 
 #include "ompi_config.h"
-
+#define ORTE_DECLSPEC OMPI_DECLSPEC
 
 #endif
