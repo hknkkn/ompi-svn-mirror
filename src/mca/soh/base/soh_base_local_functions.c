@@ -24,7 +24,7 @@
 
 #include "mca/soh/base/base.h"
 
-int mca_soh_base_update_cell_soh_not_available(mca_ns_base_cellid_t cellid)
+int mca_soh_base_update_cell_soh_not_available(orte_cellid_t cellid)
 {
     return OMPI_ERR_NOT_IMPLEMENTED;
 }

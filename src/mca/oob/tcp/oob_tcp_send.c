@@ -12,6 +12,9 @@
  * $HEADER$
  */
 #include "ompi_config.h"
+
+#include "mca/ns/ns_types.h"
+
 #include "mca/oob/tcp/oob_tcp.h"
 
 static int mca_oob_tcp_send_self(
@@ -53,7 +56,7 @@ static int mca_oob_tcp_send_self(
  */
 
 int mca_oob_tcp_send(
-    ompi_process_name_t* name, 
+    orte_process_name_t* name, 
     struct iovec *iov, 
     int count, 
     int tag,
@@ -66,8 +69,8 @@ int mca_oob_tcp_send(
 
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_send: tag %d\n",
-            OMPI_NAME_ARGS(mca_oob_name_self),
-            OMPI_NAME_ARGS(peer->peer_name),
+            ORTE_NAME_ARGS(mca_oob_name_self),
+            ORTE_NAME_ARGS(peer->peer_name),
             tag);
     }
 
@@ -142,7 +145,7 @@ int mca_oob_tcp_send(
  */
 
 int mca_oob_tcp_send_nb(
-    ompi_process_name_t* name, 
+    orte_process_name_t* name, 
     struct iovec* iov, 
     int count,
     int tag,

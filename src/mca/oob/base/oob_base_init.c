@@ -25,7 +25,7 @@
 #include "mca/base/base.h"
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/base/base.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
 
@@ -44,9 +44,9 @@ OBJ_CLASS_INSTANCE(
     NULL
 );
 
-ompi_process_name_t mca_oob_name_self  = { MCA_NS_BASE_CELLID_MAX, MCA_NS_BASE_JOBID_MAX, MCA_NS_BASE_VPID_MAX };
-ompi_process_name_t mca_oob_name_seed  = { 0, 0, 0 };
-ompi_process_name_t mca_oob_name_any  = { MCA_NS_BASE_CELLID_MAX, MCA_NS_BASE_JOBID_MAX, MCA_NS_BASE_VPID_MAX };
+orte_process_name_t mca_oob_name_self  = { ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX };
+orte_process_name_t mca_oob_name_seed  = { 0, 0, 0 };
+orte_process_name_t mca_oob_name_any  = { ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX };
 
 /**
  * Parse contact info string into process name and list of uri strings.
@@ -54,10 +54,10 @@ ompi_process_name_t mca_oob_name_any  = { MCA_NS_BASE_CELLID_MAX, MCA_NS_BASE_JO
 
 int mca_oob_parse_contact_info(
     const char* contact_info,
-    ompi_process_name_t* name,
+    orte_process_name_t* name,
     char*** uri)
 {
-    ompi_process_name_t* proc_name;
+    orte_process_name_t* proc_name;
 
     /* parse the process name */
     char* cinfo = strdup(contact_info);
@@ -68,7 +68,10 @@ int mca_oob_parse_contact_info(
     }
     *ptr = '\0';
     ptr++;
-    proc_name = mca_ns_base_convert_string_to_process_name(cinfo);
+    if (ORTE_SUCCESS != orte_name_services.convert_string_to_process_name(proc_name, cinfo)) {
+        name = NULL;
+        return OMPI_ERROR;
+    }
     *name = *proc_name;
     free(proc_name);
 
@@ -191,10 +194,14 @@ int mca_oob_base_init(bool *user_threads, bool *hidden_threads)
                                                                                                              
 char* mca_oob_get_contact_info()
 {
-    char *proc_name = mca_ns_base_get_proc_name_string(MCA_OOB_NAME_SELF);
+    char *proc_name;
     char *proc_addr = mca_oob.oob_get_addr();
     size_t size = strlen(proc_name) + 1 + strlen(proc_addr) + 1;
     char *contact_info = malloc(size);
+    
+    if (ORTE_SUCCESS != orte_name_services.get_proc_name_string(proc_name, MCA_OOB_NAME_SELF)) {
+        return NULL;
+    }
     sprintf(contact_info, "%s;%s", proc_name, proc_addr);
     free(proc_name);
     free(proc_addr);
@@ -211,7 +218,7 @@ char* mca_oob_get_contact_info()
                                                                                                              
 int mca_oob_set_contact_info(const char* contact_info)
 {
-    ompi_process_name_t name;
+    orte_process_name_t name;
     char** uri;
     char** ptr;
     int rc = mca_oob_parse_contact_info(contact_info, &name, &uri);

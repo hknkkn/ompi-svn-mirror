@@ -27,7 +27,7 @@
 #include "ompi_config.h"
 
 #include "mca/mca.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns_types.h"
 
 /*
  * Component functions - all MUST be provided!
@@ -35,7 +35,7 @@
 
 /* Update the state-of-health of a cell
  */
-typedef int (*mca_soh_base_module_update_cell_soh_fn_t)(mca_ns_base_cellid_t cellid);
+typedef int (*mca_soh_base_module_update_cell_soh_fn_t)(orte_cellid_t cellid);
 
 
 /*

@@ -31,10 +31,10 @@
 #include "include/types.h"
 #include "include/constants.h"
 #include "mca/ns/ns.h"
-#include "mca/gpr/base/base.h"
+#include "mca/gpr/gpr.h"
 #include "runtime/runtime.h"
 
-OMPI_COMP_EXPORT extern ompi_process_name_t *mca_pcmclient_singleton_procs;
+OMPI_COMP_EXPORT extern orte_process_name_t *mca_pcmclient_singleton_procs;
 
 static
 int
@@ -44,13 +44,13 @@ init_proclist(void)
 
     /* need to create us an array of these things... */
     mca_pcmclient_singleton_procs = 
-        (ompi_process_name_t*) malloc(sizeof(ompi_process_name_t));
+        (orte_process_name_t*) malloc(sizeof(orte_process_name_t));
     if (NULL == mca_pcmclient_singleton_procs) return OMPI_ERROR;
 
     /* assign illegal name - someone will repair later */
-    mca_pcmclient_singleton_procs[0].cellid =  MCA_NS_BASE_CELLID_MAX;
-    mca_pcmclient_singleton_procs[0].jobid = MCA_NS_BASE_JOBID_MAX;
-    mca_pcmclient_singleton_procs[0].vpid = MCA_NS_BASE_VPID_MAX;
+    mca_pcmclient_singleton_procs[0].cellid =  ORTE_CELLID_MAX;
+    mca_pcmclient_singleton_procs[0].jobid = ORTE_JOBID_MAX;
+    mca_pcmclient_singleton_procs[0].vpid = ORTE_VPID_MAX;
     return OMPI_SUCCESS;
 }
 
@@ -66,7 +66,7 @@ int
 mca_pcmclient_singleton_init_cleanup(void)
 {
     int ret;
-    char *segment;
+    char *segment, *jobidstring;
     ompi_registry_notify_id_t rc_tag;
 
     if (NULL == mca_pcmclient_singleton_procs) {
@@ -78,8 +78,10 @@ mca_pcmclient_singleton_init_cleanup(void)
        started executing).  At this point, do the broadcast code */
 
     /* setup segment for this job */
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT,
-	     ompi_name_server.convert_jobid_to_string(mca_pcmclient_singleton_procs[0].jobid));
+    if (ORTE_SUCCESS != (ret = orte_name_services.convert_jobid_to_string(jobidstring, mca_pcmclient_singleton_procs[0].jobid))) {
+        return ret;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
 
     /* register a synchro on the segment so we get notified for startup */
     rc_tag = ompi_registry.synchro(
@@ -96,7 +98,7 @@ mca_pcmclient_singleton_init_cleanup(void)
 
 
 int 
-mca_pcmclient_singleton_get_peers(ompi_process_name_t **procs, 
+mca_pcmclient_singleton_get_peers(orte_process_name_t **procs, 
                                   size_t *num_procs)
 {
     int ret;
@@ -113,7 +115,7 @@ mca_pcmclient_singleton_get_peers(ompi_process_name_t **procs,
 }
 
 
-ompi_process_name_t*
+orte_process_name_t*
 mca_pcmclient_singleton_get_self(void)
 {
     int ret;

@@ -28,7 +28,7 @@
 #endif
 #include "class/ompi_object.h"
 #include "util/bufpack.h"
-#include "mca/ns/ns.h"
+#include "mca/ns/ns_types.h"
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
@@ -37,7 +37,7 @@ extern "C" {
  */
 struct mca_oob_tcp_addr_t {
     ompi_object_t super;
-    ompi_process_name_t addr_name;
+    orte_process_name_t addr_name;
     uint32_t addr_count;               
     uint32_t addr_next;
     uint32_t addr_alloc;

@@ -14,6 +14,9 @@
 
 
 #include "ompi_config.h"
+
+#include "mca/ns/ns_types.h"
+
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/env/pcmclient_env.h"
 #include "include/types.h"
@@ -30,7 +33,7 @@
 
 OMPI_COMP_EXPORT extern int mca_pcmclient_env_num_procs;
 OMPI_COMP_EXPORT extern int mca_pcmclient_env_procid;
-OMPI_COMP_EXPORT extern ompi_process_name_t *mca_pcmclient_env_procs;
+OMPI_COMP_EXPORT extern orte_process_name_t *mca_pcmclient_env_procs;
 
 int
 mca_pcmclient_env_init_cleanup(void)
@@ -40,7 +43,7 @@ mca_pcmclient_env_init_cleanup(void)
 
 
 int 
-mca_pcmclient_env_get_peers(ompi_process_name_t **procs, 
+mca_pcmclient_env_get_peers(orte_process_name_t **procs, 
                                   size_t *num_procs)
 {
     if (NULL == mca_pcmclient_env_procs) return OMPI_ERROR;
@@ -51,7 +54,7 @@ mca_pcmclient_env_get_peers(ompi_process_name_t **procs,
 }
 
 
-ompi_process_name_t*
+orte_process_name_t*
 mca_pcmclient_env_get_self(void)
 {
     if (NULL == mca_pcmclient_env_procs) return NULL;

@@ -23,10 +23,12 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_proxy.h"
 
 
-void mca_gpr_proxy_cleanup_job(mca_ns_base_jobid_t jobid)
+void mca_gpr_proxy_cleanup_job(orte_jobid_t jobid)
 {
     ompi_buffer_t cmd;
 
@@ -51,7 +53,7 @@ void mca_gpr_proxy_cleanup_job(mca_ns_base_jobid_t jobid)
 }
 
 
-void mca_gpr_proxy_cleanup_proc(bool purge, ompi_process_name_t *proc)
+void mca_gpr_proxy_cleanup_proc(bool purge, orte_process_name_t *proc)
 {
     ompi_buffer_t cmd;
 
@@ -62,7 +64,7 @@ void mca_gpr_proxy_cleanup_proc(bool purge, ompi_process_name_t *proc)
 
     if (mca_gpr_proxy_debug) {
         ompi_output(0, "[%d,%d,%d] cleanup_process: function entered for proc [%d,%d,%d]",
-            OMPI_NAME_ARGS(*ompi_rte_get_self()), OMPI_NAME_ARGS(*proc));
+            ORTE_NAME_ARGS(*ompi_rte_get_self()), ORTE_NAME_ARGS(*proc));
     }
 
     if (OMPI_SUCCESS != ompi_buffer_init(&cmd, 0)) { /* got a problem */

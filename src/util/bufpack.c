@@ -428,13 +428,13 @@ return (OMPI_SUCCESS);
 	       op_size = n*sizeof(uint32_t);
 	       break;
         case OMPI_JOBID:
-	       op_size = n*sizeof(mca_ns_base_jobid_t);
+	       op_size = n*sizeof(orte_jobid_t);
 	       break;
         case OMPI_CELLID:
-            op_size = n*sizeof(mca_ns_base_cellid_t);
+            op_size = n*sizeof(orte_cellid_t);
             break;
         case OMPI_NAME:
-            op_size = n*sizeof(ompi_process_name_t);
+            op_size = n*sizeof(orte_process_name_t);
             break;
         default:
             return OMPI_ERROR;
@@ -514,15 +514,15 @@ return (OMPI_SUCCESS);
             break;
             
         case OMPI_JOBID:
-	       mca_ns_base_pack_jobid(dest, src, n);
+	       orte_name_services.pack_jobid(dest, src);
 	       break;
         
         case OMPI_CELLID:
-            mca_ns_base_pack_cellid(dest, src, n);
+            orte_name_services.pack_cellid(dest, src);
             break;
             
         case OMPI_NAME:
-	       mca_ns_base_pack_name(dest, src, n);
+	       orte_name_services.pack_name(dest, src);
             break;
             
         default:
@@ -596,13 +596,13 @@ ompi_unpack(ompi_buffer_t buffer, void * dest, size_t n, ompi_pack_type_t type)
 	    op_size = n*sizeof(uint32_t);
 	    break;
         case OMPI_JOBID:
-	       op_size = n*sizeof(mca_ns_base_jobid_t);
+	       op_size = n*sizeof(orte_jobid_t);
 	       break;
         case OMPI_CELLID:
-            op_size = n*sizeof(mca_ns_base_cellid_t);
+            op_size = n*sizeof(orte_cellid_t);
             break;
         case OMPI_NAME:
-            op_size = n*sizeof(ompi_process_name_t);
+            op_size = n*sizeof(orte_process_name_t);
             break;
         default:
             return OMPI_ERROR;
@@ -720,21 +720,21 @@ ompi_unpack(ompi_buffer_t buffer, void * dest, size_t n, ompi_pack_type_t type)
             if (OMPI_JOBID != packed_type) {
                 return OMPI_PACK_MISMATCH;
             }
-	       mca_ns_base_unpack_jobid(dest, src, n);
+	       orte_name_services.unpack_jobid(dest, src);
 	       break;
         
         case OMPI_CELLID:
             if (OMPI_CELLID != packed_type) {
                 return OMPI_PACK_MISMATCH;
             }
-            mca_ns_base_unpack_cellid(dest, src, n);
+            orte_name_services.unpack_cellid(dest, src);
             break;
             
         case OMPI_NAME:
             if (OMPI_NAME != packed_type) {
                 return OMPI_PACK_MISMATCH;
             }
-	        mca_ns_base_unpack_name(dest, src, n);
+	        orte_name_services.unpack_name(dest, src);
             break;
             
         default:

@@ -23,6 +23,8 @@
  */
 #include "ompi_config.h"
 
+#include "mca/ns/ns.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
@@ -57,14 +59,14 @@ void mca_gpr_replica_process_callbacks(void)
 }
 
 
-ompi_buffer_t mca_gpr_replica_get_startup_msg(mca_ns_base_jobid_t jobid,
+ompi_buffer_t mca_gpr_replica_get_startup_msg(orte_jobid_t jobid,
 					      ompi_list_t *recipients)
 {
     ompi_buffer_t msg;
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] entered get_startup_msg",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()));
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
@@ -78,19 +80,19 @@ ompi_buffer_t mca_gpr_replica_get_startup_msg(mca_ns_base_jobid_t jobid,
 
 
 ompi_buffer_t
-mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
+mca_gpr_replica_construct_startup_msg_nl(orte_jobid_t jobid,
 						               ompi_list_t *recipients)
 {
     mca_gpr_replica_segment_t *seg=NULL, *proc_stat_seg;
     mca_gpr_replica_key_t *keys;
-    int num_keys;
+    int num_keys, cmpval;
     mca_gpr_replica_core_t *reg=NULL;
     mca_gpr_replica_trigger_list_t *trig, *next_trig;
     mca_gpr_replica_notify_request_tracker_t *trackptr;
-    ompi_name_server_namelist_t *peer, *ptr;
+    orte_name_services_namelist_t *peer, *ptr;
     ompi_rte_process_status_t *proc_status;
-    ompi_process_name_t *name;
-    char *segment, *tokens[2];
+    orte_process_name_t *name;
+    char *segment, *tokens[2], *jobidstring, *procstring;
     int32_t size;
     ompi_buffer_t msg;
     ompi_list_t *returned_list;
@@ -100,7 +102,7 @@ mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] entered construct_startup_msg for job %d",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
     }
 
     if (OMPI_SUCCESS != ompi_buffer_init(&msg, 0)) {
@@ -108,11 +110,13 @@ mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
     }
 
     /* setup tokens and segments for this job */
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT,
-	     ompi_name_server.convert_jobid_to_string(jobid));
+    if (ORTE_SUCCESS != orte_name_services.convert_jobid_to_string(jobidstring, jobid)) {
+        return NULL;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
 
     /* find the specified segment */
-    proc_stat_seg = mca_gpr_replica_find_seg(false, segment, MCA_NS_BASE_JOBID_MAX);
+    proc_stat_seg = mca_gpr_replica_find_seg(false, segment, ORTE_JOBID_MAX);
 
     /* traverse the registry's segments */
     for (seg = (mca_gpr_replica_segment_t*)ompi_list_get_first(&mca_gpr_replica_head.registry);
@@ -121,11 +125,11 @@ mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
 
 	if (mca_gpr_replica_debug) {
 	    ompi_output(0, "[%d,%d,%d] construct_ss_msg: checking segment %s owned by %d",
-			OMPI_NAME_ARGS(*ompi_rte_get_self()), seg->name, (int)seg->owning_job);
+			ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name, (int)seg->owning_job);
 	}
 
 	if ((jobid == seg->owning_job) ||    /* this segment is part of the specified jobid */
-        (MCA_NS_BASE_JOBID_MAX == seg->owning_job)) {    /* wildcard segment - belongs to all */
+        (ORTE_JOBID_MAX == seg->owning_job)) {    /* wildcard segment - belongs to all */
 
 	    ompi_pack_string(msg, seg->name);  /* pack the segment name */
 	    include_data = false;
@@ -160,18 +164,23 @@ mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
 			    }
 			    /* see if process already on list of recipients */
 			    found = false;
-			    for (ptr = (ompi_name_server_namelist_t*)ompi_list_get_first(recipients);
-				 ptr != (ompi_name_server_namelist_t*)ompi_list_get_end(recipients) && !found;
-				 ptr = (ompi_name_server_namelist_t*)ompi_list_get_next(ptr)) {
-				if (0 == ompi_name_server.compare(OMPI_NS_CMP_ALL, name, ptr->name)) {
-				    found = true;
-				}
+			    for (ptr = (orte_name_services_namelist_t*)ompi_list_get_first(recipients);
+				 ptr != (orte_name_services_namelist_t*)ompi_list_get_end(recipients) && !found;
+				 ptr = (orte_name_services_namelist_t*)ompi_list_get_next(ptr)) {
+                    if (ORTE_SUCCESS != orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, name, ptr->name)) {
+                        return NULL;
+                    }
+				   if (0 == cmpval) {
+				       found = true;
+				   }
 			    }
 
 			    if (!found) {
 				/* check job status segment to verify recipient still alive */
-				tokens[0] = ompi_name_server.get_proc_name_string(name);
-				tokens[1] = NULL;
+                    if (ORTE_SUCCESS != orte_name_services.get_proc_name_string(tokens[0], name)) {
+                        return NULL;
+                    }
+				   tokens[1] = NULL;
 
 				/* convert tokens to array of keys */
 				keys = mca_gpr_replica_get_key_list(proc_stat_seg, tokens, &num_keys);
@@ -189,8 +198,10 @@ mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
 				    if ((OMPI_PROC_KILLED != proc_status->status_key) &&
 					(OMPI_PROC_STOPPED != proc_status->status_key)) {
 					/* add process to list of recipients */
-					peer = OBJ_NEW(ompi_name_server_namelist_t);
-					peer->name = ompi_name_server.copy_process_name(name);
+					peer = OBJ_NEW(orte_name_services_namelist_t);
+                     if (ORTE_SUCCESS != orte_name_services.copy_process_name(peer->name, name)) {
+                         return NULL;
+                     }
 					ompi_list_append(recipients, &peer->item);
 				    }
 				}
@@ -225,11 +236,13 @@ mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
 	if (mca_gpr_replica_debug) {
 	    ompi_buffer_size(msg, &bufsize);
 	    ompi_output(0, "[%d,%d,%d] built startup_msg of length %d with %d recipients",
-			OMPI_NAME_ARGS(*ompi_rte_get_self()), bufsize, (int)ompi_list_get_size(recipients));
-	    for (peer = (ompi_name_server_namelist_t*)ompi_list_get_first(recipients);
-		 peer != (ompi_name_server_namelist_t*)ompi_list_get_end(recipients);
-		 peer = (ompi_name_server_namelist_t*)ompi_list_get_next(peer)) {
-		ompi_output(0, "\trecipient: %s", ompi_name_server.get_proc_name_string(peer->name));
+			ORTE_NAME_ARGS(*ompi_rte_get_self()), bufsize, (int)ompi_list_get_size(recipients));
+	    for (peer = (orte_name_services_namelist_t*)ompi_list_get_first(recipients);
+		 peer != (orte_name_services_namelist_t*)ompi_list_get_end(recipients);
+		 peer = (orte_name_services_namelist_t*)ompi_list_get_next(peer)) {
+          if (ORTE_SUCCESS == orte_name_services.get_proc_name_string(procstring, peer->name)) {
+		  ompi_output(0, "\trecipient: %s", procstring);
+          }
 	    }
 	}
     }
@@ -238,7 +251,7 @@ mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
 }
 
 
-void mca_gpr_replica_remote_notify(ompi_process_name_t *recipient, int recipient_tag,
+void mca_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
 				   ompi_registry_notify_message_t *message)
 {
     ompi_buffer_t msg;

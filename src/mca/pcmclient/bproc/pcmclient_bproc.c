@@ -14,6 +14,9 @@
 
 
 #include "ompi_config.h"
+
+#include "mca/ns/ns_types.h"
+
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/bproc/pcmclient_bproc.h"
 #include "include/types.h"
@@ -30,7 +33,7 @@
 
 extern int mca_pcmclient_bproc_num_procs;
 extern int mca_pcmclient_bproc_proc_index;
-extern ompi_process_name_t *mca_pcmclient_bproc_procs;
+extern orte_process_name_t *mca_pcmclient_bproc_procs;
 
 int
 mca_pcmclient_bproc_init_cleanup(void)
@@ -40,7 +43,7 @@ mca_pcmclient_bproc_init_cleanup(void)
 
 
 int 
-mca_pcmclient_bproc_get_peers(ompi_process_name_t **procs, 
+mca_pcmclient_bproc_get_peers(orte_process_name_t **procs, 
                                   size_t *num_procs)
 {
     if (NULL == mca_pcmclient_bproc_procs) return OMPI_ERROR;
@@ -51,7 +54,7 @@ mca_pcmclient_bproc_get_peers(ompi_process_name_t **procs,
 }
 
 
-ompi_process_name_t*
+orte_process_name_t*
 mca_pcmclient_bproc_get_self(void)
 {
     if (NULL == mca_pcmclient_bproc_procs) return NULL;

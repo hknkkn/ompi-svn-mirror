@@ -20,6 +20,10 @@
 #ifndef MCA_GPR_REPLICA_INTERNALS_H_
 #define MCA_GPR_REPLICA_INTERNALS_H_
 
+#include "orte_config.h"
+
+#include "mca/ns/ns_types.h"
+
 /** Retrieve a registry key value for a given token string.
  * The ompi_registry_getkey() function is used to translate a token string for a particular
  * segment of the registry into its associated (integer) key value.
@@ -76,7 +80,7 @@ int mca_gpr_replica_delete_key(mca_gpr_replica_segment_t *seg, char *token);
  * @retval NULL Indicates that the specified segment could not be found
  */
 mca_gpr_replica_segment_t *mca_gpr_replica_find_seg(bool create, char *segment,
-						    mca_ns_base_jobid_t jobid);
+						    orte_jobid_t jobid);
 
 mca_gpr_replica_keytable_t
 *mca_gpr_replica_find_dict_entry(mca_gpr_replica_segment_t *seg, char *token);
@@ -94,7 +98,7 @@ bool mca_gpr_replica_check_key_list(ompi_registry_mode_t mode,
 				    mca_gpr_replica_key_t *entry_keys);
 
 mca_gpr_replica_segment_t *mca_gpr_replica_define_segment(char *segment,
-							  mca_ns_base_jobid_t jobid);
+							  orte_jobid_t jobid);
 
 mca_gpr_replica_trigger_list_t
 *mca_gpr_replica_construct_trigger(ompi_registry_synchro_mode_t synchro_mode,
@@ -105,7 +109,7 @@ mca_gpr_replica_trigger_list_t
 				   int num_keys,
 				   int trigger,
 				   ompi_registry_notify_id_t id_tag,
-                    mca_ns_base_jobid_t owning_jobid);
+                    orte_jobid_t owning_jobid);
 
 ompi_registry_notify_message_t
 *mca_gpr_replica_construct_notify_message(mca_gpr_replica_segment_t *seg,
@@ -123,7 +127,7 @@ char *mca_gpr_replica_get_token(mca_gpr_replica_segment_t *seg, mca_gpr_replica_
 ompi_registry_notify_id_t
 mca_gpr_replica_enter_notify_request(mca_gpr_replica_segment_t *seg,
 				     ompi_registry_notify_action_t action,
-				     ompi_process_name_t *requestor,
+				     orte_process_name_t *requestor,
 				     ompi_registry_notify_id_t idtag,
 				     ompi_registry_notify_cb_fn_t cb_func,
 				     void *user_tag);
@@ -137,11 +141,11 @@ int mca_gpr_replica_check_synchros(mca_gpr_replica_segment_t *seg);
 
 void mca_gpr_replica_check_subscriptions(mca_gpr_replica_segment_t *seg, int8_t action_taken);
 
-int mca_gpr_replica_purge_subscriptions(ompi_process_name_t *proc);
+int mca_gpr_replica_purge_subscriptions(orte_process_name_t *proc);
 
 ompi_buffer_t
 mca_gpr_replica_process_command_buffer(ompi_buffer_t buffer,
-				       ompi_process_name_t *sender,
+				       orte_process_name_t *sender,
 				       bool *return_requested,
 				       bool *compound_cmd_detected);
 

@@ -23,25 +23,28 @@
 
 #include "ompi_config.h"
 
+#include "util/output.h"
+
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr.h"
 
 #include "runtime/runtime.h"
 
 
-int ompi_rte_job_startup(mca_ns_base_jobid_t jobid)
+int ompi_rte_job_startup(orte_jobid_t jobid)
 {
     ompi_list_t *recipients;
     ompi_buffer_t startup_msg;
-    ompi_name_server_namelist_t *ptr;
+    orte_name_services_namelist_t *ptr;
     ompi_rte_process_status_t *proc_status;
     int num_procs;
     size_t buf_size;
 
     if (ompi_rte_debug_flag) {
         	ompi_output(0, "[%d,%d,%d] entered rte_job_startup for job %d",
-        		    OMPI_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
+        		    ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
     }
 
     recipients = OBJ_NEW(ompi_list_t);
@@ -52,7 +55,7 @@ int ompi_rte_job_startup(mca_ns_base_jobid_t jobid)
     if (ompi_rte_debug_flag) {
         ompi_buffer_size(startup_msg, &buf_size);
         	ompi_output(0, "[%d,%d,%d] rte_job_startup: sending startup message of size %d to %d recipients",
-        		    OMPI_NAME_ARGS(*ompi_rte_get_self()), (int)buf_size,
+        		    ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)buf_size,
         		    ompi_list_get_size(recipients));
     }
 
@@ -62,12 +65,12 @@ int ompi_rte_job_startup(mca_ns_base_jobid_t jobid)
 
     if (ompi_rte_debug_flag) {
          ompi_output(0, "[%d,%d,%d] rte_job_startup: completed xcast of startup message",
-                 OMPI_NAME_ARGS(*ompi_rte_get_self()));
+                 ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
         /* for each recipient, set process status to "running" */
 
-	while (NULL != (ptr = (ompi_name_server_namelist_t*)ompi_list_remove_first(recipients))) {
+	while (NULL != (ptr = (orte_name_services_namelist_t*)ompi_list_remove_first(recipients))) {
 		proc_status = ompi_rte_get_process_status(ptr->name);
 		proc_status->status_key = OMPI_PROC_RUNNING;
 		proc_status->exit_code = 0;

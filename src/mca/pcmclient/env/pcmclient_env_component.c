@@ -19,6 +19,8 @@
 #include "include/constants.h"
 #include "include/types.h"
 #include "mca/mca.h"
+#include "mca/ns/ns_types.h"
+
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/env/pcmclient_env.h"
 #include "util/proc_info.h"
@@ -70,7 +72,7 @@ int mca_pcmclient_env_cellid;
 int mca_pcmclient_env_jobid;
 int mca_pcmclient_env_num_procs;
 int mca_pcmclient_env_procid;
-ompi_process_name_t *mca_pcmclient_env_procs = NULL;
+orte_process_name_t *mca_pcmclient_env_procs = NULL;
 
 
 int
@@ -126,7 +128,7 @@ mca_pcmclient_env_init(int *priority,
     if (mca_pcmclient_env_num_procs < 0) return NULL;
 
     mca_pcmclient_env_procs = 
-        (ompi_process_name_t*) malloc(sizeof(ompi_process_name_t) * 
+        (orte_process_name_t*) malloc(sizeof(orte_process_name_t) * 
                                       mca_pcmclient_env_num_procs);
     if (NULL == mca_pcmclient_env_procs) return NULL;
 

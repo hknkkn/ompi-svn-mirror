@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
@@ -38,7 +40,7 @@ ompi_list_t *mca_gpr_replica_test_internals(int level)
     mca_gpr_replica_segment_t *seg=NULL;
     mca_gpr_replica_keytable_t *dict_entry=NULL;
     bool success=false;
-    mca_ns_base_jobid_t test_jobid=0;
+    orte_jobid_t test_jobid=0;
 
 
     test_results = OBJ_NEW(ompi_list_t);

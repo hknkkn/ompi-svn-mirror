@@ -32,7 +32,7 @@ mca_gpr_base_unpack_get_startup_msg(ompi_buffer_t buffer,
     mca_gpr_cmd_flag_t command;
     int32_t num_objects, num_recipients, i;
     orte_process_name_t proc;
-    ompi_name_server_namelist_t *peer;
+    orte_name_services_namelist_t *peer;
     ompi_buffer_t msg;
     char *segment=NULL;
     ompi_registry_object_t *data_object;
@@ -55,10 +55,15 @@ mca_gpr_base_unpack_get_startup_msg(ompi_buffer_t buffer,
 	if (OMPI_SUCCESS != ompi_unpack(buffer, &proc, 1, OMPI_NAME)) {
 	    return NULL;
 	}
-	peer = OBJ_NEW(ompi_name_server_namelist_t);
-	peer->name = ompi_name_server.copy_process_name(&proc);
+	peer = OBJ_NEW(orte_name_services_namelist_t);
+    if (NULL == peer) {
+        return NULL;
+    }
+	if (ORTE_SUCCESS != orte_name_services.copy_process_name(peer->name, &proc)) {
+        return NULL;
+    }
     ompi_output(0, "\tproc [%d,%d,%d] added to list as [%d,%d,%d]",
-            OMPI_NAME_ARGS(proc), OMPI_NAME_ARGS(*(peer->name)));
+            ORTE_NAME_ARGS(proc), ORTE_NAME_ARGS(*(peer->name)));
 	ompi_list_append(recipients, &peer->item);
     }
 

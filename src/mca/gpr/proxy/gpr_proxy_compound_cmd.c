@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_proxy.h"
 
 
@@ -88,7 +90,7 @@ ompi_list_t* mca_gpr_proxy_exec_compound_cmd(bool return_requested)
 
     if (mca_gpr_proxy_debug) {
 	ompi_output(0, "[%d,%d,%d] transmitting compound command",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()));
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     OMPI_THREAD_LOCK(&mca_gpr_proxy_wait_for_compound_mutex);

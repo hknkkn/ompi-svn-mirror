@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
@@ -37,14 +39,16 @@ mca_gpr_replica_subscribe(ompi_registry_mode_t addr_mode,
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_key_t *keys;
     int num_keys;
-    mca_ns_base_jobid_t my_jobid;
+    orte_jobid_t my_jobid;
 
     /* protect against errors */
     if (NULL == segment) {
 	   return OMPI_REGISTRY_NOTIFY_ID_MAX;
     }
 
-    my_jobid = ompi_name_server.get_jobid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != orte_name_services.get_jobid(&my_jobid, ompi_rte_get_self())) {
+        return OMPI_REGISTRY_NOTIFY_ID_MAX;
+    }
     
     seg = mca_gpr_replica_find_seg(true, segment, my_jobid);
     if (NULL == seg) { /* segment couldn't be found or created */
@@ -102,7 +106,7 @@ int mca_gpr_replica_subscribe_nl(ompi_registry_mode_t addr_mode,
 				 mca_gpr_replica_key_t *keys,
 				 int num_keys,
 				 ompi_registry_notify_id_t id_tag,
-                  mca_ns_base_jobid_t jobid)
+                  orte_jobid_t jobid)
 {
     mca_gpr_replica_trigger_list_t *trig;
     ompi_registry_notify_message_t *notify_msg;
@@ -110,7 +114,7 @@ int mca_gpr_replica_subscribe_nl(ompi_registry_mode_t addr_mode,
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr replica: subscribe entered: segment %s",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), seg->name);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
     }
 
     /* construct the trigger */
@@ -160,7 +164,7 @@ mca_gpr_replica_unsubscribe_nl(ompi_registry_notify_id_t sub_number)
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr replica: unsubscribe entered for sub number %d",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), sub_number);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), sub_number);
     }
 
     /* find trigger on replica and remove it - return requestor's id_tag */

@@ -26,10 +26,6 @@
 #include "mca/allocator/base/base.h"
 #include "mca/mpool/mpool.h"
 #include "mca/mpool/base/base.h"
-#include "mca/llm/llm.h"
-#include "mca/llm/base/base.h"
-#include "mca/pcm/pcm.h"
-#include "mca/pcm/base/base.h"
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/base/base.h"
 #include "mca/oob/oob.h"
@@ -50,6 +46,7 @@
 #include "mca/gpr/base/base.h"
 #include "mca/io/io.h"
 #include "mca/io/base/base.h"
+#include "runtime/runtime.h"
 #include "tools/ompi_info/ompi_info.h"
 
 using namespace std;
@@ -120,13 +117,10 @@ void ompi_info::open_components()
   mca_gpr_base_open();
   component_map["gpr"] = &mca_gpr_base_components_available;
 
-  mca_llm_base_open();
-  component_map["llm"] = &mca_llm_base_components_available;
-
   mca_io_base_open();
   component_map["io"] = &mca_io_base_components_opened;
 
-  mca_ns_base_open();
+  orte_ns_base_open();
   component_map["ns"] = &mca_ns_base_components_available;
 
   mca_mpool_base_open();
@@ -150,9 +144,6 @@ void ompi_info::open_components()
 #else
   component_map["op"] = NULL;
 #endif
-
-  mca_pcm_base_open();
-  component_map["pcm"] = &mca_pcm_base_components_available;
 
   mca_pcmclient_base_open();
   component_map["pcmclient"] = &mca_pcmclient_base_components_available;
@@ -181,9 +172,8 @@ void ompi_info::open_components()
 void ompi_info::close_components()
 {
   if (opened_components) {
-    mca_pcm_base_close();
     mca_oob_base_close();
-    mca_ns_base_close();
+    orte_ns_base_close();
     mca_gpr_base_close();
 #if 0
     // JMS waiting for ralph to finish
@@ -194,7 +184,6 @@ void ompi_info::close_components()
     mca_ptl_base_close();
     mca_topo_base_close();
     mca_mpool_base_close();
-    mca_llm_base_close();
     mca_allocator_base_close();
     mca_base_close();
 

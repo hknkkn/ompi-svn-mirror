@@ -33,7 +33,7 @@
 #include "ompi_config.h"
 
 #include "mca/mca.h"
-#include "mca/ns/ns.h"
+#include "mca/ns/ns_types.h"
 #include "include/types.h"
 #include "runtime/runtime_types.h"
 
@@ -116,7 +116,7 @@ typedef int
  *
  * @return my name
  */
-typedef ompi_process_name_t * 
+typedef orte_process_name_t * 
 (*mca_pcmclient_base_module_get_self_fn_t)(void);
 
 
@@ -127,7 +127,7 @@ typedef ompi_process_name_t *
  * @return An array of peer names, including me
  */
 typedef int 
-(*mca_pcmclient_base_module_get_peers_fn_t)(ompi_process_name_t **peers, 
+(*mca_pcmclient_base_module_get_peers_fn_t)(orte_process_name_t **peers, 
                                              size_t *npeers);
 
 

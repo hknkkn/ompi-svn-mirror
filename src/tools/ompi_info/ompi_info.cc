@@ -139,13 +139,11 @@ int main(int argc, char *argv[])
   ompi_info::mca_types.push_back("coll");
   ompi_info::mca_types.push_back("gpr");
   ompi_info::mca_types.push_back("io");
-  ompi_info::mca_types.push_back("llm");
   ompi_info::mca_types.push_back("mpool");
   ompi_info::mca_types.push_back("ns");
   ompi_info::mca_types.push_back("one");
   ompi_info::mca_types.push_back("oob");
   ompi_info::mca_types.push_back("op");
-  ompi_info::mca_types.push_back("pcm");
   ompi_info::mca_types.push_back("pcmclient");
   ompi_info::mca_types.push_back("pml");
   ompi_info::mca_types.push_back("ptl");
@@ -194,13 +192,11 @@ int main(int argc, char *argv[])
     ompi_info::show_component_version("coll", component_all, ver_full, type_all);
     ompi_info::show_component_version("gpr", component_all, ver_full, type_all);
     ompi_info::show_component_version("io", component_all, ver_full, type_all);
-    ompi_info::show_component_version("llm", component_all, ver_full, type_all);
     ompi_info::show_component_version("mpool", component_all, ver_full, type_all);
     ompi_info::show_component_version("ns", component_all, ver_full, type_all);
     ompi_info::show_component_version("one", component_all, ver_full, type_all);
     ompi_info::show_component_version("oob", component_all, ver_full, type_all);
     ompi_info::show_component_version("op", component_all, ver_full, type_all);
-    ompi_info::show_component_version("pcm", component_all, ver_full, type_all);
     ompi_info::show_component_version("pcmclient", component_all, ver_full, type_all);
     ompi_info::show_component_version("pml", component_all, ver_full, type_all);
     ompi_info::show_component_version("ptl", component_all, ver_full, type_all);

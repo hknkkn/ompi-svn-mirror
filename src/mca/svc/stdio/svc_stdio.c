@@ -16,6 +16,7 @@
 #include "include/constants.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
+#include "mca/ns/ns_types.h"
 #include "svc_stdio.h"
 
 
@@ -31,7 +32,7 @@ mca_svc_base_module_t mca_svc_stdio_module = {
 
 static void mca_svc_stdio_recv(
     int status,
-    ompi_process_name_t* peer,
+    orte_process_name_t* peer,
     ompi_buffer_t buffer,
     int tag,
     void* cbdata)

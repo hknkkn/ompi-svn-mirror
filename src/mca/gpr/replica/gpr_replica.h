@@ -27,6 +27,8 @@
 #include "threads/mutex.h"
 #include "threads/condition.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "mca/gpr/base/base.h"
 
 /*
@@ -61,7 +63,7 @@ struct mca_gpr_replica_callbacks_t {
     ompi_registry_notify_cb_fn_t cb_func;
     void *user_tag;
     ompi_registry_notify_message_t *message;
-    ompi_process_name_t *requestor;
+    orte_process_name_t *requestor;
     ompi_registry_notify_id_t remote_idtag;
 };
 typedef struct mca_gpr_replica_callbacks_t mca_gpr_replica_callbacks_t;
@@ -74,7 +76,7 @@ OBJ_CLASS_DECLARATION(mca_gpr_replica_callbacks_t);
 struct mca_gpr_replica_notify_off_t {
     ompi_list_item_t item;
     ompi_registry_notify_id_t sub_number;
-    ompi_process_name_t *proc;
+    orte_process_name_t *proc;
 };
 typedef struct mca_gpr_replica_notify_off_t mca_gpr_replica_notify_off_t;
 
@@ -117,7 +119,7 @@ OBJ_CLASS_DECLARATION(mca_gpr_replica_keylist_t);
  */
 struct mca_gpr_replica_trigger_list_t {
     ompi_list_item_t item;                     /**< Allows this item to be placed on a list */
-    mca_ns_base_jobid_t owning_job;            /**< Job ID of the process that registered trigger */
+    orte_jobid_t owning_job;            /**< Job ID of the process that registered trigger */
     ompi_registry_synchro_mode_t synch_mode;   /**< Synchro mode - ascending, descending, ... */
     ompi_registry_notify_action_t action;      /**< Bit-mask of actions that trigger non-synchro notification */
     ompi_registry_mode_t addr_mode;            /**< Addressing mode */
@@ -153,7 +155,7 @@ OBJ_CLASS_DECLARATION(mca_gpr_replica_trigger_list_t);
  */
 struct mca_gpr_replica_list_t {
     ompi_list_item_t item;         /**< Allows this item to be placed on a list */
-    ompi_process_name_t *replica;  /**< Name of the replica */
+    orte_process_name_t *replica;  /**< Name of the replica */
 };
 typedef struct mca_gpr_replica_list_t mca_gpr_replica_list_t;
 
@@ -169,7 +171,7 @@ OBJ_CLASS_DECLARATION(mca_gpr_replica_list_t);
 struct mca_gpr_replica_write_invalidate_t {
     bool invalidate;
     time_t last_mod;
-    ompi_process_name_t *valid_replica;
+    orte_process_name_t *valid_replica;
 };
 typedef struct mca_gpr_replica_write_invalidate_t mca_gpr_replica_write_invalidate_t;
 
@@ -211,7 +213,7 @@ OBJ_CLASS_DECLARATION(mca_gpr_replica_core_t);
 struct mca_gpr_replica_segment_t {
     ompi_list_item_t item;             /**< Allows this item to be placed on a list */
     char *name;                        /**< Name of the segment */
-    mca_ns_base_jobid_t owning_job;    /**< Job that "owns" this segment */
+    orte_jobid_t owning_job;    /**< Job that "owns" this segment */
     mca_gpr_replica_key_t key;         /**< Key corresponding to name of registry segment */
     mca_gpr_replica_key_t lastkey;     /**< Highest key value used */
     ompi_list_t registry_entries;      /**< Linked list of stored objects within this segment */
@@ -227,7 +229,7 @@ OBJ_CLASS_DECLARATION(mca_gpr_replica_segment_t);
 
 struct mca_gpr_replica_notify_request_tracker_t {
     ompi_list_item_t item;                   /**< Allows this item to be placed on a list */
-    ompi_process_name_t *requestor;          /**< Name of requesting process */
+    orte_process_name_t *requestor;          /**< Name of requesting process */
     ompi_registry_notify_cb_fn_t callback;   /**< Function to be called for notificaiton */
     void *user_tag;                          /**< User-provided tag for callback function */
     ompi_registry_notify_id_t local_idtag;   /**< Local ID tag of associated subscription */
@@ -295,20 +297,20 @@ void mca_gpr_replica_silent_mode_on(void);
 void mca_gpr_replica_silent_mode_off(void);
 
 void mca_gpr_replica_notify_off(ompi_registry_notify_id_t sub_number);
-void mca_gpr_replica_notify_off_nl(ompi_process_name_t *proc, ompi_registry_notify_id_t sub_number);
+void mca_gpr_replica_notify_off_nl(orte_process_name_t *proc, ompi_registry_notify_id_t sub_number);
 
-void mca_gpr_replica_triggers_active(mca_ns_base_jobid_t jobid);
-void mca_gpr_replica_triggers_active_nl(mca_ns_base_jobid_t jobid);
+void mca_gpr_replica_triggers_active(orte_jobid_t jobid);
+void mca_gpr_replica_triggers_active_nl(orte_jobid_t jobid);
 
-void mca_gpr_replica_triggers_inactive(mca_ns_base_jobid_t jobid);
-void mca_gpr_replica_triggers_inactive_nl(mca_ns_base_jobid_t jobid);
+void mca_gpr_replica_triggers_inactive(orte_jobid_t jobid);
+void mca_gpr_replica_triggers_inactive_nl(orte_jobid_t jobid);
 
 void mca_gpr_replica_notify_on(ompi_registry_notify_id_t sub_number);
-void mca_gpr_replica_notify_on_nl(ompi_process_name_t *proc, ompi_registry_notify_id_t sub_number);
+void mca_gpr_replica_notify_on_nl(orte_process_name_t *proc, ompi_registry_notify_id_t sub_number);
 
-int mca_gpr_replica_assign_ownership(char *segment, mca_ns_base_jobid_t jobid);
+int mca_gpr_replica_assign_ownership(char *segment, orte_jobid_t jobid);
 int mca_gpr_replica_assign_ownership_nl(mca_gpr_replica_segment_t *seg,
-					mca_ns_base_jobid_t jobid);
+					orte_jobid_t jobid);
 
 /*
  * Delete-index functions
@@ -329,11 +331,11 @@ ompi_list_t* mca_gpr_replica_index_nl(mca_gpr_replica_segment_t *seg);
 /*
  * Cleanup functions
  */
-void mca_gpr_replica_cleanup_job(mca_ns_base_jobid_t jobid);
-void mca_gpr_replica_cleanup_job_nl(mca_ns_base_jobid_t jobid);
+void mca_gpr_replica_cleanup_job(orte_jobid_t jobid);
+void mca_gpr_replica_cleanup_job_nl(orte_jobid_t jobid);
 
-void mca_gpr_replica_cleanup_proc(bool purge, ompi_process_name_t *proc);
-void mca_gpr_replica_cleanup_proc_nl(bool purge, ompi_process_name_t *proc);
+void mca_gpr_replica_cleanup_proc(bool purge, orte_process_name_t *proc);
+void mca_gpr_replica_cleanup_proc_nl(bool purge, orte_process_name_t *proc);
 
 /*
  * Put-get functions
@@ -368,7 +370,7 @@ int mca_gpr_replica_subscribe_nl(ompi_registry_mode_t addr_mode,
 				 mca_gpr_replica_key_t *keys,
 				 int num_keys,
 				 ompi_registry_notify_id_t id_tag,
-                  mca_ns_base_jobid_t owning_jobid);
+                  orte_jobid_t owning_jobid);
 
 int mca_gpr_replica_unsubscribe(ompi_registry_notify_id_t sub_number);
 ompi_registry_notify_id_t mca_gpr_replica_unsubscribe_nl(ompi_registry_notify_id_t sub_number);
@@ -387,7 +389,7 @@ int mca_gpr_replica_synchro_nl(ompi_registry_synchro_mode_t synchro_mode,
 			       int num_keys,
 			       int trigger,
 			       ompi_registry_notify_id_t id_tag,
-                    mca_ns_base_jobid_t owning_jobid);
+                    orte_jobid_t owning_jobid);
 
 int mca_gpr_replica_cancel_synchro(ompi_registry_notify_id_t synch_number);
 ompi_registry_notify_id_t mca_gpr_replica_cancel_synchro_nl(ompi_registry_notify_id_t synch_number);
@@ -414,21 +416,21 @@ ompi_list_t* mca_gpr_replica_test_internals(int level);
 /*
  * Startup functions
  */
-ompi_buffer_t mca_gpr_replica_get_startup_msg(mca_ns_base_jobid_t jobid,
+ompi_buffer_t mca_gpr_replica_get_startup_msg(orte_jobid_t jobid,
 					      ompi_list_t *recipients);
 
 ompi_buffer_t
-mca_gpr_replica_construct_startup_msg_nl(mca_ns_base_jobid_t jobid,
+mca_gpr_replica_construct_startup_msg_nl(orte_jobid_t jobid,
 						               ompi_list_t *recipients);
 
 /*
  * Functions that interface to the proxy, but aren't available outside the gpr subsystem
  */
-void mca_gpr_replica_recv(int status, ompi_process_name_t* sender,
+void mca_gpr_replica_recv(int status, orte_process_name_t* sender,
 			  ompi_buffer_t buffer, int tag,
 			  void* cbdata);
 
-void mca_gpr_replica_remote_notify(ompi_process_name_t *recipient, int recipient_tag,
+void mca_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
 			       ompi_registry_notify_message_t *message);
 
 #endif

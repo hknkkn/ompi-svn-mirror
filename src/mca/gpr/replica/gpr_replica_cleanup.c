@@ -23,11 +23,13 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
 
-void mca_gpr_replica_cleanup_job(mca_ns_base_jobid_t jobid)
+void mca_gpr_replica_cleanup_job(orte_jobid_t jobid)
 {
     OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
     mca_gpr_replica_cleanup_job_nl(jobid);
@@ -37,7 +39,7 @@ void mca_gpr_replica_cleanup_job(mca_ns_base_jobid_t jobid)
 }
 
 
-void mca_gpr_replica_cleanup_job_nl(mca_ns_base_jobid_t jobid)
+void mca_gpr_replica_cleanup_job_nl(orte_jobid_t jobid)
 {
     mca_gpr_replica_segment_t *seg, *next_seg;
     mca_gpr_replica_trigger_list_t *trig, *next_trig;
@@ -69,7 +71,7 @@ void mca_gpr_replica_cleanup_job_nl(mca_ns_base_jobid_t jobid)
 }
 
 
-void mca_gpr_replica_cleanup_proc(bool purge, ompi_process_name_t *proc)
+void mca_gpr_replica_cleanup_proc(bool purge, orte_process_name_t *proc)
 {
     OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
     mca_gpr_replica_cleanup_proc_nl(purge, proc);
@@ -79,20 +81,24 @@ void mca_gpr_replica_cleanup_proc(bool purge, ompi_process_name_t *proc)
 }
 
 
-void mca_gpr_replica_cleanup_proc_nl(bool purge, ompi_process_name_t *proc)
+void mca_gpr_replica_cleanup_proc_nl(bool purge, orte_process_name_t *proc)
 {
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_trigger_list_t *trig;
     char *procname;
-    mca_ns_base_jobid_t jobid;
+    orte_jobid_t jobid;
 
 	if (mca_gpr_replica_debug) {
 		ompi_output(0, "[%d,%d,%d] gpr_replica_cleanup_proc: function entered for process [%d,%d,%d]",
-					OMPI_NAME_ARGS(*ompi_rte_get_self()), OMPI_NAME_ARGS(*proc));
+					ORTE_NAME_ARGS(*ompi_rte_get_self()), ORTE_NAME_ARGS(*proc));
 	}
 	
-    procname = ompi_name_server.get_proc_name_string(proc);
-    jobid = ompi_name_server.get_jobid(proc);
+    if (ORTE_SUCCESS != orte_name_services.get_proc_name_string(procname, proc)) {
+        return;
+    }
+    if (ORTE_SUCCESS != orte_name_services.get_jobid(&jobid, proc)) {
+        return;
+    }
 
     /* search all segments for this process name - remove all references
      */
@@ -106,7 +112,7 @@ void mca_gpr_replica_cleanup_proc_nl(bool purge, ompi_process_name_t *proc)
         	     */
         		if (mca_gpr_replica_debug) {
         			ompi_output(0, "[%d,%d,%d] gpr_replica_cleanup_proc: adjusting synchros for segment %s",
-        						OMPI_NAME_ARGS(*ompi_rte_get_self()), seg->name);
+        						ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
         		}
         		
         	    for (trig = (mca_gpr_replica_trigger_list_t*)ompi_list_get_first(&seg->triggers);

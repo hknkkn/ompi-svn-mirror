@@ -81,7 +81,7 @@ int mca_gpr_proxy_delete_object(ompi_registry_mode_t mode,
     int response;
 
     if (mca_gpr_proxy_debug) {
-	    ompi_output(0, "[%d,%d,%d] gpr_proxy_delete_object", OMPI_NAME_ARGS(*ompi_rte_get_self()));
+	    ompi_output(0, "[%d,%d,%d] gpr_proxy_delete_object", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     /* need to protect against errors */
@@ -125,7 +125,7 @@ int mca_gpr_proxy_delete_object(ompi_registry_mode_t mode,
 
  CLEANUP:
     if (mca_gpr_proxy_debug) {
-	   ompi_output(0, "[%d,%d,%d] gpr_proxy_delete_object: cleanup\n", OMPI_NAME_ARGS(*ompi_rte_get_self()));
+	   ompi_output(0, "[%d,%d,%d] gpr_proxy_delete_object: cleanup\n", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
     ompi_buffer_free(cmd);
     return response;

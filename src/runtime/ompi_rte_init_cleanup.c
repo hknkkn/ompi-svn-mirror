@@ -19,6 +19,7 @@
 #include "include/constants.h"
 
 #include "runtime/runtime.h"
+#include "util/output.h"
 #include "mca/oob/oob.h"
 #include "mca/pcmclient/base/base.h"
 

@@ -21,7 +21,8 @@
 #include "mca/oob/base/base.h"
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/base/base.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns.h"
+#include "runtime/runtime.h"
 
 
 /**
@@ -37,22 +38,25 @@
  */
                                                                                                   
 int mca_oob_xcast(
-    ompi_process_name_t* root,
+    orte_process_name_t* root,
     ompi_list_t* peers,
     ompi_buffer_t buffer,
     mca_oob_callback_packed_fn_t cbfunc)
 {
-    ompi_name_server_namelist_t *ptr;
+    orte_name_services_namelist_t *ptr;
     int rc;
     int tag = MCA_OOB_TAG_XCAST;
     ompi_buffer_t rbuf;
+    int cmpval;
         
     /* check to see if I am the root process name */
-    if(NULL != root &&
-       0 == ompi_name_server.compare(OMPI_NS_CMP_ALL, root, ompi_rte_get_self())) {
-        for (ptr = (ompi_name_server_namelist_t*)ompi_list_get_first(peers);
-	     ptr != (ompi_name_server_namelist_t*)ompi_list_get_end(peers);
-	     ptr = (ompi_name_server_namelist_t*)ompi_list_get_next(ptr)) {
+    if (ORTE_SUCCESS != (rc = orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, root, ompi_rte_get_self()))) {
+        return rc;
+    }
+    if(NULL != root && 0 == cmpval) {
+        for (ptr = (orte_name_services_namelist_t*)ompi_list_get_first(peers);
+	     ptr != (orte_name_services_namelist_t*)ompi_list_get_end(peers);
+	     ptr = (orte_name_services_namelist_t*)ompi_list_get_next(ptr)) {
             rc = mca_oob_send_packed(ptr->name, buffer, tag, 0);
             if(rc < 0) {
                 return rc;

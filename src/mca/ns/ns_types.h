@@ -80,12 +80,12 @@ typedef struct orte_process_name_t orte_process_name_t;
 
 /** List of names for general use
  */
-struct orte_name_server_namelist_t {
+struct orte_name_services_namelist_t {
     ompi_list_item_t item;     /**< Allows this item to be placed on a list */
     orte_process_name_t *name;  /**< Name of a process */
 };
-typedef struct orte_name_server_namelist_t orte_name_server_namelist_t;
+typedef struct orte_name_services_namelist_t orte_name_services_namelist_t;
 
-OMPI_DECLSPEC    OBJ_CLASS_DECLARATION(orte_name_server_namelist_t);
+OMPI_DECLSPEC    OBJ_CLASS_DECLARATION(orte_name_services_namelist_t);
 
 #endif

@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_proxy.h"
 
 ompi_registry_notify_id_t
@@ -51,7 +53,7 @@ mca_gpr_proxy_enter_notify_request(char *segment,
 
     if (mca_gpr_proxy_debug) {
         ompi_output(0, "[%d,%d,%d] enter_notify_request: tracker created for segment %s action %X idtag %d",
-                    OMPI_NAME_ARGS(*ompi_rte_get_self()), segment, action, trackptr->local_idtag);
+                    ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, action, trackptr->local_idtag);
     }
     
     return trackptr->local_idtag;
@@ -85,7 +87,7 @@ mca_gpr_proxy_remove_notify_request(ompi_registry_notify_id_t local_idtag)
 
     if (mca_gpr_proxy_debug) {
         ompi_output(0, "[%d,%d,%d] remove_notify_request: tracker removed for segment %s action %X idtag %d",
-                OMPI_NAME_ARGS(*ompi_rte_get_self()), trackptr->segment, trackptr->action, local_idtag);
+                ORTE_NAME_ARGS(*ompi_rte_get_self()), trackptr->segment, trackptr->action, local_idtag);
     }
 
     /* release tracker item */

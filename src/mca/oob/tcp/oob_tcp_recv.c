@@ -12,6 +12,9 @@
  * $HEADER$
  */
 #include "ompi_config.h"
+
+#include "mca/ns/ns.h"
+
 #include "mca/oob/tcp/oob_tcp.h"
 
 /*
@@ -27,7 +30,7 @@
  * @return             OMPI error code (<0) on error or number of bytes actually received.
  */
 int mca_oob_tcp_recv(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec *iov, 
     int count, 
     int* tagp,
@@ -39,8 +42,8 @@ int mca_oob_tcp_recv(
 
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_recv: tag %d\n",
-            OMPI_NAME_ARGS(mca_oob_name_self),
-            OMPI_NAME_ARGS(*peer),
+            ORTE_NAME_ARGS(mca_oob_name_self),
+            ORTE_NAME_ARGS(*peer),
             tag);
     }
 
@@ -145,7 +148,7 @@ int mca_oob_tcp_recv(
  * @return             OMPI error code (<0) on error.
  */
 int mca_oob_tcp_recv_nb(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec* iov, 
     int count,
     int tag,
@@ -247,10 +250,10 @@ int mca_oob_tcp_recv_nb(
  */
 
 int mca_oob_tcp_recv_cancel(
-    ompi_process_name_t* name, 
+    orte_process_name_t* name, 
     int tag)
 {
-    int matched = 0;
+    int matched = 0, cmpval1, cmpval2, rc;
     ompi_list_item_t *item, *next;
 
     /* wait for any previously matched messages to be processed */
@@ -268,8 +271,13 @@ int mca_oob_tcp_recv_cancel(
         mca_oob_tcp_msg_t* msg = (mca_oob_tcp_msg_t*)item;
         next = ompi_list_get_next(item);
 
-        if((0 == ompi_name_server.compare(OMPI_NS_CMP_ALL, name,MCA_OOB_NAME_ANY) ||
-	    (0 == ompi_name_server.compare(OMPI_NS_CMP_ALL, &msg->msg_peer,name)))) {
+        if (ORTE_SUCCESS != (rc = orte_name_services.compare(&cmpval1, ORTE_NS_CMP_ALL, name, MCA_OOB_NAME_ANY))) {
+            return rc;
+        }
+        if (ORTE_SUCCESS != (rc = orte_name_services.compare(&cmpval2, ORTE_NS_CMP_ALL, &msg->msg_peer, name))) {
+            return rc;
+        }
+        if ((0 == cmpval1) || (0 == cmpval2)) {
             if (tag == MCA_OOB_TAG_ANY || msg->msg_hdr.msg_tag == tag) {
                 ompi_list_remove_item(&mca_oob_tcp_component.tcp_msg_post, &msg->super);
                 MCA_OOB_TCP_MSG_RETURN(msg);

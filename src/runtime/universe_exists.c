@@ -36,7 +36,7 @@
 #include "util/universe_setup_file_io.h"
 
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns.h"
 
 #include "runtime/runtime.h"
 
@@ -48,7 +48,7 @@ int ompi_rte_universe_exists()
 {
     char *contact_file;
     int ret;
-    ompi_process_name_t proc={0,0,0};
+    orte_process_name_t proc={0,0,0};
 /*    bool ns_found=false, gpr_found=false; */
     bool ping_success=false;
 
@@ -200,13 +200,17 @@ int ompi_rte_universe_exists()
 	    free(ompi_process_info.ns_replica);
 	    ompi_process_info.ns_replica = NULL;
 	}
-	ompi_process_info.ns_replica = mca_ns_base_copy_process_name(&proc);
+    if (ORTE_SUCCESS != (ret = orte_name_services.copy_process_name(ompi_process_info.ns_replica, &proc))) {
+        return ret;
+    }
 
 	if (NULL != ompi_process_info.gpr_replica) {
 	    free(ompi_process_info.gpr_replica);
 	    ompi_process_info.gpr_replica = NULL;
 	}
-	ompi_process_info.gpr_replica = mca_ns_base_copy_process_name(&proc);
+    if (ORTE_SUCCESS != (ret = orte_name_services.copy_process_name(ompi_process_info.gpr_replica, &proc))) {
+        return ret;
+    }
 
 	if (NULL != ompi_universe_info.ns_replica) {
 	    free(ompi_universe_info.ns_replica);

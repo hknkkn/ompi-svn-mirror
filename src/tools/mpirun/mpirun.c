@@ -40,9 +40,7 @@
 
 #include "mca/base/base.h"
 #include "mca/ns/ns.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
-#include "mca/pcm/base/base.h"
+#include "mca/gpr/gpr.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
 
@@ -54,7 +52,7 @@ extern char** environ;
 struct ompi_event term_handler;
 struct ompi_event int_handler;
 struct ompi_event exit_handler;
-mca_ns_base_jobid_t new_jobid = MCA_NS_BASE_JOBID_MAX;
+orte_jobid_t new_jobid = ORTE_JOBID_MAX;
 
 static void
 exit_callback(int fd, short event, void *arg)
@@ -69,10 +67,10 @@ signal_callback(int fd, short event, void *arg)
     int ret;
     struct timeval tv;
 
-    if (new_jobid != MCA_NS_BASE_JOBID_MAX) {
-        ret = ompi_rte_terminate_job(new_jobid, 0);
+    if (new_jobid != ORTE_JOBID_MAX) {
+//        ret = ompi_rte_terminate_job(new_jobid, 0);
         if (OMPI_SUCCESS != ret) {
-            new_jobid = MCA_NS_BASE_JOBID_MAX;
+            new_jobid = ORTE_JOBID_MAX;
         }
     }
 
@@ -94,11 +92,9 @@ main(int argc, char *argv[])
     ompi_list_t *nodelist = NULL;
     ompi_list_t schedlist;
     int num_procs = 1;
-    ompi_rte_node_schedule_t *sched;
     char cwd[MAXPATHLEN];
-    char *my_contact_info, *tmp;
+    char *my_contact_info, *tmp, *jobidstring;
     char *contact_file, *filenm, *segment;
-    ompi_rte_spawn_handle_t *spawn_handle;
     ompi_registry_notify_id_t rc_tag;
     ompi_rte_process_status_t *proc_status;
     ompi_list_t *status_list;
@@ -267,71 +263,75 @@ main(int argc, char *argv[])
     ompi_event_add(&int_handler, NULL);
 
     /* get the jobid for the application */
-    new_jobid = ompi_name_server.create_jobid();
+    if (ORTE_SUCCESS != orte_name_services.create_jobid(&new_jobid)) {
+        return ORTE_ERROR;
+    }
 
     /* get the spawn handle to start spawning stuff */
-    spawn_handle = ompi_rte_get_spawn_handle(OMPI_RTE_SPAWN_HIGH_QOS, true);
+//    spawn_handle = ompi_rte_get_spawn_handle(OMPI_RTE_SPAWN_HIGH_QOS, true);
 
     /* BWB - fix jobid, procs, and nodes */
-    nodelist = ompi_rte_allocate_resources(spawn_handle, new_jobid, 0, num_procs);
-    if (NULL == nodelist) {
-        ompi_show_help("help-mpirun.txt", "mpirun:allocate-resources",
-                       true, argv[0], errno);
-	return -1;
-    }
+//    nodelist = ompi_rte_allocate_resources(spawn_handle, new_jobid, 0, num_procs);
+//    if (NULL == nodelist) {
+//        ompi_show_help("help-mpirun.txt", "mpirun:allocate-resources",
+//                       true, argv[0], errno);
+//	return -1;
+//    }
 
     /*
      * Process mapping
      */
-    OBJ_CONSTRUCT(&schedlist,  ompi_list_t);
-    sched = OBJ_NEW(ompi_rte_node_schedule_t);
-    ompi_list_append(&schedlist, (ompi_list_item_t*) sched);
-    ompi_cmd_line_get_tail(cmd_line, &(sched->argc), &(sched->argv));
+//    OBJ_CONSTRUCT(&schedlist,  ompi_list_t);
+//    sched = OBJ_NEW(ompi_rte_node_schedule_t);
+//    ompi_list_append(&schedlist, (ompi_list_item_t*) sched);
+//    ompi_cmd_line_get_tail(cmd_line, &(sched->argc), &(sched->argv));
 
     /*
      * build environment to be passed
      */
-    mca_pcm_base_build_base_env(environ, &(sched->envc), &(sched->env));
+//    mca_pcm_base_build_base_env(environ, &(sched->envc), &(sched->env));
     /* set initial contact info */
-    if (ompi_process_info.seed) {  /* i'm the seed - direct them towards me */
-	my_contact_info = mca_oob_get_contact_info();
-    } else { /* i'm not the seed - direct them to it */
-	my_contact_info = strdup(ompi_universe_info.ns_replica);
-    }
-    asprintf(&tmp, "OMPI_MCA_ns_base_replica=%s", my_contact_info);
-    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-    free(tmp);
-    asprintf(&tmp, "OMPI_MCA_gpr_base_replica=%s", my_contact_info);
-    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-    free(tmp);
-    if (NULL != ompi_universe_info.name) {
-	asprintf(&tmp, "OMPI_universe_name=%s", ompi_universe_info.name);
-	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-	free(tmp);
-    }
-    if (ompi_cmd_line_is_taken(cmd_line, "tmpdir")) {  /* user specified the tmp dir base */
-	asprintf(&tmp, "OMPI_tmpdir_base=%s", ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0));
-	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-	free(tmp);
-    }
-
-    getcwd(cwd, MAXPATHLEN);
-    sched->cwd = strdup(cwd);
-    sched->nodelist = nodelist;
-
-    if (sched->argc == 0) {
-        ompi_show_help("help-mpirun.txt", "mpirun:no-application", true,
-                       argv[0], argv[0]);
-	return 1;
-    }
+//    if (ompi_process_info.seed) {  /* i'm the seed - direct them towards me */
+//	my_contact_info = mca_oob_get_contact_info();
+//    } else { /* i'm not the seed - direct them to it */
+//	my_contact_info = strdup(ompi_universe_info.ns_replica);
+//    }
+//    asprintf(&tmp, "OMPI_MCA_ns_base_replica=%s", my_contact_info);
+//    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
+//    free(tmp);
+//    asprintf(&tmp, "OMPI_MCA_gpr_base_replica=%s", my_contact_info);
+//    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
+//    free(tmp);
+//    if (NULL != ompi_universe_info.name) {
+//	asprintf(&tmp, "OMPI_universe_name=%s", ompi_universe_info.name);
+//	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
+//	free(tmp);
+//    }
+//    if (ompi_cmd_line_is_taken(cmd_line, "tmpdir")) {  /* user specified the tmp dir base */
+//	asprintf(&tmp, "OMPI_tmpdir_base=%s", ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0));
+//	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
+//	free(tmp);
+//    }
+//
+//    getcwd(cwd, MAXPATHLEN);
+//    sched->cwd = strdup(cwd);
+//    sched->nodelist = nodelist;
+//
+//    if (sched->argc == 0) {
+//        ompi_show_help("help-mpirun.txt", "mpirun:no-application", true,
+//                       argv[0], argv[0]);
+//	return 1;
+//    }
 
 
     /*
      * register to monitor the startup and shutdown processes
      */
     /* setup segment for this job */
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT,
-	     ompi_name_server.convert_jobid_to_string(new_jobid));
+    if (ORTE_SUCCESS != orte_name_services.convert_jobid_to_string(jobidstring, new_jobid)) {
+        return ORTE_ERROR;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
 
     /* register a synchro on the segment so we get notified when everyone registers */
     rc_tag = ompi_registry.synchro(
@@ -356,12 +356,12 @@ main(int argc, char *argv[])
     /*
      * spawn procs
      */
-    if (OMPI_SUCCESS != (ret = ompi_rte_spawn_procs(spawn_handle, new_jobid, &schedlist))) {
-        ompi_show_help("help-mpirun.txt", "mpirun:error-spawning",
-                       true, argv[0], ret);
-	return 1;
-    }
-    
+//    if (OMPI_SUCCESS != (ret = ompi_rte_spawn_procs(spawn_handle, new_jobid, &schedlist))) {
+//        ompi_show_help("help-mpirun.txt", "mpirun:error-spawning",
+//                       true, argv[0], ret);
+//	return 1;
+//    }
+//    
    
     if (OMPI_SUCCESS != (ret = ompi_rte_monitor_procs_registered())) {
         ompi_show_help("help-mpirun.txt", "mpirun:proc-reg-failed", 
@@ -395,9 +395,9 @@ main(int argc, char *argv[])
     /*
      * Clean up
      */
-    if (NULL != nodelist) ompi_rte_deallocate_resources(spawn_handle, new_jobid, nodelist);
+//    if (NULL != nodelist) ompi_rte_deallocate_resources(spawn_handle, new_jobid, nodelist);
     if (NULL != cmd_line) OBJ_RELEASE(cmd_line);
-    if (NULL != spawn_handle) OBJ_RELEASE(spawn_handle);
+//    if (NULL != spawn_handle) OBJ_RELEASE(spawn_handle);
 
     /* eventually, mpirun won't be the seed and so won't have to do this.
      * for now, though, remove the universe-setup.txt file so the directories

@@ -58,7 +58,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(mca_gpr_proxy_notify_request_tracker_t);
  * globals used within proxy component
  */
 
-extern ompi_process_name_t *mca_gpr_my_replica;
+extern orte_process_name_t *mca_gpr_my_replica;
 extern ompi_list_t mca_gpr_proxy_notify_request_tracker;
 extern ompi_registry_notify_id_t mca_gpr_proxy_last_notify_id_tag;
 extern ompi_list_t mca_gpr_proxy_free_notify_id_tags;
@@ -91,11 +91,11 @@ void mca_gpr_proxy_notify_off(ompi_registry_notify_id_t sub_number);
 
 void mca_gpr_proxy_notify_on(ompi_registry_notify_id_t sub_number);
 
-void mca_gpr_proxy_triggers_active(mca_ns_base_jobid_t jobid);
+void mca_gpr_proxy_triggers_active(orte_jobid_t jobid);
 
-void mca_gpr_proxy_triggers_inactive(mca_ns_base_jobid_t jobid);
+void mca_gpr_proxy_triggers_inactive(orte_jobid_t jobid);
 
-int mca_gpr_proxy_assign_ownership(char *segment, mca_ns_base_jobid_t jobid);
+int mca_gpr_proxy_assign_ownership(char *segment, orte_jobid_t jobid);
 
 /*
  * Delete-index functions
@@ -107,15 +107,15 @@ int mca_gpr_proxy_delete_object(ompi_registry_mode_t mode,
 
 ompi_list_t* mca_gpr_proxy_index(char *segment);
 
-void mca_gpr_proxy_cleanup(mca_ns_base_jobid_t jobid);
+void mca_gpr_proxy_cleanup(orte_jobid_t jobid);
 
 
 /*
  * Cleanup functions
  */
-void mca_gpr_proxy_cleanup_job(mca_ns_base_jobid_t jobid);
+void mca_gpr_proxy_cleanup_job(orte_jobid_t jobid);
 
-void mca_gpr_proxy_cleanup_proc(bool purge, ompi_process_name_t *proc);
+void mca_gpr_proxy_cleanup_proc(bool purge, orte_process_name_t *proc);
 
 
 /*
@@ -176,14 +176,14 @@ ompi_list_t* mca_gpr_proxy_test_internals(int level);
 /*
  * Startup functions
  */
-ompi_buffer_t mca_gpr_proxy_get_startup_msg(mca_ns_base_jobid_t jobid,
+ompi_buffer_t mca_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
 					    ompi_list_t *recipients);
 
 
 /*
  * Functions that interface to the replica
  */
-void mca_gpr_proxy_notify_recv(int status, ompi_process_name_t* sender,
+void mca_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
 			       ompi_buffer_t buffer, int tag,
 			       void* cbdata);
 

@@ -15,6 +15,8 @@
  */
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "mca/pcmclient/pcmclient.h"
 #include "include/types.h"
 
@@ -35,5 +37,5 @@ int mca_pcmclient_seed_finalize(void);
  * "Action" functions
  */
 int mca_pcmclient_seed_init_cleanup(void);
-int mca_pcmclient_seed_get_peers(ompi_process_name_t **peers, size_t *npeers);
-ompi_process_name_t* mca_pcmclient_seed_get_self(void);
+int mca_pcmclient_seed_get_peers(orte_process_name_t **peers, size_t *npeers);
+orte_process_name_t* mca_pcmclient_seed_get_self(void);

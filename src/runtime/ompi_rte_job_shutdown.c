@@ -23,12 +23,12 @@
 
 #include "ompi_config.h"
 
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr.h"
 
 #include "runtime/runtime.h"
 
-int ompi_rte_job_shutdown(mca_ns_base_jobid_t jobid)
+int ompi_rte_job_shutdown(orte_jobid_t jobid)
 {
     ompi_registry.triggers_inactive(jobid);
     ompi_registry.cleanup_job(jobid);

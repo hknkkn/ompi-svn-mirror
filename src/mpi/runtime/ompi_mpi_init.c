@@ -52,8 +52,8 @@
 #include "mca/io/base/base.h"
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 #include "runtime/runtime.h"
 #include "event/event.h"
@@ -82,7 +82,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     size_t nprocs;
     char *error = NULL;
     char *segment, *jobid_string;
-    mca_ns_base_jobid_t jobid;
+    orte_jobid_t jobid;
 
     /* Become an OMPI process */
 
@@ -263,8 +263,14 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
      *
      *  Ensure we own the job status and the oob segments first
      */
-    jobid = ompi_name_server.get_jobid(ompi_rte_get_self());
-    jobid_string = ompi_name_server.get_jobid_string(ompi_rte_get_self());
+    if (ORTE_SUCCESS != orte_name_services.get_jobid(&jobid, ompi_rte_get_self())) {
+        error = "orte_name_services - failed to get jobid";
+        goto error;
+    }
+    if (ORTE_SUCCESS != orte_name_services.get_jobid_string(&jobid_string, ompi_rte_get_self())) {
+        error = "orte_name_services - failed to get jobid string";
+        goto error;
+    }
     asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobid_string);
     ompi_registry.assign_ownership(segment, jobid);
     free(segment);
@@ -273,7 +279,10 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     ompi_registry.assign_ownership(segment, jobid);
     free(segment);
 
-    my_status.rank = mca_ns_base_get_vpid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != orte_name_services.get_vpid(&my_status.rank, ompi_rte_get_self())) {
+        error = "orte_name_services - failed to get vpid";
+        goto error;
+    }
     my_status.local_pid = (int32_t)ompi_process_info.pid;
     my_status.nodename = strdup(ompi_system_info.nodename);
     my_status.status_key = OMPI_PROC_STARTING;
@@ -301,7 +310,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
 
     if (ompi_rte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] process startup message received",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()));
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     /* add all ompi_proc_t's to PML */
@@ -381,7 +390,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
 
     if (ompi_rte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] ompi_mpi_init completed",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()));
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     return MPI_SUCCESS;

@@ -22,7 +22,6 @@
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/bproc/pcmclient_bproc.h"
 #include "mca/ns/ns.h"
-#include "mca/ns/base/base.h"
 #include "mca/base/mca_base_param.h"
 
 #include <stdio.h>
@@ -66,7 +65,7 @@ struct mca_pcmclient_base_module_1_0_0_t mca_pcmclient_bproc_1_0_0 = {
  */
 int mca_pcmclient_bproc_num_procs;
 int mca_pcmclient_bproc_proc_index;
-ompi_process_name_t *mca_pcmclient_bproc_procs = NULL;
+orte_process_name_t *mca_pcmclient_bproc_procs = NULL;
 
 
 /*
@@ -112,7 +111,8 @@ mca_pcmclient_bproc_init(int *priority,
 {
     int i;
     char *tmp;
-    ompi_process_name_t *base_name;
+    orte_process_name_t *base_name;
+    orte_vpid_t vpid;
 
     *priority = 5; /* make sure we are above env / singleton */
     *allow_multiple_user_threads = true;
@@ -156,26 +156,33 @@ mca_pcmclient_bproc_init(int *priority,
     mca_base_param_lookup_string(param_base_proc_name, &tmp);
     if (tmp == NULL) return NULL;
 
-    base_name = 
-        ompi_name_server.convert_string_to_process_name(tmp);
-    if (base_name == NULL) return NULL;
+    if (ORTE_SUCCESS != orte_name_services.convert_string_to_process_name(base_name, tmp)) {
+        return NULL;
+    }
 
     /* create the list of names */
     mca_pcmclient_bproc_procs = 
-        (ompi_process_name_t*) malloc(sizeof(ompi_process_name_t) * 
+        (orte_process_name_t*) malloc(sizeof(orte_process_name_t) * 
                                       mca_pcmclient_bproc_num_procs);
     if (NULL == mca_pcmclient_bproc_procs) return NULL;
 
     for ( i = 0 ; i < mca_pcmclient_bproc_num_procs ; ++i) {
         /* BWB - this needs to suck less - possibly by changing the
            return type of get_peer_names */
-        ompi_process_name_t *tmp_name;
+        orte_process_name_t *tmp_name;
 
-        tmp_name = ompi_name_server.copy_process_name(base_name);
+        if (ORTE_SUCCESS != orte_name_services.copy_process_name(tmp_name, base_name)) {
+            return NULL;
+        }
         /* BWB - this will eventually be a function in the NS */
-        tmp_name->vpid = ompi_name_server.get_vpid(base_name) + i;
+        if (ORTE_SUCCESS != orte_name_services.get_vpid(&vpid, base_name)) {
+            return NULL;
+        }
+        tmp_name->vpid = vpid + i;
         mca_pcmclient_bproc_procs[i] = *tmp_name;
-        ompi_name_server.free_name(tmp_name);
+        if (ORTE_SUCCESS != orte_name_services.free_name(&tmp_name)) {
+            /* ignore */
+        }
     }
     
     return &mca_pcmclient_bproc_1_0_0;

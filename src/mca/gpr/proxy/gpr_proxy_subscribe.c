@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_proxy.h"
 
 ompi_registry_notify_id_t
@@ -86,7 +88,7 @@ mca_gpr_proxy_subscribe(ompi_registry_mode_t mode,
 
     if (mca_gpr_proxy_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr proxy subscribe: subscribing to segment %s local idtag %d",
-				OMPI_NAME_ARGS(*ompi_rte_get_self()), segment, (int)idtag);
+				ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, (int)idtag);
     }
 
 

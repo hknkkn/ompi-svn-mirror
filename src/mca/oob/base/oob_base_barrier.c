@@ -22,8 +22,8 @@
 
 int mca_oob_barrier(void)
 {
-    ompi_process_name_t* peers;
-    ompi_process_name_t* self;
+    orte_process_name_t* peers;
+    orte_process_name_t* self;
     size_t i, npeers;
     struct iovec iov;
     int foo = 0;

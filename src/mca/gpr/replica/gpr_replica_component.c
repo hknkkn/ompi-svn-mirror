@@ -314,7 +314,7 @@ OBJ_CLASS_INSTANCE(
 static void mca_gpr_replica_segment_construct(mca_gpr_replica_segment_t* seg)
 {
     seg->name = NULL;
-    seg->owning_job = MCA_NS_BASE_JOBID_MAX;
+    seg->owning_job = ORTE_JOBID_MAX;
     seg->key = MCA_GPR_REPLICA_KEY_MAX;
     seg->lastkey = 0;
     seg->triggers_active = false;

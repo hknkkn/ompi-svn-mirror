@@ -25,7 +25,7 @@
  * Function for selecting one component from all those that are
  * available.
  */
-int mca_ns_base_select(bool *allow_multi_user_threads, 
+int orte_ns_base_select(bool *allow_multi_user_threads, 
                        bool *have_hidden_threads)
 {
   ompi_list_item_t *item;

@@ -23,18 +23,20 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
 mca_gpr_replica_segment_t *mca_gpr_replica_define_segment(char *segment,
-							  mca_ns_base_jobid_t jobid)
+							  orte_jobid_t jobid)
 {
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_key_t key;
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] define_segment: name %s jobid %d",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), segment, (int)jobid);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, (int)jobid);
     }
 
     key = mca_gpr_replica_define_key(NULL, segment);
@@ -56,7 +58,7 @@ mca_gpr_replica_segment_t *mca_gpr_replica_define_segment(char *segment,
 
 
 mca_gpr_replica_segment_t *mca_gpr_replica_find_seg(bool create, char *segment,
-						    mca_ns_base_jobid_t jobid)
+						    orte_jobid_t jobid)
 {
     mca_gpr_replica_keytable_t *ptr_seg;
     mca_gpr_replica_segment_t *seg;

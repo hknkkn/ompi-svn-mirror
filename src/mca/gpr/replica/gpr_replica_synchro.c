@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
@@ -37,14 +39,16 @@ mca_gpr_replica_synchro(ompi_registry_synchro_mode_t synchro_mode,
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_key_t *keys;
     int num_keys;
-    mca_ns_base_jobid_t my_jobid;
+    orte_jobid_t my_jobid;
     
     /* protect against errors */
     if (NULL == segment) {
 	return OMPI_REGISTRY_NOTIFY_ID_MAX;
     }
 
-    my_jobid = ompi_name_server.get_jobid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != orte_name_services.get_jobid(&my_jobid, ompi_rte_get_self())) {
+        return OMPI_REGISTRY_NOTIFY_ID_MAX;
+    }
     
     seg = mca_gpr_replica_find_seg(true, segment, my_jobid);
     if (NULL == seg) { /* segment couldn't be found */
@@ -103,13 +107,13 @@ int mca_gpr_replica_synchro_nl(ompi_registry_synchro_mode_t synchro_mode,
 			       int num_keys,
 			       int trigger,
 			       ompi_registry_notify_id_t id_tag,
-                    mca_ns_base_jobid_t jobid)
+                    orte_jobid_t jobid)
 {
     mca_gpr_replica_trigger_list_t *trig;
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr replica: synchro entered on segment %s trigger %d",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), seg->name, trigger);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name, trigger);
     }
 
     /* construct the trigger */
@@ -152,7 +156,7 @@ mca_gpr_replica_cancel_synchro_nl(ompi_registry_notify_id_t synch_number)
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr replica: cancel_synchro entered for synch %d",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), synch_number);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), synch_number);
     }
 
     /* find trigger on replica and remove it - return requestor's id_tag */

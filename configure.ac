@@ -1181,5 +1181,6 @@ AC_CONFIG_FILES([
     test/class/Makefile
     test/include/Makefile
     test/rte/Makefile
+    test/dps/Makefile
 ])
 AC_OUTPUT

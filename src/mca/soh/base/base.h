@@ -40,7 +40,7 @@ OMPI_DECLSPEC    int mca_soh_base_open(void);
 OMPI_DECLSPEC    int mca_soh_base_select(bool *allow_multi_user_threads,
 			                            bool *have_hidden_threads);
 OMPI_DECLSPEC    int mca_soh_base_close(void);
-OMPI_DECLSPEC    int mca_soh_base_update_cell_soh_not_available(mca_ns_base_cellid_t cellid);
+OMPI_DECLSPEC    int mca_soh_base_update_cell_soh_not_available(orte_cellid_t cellid);
 
 /*
  * globals that might be needed

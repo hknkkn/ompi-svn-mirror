@@ -22,7 +22,7 @@
 #include "mca/oob/oob.h"
 #include "mca/oob/base/base.h"
 #include "mca/base/base.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns_types.h"
 #include "class/ompi_free_list.h"
 #include "class/ompi_rb_tree.h"
 #include "event/event.h"
@@ -89,7 +89,7 @@ int mca_oob_tcp_fini(void);
 * just needs to be consistently applied to maintain an ordering
 * when process names are used as indices.
 */
-int mca_oob_tcp_process_name_compare(const ompi_process_name_t* n1, const ompi_process_name_t* n2);
+int mca_oob_tcp_process_name_compare(const orte_process_name_t* n1, const orte_process_name_t* n2);
                                                                                                            /**
  *  Obtain contact information for this host (e.g. <ipaddress>:<port>)
  */
@@ -100,7 +100,7 @@ char* mca_oob_tcp_get_addr(void);
  *  Setup cached addresses for the peers.
  */
 
-int mca_oob_tcp_set_addr(const ompi_process_name_t*, const char*);
+int mca_oob_tcp_set_addr(const orte_process_name_t*, const char*);
 
 /**
  *  A routine to ping a given process name to determine if it is reachable.
@@ -113,7 +113,7 @@ int mca_oob_tcp_set_addr(const ompi_process_name_t*, const char*);
  *  an error status is returned.
  */
                                                                                                        
-int mca_oob_tcp_ping(const ompi_process_name_t* name, const struct timeval* tv);
+int mca_oob_tcp_ping(const orte_process_name_t* name, const struct timeval* tv);
 
 /**
  *  Similiar to unix writev(2).
@@ -127,7 +127,7 @@ int mca_oob_tcp_ping(const ompi_process_name_t* name, const struct timeval* tv);
  */
 
 int mca_oob_tcp_send(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec *msg, 
     int count, 
     int tag,
@@ -146,7 +146,7 @@ int mca_oob_tcp_send(
  */
 
 int mca_oob_tcp_recv(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec * msg, 
     int count, 
     int* tag,
@@ -172,7 +172,7 @@ int mca_oob_tcp_recv(
  */
 
 int mca_oob_tcp_send_nb(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec* msg, 
     int count,
     int tag,
@@ -194,7 +194,7 @@ int mca_oob_tcp_send_nb(
  */
 
 int mca_oob_tcp_recv_nb(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec* msg, 
     int count, 
     int tag,
@@ -211,7 +211,7 @@ int mca_oob_tcp_recv_nb(
  */
 
 int mca_oob_tcp_recv_cancel(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     int tag);
 
 /**

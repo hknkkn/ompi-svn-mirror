@@ -26,6 +26,7 @@
 #include "file/file.h"
 #include "info/info.h"
 #include "util/proc_info.h"
+#include "util/sys_info.h"
 #include "runtime/runtime.h"
 #include "runtime/ompi_progress.h"
 #include "runtime/ompi_rte_wait.h"
@@ -44,8 +45,8 @@
 #include "mca/io/io.h"
 #include "mca/io/base/base.h"
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 
 int ompi_mpi_finalize(void)
@@ -53,7 +54,7 @@ int ompi_mpi_finalize(void)
     int ret;
     ompi_rte_process_status_t my_status;
     int my_rank;
-    mca_ns_base_jobid_t my_jobid;
+    orte_jobid_t my_jobid;
 
     ompi_mpi_finalized = true;
 #if OMPI_HAVE_THREADS == 0
@@ -87,7 +88,9 @@ int ompi_mpi_finalize(void)
  	 * rank 0 process do it.
  	 */
  	 if (0 == my_rank) {
- 	 	my_jobid = ompi_name_server.get_jobid(ompi_rte_get_self());
+         if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid(&my_jobid, ompi_rte_get_self()))) {
+            return ret;
+         }
  	 	ompi_rte_job_shutdown(my_jobid);
  	 }
  	 

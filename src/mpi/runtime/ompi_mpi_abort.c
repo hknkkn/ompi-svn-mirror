@@ -21,7 +21,7 @@
 #include "util/proc_info.h"
 #include "runtime/runtime.h"
 #include "mca/ns/ns.h"
-#include "mca/ns/base/base.h"
+
 #include "event/event.h"
 
 #if HAVE_SIGNAL_H
@@ -31,15 +31,17 @@
 static
 int
 abort_procs(ompi_proc_t **procs, int proc_count, 
-            mca_ns_base_jobid_t my_jobid)
+            orte_jobid_t my_jobid)
 {
     int i;
     int ret = OMPI_SUCCESS;
     int killret=OMPI_SUCCESS;
-    mca_ns_base_jobid_t jobid;
+    orte_jobid_t jobid;
 
     for (i = 0 ; i < proc_count ; ++i) {
-        jobid = ompi_name_server.get_jobid(&(procs[i]->proc_name));
+        if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid(&jobid, &(procs[i]->proc_name)))) {
+            return ret;
+        }
         if (jobid == my_jobid) continue;
 
 //        killret = ompi_rte_terminate_job(jobid, 0);
@@ -55,7 +57,7 @@ ompi_mpi_abort(struct ompi_communicator_t* comm,
                int errcode,
                bool kill_remote_of_intercomm)
 {
-    mca_ns_base_jobid_t my_jobid;
+    orte_jobid_t my_jobid;
     int ret=OMPI_SUCCESS;
     
     /* BWB - XXX - Should probably publish the error code somewhere */
@@ -64,7 +66,9 @@ ompi_mpi_abort(struct ompi_communicator_t* comm,
        actually loop over ompi_rte_kill_proc() to only kill the procs
        in comm, and additionally to somehow use errorcode. */
 
-    my_jobid = ompi_name_server.get_jobid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid(&my_jobid, ompi_rte_get_self()))) {
+        return ret;
+    }
 
     /* kill everyone in the remote group execpt our jobid, if requested */
     if (kill_remote_of_intercomm && OMPI_COMM_IS_INTER(comm)) {

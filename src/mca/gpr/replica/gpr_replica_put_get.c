@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
@@ -35,13 +37,14 @@ int mca_gpr_replica_put(ompi_registry_mode_t addr_mode, char *segment,
     mca_gpr_replica_segment_t *seg;
     mca_gpr_replica_key_t *keys;
     int num_keys;
+    orte_jobid_t jobid;
 
     /* protect ourselves against errors */
     if (NULL == segment || NULL == object || 0 == size ||
 	NULL == tokens || NULL == *tokens) {
 	if (mca_gpr_replica_debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr replica: error in input - put rejected",
-                        OMPI_NAME_ARGS(*ompi_rte_get_self()));
+                        ORTE_NAME_ARGS(*ompi_rte_get_self()));
 	}
 	return OMPI_ERROR;
     }
@@ -56,8 +59,10 @@ int mca_gpr_replica_put(ompi_registry_mode_t addr_mode, char *segment,
     OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
 
     /* find the segment */
-    seg = mca_gpr_replica_find_seg(true, segment,
-				   ompi_name_server.get_jobid(ompi_rte_get_self()));
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid(&jobid, ompi_rte_get_self()))) {
+        return rc;
+    }
+    seg = mca_gpr_replica_find_seg(true, segment, jobid);
 
     if (NULL == seg) { /* couldn't find segment or create it */
         OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
@@ -101,7 +106,7 @@ int mca_gpr_replica_put_nl(ompi_registry_mode_t addr_mode,
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), seg->name);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
     }
 
     /* ignore addressing mode - all tokens are used
@@ -157,7 +162,7 @@ int mca_gpr_replica_put_nl(ompi_registry_mode_t addr_mode,
 
  CLEANUP:
     if (mca_gpr_replica_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr replica-put: complete", OMPI_NAME_ARGS(*ompi_rte_get_self()));
+	ompi_output(0, "[%d,%d,%d] gpr replica-put: complete", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     return return_code;
@@ -187,7 +192,7 @@ ompi_list_t* mca_gpr_replica_get(ompi_registry_mode_t addr_mode,
     OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
 
     /* find the specified segment */
-    seg = mca_gpr_replica_find_seg(false, segment, MCA_NS_BASE_JOBID_MAX);
+    seg = mca_gpr_replica_find_seg(false, segment, ORTE_JOBID_MAX);
     if (NULL == seg) {  /* segment not found */
         OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
 	   return list;
@@ -215,7 +220,7 @@ void mca_gpr_replica_get_nl(ompi_list_t *answer, ompi_registry_mode_t addr_mode,
     mca_gpr_replica_core_t *reg=NULL;
 
     if (mca_gpr_replica_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr replica: get entered", OMPI_NAME_ARGS(*ompi_rte_get_self()));
+	ompi_output(0, "[%d,%d,%d] gpr replica: get entered", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     /* traverse the segment's registry, looking for matching tokens per the specified mode */
@@ -234,7 +239,7 @@ void mca_gpr_replica_get_nl(ompi_list_t *answer, ompi_registry_mode_t addr_mode,
 	}
     }
     if (mca_gpr_replica_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr replica-get: finished search", OMPI_NAME_ARGS(*ompi_rte_get_self()));
+	ompi_output(0, "[%d,%d,%d] gpr replica-get: finished search", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     return;

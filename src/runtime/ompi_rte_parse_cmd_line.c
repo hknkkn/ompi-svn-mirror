@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns.h"
 
 #include "util/output.h"
 #include "util/cmd_line.h"
@@ -132,7 +132,9 @@ void ompi_rte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
 	}
 	ompi_universe_info.ns_replica = strdup(nsreplica);
 	if (NULL == ompi_process_info.ns_replica) {
-	    ompi_process_info.ns_replica = mca_ns_base_create_process_name(0,0,0);
+        if (ORTE_SUCCESS != orte_name_services.create_process_name(ompi_process_info.ns_replica, 0, 0, 0)) {
+            return;
+        }
 	}
 	mca_oob_parse_contact_info(ompi_universe_info.ns_replica,
 				   ompi_process_info.ns_replica, NULL);
@@ -152,7 +154,9 @@ void ompi_rte_parse_cmd_line(ompi_cmd_line_t *cmd_line)
 	}
 	ompi_universe_info.gpr_replica = strdup(nsreplica);
 	if (NULL == ompi_process_info.gpr_replica) {
-	    ompi_process_info.gpr_replica = mca_ns_base_create_process_name(0,0,0);
+        if (ORTE_SUCCESS != orte_name_services.create_process_name(ompi_process_info.gpr_replica, 0, 0, 0)) {
+            return;
+        }
 	}
 	mca_oob_parse_contact_info(ompi_universe_info.gpr_replica,
 				   ompi_process_info.gpr_replica, NULL);

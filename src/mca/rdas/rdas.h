@@ -34,7 +34,8 @@
 #include "mca/mca.h"
 #include "class/ompi_list.h"
 
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr_types.h"
 
 /*
  * MCA component management functions
@@ -49,7 +50,7 @@
  */
 struct orte_rdas_resources_t {
     ompi_object_t object;
-    mca_ns_base_cellid_t cellid;
+    orte_cellid_t cellid;
     char *cell_name;
     int32_t num_node_types;
     ompi_list_t *node_types;
@@ -91,8 +92,8 @@ typedef struct orte_rdas_key_value_t orte_rdas_key_value_t;
  */
 struct orte_rdas_allocated_resource_t {
     ompi_list_item_t item;
-    mca_ns_base_jobid_t jobid;      /* jobid for which this allocation was made */
-    mca_ns_base_cellid_t cellid;    /* id of the cell holding these nodes */
+    orte_jobid_t jobid;             /* jobid for which this allocation was made */
+    orte_cellid_t cellid;           /* id of the cell holding these nodes */
     int32_t num_nodes;              /* #nodes in this allocation */
     int32_t allocated_proc_slots;   /* #process slots in this allocation */
     void *data;                     /* storage for key-value pairs */
@@ -210,7 +211,7 @@ typedef int
  *
  */
 typedef int
-(*mca_rdas_base_request_allocation_fn_t)(mca_ns_base_jobid_t jobid, 
+(*mca_rdas_base_request_allocation_fn_t)(orte_jobid_t jobid, 
                                      int num_procs, int num_nodes,
                                      int max_procs_per_node);
 
@@ -220,7 +221,7 @@ typedef int
  * Provide list of orte_rdas_allocated_resource_t that describe the allocation.
  */
 typedef int
-(*mca_rdas_base_set_allocation_fn_t)(mca_ns_base_jobid_t jobid,
+(*mca_rdas_base_set_allocation_fn_t)(orte_jobid_t jobid,
                                      ompi_list_t *allocation);
 
 
@@ -234,7 +235,7 @@ typedef int
  * the allocation.
  */
 typedef ompi_list_t*
-(*mca_rdas_base_get_allocation_fn_t)(mca_ns_base_jobid_t jobid);
+(*mca_rdas_base_get_allocation_fn_t)(orte_jobid_t jobid);
 
 
 /**
@@ -261,7 +262,7 @@ typedef char*
  * @retval OMPI_ERROR Allocation could not be determined.
  */
 typedef int
-(*mca_rdas_base_process_allocation_options_fn_t)(mca_ns_base_jobid_t jobid,
+(*mca_rdas_base_process_allocation_options_fn_t)(orte_jobid_t jobid,
                                                  ompi_cmd_line_t cmd_line);
 
 
@@ -276,7 +277,7 @@ typedef int
  * @retval OMPI_ERROR Resources could not be deallocated.
  */
 typedef int
-(*mca_rdas_base_deallocate_resources_fn_t)(mca_ns_base_jobid_t jobid);
+(*mca_rdas_base_deallocate_resources_fn_t)(orte_jobid_t jobid);
 
 
 /**

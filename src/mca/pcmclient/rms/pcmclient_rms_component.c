@@ -19,6 +19,8 @@
 #include "include/constants.h"
 #include "include/types.h"
 #include "mca/mca.h"
+#include "mca/ns/ns_types.h"
+
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/rms/pcmclient_rms.h"
 #include "util/proc_info.h"
@@ -65,7 +67,7 @@ struct mca_pcmclient_base_module_1_0_0_t mca_pcmclient_rms_1_0_0 = {
 int mca_pcmclient_rms_num_procs;
 int mca_pcmclient_rms_procid;
 
-ompi_process_name_t *mca_pcmclient_rms_procs = NULL;
+orte_process_name_t *mca_pcmclient_rms_procs = NULL;
 
 /*
  * local variables
@@ -131,7 +133,7 @@ mca_pcmclient_rms_init(int *priority,
     mca_pcmclient_rms_num_procs = atoi(tmp);
 
     mca_pcmclient_rms_procs = 
-        (ompi_process_name_t*) malloc(sizeof(ompi_process_name_t) * 
+        (orte_process_name_t*) malloc(sizeof(orte_process_name_t) * 
                                       mca_pcmclient_rms_num_procs);
     if (NULL == mca_pcmclient_rms_procs) return NULL;
 

@@ -26,10 +26,8 @@
 #include "threads/condition.h"
 #include "mca/oob/base/base.h"
 #include "mca/oob/oob.h"
-#include "mca/ns/ns.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/gpr.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr_types.h"
 
 
 static ompi_mutex_t ompi_rte_mutex;
@@ -49,7 +47,7 @@ void ompi_rte_all_procs_registered(ompi_registry_notify_message_t* match, void* 
 {
     if (ompi_rte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] all procs registered",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()));
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     OMPI_THREAD_LOCK(&ompi_rte_mutex);

@@ -23,10 +23,12 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
-static ompi_process_name_t* mca_gpr_replica_find_recipient(ompi_registry_notify_id_t idtag);
+static orte_process_name_t* mca_gpr_replica_find_recipient(ompi_registry_notify_id_t idtag);
 
 static void mca_gpr_replica_dump_load_string(ompi_buffer_t buffer, char *tmp);
 
@@ -36,7 +38,7 @@ void mca_gpr_replica_dump(int output_id)
 
     if (mca_gpr_replica_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr_replica_dump: entered for output on %d",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), output_id);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), output_id);
     }
 
     OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
@@ -68,7 +70,7 @@ void mca_gpr_replica_dump_nl(ompi_buffer_t buffer)
     mca_gpr_replica_core_t *reg;
     mca_gpr_replica_key_t *key;
     mca_gpr_replica_trigger_list_t *trig;
-    ompi_process_name_t *recip;
+    orte_process_name_t *recip;
     char *token, **tokptr;
     int num_objects, num_trigs, cnt;
     uint i;
@@ -129,7 +131,7 @@ void mca_gpr_replica_dump_nl(ompi_buffer_t buffer)
 		if (NULL == recip) {
 		    asprintf(&tmp_out, "\tIntended recipient: LOCAL");
 		} else {
-		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", OMPI_NAME_ARGS(*recip));
+		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(*recip));
 		}
 		mca_gpr_replica_dump_load_string(buffer, tmp_out);
 		ompi_pack_string(buffer, "\tActions:");
@@ -175,7 +177,7 @@ void mca_gpr_replica_dump_nl(ompi_buffer_t buffer)
 		if (NULL == recip) {
 		    asprintf(&tmp_out, "\tIntended recipient: LOCAL");
 		} else {
-		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", OMPI_NAME_ARGS(*recip));
+		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(*recip));
 		}
 		mca_gpr_replica_dump_load_string(buffer, tmp_out);
 		ompi_pack_string(buffer, "\tSynchro Mode:");
@@ -225,7 +227,7 @@ void mca_gpr_replica_dump_nl(ompi_buffer_t buffer)
 }
 
 
-static ompi_process_name_t *mca_gpr_replica_find_recipient(ompi_registry_notify_id_t idtag)
+static orte_process_name_t *mca_gpr_replica_find_recipient(ompi_registry_notify_id_t idtag)
 {
     mca_gpr_replica_notify_request_tracker_t *trackptr;
 

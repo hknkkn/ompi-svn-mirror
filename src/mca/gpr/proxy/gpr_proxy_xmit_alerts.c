@@ -23,9 +23,11 @@
  */
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_proxy.h"
 
-ompi_buffer_t mca_gpr_proxy_get_startup_msg(mca_ns_base_jobid_t jobid,
+ompi_buffer_t mca_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
 					    ompi_list_t *recipients)
 {
     ompi_buffer_t msg, cmd, answer;
@@ -34,7 +36,7 @@ ompi_buffer_t mca_gpr_proxy_get_startup_msg(mca_ns_base_jobid_t jobid,
     if (mca_gpr_proxy_compound_cmd_mode) {
     		if (mca_gpr_proxy_debug) {
     			ompi_output(0, "[%d,%d,%d] gpr_proxy: getting startup msg - compound cmd",
-    						OMPI_NAME_ARGS(*ompi_rte_get_self()));
+    						ORTE_NAME_ARGS(*ompi_rte_get_self()));
     		}
 	mca_gpr_base_pack_get_startup_msg(mca_gpr_proxy_compound_cmd, jobid);
 	return NULL;
@@ -52,7 +54,7 @@ ompi_buffer_t mca_gpr_proxy_get_startup_msg(mca_ns_base_jobid_t jobid,
 
 	if (mca_gpr_proxy_debug) {
 		ompi_output(0, "[%d,%d,%d] gpr_proxy: getting startup msg for job %d",
-					OMPI_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
+					ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)jobid);
 	}
 
     if (0 > mca_oob_send_packed(mca_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {

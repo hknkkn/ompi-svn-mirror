@@ -28,13 +28,14 @@
 #include "util/proc_info.h"
 #include "util/sys_info.h"
 
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 #include "runtime/runtime.h"
 
-ompi_rte_process_status_t *ompi_rte_get_process_status(ompi_process_name_t *proc)
+ompi_rte_process_status_t *ompi_rte_get_process_status(orte_process_name_t *proc)
 {
-    char *segment, *tokens[2];
+    char *segment, *tokens[2], *jobidstring;
     ompi_registry_value_t *value;
     ompi_rte_process_status_t *stat_ptr;
     ompi_list_t *returned_list;
@@ -45,7 +46,9 @@ ompi_rte_process_status_t *ompi_rte_get_process_status(ompi_process_name_t *proc
     }
 
     /* setup tokens and segments for this job */
-    tokens[0] = ompi_name_server.get_proc_name_string(proc);
+    if (ORTE_SUCCESS != orte_name_services.get_proc_name_string(tokens[0], proc)) {
+        return NULL;
+    }
     tokens[1] = NULL;
 
     if (NULL == tokens[0]) {
@@ -53,7 +56,10 @@ ompi_rte_process_status_t *ompi_rte_get_process_status(ompi_process_name_t *proc
         return NULL;
     }
 
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, ompi_name_server.get_jobid_string(proc));
+    if (ORTE_SUCCESS != orte_name_services.get_jobid_string(jobidstring, proc)) {
+        return NULL;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
 
     returned_list = ompi_registry.get(OMPI_REGISTRY_XAND, segment, tokens);
 
@@ -71,17 +77,23 @@ ompi_rte_process_status_t *ompi_rte_get_process_status(ompi_process_name_t *proc
 
 
 int ompi_rte_set_process_status(ompi_rte_process_status_t *status,
-				ompi_process_name_t *proc)
+				orte_process_name_t *proc)
 {
-    char *segment;
+    char *segment, jobidstring;
     char *tokens[2];
     void *addr;
-    int size;
+    int size, rc;
     ompi_buffer_t buffer;
 
     /* setup keys and segment for this job */
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, ompi_name_server.get_jobid_string(proc));
-    tokens[0] = ompi_name_server.get_proc_name_string(proc);
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, proc))) {
+        return rc;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobidstring);
+
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string(tokens[0], proc))) {
+        return rc;
+    }
     tokens[1] = NULL;
 
     /* create the buffer to store the status information */

@@ -23,6 +23,7 @@
  */
 #include "ompi_config.h"
 
+#include "mca/ns/ns.h"
 #include "mca/gpr/base/base.h"
 
 #include "gpr_proxy.h"
@@ -89,7 +90,7 @@ static bool initialized = false;
 /*
  * globals needed within proxy component
  */
-ompi_process_name_t *mca_gpr_my_replica;
+orte_process_name_t *mca_gpr_my_replica;
 ompi_list_t mca_gpr_proxy_notify_request_tracker;
 ompi_registry_notify_id_t mca_gpr_proxy_last_notify_id_tag;
 ompi_list_t mca_gpr_proxy_free_notify_id_tags;
@@ -190,7 +191,10 @@ mca_gpr_base_module_t* mca_gpr_proxy_init(bool *allow_multi_user_threads, bool *
 	mca_gpr_proxy_compound_cmd = NULL;
 
 	/* define the replica for us to use - get it from process_info */
-	mca_gpr_my_replica = ompi_name_server.copy_process_name(ompi_process_info.gpr_replica);
+    if (ORTE_SUCCESS != orte_name_services.copy_process_name(mca_gpr_my_replica, ompi_process_info.gpr_replica)) {
+        return NULL;
+    }
+    
 	if (NULL == mca_gpr_my_replica) { /* can't function */
 	    return NULL;
 	}
@@ -241,7 +245,7 @@ int mca_gpr_proxy_finalize(void)
  * handle notify messages from replicas
  */
 
-void mca_gpr_proxy_notify_recv(int status, ompi_process_name_t* sender,
+void mca_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
 			       ompi_buffer_t buffer, int tag,
 			       void* cbdata)
 {
@@ -257,7 +261,7 @@ void mca_gpr_proxy_notify_recv(int status, ompi_process_name_t* sender,
 
     if (mca_gpr_proxy_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr proxy: received trigger message",
-				OMPI_NAME_ARGS(*ompi_rte_get_self()));
+				ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     message = OBJ_NEW(ompi_registry_notify_message_t);
@@ -274,7 +278,7 @@ void mca_gpr_proxy_notify_recv(int status, ompi_process_name_t* sender,
     if (OMPI_SUCCESS != ompi_unpack(buffer, &i, 1, OMPI_INT32)) {
 	goto RETURN_ERROR;
     }
-    message->owning_job = (mca_ns_base_jobid_t)i;
+    message->owning_job = (orte_jobid_t)i;
 
     if (OMPI_SUCCESS != ompi_unpack(buffer, &i, 1, OMPI_INT32)) {
 	goto RETURN_ERROR;
@@ -283,7 +287,7 @@ void mca_gpr_proxy_notify_recv(int status, ompi_process_name_t* sender,
 	
     if (mca_gpr_proxy_debug) {
 	ompi_output(0, "[%d,%d,%d] trigger from segment %s id %d",
-				OMPI_NAME_ARGS(*ompi_rte_get_self()), message->segment, (int)id_tag);
+				ORTE_NAME_ARGS(*ompi_rte_get_self()), message->segment, (int)id_tag);
     }
 
     if (OMPI_SUCCESS != ompi_unpack(buffer, &message->trig_action, 1, MCA_GPR_OOB_PACK_ACTION)) {
@@ -350,7 +354,7 @@ void mca_gpr_proxy_notify_recv(int status, ompi_process_name_t* sender,
 
     if (!found) {  /* didn't find request */
         	ompi_output(0, "[%d,%d,%d] Proxy notification error - received request not found",
-                        OMPI_NAME_ARGS(*ompi_rte_get_self()));
+                        ORTE_NAME_ARGS(*ompi_rte_get_self()));
         	return;
     }
 

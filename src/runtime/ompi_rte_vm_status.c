@@ -26,21 +26,23 @@
 #include "util/bufpack.h"
 
 #include "mca/oob/base/base.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 #include "runtime/runtime.h"
 
 
 ompi_rte_vm_status_t
-*ompi_rte_get_vm_status(mca_ns_base_cellid_t cellid, char *nodename)
+*ompi_rte_get_vm_status(orte_cellid_t cellid, char *nodename)
 {
     char *tokens[3];
     ompi_registry_value_t *value;
     ompi_rte_vm_status_t *stat_ptr;
     ompi_list_t *returned_list;
     
-    tokens[0] = ompi_name_server.convert_cellid_to_string(cellid);
+    if (ORTE_SUCCESS != orte_name_services.convert_cellid_to_string(tokens[0], cellid)) {
+        return NULL;
+    }
     tokens[1] = strdup(nodename);
     tokens[2] = NULL;
     
@@ -64,10 +66,12 @@ int ompi_rte_set_vm_status(ompi_rte_vm_status_t *status)
 {
     char *tokens[3];
     void *addr;
-    int size;
+    int size, rc;
     ompi_buffer_t buffer;
     
-    tokens[0] = ompi_name_server.convert_cellid_to_string(status->cell);
+    if (ORTE_SUCCESS != (rc = orte_name_services.convert_cellid_to_string(tokens[0], status->cell))) {
+        return rc;
+    }
     tokens[1] = strdup(status->nodename);
     tokens[2] = NULL;
     
@@ -131,7 +135,9 @@ int ompi_rte_vm_register(void)
     ompi_rte_vm_status_t status;
     int ret_code=OMPI_SUCCESS;
         
-    status.cell = ompi_name_server.get_cellid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != (ret_code = orte_name_services.get_cellid(&status.cell, ompi_rte_get_self()))) {
+        return ret_code;
+    }
     status.nodename = strdup(ompi_system_info.nodename);
     status.arch = strdup(ompi_system_info.machine);
     status.op_sys = strdup(ompi_system_info.sysname);
@@ -166,7 +172,7 @@ int ompi_rte_vm_register(void)
     ret_code = ompi_rte_set_vm_status(&status);
     
     /* ensure that segment ownership is set to "everyone" */
-    ompi_registry.assign_ownership(OMPI_RTE_VM_STATUS_SEGMENT, MCA_NS_BASE_JOBID_MAX);
+    ompi_registry.assign_ownership(OMPI_RTE_VM_STATUS_SEGMENT, ORTE_JOBID_MAX);
 
     return ret_code;
 }

@@ -44,7 +44,7 @@ int ompi_rte_finalize(void)
   ompi_rte_internal_fini_spawn();
 
   mca_pcmclient_base_close();
-  mca_ns_base_close();
+  orte_ns_base_close();
   mca_gpr_base_close();
   mca_oob_base_close();
 

@@ -19,6 +19,8 @@
 #include "include/constants.h"
 #include "include/types.h"
 #include "mca/mca.h"
+#include "mca/ns/ns_types.h"
+
 #include "mca/pcmclient/pcmclient.h"
 #include "mca/pcmclient/singleton/pcmclient_singleton.h"
 #include "util/proc_info.h"
@@ -59,7 +61,7 @@ OMPI_COMP_EXPORT struct mca_pcmclient_base_module_1_0_0_t mca_pcmclient_singleto
     mca_pcmclient_singleton_get_peers,
 };
 
-ompi_process_name_t *mca_pcmclient_singleton_procs = NULL;
+orte_process_name_t *mca_pcmclient_singleton_procs = NULL;
 
 
 int

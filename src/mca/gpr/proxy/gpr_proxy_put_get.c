@@ -23,6 +23,8 @@
 
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_proxy.h"
 
 int mca_gpr_proxy_put(ompi_registry_mode_t mode, char *segment,
@@ -57,7 +59,7 @@ int mca_gpr_proxy_put(ompi_registry_mode_t mode, char *segment,
 
     if (mca_gpr_proxy_debug) {
 	ompi_output(0, "[%d,%d,%d] gpr_proxy_put: initiating send",
-                    OMPI_NAME_ARGS(*ompi_rte_get_self()));
+                    ORTE_NAME_ARGS(*ompi_rte_get_self()));
 	if (NULL == mca_gpr_my_replica) {
 	    ompi_output(0, "\tBAD REPLICA");
 	}
@@ -71,7 +73,7 @@ int mca_gpr_proxy_put(ompi_registry_mode_t mode, char *segment,
     }
 
     if (mca_gpr_proxy_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr_proxy_put: send complete", OMPI_NAME_ARGS(*ompi_rte_get_self()));
+	ompi_output(0, "[%d,%d,%d] gpr_proxy_put: send complete", ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
 
     if (mca_gpr_proxy_silent_mode) {

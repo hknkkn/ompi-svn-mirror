@@ -126,14 +126,14 @@ static void printname(char *location);
 
 int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, bool *have_hidden_threads)
 {
-    int ret;
+    int ret, cmpval;
     bool user_threads, hidden_threads;
     char *universe, *jobid_str, *procid_str;
     pid_t pid;
-    mca_ns_base_jobid_t jobid;
-    mca_ns_base_vpid_t vpid;
-    ompi_process_name_t illegal_name={MCA_NS_BASE_CELLID_MAX, MCA_NS_BASE_JOBID_MAX, MCA_NS_BASE_VPID_MAX};
-    ompi_process_name_t *new_name;
+    orte_jobid_t jobid;
+    orte_vpid_t vpid;
+    orte_process_name_t illegal_name={ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX};
+    orte_process_name_t *new_name;
 
     *allow_multi_user_threads = true;
     *have_hidden_threads = false;
@@ -180,7 +180,7 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
     /*
      * Name Server - just do the open so we can access base components
      */
-    if (OMPI_SUCCESS != (ret = mca_ns_base_open())) {
+    if (OMPI_SUCCESS != (ret = orte_ns_base_open())) {
 	/* JMS show_help */
 	printf("show_help: ompi_rte_init failed in ns_base_open\n");
 	return ret;
@@ -294,7 +294,7 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
      */
     user_threads = true;
     hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = mca_ns_base_select(&user_threads,
+    if (OMPI_SUCCESS != (ret = orte_ns_base_select(&user_threads,
 						  &hidden_threads))) {
 	/* JMS show_help */
 	printf("show_help: ompi_rte_init failed in ns_base_select\n");
@@ -325,44 +325,59 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
     printname("gpr_select");
 
     /*****    SET MY NAME IF NOT ALREADY PROVIDED IN ENVIRONMENT   *****/
-    if (0 == ompi_name_server.compare(OMPI_NS_CMP_ALL, 
+    if (ORTE_SUCCESS != (ret = orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, 
                                       ompi_rte_get_self(), 
-                                      &illegal_name)) {
+                                      &illegal_name))) {
+        return ret;
+    }
+    if (0 == cmpval) {
         /* name not previously set */
-	if (ompi_process_info.seed || NULL == ompi_process_info.ns_replica) {
+	   if (ompi_process_info.seed || NULL == ompi_process_info.ns_replica) {
             /* seed or singleton - couldn't join existing univ */
-            new_name = ompi_name_server.create_process_name(0,0,0);
-	    *ompi_rte_get_self() = *new_name;
+            if (ORTE_SUCCESS != (ret = orte_name_services.create_process_name(new_name, 0,0,0))) {
+                return ret;
+            }
+	       *ompi_rte_get_self() = *new_name;
             free(new_name);
-	    printname("singleton/seed");
-	} else {  
+	       printname("singleton/seed");
+	   } else {  
             /* not seed or singleton - name server exists elsewhere - get a name for me */
-	    jobid = ompi_name_server.create_jobid();
-	    vpid = ompi_name_server.reserve_range(jobid, 1);
-            new_name = ompi_name_server.create_process_name(0, jobid, vpid);
-	    *ompi_rte_get_self() = *new_name;
+	       if (ORTE_SUCCESS != (ret = orte_name_services.create_jobid(&jobid))) {
+                return ret;
+           }
+	       if (ORTE_SUCCESS != (ret = orte_name_services.reserve_range(jobid, 1, &vpid))) {
+                return ret;
+           }
+           if (ORTE_SUCCESS != (ret = orte_name_services.create_process_name(new_name, 0, jobid, vpid))) {
+                return ret;
+           }
+	       *ompi_rte_get_self() = *new_name;
             free(new_name);
-	    printname("name_server_provided");
-	}
+	       printname("name_server_provided");
+	   }
     }
 
     /* setup my session directory */
-    jobid_str = ompi_name_server.get_jobid_string(ompi_rte_get_self());
-    procid_str = ompi_name_server.get_vpid_string(ompi_rte_get_self());
+    if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid_string(jobid_str, ompi_rte_get_self()))) {
+        return ret;
+    }
+    if (ORTE_SUCCESS != (ret = orte_name_services.get_vpid_string(procid_str, ompi_rte_get_self()))) {
+        return ret;
+    }
  
     if (ompi_rte_debug_flag) {
-	ompi_output(0, "[%d,%d,%d] setting up session dir with",
+	    ompi_output(0, "[%d,%d,%d] setting up session dir with",
                     ompi_rte_get_self()->cellid, 
                     ompi_rte_get_self()->jobid, 
                     ompi_rte_get_self()->vpid);
-	if (NULL != ompi_process_info.tmpdir_base) {
-	    ompi_output(0, "\ttmpdir %s", ompi_process_info.tmpdir_base);
-	}
-	ompi_output(0, "\tuniverse %s", ompi_process_info.my_universe);
-	ompi_output(0, "\tuser %s", ompi_system_info.user);
-	ompi_output(0, "\thost %s", ompi_system_info.nodename);
-	ompi_output(0, "\tjobid %s", jobid_str);
-	ompi_output(0, "\tprocid %s", procid_str);
+	    if (NULL != ompi_process_info.tmpdir_base) {
+	       ompi_output(0, "\ttmpdir %s", ompi_process_info.tmpdir_base);
+	    }
+        	ompi_output(0, "\tuniverse %s", ompi_process_info.my_universe);
+        	ompi_output(0, "\tuser %s", ompi_system_info.user);
+        	ompi_output(0, "\thost %s", ompi_system_info.nodename);
+        	ompi_output(0, "\tjobid %s", jobid_str);
+        	ompi_output(0, "\tprocid %s", procid_str);
     }
     if (OMPI_ERROR == ompi_session_dir(true,
 				       ompi_process_info.tmpdir_base,
@@ -388,7 +403,7 @@ static void printname(char *loc)
 	if (NULL == ompi_rte_get_self()) {
 	    ompi_output(0, "My name after %s has NOT been set", loc);
 	} else {
-	    ompi_output(0, "My name after %s is [%d,%d,%d]", loc, OMPI_NAME_ARGS(*ompi_rte_get_self()));
+	    ompi_output(0, "My name after %s is [%d,%d,%d]", loc, ORTE_NAME_ARGS(*ompi_rte_get_self()));
 	}
     }
 }

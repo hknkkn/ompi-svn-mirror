@@ -16,15 +16,18 @@
 
 #include "ompi_config.h"
 
+#include "util/output.h"
+
 #include "runtime/runtime.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr.h"
 #include "mca/oob/base/base.h"
 
 /*
  * Local functions
  */
 void
-ompi_rte_decode_startup_msg(int status, ompi_process_name_t *peer,
+ompi_rte_decode_startup_msg(int status, orte_process_name_t *peer,
 			    ompi_buffer_t msg, int tag, void *cbdata);
 
 
@@ -50,7 +53,7 @@ int ompi_rte_wait_startup_msg(void)
  */
 
 void
-ompi_rte_decode_startup_msg(int status, ompi_process_name_t *peer,
+ompi_rte_decode_startup_msg(int status, orte_process_name_t *peer,
 			    ompi_buffer_t msg, int tag, void *cbdata)
 {
     char *segment;
@@ -64,13 +67,13 @@ ompi_rte_decode_startup_msg(int status, ompi_process_name_t *peer,
     if (ompi_rte_debug_flag) {
         ompi_buffer_size(msg, &buf_size);
 		ompi_output(0, "[%d,%d,%d] decoding startup msg of length %d",
-		    OMPI_NAME_ARGS(*ompi_rte_get_self()), (int)buf_size);
+		    ORTE_NAME_ARGS(*ompi_rte_get_self()), (int)buf_size);
     }
 
     while (0 < ompi_unpack_string(msg, &segment)) {
 	if (ompi_rte_debug_flag) {
 	    ompi_output(0, "[%d,%d,%d] decoding msg for segment %s",
-			OMPI_NAME_ARGS(*ompi_rte_get_self()), segment);
+			ORTE_NAME_ARGS(*ompi_rte_get_self()), segment);
 	}
 
 	ompi_unpack(msg, &num_objects, 1, OMPI_INT32);  /* unpack #data objects */
@@ -97,7 +100,7 @@ ompi_rte_decode_startup_msg(int status, ompi_process_name_t *peer,
 
 	    if (ompi_rte_debug_flag) {
 		ompi_output(0, "[%d,%d,%d] delivering msg for segment %s with %d data objects",
-			    OMPI_NAME_ARGS(*ompi_rte_get_self()), segment, (int)num_objects);
+			    ORTE_NAME_ARGS(*ompi_rte_get_self()), segment, (int)num_objects);
 	    }
 
 	    ompi_registry.deliver_notify_msg(OMPI_REGISTRY_NOTIFY_ON_STARTUP, notify_msg);

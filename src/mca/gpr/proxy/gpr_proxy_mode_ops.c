@@ -23,6 +23,8 @@
  */
 #include "ompi_config.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "gpr_proxy.h"
 
 
@@ -102,7 +104,7 @@ void mca_gpr_proxy_notify_on(ompi_registry_notify_id_t sub_number)
     return;
 }
 
-void mca_gpr_proxy_triggers_active(mca_ns_base_jobid_t jobid)
+void mca_gpr_proxy_triggers_active(orte_jobid_t jobid)
 {
     ompi_buffer_t cmd;
 
@@ -126,13 +128,13 @@ void mca_gpr_proxy_triggers_active(mca_ns_base_jobid_t jobid)
  CLEANUP:
     if (mca_gpr_proxy_debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr_proxy_triggers_active: cleanup\n",
-		       OMPI_NAME_ARGS(*ompi_rte_get_self()));
+		       ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
     ompi_buffer_free(cmd);
     return;
 }
 
-void mca_gpr_proxy_triggers_inactive(mca_ns_base_jobid_t jobid)
+void mca_gpr_proxy_triggers_inactive(orte_jobid_t jobid)
 {
     ompi_buffer_t cmd;
 
@@ -156,14 +158,14 @@ void mca_gpr_proxy_triggers_inactive(mca_ns_base_jobid_t jobid)
  CLEANUP:
     if (mca_gpr_proxy_debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr_proxy_triggers_active: cleanup\n",
-		       OMPI_NAME_ARGS(*ompi_rte_get_self()));
+		       ORTE_NAME_ARGS(*ompi_rte_get_self()));
     }
     ompi_buffer_free(cmd);
     return;
 }
 
 
-int mca_gpr_proxy_assign_ownership(char *segment, mca_ns_base_jobid_t jobid)
+int mca_gpr_proxy_assign_ownership(char *segment, orte_jobid_t jobid)
 {
     ompi_buffer_t cmd, answer;
     mca_gpr_cmd_flag_t command;
