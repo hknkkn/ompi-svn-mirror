@@ -87,7 +87,8 @@ int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes)
                 node->node_slots_max > num_per_node + node->node_slots_inuse) {
                 size_t num_avail = node->node_slots_max - node->node_slots_inuse;
                 num_allocated += num_avail;
-                node->node_slots_inuse = 
+                node->node_slots_inuse += num_avail;
+                node->node_slots_alloc += num_avail;
                 num_constrained++;
             } else {
                 num_allocated += num_per_node;
