@@ -31,12 +31,12 @@
 #include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
 #include "gpr_replica_fn.h"
 
-int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_replica_segment_t *seg,
-                            orte_gpr_value_t *value,
-                            int trigger_level,
-                            orte_gpr_notify_id_t local_idtag)
+int orte_gpr_replica_subscribe_fn(orte_gpr_replica_segment_t *seg,
+                                  orte_gpr_value_t *value,
+                                  orte_gpr_value_t *trigval,
+                                  orte_gpr_notify_id_t local_idtag)
 {
+#if 0
     orte_gpr_replica_triggers_t *trig;
     orte_gpr_replica_itag_t *itags;
     orte_gpr_keyval_t *kptr;
@@ -123,6 +123,8 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
 CLEANUP:
     OBJ_RELEASE(trig);
     return rc;
+#endif
+    return ORTE_SUCCESS;
 }
 
 

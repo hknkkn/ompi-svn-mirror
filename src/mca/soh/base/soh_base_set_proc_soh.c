@@ -35,12 +35,15 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
     orte_gpr_keyval_t **keyvals;
     int rc;
     orte_jobid_t jobid;
+    orte_vpid_t vpid;
 
     value = OBJ_NEW(orte_gpr_value_t);
     if (NULL == value) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
+    
+    value->addr_mode = ORTE_GPR_OVERWRITE | ORTE_GPR_TOKENS_AND;
     
     if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, proc))) {
         ORTE_ERROR_LOG(rc);
@@ -52,12 +55,21 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
         return rc;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&(value->tokens),
-                                                    &(value->num_tokens), proc))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_vpid(&vpid, proc))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    
+
+    if (ORTE_VPID_MAX == vpid) {  /* wildcard case - set everyone on job segment to this status */
+        value->tokens = NULL;
+    } else {
+        if (ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&(value->tokens),
+                                                        &(value->num_tokens), proc))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+    }
+
     value->cnt = 2;
     value->keyvals = (orte_gpr_keyval_t**)malloc(2 * sizeof(orte_gpr_keyval_t*));
     if (NULL == value->keyvals) {
@@ -86,7 +98,7 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
     (value->keyvals[1])->type = ORTE_EXIT_CODE;
     (value->keyvals[1])->value.exit_code = exit_status;
 
-    if (ORTE_SUCCESS != (rc = orte_gpr.put(ORTE_GPR_OVERWRITE|ORTE_GPR_TOKENS_AND, 1, &value))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr.put(1, &value))) {
         ORTE_ERROR_LOG(rc);
     }
     

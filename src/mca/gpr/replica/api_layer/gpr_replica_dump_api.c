@@ -28,6 +28,7 @@
 #include "util/proc_info.h"
 
 #include "mca/ns/ns_types.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "mca/gpr/replica/api_layer/gpr_replica_api.h"
 
@@ -44,17 +45,22 @@ int orte_gpr_replica_dump(int output_id)
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     if (orte_gpr_replica_globals.compound_cmd_mode) {
-	    rc = orte_gpr_base_pack_dump(orte_gpr_replica_globals.compound_cmd);
+	    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_dump(orte_gpr_replica_globals.compound_cmd))) {
+            ORTE_ERROR_LOG(rc);
+        }
 	    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-	   return rc;
+	    return rc;
     }
 
     buffer = OBJ_NEW(orte_buffer_t);
     if (NULL == buffer) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    rc = orte_gpr_replica_dump_fn(buffer);
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dump_fn(buffer))) {
+        ORTE_ERROR_LOG(rc);
+    }
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 

@@ -30,8 +30,7 @@
 
 #include "gpr_replica_api.h"
 
-int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
-                         int cnt, orte_gpr_value_t **values)
+int orte_gpr_replica_put(int cnt, orte_gpr_value_t **values)
 {
     int rc, i, j;
     int8_t action_taken;
@@ -49,8 +48,7 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
     }
 
     if (orte_gpr_replica_globals.compound_cmd_mode) {
-	   return orte_gpr_base_pack_put(orte_gpr_replica_globals.compound_cmd,
-				     mode, cnt, values);
+	   return orte_gpr_base_pack_put(orte_gpr_replica_globals.compound_cmd, cnt, values);
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
@@ -79,7 +77,7 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
             return rc;
         }
     
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_put_fn(mode, seg, itags, val->num_tokens,
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_put_fn(val->addr_mode, seg, itags, val->num_tokens,
     				val->cnt, val->keyvals, &action_taken))) {
             goto CLEANUP;
         }
@@ -117,9 +115,8 @@ CLEANUP:
 }
 
 
-int orte_gpr_replica_put_nb(orte_gpr_addr_mode_t addr_mode,
-                      int cnt, orte_gpr_value_t **values,
-                      orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
+int orte_gpr_replica_put_nb(int cnt, orte_gpr_value_t **values,
+                            orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

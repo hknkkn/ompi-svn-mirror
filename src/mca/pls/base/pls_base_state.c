@@ -57,9 +57,10 @@ int orte_pls_base_set_proc_pid(const orte_process_name_t* name, pid_t pid)
     
     value.keyvals = keyvals;
     value.cnt = 2;
+    value.addr_mode = ORTE_GPR_OVERWRITE;
     values[0] = &value;
     
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
+    rc = orte_gpr.put(1, values);
     if(ORTE_SUCCESS != rc) {
         ORTE_ERROR_LOG(rc);
     }
@@ -180,7 +181,6 @@ int orte_pls_base_get_proc_pids(orte_jobid_t jobid, pid_t **pids, size_t* num_pi
     } 
     *num_pids = num_values;
 
-cleanup:
     if(NULL != values) {
         for(i=0; i<num_values; i++) {
             if(NULL != values[i]) {
@@ -223,9 +223,10 @@ int orte_pls_base_set_node_pid(orte_cellid_t cellid, char* node_name, orte_jobid
     value.segment = ORTE_NODE_SEGMENT;
     value.keyvals = keyvals;
     value.cnt = 1;
+    value.addr_mode = ORTE_GPR_OVERWRITE;
     values[0] = &value;
     
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
+    rc = orte_gpr.put(1, values);
     if(ORTE_SUCCESS != rc) {
         ORTE_ERROR_LOG(rc);
     }

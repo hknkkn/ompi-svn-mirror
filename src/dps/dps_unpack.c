@@ -376,6 +376,15 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
 
+                /* unpack the address mode */
+                n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->addr_mode),
+                            src, 1, ORTE_GPR_ADDR_MODE, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+                
                 /* unpack the segment name */
 				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->segment),

@@ -310,7 +310,7 @@ static void mca_base_modex_registry_callback(
 static int mca_base_modex_subscribe(orte_process_name_t* name)
 {
     orte_gpr_notify_id_t rctag;
-    orte_gpr_value_t value;
+    orte_gpr_value_t value, trig;
     orte_jobid_t jobid;
     ompi_list_item_t* item;
     mca_base_modex_subscription_t* subscription;
@@ -329,35 +329,88 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     }
     OMPI_UNLOCK(&mca_base_modex_lock);
 
-    /* otherwise - subscribe */
-    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+    /* otherwise - subscribe to get this jobid's ptl contact info */
     if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, name))) {
         ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&value);
         return rc;
     }
     
+    /* setup the subscription definition */
+    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
     if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value.segment), jobid))) {
         ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&value);
         return rc;
     }
-    
+    value.addr_mode = ORTE_GPR_KEYS_OR | ORTE_GPR_TOKENS_OR;
+    value.tokens = NULL;
+    value.num_tokens = 0;
     value.cnt = 1;
+    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    if (NULL == value.keyvals) {
+       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
     value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     if (NULL == value.keyvals[0]) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    
     value.keyvals[0]->key = strdup("modex-*");
     value.keyvals[0]->type = ORTE_NULL;
     
+    /* setup the trigger definition */
+    OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
+    trig.addr_mode = ORTE_GPR_TOKENS_XAND;
+    if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(trig.segment), jobid))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&trig);
+        return rc;
+    }
+    trig.tokens = (char**)malloc(sizeof(char*));
+    if (NULL == trig.tokens) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.tokens[0] = strdup(ORTE_JOB_GLOBALS);
+    trig.num_tokens = 1;
+    trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
+    if (NULL == trig.keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == trig.keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[0]->key = strdup(ORTE_PROC_NUM_PROCS);
+    trig.keyvals[0]->type = ORTE_NULL;
+    trig.keyvals[1] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == trig.keyvals[1]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.keyvals[1]->key = strdup(ORTE_PROC_NUM_AT_STG1);
+    trig.keyvals[1]->type = ORTE_NULL;
+
+    /* register the subscription */
     rc = orte_gpr.subscribe(
-        ORTE_GPR_KEYS_OR | ORTE_GPR_TOKENS_OR,
-        	ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_DEL_ENTRY |
-        	ORTE_GPR_NOTIFY_VALUE_CHG |
-		ORTE_GPR_NOTIFY_AT_LEVEL,
+        	ORTE_GPR_NOTIFY_ALL | ORTE_GPR_TRIG_ALL_CMP,
         	&value,
-         orte_process_info.num_procs,
+         &trig,
          &rctag,
         	mca_base_modex_registry_callback,
         	NULL);
@@ -416,7 +469,7 @@ int mca_base_modex_send(
        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    
+    value->addr_mode = ORTE_GPR_TOKENS_AND | ORTE_GPR_OVERWRITE;
     if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&(value->tokens[0]), orte_process_info.my_name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
@@ -443,10 +496,7 @@ int mca_base_modex_send(
         source_component->mca_component_major_version,
         source_component->mca_component_minor_version);
     
-    rc = orte_gpr.put(
-        ORTE_GPR_TOKENS_AND | ORTE_GPR_OVERWRITE, 
-        1,
-        &value);
+    rc = orte_gpr.put(1, &value);
         
     OBJ_RELEASE(value);
 

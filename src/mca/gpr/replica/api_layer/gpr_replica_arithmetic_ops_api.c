@@ -29,24 +29,12 @@
 #include "gpr_replica_api.h"
 
 
-int orte_gpr_replica_notify_on(orte_gpr_notify_id_t sub_number)
+int orte_gpr_replica_increment_value(orte_gpr_value_t *value)
 {
-    int rc;
-    
-    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    rc = orte_gpr_replica_notify_on_fn(orte_process_info.my_name, sub_number);
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-    
-    return rc;
+    return ORTE_SUCCESS;
 }
 
-int orte_gpr_replica_notify_off(orte_gpr_notify_id_t sub_number)
+int orte_gpr_replica_decrement_value(orte_gpr_value_t *value)
 {
-    int rc;
-    
-    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    rc = orte_gpr_replica_notify_off_fn(orte_process_info.my_name, sub_number);
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-    
-    return rc;
+    return ORTE_SUCCESS;
 }

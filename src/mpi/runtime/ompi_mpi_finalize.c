@@ -49,6 +49,7 @@
 #include "mca/oob/base/base.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
+#include "mca/rml/rml.h"
 #include "mca/soh/soh.h"
 #include "mca/errmgr/errmgr.h"
 
@@ -57,9 +58,6 @@
 int ompi_mpi_finalize(void)
 {
     int ret;
-    orte_jobid_t jobid;
-    orte_gpr_value_t value;
-    orte_gpr_notify_id_t idtag;
 
     ompi_mpi_finalized = true;
 #if OMPI_HAVE_THREADS == 0
@@ -71,9 +69,9 @@ int ompi_mpi_finalize(void)
         return ret;
     }
 */
-    /* Set process status to "terminating"*/
+    /* Set process status to "at stg3" */
     if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
-                                ORTE_PROC_STATE_AT_STG4, 0))) {
+                                ORTE_PROC_STATE_AT_STG3, 0))) {
         ORTE_ERROR_LOG(ret);
     }
 
@@ -84,32 +82,12 @@ int ompi_mpi_finalize(void)
     }
 */
     /*
-     * Setup the subscription to notify us when all procs have reached this point
+     * Wait for everyone to get here
      */
-    if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&jobid, orte_process_info.my_name))) {
+    if (ORTE_SUCCESS != (ret = orte_rml.xcast(NULL, NULL, 0, NULL, orte_gpr.deliver_notify_msg))) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }
-    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
-    if (ORTE_SUCCESS != (ret = orte_schema.get_job_segment_name(&(value.segment), jobid))) {
-        ORTE_ERROR_LOG(ret);
-        OBJ_DESTRUCT(&value);
-        return ret;
-    }
-    
-    if (ORTE_SUCCESS != (ret = orte_gpr.subscribe(ORTE_GPR_TOKENS_OR, ORTE_GPR_NOTIFY_AT_LEVEL,
-                                    &value, 0, &idtag,
-                                    orte_all_procs_unregistered, NULL))) {
-        ORTE_ERROR_LOG(ret);
-        OBJ_DESTRUCT(&value);
-        return ret;
-    }
-    
-    if (ORTE_SUCCESS != (ret = orte_monitor_procs_unregistered())) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
-    OBJ_DESTRUCT(&value);
     
     /* Shut down any bindings-specific issues: C++, F77, F90 (may or
        may not be necessary...?) */
@@ -212,6 +190,12 @@ int ompi_mpi_finalize(void)
     }
     if (OMPI_SUCCESS != (ret = mca_coll_base_close())) {
 	return ret;
+    }
+
+    /* Set process status to "finalized" */
+    if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
+                                ORTE_PROC_STATE_FINALIZED, 0))) {
+        ORTE_ERROR_LOG(ret);
     }
 
     /* Leave the RTE */

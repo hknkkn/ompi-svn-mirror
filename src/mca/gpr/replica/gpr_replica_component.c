@@ -76,6 +76,9 @@ static orte_gpr_base_module_t orte_gpr_replica_module = {
     /* GENERAL OPERATIONS */
     orte_gpr_replica_preallocate_segment,
     orte_gpr_replica_deliver_notify_msg,
+    /* ARITHMETIC OPERATIONS */
+    orte_gpr_replica_increment_value,
+    orte_gpr_replica_decrement_value,
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_replica_subscribe,
     orte_gpr_replica_unsubscribe,
@@ -85,9 +88,6 @@ static orte_gpr_base_module_t orte_gpr_replica_module = {
     orte_gpr_replica_exec_compound_cmd,
     /* DUMP */
     orte_gpr_replica_dump,
-    /* MODE OPERATIONS */
-    orte_gpr_replica_notify_on,
-    orte_gpr_replica_notify_off,
     /* CLEANUP OPERATIONS */
     orte_gpr_replica_cleanup_job,
     orte_gpr_replica_cleanup_proc,

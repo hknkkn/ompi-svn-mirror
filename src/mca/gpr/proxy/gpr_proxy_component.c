@@ -78,6 +78,9 @@ static orte_gpr_base_module_t orte_gpr_proxy = {
     /* GENERAL OPERATIONS */
     orte_gpr_proxy_preallocate_segment,
     orte_gpr_proxy_deliver_notify_msg,
+    /* ARITHMETIC OPERATIONS */
+    orte_gpr_proxy_increment_value,
+    orte_gpr_proxy_decrement_value,
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_proxy_subscribe,
     orte_gpr_proxy_unsubscribe,
@@ -87,9 +90,6 @@ static orte_gpr_base_module_t orte_gpr_proxy = {
     orte_gpr_proxy_exec_compound_cmd,
     /* DUMP */
     orte_gpr_proxy_dump,
-    /* MODE OPERATIONS */
-    orte_gpr_proxy_notify_on,
-    orte_gpr_proxy_notify_off,
     /* CLEANUP OPERATIONS */
     orte_gpr_proxy_cleanup_job,
     orte_gpr_proxy_cleanup_proc,

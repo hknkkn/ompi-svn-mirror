@@ -44,6 +44,7 @@ static int orte_rmaps_rr_set_vpid_range(orte_jobid_t jobid, orte_vpid_t start, o
 
     keyvals[0] = &vpid_start;
     keyvals[1] = &vpid_range;
+    value.addr_mode = ORTE_GPR_OVERWRITE;
     value.tokens = tokens;
     value.num_tokens = 1;
     value.keyvals = keyvals;
@@ -55,7 +56,7 @@ static int orte_rmaps_rr_set_vpid_range(orte_jobid_t jobid, orte_vpid_t start, o
 
     vpid_start.value.vpid = start;
     vpid_range.value.vpid = range;
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, &values);
+    rc = orte_gpr.put(1, &values);
     free(value.segment);
     return rc;
 }

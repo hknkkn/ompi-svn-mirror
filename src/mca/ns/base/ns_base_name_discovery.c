@@ -122,7 +122,7 @@ int orte_ns_base_get_peers(orte_process_name_t **procs,
     }
 
     *num_procs = (size_t)orte_process_info.num_procs;
-    *self = (size_t)myvpid;
+    *self = (size_t)(myvpid - orte_process_info.vpid_start);
     
     return ORTE_SUCCESS;
 }

@@ -216,6 +216,7 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
         
+        value->addr_mode = ORTE_GPR_OVERWRITE;
         value->segment = strdup(ORTE_NODE_SEGMENT);
         value->cnt = 5;
         value->keyvals = (orte_gpr_keyval_t**)malloc(5*sizeof(orte_gpr_keyval_t*));
@@ -279,10 +280,7 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
     }
     
     /* try the insert */
-    rc = orte_gpr.put(
-        ORTE_GPR_OVERWRITE,
-        num_values,
-        values);
+    rc = orte_gpr.put(num_values, values);
 
     for (j=0; j < num_values; j++) {
           OBJ_RELEASE(values[j]);
@@ -359,6 +357,7 @@ int orte_ras_base_node_assign(ompi_list_t* nodes, orte_jobid_t jobid)
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
         
+        values[i]->addr_mode = ORTE_GPR_OVERWRITE;
         values[i]->segment = strdup(ORTE_NODE_SEGMENT);
         values[i]->cnt = 1;
         values[i]->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
@@ -412,10 +411,7 @@ int orte_ras_base_node_assign(ompi_list_t* nodes, orte_jobid_t jobid)
     }
     
     /* try the insert */
-    rc = orte_gpr.put(
-        ORTE_GPR_OVERWRITE,
-        num_values,
-        values);
+    rc = orte_gpr.put(num_values, values);
     
     for (j=0; j < num_values; j++) {
         OBJ_RELEASE(values[j]);

@@ -36,6 +36,8 @@
  * globals
  */
 
+orte_process_name_t orte_name_all = {ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX};
+
 /*
  * Global variables
  */

@@ -340,6 +340,15 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             /* array of pointers to value objects - need to pack the objects */
             values = (orte_gpr_value_t**) src;
             for (i=0; i<num_vals; i++) {
+                /* pack the address mode */
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(values[i]->addr_mode)), 1, ORTE_GPR_ADDR_MODE, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes+=n;
+                
                 /* pack the segment name */
 				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,

@@ -50,11 +50,11 @@ int orte_gpr_replica_stop_compound_cmd(void);
 int orte_gpr_replica_exec_compound_cmd(void);
 
 /*
- * Mode operations
+ * Arithmetic operations
  */
-int orte_gpr_replica_notify_off(orte_gpr_notify_id_t sub_number);
+int orte_gpr_replica_increment_value(orte_gpr_value_t *value);
 
-int orte_gpr_replica_notify_on(orte_gpr_notify_id_t sub_number);
+int orte_gpr_replica_decrement_value(orte_gpr_value_t *value);
 
 /*
  * Delete-index functions
@@ -89,12 +89,10 @@ int orte_gpr_replica_cleanup_proc(orte_process_name_t *proc);
 /*
  * Put-get functions
  */
-int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
-                         int cnt, orte_gpr_value_t **values);
+int orte_gpr_replica_put(int cnt, orte_gpr_value_t **values);
 
-int orte_gpr_replica_put_nb(orte_gpr_addr_mode_t addr_mode,
-                      int cnt, orte_gpr_value_t **values,
-                      orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
+int orte_gpr_replica_put_nb(int cnt, orte_gpr_value_t **values,
+                            orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
                       
 int orte_gpr_replica_get(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
@@ -108,12 +106,11 @@ int orte_gpr_replica_get_nb(orte_gpr_addr_mode_t addr_mode,
 /*
  * Subscribe functions
  */
-int orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_notify_action_t action,
-                            orte_gpr_value_t *value,
-                            int trigger_level,
-                            orte_gpr_notify_id_t *sub_number,
-                            orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
+int orte_gpr_replica_subscribe(orte_gpr_notify_action_t action,
+                               orte_gpr_value_t *value,
+                               orte_gpr_value_t *trig,
+                               orte_gpr_notify_id_t *sub_number,
+                               orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
 int orte_gpr_replica_unsubscribe(orte_gpr_notify_id_t sub_number);
 

@@ -120,6 +120,9 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             values = (orte_gpr_value_t**) src;
             for (i=0; i<num_vals; i++) {
                 mem_req += orte_dps_memory_required(
+                                (void*)(&(values[i]->addr_mode)), 1,
+                                ORTE_GPR_ADDR_MODE);
+                mem_req += orte_dps_memory_required(
                                 (void*)(&(values[i]->segment)), 1, ORTE_STRING);
                 mem_req += sizeof(int32_t); /* number of tokens */
                 mem_req += orte_dps_memory_required(

@@ -732,6 +732,7 @@ int mca_oob_tcp_init(void)
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
+    value->addr_mode = ORTE_GPR_OVERWRITE | ORTE_GPR_TOKENS_XAND;
     if (ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value->segment), jobid))) {
         ORTE_ERROR_LOG(rc);
         return rc;
@@ -772,7 +773,7 @@ int mca_oob_tcp_init(void)
             value->segment);
     }
 
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE | ORTE_GPR_TOKENS_XAND, 1, &value);
+    rc = orte_gpr.put(1, &value);
     if(rc != OMPI_SUCCESS) {
         ORTE_ERROR_LOG(rc);
         OBJ_RELEASE(value);

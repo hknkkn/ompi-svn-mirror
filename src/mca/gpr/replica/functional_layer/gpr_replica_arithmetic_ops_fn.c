@@ -28,8 +28,7 @@
 #include "gpr_replica_fn.h"
 
 
-int orte_gpr_replica_notify_on_fn(orte_process_name_t *proc,
-				  orte_gpr_notify_id_t sub_number)
+int orte_gpr_replica_increment_value_fn(orte_gpr_value_t *value)
 {
 #if 0
     orte_gpr_replica_notify_off_t *ptr, *nextptr;
@@ -56,8 +55,7 @@ int orte_gpr_replica_notify_on_fn(orte_process_name_t *proc,
 }
 
 
-int orte_gpr_replica_notify_off_fn(orte_process_name_t *proc,
-				   orte_gpr_notify_id_t sub_number)
+int orte_gpr_replica_decrement_value_fn(orte_gpr_value_t *value)
 {
 #if 0
     orte_gpr_replica_notify_off_t *ptr;

@@ -36,28 +36,29 @@
 #include "gpr_proxy.h"
 
 int
-orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
-                        orte_gpr_notify_action_t action,
-                        orte_gpr_value_t *value,
-                        int trigger_level,
-                        orte_gpr_notify_id_t *sub_number,
-                        orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
+orte_gpr_proxy_subscribe(orte_gpr_notify_action_t action,
+                         orte_gpr_value_t *value,
+                         orte_gpr_value_t *trig,
+                         orte_gpr_notify_id_t *sub_number,
+                         orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
     orte_buffer_t *cmd;
     orte_buffer_t *answer;
-    int rc;
+    int rc, ret;
     orte_gpr_notify_id_t idtag, remote_idtag;
 
     *sub_number = ORTE_GPR_NOTIFY_ID_MAX;
     
     /* need to protect against errors */
     if (NULL == value || NULL == value->segment) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
 	    return ORTE_ERR_BAD_PARAM;
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
 	    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(orte_gpr_proxy_globals.compound_cmd,
-							                         mode, action, value, trigger_level))) {
+							                         action, value, trig))) {
+            ORTE_ERROR_LOG(rc);
             return rc;
         }
 
@@ -67,6 +68,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 	    /* generate id_tag to send to replica to identify lookup entry */
 	    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
                                             cb_func, user_tag))) {
+            ORTE_ERROR_LOG(rc);
             OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
             return rc;
         }
@@ -83,10 +85,12 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
     cmd = OBJ_NEW(orte_buffer_t);
     if (NULL == cmd) {
+        ORTE_ERROR_LOG(rc);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(cmd, mode, action, value, trigger_level))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_subscribe(cmd, action, value, trig))) {
+        ORTE_ERROR_LOG(rc);
 	    OBJ_RELEASE(cmd);
         return rc;
     }
@@ -97,6 +101,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
     /* generate id_tag to send to replica to identify lookup entry */
     if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
                                         cb_func, user_tag))) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         OBJ_RELEASE(cmd);
         return rc;
@@ -105,6 +110,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
     OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
     
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+        ORTE_ERROR_LOG(rc);
 	    OBJ_RELEASE(cmd);
         return rc;
     }
@@ -116,6 +122,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
 
     if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+        ORTE_ERROR_LOG(rc);
          OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
          orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
          OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
@@ -124,6 +131,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
     answer = OBJ_NEW(orte_buffer_t);
     if (NULL == answer) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
@@ -131,6 +139,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
     }
     
     if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
@@ -138,7 +147,8 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
         return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_base_unpack_subscribe(answer, &remote_idtag))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_unpack_subscribe(answer, &ret, &remote_idtag))) {
+        ORTE_ERROR_LOG(rc);
 	    OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
 	    orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
 	    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
@@ -147,6 +157,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
     /* set the remote id tag field */
     if (ORTE_SUCCESS != (rc = orte_gpr_proxy_set_remote_idtag(idtag, remote_idtag))) {
+        ORTE_ERROR_LOG(rc);
         OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
@@ -154,7 +165,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
     }
 
     *sub_number = idtag;
-    return rc;
+    return ret;
 }
 
 
@@ -162,12 +173,13 @@ int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number)
 {
     orte_buffer_t *cmd;
     orte_buffer_t *answer;
-    int rc;
+    int rc, ret;
     orte_gpr_notify_id_t remote_idtag;
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
         if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_unsubscribe(orte_gpr_proxy_globals.compound_cmd,
                                     sub_number))) {
+            ORTE_ERROR_LOG(rc);
             return rc;
         }
 
@@ -175,11 +187,15 @@ int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number)
 
         /* remove the notify tag */
         if (ORTE_SUCCESS != (rc = orte_gpr_proxy_remove_notify_request(sub_number, &remote_idtag))) {
+            ORTE_ERROR_LOG(rc);
             OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
             return rc;
         }
         
-        rc = orte_dps.pack(orte_gpr_proxy_globals.compound_cmd, &remote_idtag, 1, ORTE_GPR_NOTIFY_ID);
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(orte_gpr_proxy_globals.compound_cmd,
+                                &remote_idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+            ORTE_ERROR_LOG(rc);
+        }
            
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return rc;
@@ -187,11 +203,13 @@ int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number)
 
     cmd = OBJ_NEW(orte_buffer_t);
     if (NULL == cmd) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
     OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
     if (ORTE_SUCCESS != (rc = orte_gpr_proxy_remove_notify_request(sub_number, &remote_idtag))) {
+        ORTE_ERROR_LOG(rc);
         OBJ_RELEASE(cmd);
         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return rc;
@@ -199,26 +217,37 @@ int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number)
     OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);    
 
     if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_unsubscribe(cmd, remote_idtag))) {
+        ORTE_ERROR_LOG(rc);
         OBJ_RELEASE(cmd);
         return rc;
     }
 
     if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
+        OBJ_RELEASE(cmd);
 	    return ORTE_ERR_COMM_FAILURE;
     }
-
+    OBJ_RELEASE(cmd);
+    
     answer = OBJ_NEW(orte_buffer_t);
     if (NULL == answer) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
     if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
+        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
 	    OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }
 
-    rc = orte_gpr_base_unpack_unsubscribe(answer);
-	OBJ_RELEASE(answer);
-	return rc;
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_unpack_unsubscribe(answer, &ret))) {
+        ORTE_ERROR_LOG(rc);
+	    OBJ_RELEASE(answer);
+        return rc;
+    }
+  
+    OBJ_RELEASE(answer);
+	return ret;
 
 }

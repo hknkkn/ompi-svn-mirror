@@ -23,7 +23,7 @@ libmca_gpr_replica_api_la_SOURCES = \
 	gpr_replica_del_index_api.c \
 	gpr_replica_dump_api.c \
 	gpr_replica_messaging_api.c \
-	gpr_replica_mode_ops_api.c \
+	gpr_replica_arithmetic_ops_api.c \
     gpr_replica_put_get_api.c \
 	gpr_replica_subscribe_api.c \
 	gpr_replica_test_internals_api.c

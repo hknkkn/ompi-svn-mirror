@@ -182,16 +182,24 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 	    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_PRE_EXISTING");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 	}
-	if (ORTE_GPR_NOTIFY_ONE_SHOT & trig->action) {
-	    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ONE_SHOT");
+	if (ORTE_GPR_TRIG_ONE_SHOT & trig->action) {
+	    tmp_out = strdup("\t\tORTE_GPR_TRIG_ONE_SHOT");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 	}
-    if (ORTE_GPR_NOTIFY_AT_LEVEL & trig->action) {
-        tmp_out = strdup("\t\tORTE_GPR_NOTIFY_AT_LEVEL");
+    if (ORTE_GPR_TRIG_CMP_LEVELS & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_TRIG_CMP_LEVELS");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
-    if (ORTE_GPR_NOTIFY_BEGIN & trig->action) {
-        tmp_out = strdup("\t\tORTE_GPR_NOTIFY_BEGIN");
+    if (ORTE_GPR_TRIG_MONITOR_ONLY & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_TRIG_MONITOR_ONLY");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_TRIG_NOTIFY_START & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_TRIG_NOTIFY_START");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_TRIG_INCLUDE_DATA & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_TRIG_INCLUDE_DATA");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
 

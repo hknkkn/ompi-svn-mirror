@@ -32,28 +32,15 @@
 #include "mca/gpr/base/base.h"
 
 int orte_gpr_base_pack_put(orte_buffer_t *cmd,
-                orte_gpr_addr_mode_t mode,
                 int cnt, orte_gpr_value_t **values)
 {
     orte_gpr_cmd_flag_t command;
-    int rc, i;
+    int rc;
 
     command = ORTE_GPR_PUT_CMD;
 
-    /* need to check for errors - must have at least one token! */
-    for (i=0; i < cnt; i++) {
-        if (NULL == values[i]->tokens) {
-           ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-           return ORTE_ERR_BAD_PARAM;
-        }
-    }
-    
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_CMD))) {
 	   return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_ADDR_MODE))) {
-        return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, values, (size_t)cnt, ORTE_GPR_VALUE))) {

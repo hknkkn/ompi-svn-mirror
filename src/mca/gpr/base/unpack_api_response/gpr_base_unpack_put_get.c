@@ -30,49 +30,54 @@
 
 #include "mca/gpr/base/base.h"
 
-int orte_gpr_base_unpack_put(orte_buffer_t *buffer)
+int orte_gpr_base_unpack_put(orte_buffer_t *buffer, int *ret)
 {
     orte_gpr_cmd_flag_t command;
-    int32_t response;
     int rc;
     size_t n;
 
     n=1;
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     
 	if (ORTE_GPR_PUT_CMD != command) {
+       ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
 	   return ORTE_ERR_COMM_FAILURE;
     }
 
     n=1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &response, &n, ORTE_INT))) {
-	   return rc;
-    } else {
-	   return (int)response;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, ret, &n, ORTE_INT))) {
+        ORTE_ERROR_LOG(rc);
+	    return rc;
     }
+    
+	return ORTE_SUCCESS;
 
 }
 
 
-int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *cnt, orte_gpr_value_t ***values)
+int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *ret, int *cnt, orte_gpr_value_t ***values)
 {
     orte_gpr_cmd_flag_t command;
-    int rc, ret, num;
+    int rc, num;
     size_t n;
 
     n=1;
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        ORTE_ERROR_LOG(rc);
         return rc;
     }
     
     if (ORTE_GPR_GET_CMD != command) {
+        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
         return ORTE_ERR_COMM_FAILURE;
     }
 
     /* unpack the response code */
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &ret, &n, ORTE_INT))) {
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, ret, &n, ORTE_INT))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
@@ -93,12 +98,12 @@ int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *cnt, orte_gpr_value_t *
         
         if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, *values, (size_t*)&num, ORTE_GPR_VALUE))) {
             ORTE_ERROR_LOG(rc);
-            free(values);
+            free(*values);
             return rc;
         }
     }
     
     *cnt = num;
 
-    return ret;
+    return ORTE_SUCCESS;
 }

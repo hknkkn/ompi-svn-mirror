@@ -51,6 +51,7 @@ int orte_rmgr_base_put_app_context(
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
+    value->addr_mode = ORTE_GPR_OVERWRITE;
     
     /* put context info on the job segment of the registry */
     if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value->segment), jobid))) {
@@ -89,10 +90,7 @@ int orte_rmgr_base_put_app_context(
         job_slots += app->num_procs;
     }
             
-    rc = orte_gpr.put(
-        ORTE_GPR_OVERWRITE,
-        1,
-        &value);
+    rc = orte_gpr.put(1, &value);
     if(ORTE_SUCCESS != rc) {
         goto cleanup;
     }
@@ -266,6 +264,7 @@ int orte_rmgr_base_set_job_slots(orte_jobid_t jobid, size_t proc_slots)
     keyval.value.ui32 = proc_slots;
     keyvals[0] = &keyval;
 
+    value.addr_mode = ORTE_GPR_OVERWRITE;
     value.segment = segment;
     value.keyvals = keyvals;
     value.cnt = 1;
@@ -273,7 +272,7 @@ int orte_rmgr_base_set_job_slots(orte_jobid_t jobid, size_t proc_slots)
     value.num_tokens = 1;
     values[0] = &value;
 
-    rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
+    rc = orte_gpr.put(1, values);
     free(segment);
     return rc;
 }

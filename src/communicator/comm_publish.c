@@ -97,7 +97,7 @@ int ompi_comm_namepublish ( char *service_name, char *port_name )
        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
        return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    
+    value->addr_mode = ORTE_GPR_TOKENS_AND | ORTE_GPR_OVERWRITE;
     value->segment = strdup(OMPI_NAMESPACE_SEGMENT);
     
     value->tokens = (char**)malloc(2*sizeof(char*));
@@ -118,8 +118,7 @@ int ompi_comm_namepublish ( char *service_name, char *port_name )
     (value->keyvals[0])->key = strdup(OMPI_COMM_PORT_KEY);
     (value->keyvals[0])->type = ORTE_STRING;
     ((value->keyvals[0])->value).strptr = strdup(port_name);
-    rc = orte_gpr.put(ORTE_GPR_TOKENS_AND | ORTE_GPR_OVERWRITE,
-                      1, &value);
+    rc = orte_gpr.put(1, &value);
     OBJ_RELEASE(value);
     return rc;
 }

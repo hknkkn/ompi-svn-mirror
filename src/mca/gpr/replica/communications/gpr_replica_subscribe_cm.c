@@ -34,25 +34,18 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
                                         orte_buffer_t *output_buffer)
 {
     orte_gpr_cmd_flag_t command=ORTE_GPR_SUBSCRIBE_CMD;
-    orte_gpr_addr_mode_t addr_mode;
     orte_gpr_notify_id_t local_idtag=0, idtag=0;
     orte_gpr_replica_segment_t *seg=NULL;
-    int rc, ret, trigger_level;
+    int rc, ret;
     size_t n;
     orte_gpr_notify_action_t action;
-    orte_gpr_value_t *value;
+    orte_gpr_value_t *value, *trig;
     
     if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, &command, 1, ORTE_GPR_CMD))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
     
-    n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(input_buffer, &addr_mode, &n, ORTE_GPR_ADDR_MODE))) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
-    }
-
     n = 1;
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(input_buffer, &action, &n, ORTE_NOTIFY_ACTION))) {
         ORTE_ERROR_LOG(rc);
@@ -66,7 +59,7 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
     }
 
     n = 1;
-    if (ORTE_SUCCESS != orte_dps.unpack(input_buffer, &trigger_level, &n, ORTE_INT)) {
+    if (ORTE_SUCCESS != orte_dps.unpack(input_buffer, &trig, &n, ORTE_GPR_VALUE)) {
         ORTE_ERROR_LOG(rc);
         goto RETURN_ERROR;
     }
@@ -103,8 +96,8 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
         }
 
         /* register subscription */
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(addr_mode, seg,
-                          value, trigger_level, local_idtag))) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(seg,
+                          value, trig, local_idtag))) {
             orte_gpr_replica_remove_notify_request(local_idtag, &idtag);
             ORTE_ERROR_LOG(rc);
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
@@ -120,8 +113,8 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
 
     } else {  /* local sender - idtag is for local notify tracking system */
         /* register subscription */
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(addr_mode, seg,
-                          value, trigger_level, idtag))) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(seg,
+                          value, trig, idtag))) {
             orte_gpr_replica_remove_notify_request(idtag, &idtag);
             ORTE_ERROR_LOG(rc);
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);

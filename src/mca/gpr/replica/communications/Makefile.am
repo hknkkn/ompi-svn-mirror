@@ -23,7 +23,7 @@ libmca_gpr_replica_comm_la_SOURCES = \
     gpr_replica_cleanup_cm.c \
     gpr_replica_del_index_cm.c \
     gpr_replica_dump_cm.c \
-    gpr_replica_mode_ops_cm.c \
+    gpr_replica_arithmetic_ops_cm.c \
     gpr_replica_put_get_cm.c \
     gpr_replica_subscribe_cm.c \
     gpr_replica_test_internals_cm.c

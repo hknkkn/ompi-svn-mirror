@@ -79,6 +79,9 @@ struct orte_process_name_t {
 };
 typedef struct orte_process_name_t orte_process_name_t;
 
+extern orte_process_name_t orte_name_all;
+#define ORTE_NAME_ALL   &orte_name_all
+
 
 /** List of names for general use
  */

@@ -28,11 +28,10 @@
 
 #include "gpr_replica_comm.h"
 
-int orte_gpr_replica_recv_notify_on_cmd(orte_buffer_t *cmd, orte_buffer_t *answer)
+int orte_gpr_replica_recv_increment_value_cmd(orte_buffer_t *cmd, orte_buffer_t *answer)
 {
-    orte_gpr_cmd_flag_t command=ORTE_GPR_NOTIFY_ON_CMD;
-    orte_process_name_t proc;
-    orte_gpr_notify_id_t sub_number;
+    orte_gpr_cmd_flag_t command=ORTE_GPR_INCREMENT_VALUE_CMD;
+    orte_gpr_value_t *value;
     size_t n;
     int rc, ret;
 
@@ -42,21 +41,14 @@ int orte_gpr_replica_recv_notify_on_cmd(orte_buffer_t *cmd, orte_buffer_t *answe
     }
     
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &proc, &n, ORTE_NAME))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
-        goto RETURN_ERROR;
-    }
-
-    n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &sub_number, &n, ORTE_GPR_NOTIFY_ID))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &value, &n, ORTE_GPR_VALUE))) {
         ORTE_ERROR_LOG(rc);
         ret = rc;
         goto RETURN_ERROR;
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    ret = orte_gpr_replica_notify_on_fn(&proc, sub_number);
+    ret = orte_gpr_replica_increment_value_fn(value);
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     if (ORTE_SUCCESS != ret) {
@@ -72,11 +64,10 @@ int orte_gpr_replica_recv_notify_on_cmd(orte_buffer_t *cmd, orte_buffer_t *answe
     return ret;
 }
 
-int orte_gpr_replica_recv_notify_off_cmd(orte_buffer_t *cmd, orte_buffer_t *answer)
+int orte_gpr_replica_recv_decrement_value_cmd(orte_buffer_t *cmd, orte_buffer_t *answer)
 {
-    orte_gpr_cmd_flag_t command=ORTE_GPR_NOTIFY_OFF_CMD;
-    orte_process_name_t proc;
-    orte_gpr_notify_id_t sub_number;
+    orte_gpr_cmd_flag_t command=ORTE_GPR_DECREMENT_VALUE_CMD;
+    orte_gpr_value_t *value;
     size_t n;
     int rc, ret;
 
@@ -86,21 +77,14 @@ int orte_gpr_replica_recv_notify_off_cmd(orte_buffer_t *cmd, orte_buffer_t *answ
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &proc, &n, ORTE_NAME))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
-        goto RETURN_ERROR;
-    }
-
-    n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &sub_number, &n, ORTE_GPR_NOTIFY_ID))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &value, &n, ORTE_GPR_VALUE))) {
         ORTE_ERROR_LOG(rc);
         ret = rc;
         goto RETURN_ERROR;
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    ret = orte_gpr_replica_notify_off_fn(&proc, sub_number);
+    ret = orte_gpr_replica_decrement_value_fn(value);
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     if (ORTE_SUCCESS != ret) {

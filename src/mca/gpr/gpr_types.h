@@ -37,18 +37,22 @@
 /** Define the notify actions for the subscription system - can be OR'd
  * to create multiple actions
  */
-#define ORTE_GPR_NOTIFY_NONE                   (uint16_t)0x0000   /**< No trigger action */
-#define ORTE_GPR_NOTIFY_VALUE_CHG_TO           (uint16_t)0x0001   /**< Notifies subscriber when value changes to specified value */
-#define ORTE_GPR_NOTIFY_VALUE_CHG_FRM          (uint16_t)0x0002   /**< Notifies subscriber when value changes away from specified value */
-#define ORTE_GPR_NOTIFY_VALUE_CHG              (uint16_t)0x0003   /**< Notifies subscriber when value changes */
-#define ORTE_GPR_NOTIFY_ADD_ENTRY              (uint16_t)0x0004   /**< Notifies subscriber when entry added */
-#define ORTE_GPR_NOTIFY_DEL_ENTRY              (uint16_t)0x0008   /**< Notifies subscriber when entry deleted */
-#define ORTE_GPR_NOTIFY_ALL                    (uint16_t)0x000f   /**< Notifies subscriber upon any action */
-#define ORTE_GPR_NOTIFY_PRE_EXISTING           (uint16_t)0x0040   /**< Provide list of all pre-existing data */
-#define ORTE_GPR_NOTIFY_ONE_SHOT               (uint16_t)0x0080   /**< Only trigger once - then delete subscription */
-#define ORTE_GPR_NOTIFY_AT_LEVEL               (uint16_t)0x0100   /**< Trigger whenever count reaches specified level */
-#define ORTE_GPR_NOTIFY_BEGIN                  (uint16_t)0x0200   /**< Trigger activated when count reaches specified level */
-
+#define ORTE_GPR_NOTIFY_NONE            (uint16_t)0x0000   /**< No trigger action */
+#define ORTE_GPR_NOTIFY_VALUE_CHG_TO    (uint16_t)0x0001   /**< Notifies subscriber when value changes to specified value */
+#define ORTE_GPR_NOTIFY_VALUE_CHG_FRM   (uint16_t)0x0002   /**< Notifies subscriber when value changes away from specified value */
+#define ORTE_GPR_NOTIFY_VALUE_CHG       (uint16_t)0x0003   /**< Notifies subscriber when value changes */
+#define ORTE_GPR_NOTIFY_ADD_ENTRY       (uint16_t)0x0004   /**< Notifies subscriber when entry added */
+#define ORTE_GPR_NOTIFY_DEL_ENTRY       (uint16_t)0x0008   /**< Notifies subscriber when entry deleted */
+#define ORTE_GPR_NOTIFY_ALL             (uint16_t)0x000f   /**< Notifies subscriber upon any action */
+#define ORTE_GPR_NOTIFY_PRE_EXISTING    (uint16_t)0x0010   /**< Provide list of all pre-existing data */
+#define ORTE_GPR_TRIG_ONE_SHOT          (uint16_t)0x0100   /**< Only trigger once - then delete subscription */
+#define ORTE_GPR_TRIG_AT_LEVEL          (uint16_t)0x0200   /**< Trigger whenever count reaches specified level */
+#define ORTE_GPR_TRIG_CMP_LEVELS        (uint16_t)0x0400   /**< Trigger when all the specified values are equal */
+#define ORTE_GPR_TRIG_MONITOR_ONLY      (uint16_t)0x0800   /**< Monitor the provided trigger keyval - counting done by someone else */
+#define ORTE_GPR_TRIG_NOTIFY_START      (uint16_t)0x1000   /**< Notifies are off when subscription entered - turned on when trigger fires */
+#define ORTE_GPR_TRIG_INCLUDE_DATA      (uint16_t)0x2000   /**< Include the trigger data in the trigger msg */
+#define ORTE_GPR_TRIG_ALL_AT            (uint16_t)0xdb00   /**< Use all trig defs except include trig data with AT - a typical situation */
+#define ORTE_GPR_TRIG_ALL_CMP           (uint16_t)0xdd00   /**< Use all trig defs except include trig data with CMP */
 typedef uint16_t orte_gpr_notify_action_t;
 
 typedef int32_t orte_gpr_notify_id_t;
@@ -68,8 +72,8 @@ typedef int32_t orte_gpr_notify_id_t;
 #define ORTE_GPR_TEST_INTERNALS_CMD     (uint16_t)0x0200
 #define ORTE_GPR_NOTIFY_CMD             (uint16_t)0x0400
 #define ORTE_GPR_DUMP_CMD               (uint16_t)0x0800
-#define ORTE_GPR_NOTIFY_ON_CMD          (uint16_t)0x2000
-#define ORTE_GPR_NOTIFY_OFF_CMD         (uint16_t)0x4000
+#define ORTE_GPR_INCREMENT_VALUE_CMD    (uint16_t)0x2000
+#define ORTE_GPR_DECREMENT_VALUE_CMD    (uint16_t)0x4000
 #define ORTE_GPR_COMPOUND_CMD           (uint16_t)0x8000
 #define ORTE_GPR_CLEANUP_JOB_CMD        (uint16_t)0x8200
 #define ORTE_GPR_CLEANUP_PROC_CMD       (uint16_t)0x8400
@@ -154,10 +158,11 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_keyval_t);
  */
 typedef struct {
     ompi_object_t super;                    /**< Makes this an object */
-    int32_t cnt;                           /**< Number of keyval objects returned */
-    orte_gpr_keyval_t **keyvals;             /**< Contiguous array of keyval object pointers */
+    orte_gpr_addr_mode_t addr_mode;         /**< Address mode for combining keys/tokens */
+    int32_t cnt;                            /**< Number of keyval objects returned */
+    orte_gpr_keyval_t **keyvals;            /**< Contiguous array of keyval object pointers */
     char *segment;                          /**< Name of the segment this came from */
-    int32_t num_tokens;                    /**< Number of tokens used to recover data */
+    int32_t num_tokens;                     /**< Number of tokens used to recover data */
     char **tokens;                          /**< List of tokens that described this data */
 } orte_gpr_value_t;
 

@@ -176,14 +176,14 @@ int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
             
             
             	    
-            	case ORTE_GPR_NOTIFY_ON_CMD:  /*****     NOTIFY ON     *****/
+            	case ORTE_GPR_INCREMENT_VALUE_CMD:  /*****     INCREMENT_VALUE     *****/
             
             	    if (orte_gpr_replica_globals.debug) {
-            		    ompi_output(0, "\tnotify on cmd");
+            		    ompi_output(0, "\tincrement_value cmd");
             	    }
             
             	    if (ORTE_SUCCESS != (ret =
-                        orte_gpr_replica_recv_notify_on_cmd(input_buffer, answer))) {
+                        orte_gpr_replica_recv_increment_value_cmd(input_buffer, answer))) {
                      ORTE_ERROR_LOG(ret);
                      goto RETURN_ERROR;
                  }
@@ -191,14 +191,14 @@ int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
             
             
             	    
-            	case ORTE_GPR_NOTIFY_OFF_CMD:  /*****     NOTIFY OFF     ******/
+            	case ORTE_GPR_DECREMENT_VALUE_CMD:  /*****     DECREMENT_VALUE     ******/
             
             	    if (orte_gpr_replica_globals.debug) {
-            		    ompi_output(0, "\tnotify off cmd");
+            		    ompi_output(0, "\tdecrement_value cmd");
             	    }
             
                  if (ORTE_SUCCESS != (ret =
-                        orte_gpr_replica_recv_notify_off_cmd(input_buffer, answer))) {
+                        orte_gpr_replica_recv_decrement_value_cmd(input_buffer, answer))) {
                      ORTE_ERROR_LOG(ret);
                      goto RETURN_ERROR;
                  }

@@ -246,38 +246,12 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
      *  after the rte init is completed.
      */
     if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
-                                ORTE_PROC_STATE_RUNNING, 0))) {
+                                ORTE_PROC_STATE_AT_STG1, 0))) {
         ORTE_ERROR_LOG(ret);
         error = "set process state failed";
         goto error;
     }
 
-    /*
-     * Setup the subscription to notify us when all procs have reached this point
-     */
-    if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&jobid, orte_process_info.my_name))) {
-        ORTE_ERROR_LOG(ret);
-        error = "get jobid failed";
-        goto error;
-    }
-    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
-    if (ORTE_SUCCESS != (ret = orte_schema.get_job_segment_name(&(value.segment), jobid))) {
-        ORTE_ERROR_LOG(ret);
-        error = "get job segment name failed";
-        OBJ_DESTRUCT(&value);
-        goto error;
-    }
-    
-    if (ORTE_SUCCESS != (ret = orte_gpr.subscribe(ORTE_GPR_TOKENS_OR, ORTE_GPR_NOTIFY_AT_LEVEL,
-                                    &value, orte_process_info.num_procs, &idtag,
-                                    orte_all_procs_registered, NULL))) {
-        ORTE_ERROR_LOG(ret);
-        error = "could not register subscription for first barrier";
-        OBJ_DESTRUCT(&value);
-        goto error;
-    }
-    OBJ_DESTRUCT(&value);
-    
     /* execute the compound command 
     */
 /*    if (OMPI_SUCCESS != (ret = orte_gpr.exec_compound_cmd())) {
@@ -286,8 +260,8 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     }
 */
 
-    /* FIRST BARRIER - WAIT FOR CONTACT INFO FROM OTHER PROCESSES TO ARRIVE */
-    if (ORTE_SUCCESS != (ret = orte_monitor_procs_registered())) {
+    /* FIRST BARRIER - WAIT FOR MSG CONTAINING CONTACT INFO FROM OTHER PROCESSES TO ARRIVE */
+    if (ORTE_SUCCESS != (ret = orte_rml.xcast(NULL, NULL, 0, NULL, orte_gpr.deliver_notify_msg))) {
         ORTE_ERROR_LOG(ret);
 	    error = "ompi_mpi_init: failed to see all procs register\n";
 	    goto error;
