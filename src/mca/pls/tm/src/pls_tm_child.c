@@ -161,7 +161,7 @@ int orte_pls_tm_child_launch(orte_jobid_t jobid)
     /* Count how many processes we're starting so that we can allocate
        space for all the tid's */
 
-    for (i = 0, item = ompi_list_get_first(&mapping);
+    for (failure = false, i = 0, item = ompi_list_get_first(&mapping);
          !failure && item != ompi_list_get_end(&mapping);
          item = ompi_list_get_next(item)) {
         orte_rmaps_base_map_t* map = (orte_rmaps_base_map_t*) item;
