@@ -79,6 +79,33 @@ typedef struct {
 } orte_byte_object_t;
 
 
+/** Value for orte_app_context_map_t: the data is uninitialized (!) */
+#define ORTE_APP_CONTEXT_MAP_INVALID     0
+/** Value for orte_app_context_map_t: the data is a comma-delimited
+    string of hostnames */
+#define ORTE_APP_CONTEXT_MAP_HOSTNAME    1
+/** Value for orte_app_context_map_t: the data is a comma-delimited
+    list of architecture names */
+#define ORTE_APP_CONTEXT_MAP_ARCH        2
+/** Value for orte_app_context_map_t: the data is a comma-delimited
+    list of C, cX, N, nX mappsing */
+#define ORTE_APP_CONTEXT_MAP_CN          3
+
+/**
+ * Information about mapping requested by the user
+ */
+typedef struct {
+    /** Parent object */
+    ompi_object_t super;
+    /** One of the ORTE_APP_CONTEXT_MAP_* values */
+    uint8_t map_type;
+    /** String data */
+    char *map_data;
+} orte_app_context_map_t;
+
+OBJ_CLASS_DECLARATION(orte_app_context_map_t);
+
+
 /**
  * Information about a specific application to be launched in the RTE.
  */
@@ -101,6 +128,11 @@ typedef struct {
     char  **env;
     /** Current working directory for this app */
     char   *cwd;
+    /** Length of the map_data array, not including the final NULL entry */
+    int32_t num_map;
+    /** Mapping data about how this app should be laid out across CPUs
+        / nodes */
+    orte_app_context_map_t **map_data;
 } orte_app_context_t;
 
 

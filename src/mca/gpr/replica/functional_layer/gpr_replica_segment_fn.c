@@ -339,7 +339,8 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
                                   orte_gpr_value_union_t *src,
                                   orte_data_type_t type)
 {
-    
+    int i;
+
     switch(type) {
 
         case ORTE_STRING:
@@ -425,6 +426,8 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             dest->app_context->idx = src->app_context->idx;
             if(NULL != src->app_context->app) {
                 dest->app_context->app = strdup(src->app_context->app);
+            } else {
+                dest->app_context->app = NULL;
             }
             dest->app_context->num_procs = src->app_context->num_procs;
             dest->app_context->argc = src->app_context->argc;
@@ -433,6 +436,22 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             dest->app_context->env = ompi_argv_copy(src->app_context->env);
             if(NULL != src->app_context->cwd) {
                 dest->app_context->cwd = strdup(src->app_context->cwd);
+            } else {
+                dest->app_context->cwd = NULL;
+            }
+            dest->app_context->num_map = src->app_context->num_map;
+            if (NULL != src->app_context->map_data) {
+                dest->app_context->map_data = malloc(sizeof(orte_app_context_map_t *) * src->app_context->num_map);
+                for (i = 0; i < src->app_context->num_map; ++i) {
+                    dest->app_context->map_data[i] = 
+                        OBJ_NEW(orte_app_context_map_t);
+                    dest->app_context->map_data[i]->map_type =
+                        src->app_context->map_data[i]->map_type;
+                    dest->app_context->map_data[i]->map_data =
+                        strdup(src->app_context->map_data[i]->map_data);
+                }
+            } else {
+                dest->app_context->map_data = NULL;
             }
             break;
 

@@ -73,8 +73,9 @@ struct globals_t {
     int num_procs;
     char *hostfile;
     char *env_val;
-    char *wd;
     char *appfile;
+    char *wdir;
+    char *path;
 } orterun_globals;
 
 
@@ -115,10 +116,25 @@ ompi_cmd_line_init_t cmd_line_init[] = {
       NULL, OMPI_CMD_LINE_TYPE_NULL,
       "Export an environment variable, optionally specifying a value (e.g., \"-x foo\" exports the environment variable foo and takes its value from the current environment; \"-x foo=bar\" exports the environment variable name foo and sets its value to \"bar\" in the started processes)" },
 
-    /* Set working directory */
-    { NULL, NULL, NULL, '\0', NULL, "wd", 1,
-      &orterun_globals.wd, OMPI_CMD_LINE_TYPE_STRING,
+    /* Specific mapping (C, cX, N, nX) */
+    { NULL, NULL, NULL, '\0', NULL, "map", 1,
+      NULL, OMPI_CMD_LINE_TYPE_STRING,
+      "Mapping of processes to nodes / CPUs" },
+
+    /* mpiexec-like arguments */
+    { NULL, NULL, NULL, '\0', "wdir", "wdir", 1,
+      &orterun_globals.wdir, OMPI_CMD_LINE_TYPE_STRING,
       "Set the working directory of the started processes" },
+    { NULL, NULL, NULL, '\0', "path", "path", 1,
+      &orterun_globals.path, OMPI_CMD_LINE_TYPE_STRING,
+      "PATH to be used to look for executables to start processes" },
+    /* These arguments can be specified multiple times */
+    { NULL, NULL, NULL, '\0', "arch", "arch", 1,
+      NULL, OMPI_CMD_LINE_TYPE_STRING,
+      "Architecture to start processes on" },
+    { NULL, NULL, NULL, 'H', "host", "host", 1,
+      NULL, OMPI_CMD_LINE_TYPE_STRING,
+      "List of hosts to invoke processes on" },
 
     /* End of list */
     { NULL, NULL, NULL, '\0', NULL, NULL, 0,
@@ -246,11 +262,11 @@ static int zero_globals(void)
         NULL,
         NULL,
         NULL,
+        NULL,
         NULL
     };
 
     orterun_globals = tmp;
-
     return ORTE_SUCCESS;
 }
 
@@ -359,29 +375,111 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
 {
     ompi_cmd_line_t cmd_line;
     char cwd[OMPI_PATH_MAX];
-    int i, rc;
+    int i, j, rc;
     char *param, *value, *value2;
-    orte_app_context_t *app;
+    orte_app_context_t *app = NULL;
     extern char **environ;
-    size_t j, len;
-    bool map_data;
-    int map_argc;
-    char **map_argv;
-
-    /* Parse application command line options. */
+    size_t l, len;
+    bool map_data, save_arg, cmd_line_made = false;
+    int new_argc = 0;
+    char **new_argv = NULL;
 
     *made_app = false;
+
+    /* Pre-process the command line:
+       
+       - convert C, cX, N, nX arguments to "-rawmap <id> <arg>" so
+         that the parser can pick it up nicely.
+       - convert -host to -rawmap <id> <arg>
+       - convert -arch to -rawmap <id> <arg>
+
+       Converting these to the same argument type will a) simplify the
+       logic down below, and b) allow us to preserve the ordering of
+       these arguments as the user specified them on the command
+       line.  */
+
+    for (i = 0; i < argc; ++i) {
+        map_data = false;
+        save_arg = true;
+        if (0 == strcmp(argv[i], "C") ||
+            0 == strcmp(argv[i], "N")) {
+            map_data = true;
+        } 
+
+        /* Huersitic: if the string fits "[cn][0-9]+" or [cn][0-9],",
+           then accept it as mapping data */
+
+        else if ('c' == argv[i][0] || 'n' == argv[i][0]) {
+            len = strlen(argv[i]);
+            if (len > 1) {
+                for (l = 1; l < len; ++l) {
+                    if (',' == argv[i][l]) {
+                        map_data = true;
+                        break;
+                    } else if (!isdigit(argv[i][l])) {
+                        break;
+                    }
+                }
+                if (l >= len) {
+                    map_data = true;
+                }
+            }
+        }
+
+        /* Save -arch args */
+
+        else if (0 == strcmp("-arch", argv[i])) {
+            char str[2] = { '0' + ORTE_APP_CONTEXT_MAP_ARCH, '\0' };
+
+            ompi_argv_append(&new_argc, &new_argv, "-rawmap");
+            ompi_argv_append(&new_argc, &new_argv, str);
+            save_arg = false;
+        }
+
+        /* Save -host args */
+
+        else if (0 == strcmp("-host", argv[i])) {
+            char str[2] = { '0' + ORTE_APP_CONTEXT_MAP_HOSTNAME, '\0' };
+
+            ompi_argv_append(&new_argc, &new_argv, "-rawmap");
+            ompi_argv_append(&new_argc, &new_argv, str);
+            save_arg = false;
+        }
+
+        /* If this token was C/N map data, save it */
+
+        if (map_data) {
+            char str[2] = { '0' + ORTE_APP_CONTEXT_MAP_CN, '\0' };
+
+            ompi_argv_append(&new_argc, &new_argv, "-rawmap");
+            ompi_argv_append(&new_argc, &new_argv, str);
+        }
+
+        if (save_arg) {
+            ompi_argv_append(&new_argc, &new_argv, argv[i]);
+        }
+    }
+
+    /* Parse application command line options.  Add the -rawmap option
+       separately so that the user doesn't see it in the --help
+       message. */
+
     zero_globals();
     ompi_cmd_line_create(&cmd_line, cmd_line_init);
-    rc = ompi_cmd_line_parse(&cmd_line, true, argc, argv);
+    cmd_line_made = true;
+    ompi_cmd_line_make_opt3(&cmd_line, '\0', NULL, "rawmap", 2,
+                            "Hidden / internal parameter -- users should not use this!");
+    rc = ompi_cmd_line_parse(&cmd_line, true, new_argc, new_argv);
+    ompi_argv_free(new_argv);
+    new_argv = NULL;
     if (OMPI_SUCCESS != rc) {
-        OBJ_DESTRUCT(&cmd_line);
-        return rc;
+        goto cleanup;
     }
 
     /* Is there an appfile in here? */
 
     if (NULL != orterun_globals.appfile) {
+        OBJ_DESTRUCT(&cmd_line);
         return parse_appfile(strdup(orterun_globals.appfile));
     }
 
@@ -390,51 +488,13 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
     app = OBJ_NEW(orte_app_context_t);
     ompi_cmd_line_get_tail(&cmd_line, &app->argc, &app->argv);
 
-    /* See if there are any C, cX, N, or nX tokens at the front of the
-       tail */
-
-    map_argc = 0;
-    map_argv = NULL;
-    for (i = 0; i < app->argc; ++i) {
-        map_data = false;
-        if (0 == strcmp(app->argv[0], "C") ||
-            0 == strcmp(app->argv[0], "N")) {
-            map_data = true;
-        } 
-
-        /* Huersitic: if the string fits "[cn][0-9]+" or [cn][0-9],",
-           then accept it as mapping data */
-
-        else if ('c' == app->argv[0][0] || 'n' == app->argv[0][0]) {
-            len = strlen(app->argv[0]);
-            if (len > 1) {
-                for (j = 1; j < len; ++j) {
-                    if (',' == app->argv[0][j]) {
-                        map_data = true;
-                        break;
-                    } else if (!isdigit(app->argv[0][j])) {
-                        break;
-                    }
-                }
-                if (j >= len) {
-                    map_data = true;
-                }
-            }
-        }
-
-        /* If this token was map data, save it */
-
-        /* JMS continue here */
-    }
-
     /* See if we have anything left */
 
     if (0 == app->argc) {
         ompi_show_help("help-orterun.txt", "orterun:no-application", true,
                        argv[0], argv[0]);
-        OBJ_RELEASE(app);
-        OBJ_DESTRUCT(&cmd_line);
-        return ORTE_ERR_NOT_FOUND;
+        rc = ORTE_ERR_NOT_FOUND;
+        goto cleanup;
     }
 
     /* Grab all OMPI_MCA_* environment variables */
@@ -450,7 +510,8 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
     /* Did the user request to export any environment variables? */
 
     if (ompi_cmd_line_is_taken(&cmd_line, "x")) {
-        for (i = 0; i < ompi_cmd_line_get_ninsts(&cmd_line, "x"); ++i) {
+        j = ompi_cmd_line_get_ninsts(&cmd_line, "x");
+        for (i = 0; i < j; ++i) {
             param = ompi_cmd_line_get_param(&cmd_line, "x", i, 0);
 
             if (NULL != strchr(param, '=')) {
@@ -472,18 +533,54 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
         }
     }
 
-    /* What cwd do we want? */
+    /* Did the user request a specific path? */
 
-    if (NULL != orterun_globals.wd) {
-        app->cwd = strdup(orterun_globals.wd);
+    if (NULL != orterun_globals.path) {
+        asprintf(&value, "PATH=%s", orterun_globals.path);
+        ompi_argv_append(&app->num_env, &app->env, value);
+        free(value);
+    }
+
+    /* Did the user request a specific wdir? */
+
+    if (NULL != orterun_globals.wdir) {
+        app->cwd = strdup(orterun_globals.wdir);
     } else {
         getcwd(cwd, sizeof(cwd));
         app->cwd = strdup(cwd);
     }
 
+    /* Did the user request any mappings?  They were all converted to
+       --rawmap items, above. */
+
+    if (ompi_cmd_line_is_taken(&cmd_line, "rawmap")) {
+        j = ompi_cmd_line_get_ninsts(&cmd_line, "rawmap");
+        app->map_data = malloc(sizeof(orte_app_context_map_t*) * j);
+        if (NULL == app->map_data) {
+            rc = ORTE_ERR_OUT_OF_RESOURCE;
+            goto cleanup;
+        }
+        app->num_map = j;
+        for (i = 0; i < j; ++i) {
+            app->map_data[i] = NULL;
+        }
+        for (i = 0; i < j; ++i) {
+            value = ompi_cmd_line_get_param(&cmd_line, "rawmap", i, 0);
+            value2 = ompi_cmd_line_get_param(&cmd_line, "rawmap", i, 1);
+            app->map_data[i] = OBJ_NEW(orte_app_context_map_t);
+            if (NULL == app->map_data[i]) {
+                rc = ORTE_ERR_OUT_OF_RESOURCE;
+                goto cleanup;
+            }
+            app->map_data[i]->map_type = value[0] - '0';
+            app->map_data[i]->map_data = strdup(value2);
+        }
+    }
+
     /* Get the numprocs */
 
     app->num_procs = orterun_globals.num_procs;
+    /* JMS This may not be a valid assumption -- e.g., mpirun C foo */
     if (0 == app->num_procs) {
         app->num_procs = 1; 
     }
@@ -494,16 +591,26 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
     if (NULL == app->app) {
         ompi_show_help("help-orterun.txt", "orterun:no-application", true, 
                        argv[0], app->argv[0], argv[0]);
-        OBJ_RELEASE(app);
-        OBJ_DESTRUCT(&cmd_line);
-        return ORTE_ERR_NOT_FOUND;
+        rc = ORTE_ERR_NOT_FOUND;
+        goto cleanup;
     }
+
+    *app_ptr = app;
+    app = NULL;
+    *made_app = true;
 
     /* All done */
 
-    *app_ptr = app;
-    *made_app = true;
-    OBJ_DESTRUCT(&cmd_line);
+ cleanup:
+    if (NULL != app) {
+        OBJ_RELEASE(app);
+    }
+    if (NULL != new_argv) {
+        ompi_argv_free(new_argv);
+    }
+    if (cmd_line_made) {
+        OBJ_DESTRUCT(&cmd_line);
+    }
     return rc;
 }
 

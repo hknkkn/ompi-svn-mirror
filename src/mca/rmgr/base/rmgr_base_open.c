@@ -72,11 +72,15 @@ static void orte_app_context_construct(orte_app_context_t* app_context)
     app_context->num_env=0;
     app_context->env=NULL;
     app_context->cwd=NULL;
+    app_context->num_map = 0;
+    app_context->map_data = NULL;
 }
 
 /* destructor - used to free any resources held by instance */
 static void orte_app_context_destructor(orte_app_context_t* app_context)
 {
+    int i;
+
     if (NULL != app_context->app) {
         free (app_context->app);
     }
@@ -93,6 +97,15 @@ static void orte_app_context_destructor(orte_app_context_t* app_context)
     if (NULL != app_context->cwd) {
         free (app_context->cwd);
     }
+
+    if (NULL != app_context->map_data) {
+        for (i = 0; i < app_context->num_map; ++i) {
+            if (NULL != app_context->map_data[i]) {
+                OBJ_RELEASE(app_context->map_data[i]);
+            }
+        }
+        free(app_context->map_data);
+    }
 }
 
 /* define instance of ompi_class_t */
@@ -102,6 +115,25 @@ OBJ_CLASS_INSTANCE(
            orte_app_context_construct, /* constructor */
            orte_app_context_destructor); /* destructor */
 
+
+static void orte_app_context_map_construct(orte_app_context_map_t *a) 
+{
+    a->map_type = ORTE_APP_CONTEXT_MAP_INVALID;
+    a->map_data = NULL;
+}
+
+static void orte_app_context_map_destruct(orte_app_context_map_t *a) 
+{
+    if (NULL != a->map_data) {
+        free(a->map_data);
+    }
+}
+
+
+OBJ_CLASS_INSTANCE(orte_app_context_map_t, 
+                   ompi_object_t,
+                   orte_app_context_map_construct,
+                   orte_app_context_map_destruct);
 
 /**
  * Function for finding and opening either all MCA components, or the one

@@ -143,6 +143,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 {
     int rc;
     size_t i;
+    size_t j;
     size_t n;
     uint16_t * d16;
     uint32_t * d32;
@@ -544,7 +545,45 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                     return rc;
                 }
                 src = (void*)((char*)src + n);
-				*num_bytes+=n;
+                *num_bytes+=n;
+
+                /* unpack the map data */
+
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_map),
+                           src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+                if (app_context[i]->num_map > 0) {
+                    app_context[i]->map_data = malloc(sizeof(orte_app_context_map_t*) * app_context[i]->num_map);
+                    if (NULL == app_context[i]->map_data) {
+                        return ORTE_ERR_OUT_OF_RESOURCE;
+                    }
+
+                    for (j = 0; j < app_context[i]->num_map; ++j) {
+                        app_context[i]->map_data[j] = 
+                            OBJ_NEW(orte_app_context_map_t);
+                        if (NULL == app_context[i]->map_data[j]) {
+                            return ORTE_ERR_OUT_OF_RESOURCE;
+                        }
+                        if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&app_context[i]->map_data[j]->map_type,
+                                src, 1, ORTE_UINT8, mem_left, &n))) {
+                            return rc;
+                        }
+                        src = (void*)((char*)src + n);
+                        *num_bytes += n;
+
+                        if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&app_context[i]->map_data[j]->map_data,
+                                src, 1, ORTE_STRING, mem_left, &n))) {
+                            return rc;
+                        }
+                        src = (void*)((char*)src + n);
+                        *num_bytes += n;
+                    }
+                }
+
             }
             break;
 

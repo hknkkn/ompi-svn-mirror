@@ -166,7 +166,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
 int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                     orte_data_type_t type, size_t *num_bytes)
 {
-    size_t i, len, n;
+    size_t i, j, len, n;
     uint16_t * d16;
     uint16_t * s16;
     uint32_t * d32;
@@ -465,14 +465,44 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
     				   *num_bytes+=n;
                 }
                 
-                /* pack the cwd last */
+                /* pack the cwd */
 				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(app_context[i]->cwd)), 1, ORTE_STRING, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
-				*num_bytes+=n;
+                *num_bytes+=n;
+                                
+                /* Pack the map data */
+
+		n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                        (void*)(&(app_context[i]->num_map)), 1, ORTE_INT32, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes += n;
+
+                if (app_context[i]->num_map > 0) {
+                    for (j = 0; j < (size_t) app_context[i]->num_map; ++j) {
+                        n = 0;
+                        if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                             (void*)(&(app_context[i]->map_data[j]->map_type)), 1, ORTE_UINT8, &n)) {
+                            return ORTE_ERROR;
+                        }
+                        dst = (void*)((char*)dst + n);
+                        *num_bytes += n;
+
+                        n = 0;
+                        if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                             (void*)(&(app_context[i]->map_data[j]->map_data)), 1, ORTE_STRING, &n)) {
+                            return ORTE_ERROR;
+                        }
+                        dst = (void*)((char*)dst + n);
+                        *num_bytes += n;
+                    }
+                }
             }
             break;
 
