@@ -37,6 +37,9 @@
  * typedefs needed in replica component
  */
 
+typedef int32_t orte_gpr_replica_itag_t;
+#define ORTE_GPR_REPLICA_ITAG_MAX INT32_MAX
+
 /** Dictionary of string-itag pairs.
  * This structure is used to create a linked list of string-itag pairs. All calls to
  * registry functions pass character strings for programming clarity - the replica_dict
@@ -121,7 +124,7 @@ OBJ_CLASS_DECLARATION(orte_gpr_replica_container_t);
 
 
 struct orte_gpr_replica_notify_request_tracker_t {
-    ompi_object_t item;                     /**< Allows this item to be placed on a list */
+    ompi_object_t super;                    /**< Make this an object */
     orte_process_name_t *requestor;         /**< Name of requesting process */
     orte_gpr_notify_cb_fn_t callback;       /**< Function to be called for notificaiton */
     void *user_tag;                         /**< User-provided tag for callback function */
@@ -132,8 +135,11 @@ struct orte_gpr_replica_notify_request_tracker_t {
     orte_gpr_addr_mode_t addr_mode;         /**< Addressing mode */
     char **tokens;                          /**< Array of tokens defining which containers are affected */
     char *key;                              /**< Key defining which key-value pairs are affected */
-    orte_gpr_notify_action_t action;        /**< The action that triggers the request */
-    orte_gpr_synchro_mode_t synch_mode;     /**< Synchro mode - ascending, descending, ... */
+    orte_gpr_cmd_flag_t cmd;                    /**< command that generated the notify msg */
+    union {
+        orte_gpr_notify_action_t trig_action;   /**< If subscription, action that triggered message */
+        orte_gpr_synchro_mode_t trig_synchro;   /**< If synchro, action that triggered message */
+    } flag;
     uint32_t trigger;                       /**< Number of objects that trigger notification */
     uint32_t count;                         /**< Number of qualifying objects currently in segment */
     int8_t above_below;                     /**< Tracks transitions across level */
@@ -150,9 +156,9 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_request_tracker_t);
 
 /* define a few action flags for trigger evaluation
  */
-#define ORTE_GPR_REPLICA_OBJECT_ADDED      (int8_t) 1
-#define ORTE_GPR_REPLICA_OBJECT_DELETED    (int8_t) 2
-#define ORTE_GPR_REPLICA_OBJECT_UPDATED    (int8_t) 3
+#define ORTE_GPR_REPLICA_ENTRY_ADDED       (int8_t) 1
+#define ORTE_GPR_REPLICA_ENTRY_DELETED     (int8_t) 2
+#define ORTE_GPR_REPLICA_ENTRY_UPDATED     (int8_t) 3
 #define ORTE_GPR_REPLICA_SUBSCRIBER_ADDED  (int8_t) 4
 
 /*
@@ -219,14 +225,14 @@ typedef struct orte_gpr_replica_write_invalidate_t orte_gpr_replica_write_invali
  * globals needed within component
  */
 extern orte_gpr_replica_t orte_gpr_replica;                     /**< Head of the entire registry */
-extern orte_pointer_array_t orte_gpr_replica_notify_request_tracker; /**< List of requested notifications */
+extern orte_pointer_array_t *orte_gpr_replica_notify_request_tracker; /**< List of requested notifications */
 extern ompi_list_t orte_gpr_replica_callbacks;                       /**< List of callbacks currently pending */
 extern ompi_list_t orte_gpr_replica_notify_off_list;                 /**< List of processes and subscriptions with notify turned off */
 extern int orte_gpr_replica_debug;                                   /**< Debug flag to control debugging output */
 extern ompi_mutex_t orte_gpr_replica_mutex;                          /**< Thread lock for registry functions */
 extern bool orte_gpr_replica_compound_cmd_mode;                      /**< Indicates if we are building compound cmd */
 extern bool orte_gpr_replica_exec_compound_cmd_mode;                 /**< Indicates if we are executing compound cmd */
-extern orte_buffer_t orte_gpr_replica_compound_cmd;                  /**< Compound cmd buffer */
+extern orte_buffer_t *orte_gpr_replica_compound_cmd;                  /**< Compound cmd buffer */
 extern ompi_mutex_t orte_gpr_replica_wait_for_compound_mutex;        /**< Lock to protect build compound cmd */
 extern ompi_condition_t orte_gpr_replica_compound_cmd_condition;     /**< Condition variable to control thread access to build compound cmd */
 extern int orte_gpr_replica_compound_cmd_waiting;                    /**< Count number of threads waiting to build compound cmd */

@@ -23,10 +23,16 @@
 
 #include "orte_config.h"
 
+#include "dps/dps.h"
+#include "util/output.h"
+#include "util/proc_info.h"
+
 #include "mca/ns/ns_types.h"
 
+#include "mca/gpr/replica/gpr_replica.h"
+#include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
+
 #include "gpr_replica_api.h"
-#include "gpr_replica_fn.h"
 
 
 int orte_gpr_replica_begin_compound_cmd(void)

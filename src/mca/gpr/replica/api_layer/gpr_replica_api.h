@@ -32,6 +32,10 @@
 #include "mca/ns/ns_types.h"
 
 #include "mca/gpr/replica/gpr_replica.h"
+#include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
+#include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
+
+#include "mca/gpr/replica/gpr_replica.h"
 
 /*
  * Implemented registry functions - see gpr.h for documentation
@@ -139,8 +143,7 @@ int orte_gpr_replica_dump(int output_id);
 /*
  * Messaging functions
  */
-int orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_action_t state,
-                      orte_gpr_notify_message_t *message);
+void orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message);
 
 
 /*

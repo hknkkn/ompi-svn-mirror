@@ -28,21 +28,22 @@
  * DICTIONARY OPERATIONS
  */
  
-orte_gpr_replica_keytable_t
-*orte_gpr_replica_find_dict_entry(orte_gpr_replica_segment_t *seg, char *token);
+int orte_gpr_replica_dict_lookup(orte_gpr_replica_dict_t *entry,
+                        orte_gpr_replica_segment_t *seg, char *token);
 
 
-orte_gpr_replica_key_t
-*orte_gpr_replica_get_key_list(orte_gpr_replica_segment_t *seg, char **tokens,
-               int *num_tokens);
+int orte_gpr_replica_get_itag_list(orte_gpr_replica_itag_t **itaglist,
+                    orte_gpr_replica_segment_t *seg, char **tokens,
+                    int *num_tokens);
 
-bool orte_gpr_replica_check_key_list(orte_gpr_addr_mode_t mode,
-                   orte_gpr_replica_key_t num_keys_search,
-                    orte_gpr_replica_key_t *keys,
-                  orte_gpr_replica_key_t num_keys_entry,
-                 orte_gpr_replica_key_t *entry_keys);
+bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
+                    int num_itag_search,
+                    orte_gpr_replica_itag_t *searchlist,
+                    int num_itag_entry,
+                    orte_gpr_replica_itag_t *entrylist);
 
-char *orte_gpr_replica_get_token(orte_gpr_replica_segment_t *seg, orte_gpr_replica_key_t key);
+int orte_gpr_replica_dict_reverse_lookup(char *token,
+        orte_gpr_replica_segment_t *seg, orte_gpr_replica_itag_t itag);
 
 
 /** Retrieve a registry itag value for a given token string.
@@ -59,7 +60,7 @@ char *orte_gpr_replica_get_token(orte_gpr_replica_segment_t *seg, orte_gpr_repli
  * @retval ORTE_SUCCESS Operation successful.
  * @retval ORTE_ERR_BAD_PARAM Indicates that the segment and/or token could not be found.
  */
-int orte_gpr_replica_get_key(orte_gpr_replica_itag_t *itag, int seg, char *token);
+int orte_gpr_replica_get_itag(orte_gpr_replica_itag_t *itag, int seg, char *token);
 
 /** Add a token to a segment's dictionary.
  * The gpr_replica_define_key() function allows the addition of a new definition to
@@ -76,7 +77,7 @@ int orte_gpr_replica_get_key(orte_gpr_replica_itag_t *itag, int seg, char *token
  * @retval ORTE_SUCCESS Operation successful
  * @retval ORTE_ERROR(s) Indicates that the dictionary is full or some other error.
  */
-int orte_gpr_replica_define_key(orte_gpr_replica_itag_t *itag,
+int orte_gpr_replica_define_itag(orte_gpr_replica_itag_t *itag,
                                 orte_gpr_replica_segment_t *seg, char *token);
 
 /** Delete a token from a segment's dictionary.
@@ -95,7 +96,7 @@ int orte_gpr_replica_define_key(orte_gpr_replica_itag_t *itag,
  * @retval ORTE_ERROR Indicates that the operation failed - most likely caused by specifying
  * a token that did not exist within the specified segment, or a non-existent segment.
  */
-int orte_gpr_replica_delete_key(orte_gpr_replica_segment_t *seg, char *token);
+int orte_gpr_replica_delete_itag(orte_gpr_replica_segment_t *seg, char *token);
 
 
 /*

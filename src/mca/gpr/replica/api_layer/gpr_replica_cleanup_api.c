@@ -26,7 +26,7 @@
 #include "mca/ns/ns_types.h"
 
 #include "gpr_replica_api.h"
-#include "gpr_replica_fn.h"
+#include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
 
 
 int orte_gpr_replica_cleanup_job(orte_jobid_t jobid)

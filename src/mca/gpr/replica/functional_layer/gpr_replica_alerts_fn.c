@@ -59,26 +59,6 @@ void mca_gpr_replica_process_callbacks(void)
 }
 
 
-ompi_buffer_t mca_gpr_replica_get_startup_msg(orte_jobid_t jobid,
-					      ompi_list_t *recipients)
-{
-    ompi_buffer_t msg;
-
-    if (mca_gpr_replica_debug) {
-	ompi_output(0, "[%d,%d,%d] entered get_startup_msg",
-		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
-    }
-
-    OMPI_THREAD_LOCK(&mca_gpr_replica_mutex);
-
-    msg = mca_gpr_replica_construct_startup_msg_nl(jobid, recipients);
-
-    OMPI_THREAD_UNLOCK(&mca_gpr_replica_mutex);
-
-    return msg;
-}
-
-
 ompi_buffer_t
 mca_gpr_replica_construct_startup_msg_nl(orte_jobid_t jobid,
 						               ompi_list_t *recipients)

@@ -28,18 +28,16 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 
-#include "gpr_replica.h"
-#include "gpr_replica_internals.h"
-
+#include "gpr_replica_api.h"
 
 int orte_gpr_replica_delete_segment(char *segment)
 {
-    orte_gpr_replica_segment_t *seg;
+    orte_gpr_replica_segment_t *seg=NULL;
     int rc;
 
     /* protect against errors */
     if (NULL == segment) {
-	   return OMPI_ERROR;
+	   return ORTE_ERROR;
     }
 
     if (orte_gpr_replica_compound_cmd_mode) {
@@ -62,24 +60,30 @@ int orte_gpr_replica_delete_segment(char *segment)
 }
 
 
-int orte_gpr_replica_delete_entries(ompi_registry_mode_t addr_mode,
-			      char *segment, char **tokens)
+int orte_gpr_replica_delete_segment_nb(char *segment,
+                                orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
+{
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+
+int orte_gpr_replica_delete_entries(orte_gpr_addr_mode_t addr_mode,
+			      char *segment, char **tokens, char **keys)
 {
     int rc;
-    orte_gpr_replica_segment_t *seg;
-    orte_gpr_replica_key_t *keys;
-    int num_keys;
-    orte_jobid_t jobid;
+    orte_gpr_replica_segment_t *seg=NULL;
+    orte_gpr_replica_itag_t *token_itags=NULL, *key_itags=NULL;
+    int num_tokens, num_keys;
 
     /* protect against errors */
     if (NULL == segment) {
-	   return OMPI_ERROR;
+	   return ORTE_ERROR;
     }
 
     if (orte_gpr_replica_compound_cmd_mode) {
-	return orte_gpr_base_pack_delete_object(orte_gpr_replica_compound_cmd,
-					       orte_gpr_replica_silent_mode,
-					       addr_mode, segment, tokens);
+	   return orte_gpr_base_pack_delete_entries(orte_gpr_replica_compound_cmd,
+					       addr_mode, segment, tokens, keys);
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
@@ -87,82 +91,63 @@ int orte_gpr_replica_delete_entries(ompi_registry_mode_t addr_mode,
     seg = orte_gpr_replica_find_seg(false, segment);
     if (NULL == seg) {
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
-	   return OMPI_ERROR;
+	   return ORTE_ERROR;
     }
 
-    keys = orte_gpr_replica_get_key_list(seg, tokens, &num_keys);
-
-    rc = orte_gpr_replica_delete_object_nl(addr_mode, seg, keys, num_keys);
-
-    orte_gpr_replica_check_subscriptions(seg, MCA_GPR_REPLICA_OBJECT_DELETED);
-
-    orte_gpr_replica_check_synchros(seg);
-
-    if (NULL != keys) {
-	   free(keys);
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags, seg, tokens, &num_tokens))) {
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+        return rc;
     }
 
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&key_itags, seg, keys, &num_keys))) {
+        OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
+        return rc;
+    }
+
+    rc = orte_gpr_replica_delete_entries_fn(addr_mode, seg,
+                                            token_itags, num_tokens,
+                                            key_itags, num_keys);
+
+    if (ORTE_SUCCESS == rc) {
+        orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_ENTRY_DELETED);
+        orte_gpr_replica_check_synchros(seg);
+    }
+    
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
 
-    orte_gpr_replica_process_callbacks();
+    if (NULL != token_itags) {
+        free(token_itags);
+    }
 
+    if (NULL != key_itags) {
+        free(key_itags);
+    }
+
+    if (ORTE_SUCCESS == rc) {
+        rc = orte_gpr_replica_process_callbacks();
+    }
+    
     return rc;
 }
 
 
-int orte_gpr_replica_delete_object_nl(ompi_registry_mode_t addr_mode,
-				     orte_gpr_replica_segment_t *seg,
-				     orte_gpr_replica_key_t *keys,
-				     int num_keys)
+int orte_gpr_replica_delete_entries_nb(
+                            orte_gpr_addr_mode_t addr_mode,
+                            char *segment, char **tokens, char **keys,
+                            orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
-    orte_gpr_replica_core_t *reg, *next;
-    int count;
-    orte_gpr_replica_trigger_list_t *trig;
-
-    if (orte_gpr_replica_debug) {
-	ompi_output(0, "[%d,%d,%d] replica_delete_object entered: segment %s",
-		    ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
-    }
-
-    /* traverse the segment's registry, looking for matching tokens per the specified mode */
-    count = 0;
-    for (reg = (orte_gpr_replica_core_t*)ompi_list_get_first(&seg->registry_entries);
-	 reg != (orte_gpr_replica_core_t*)ompi_list_get_end(&seg->registry_entries);
-	 ) {
-
-	next = (orte_gpr_replica_core_t*)ompi_list_get_next(reg);
-
-	/* for each registry entry, check the key list */
-	if (orte_gpr_replica_check_key_list(addr_mode, num_keys, keys,
-				       reg->num_keys, reg->keys)) { /* found the key(s) on the list */
-	    count++;
-	    ompi_list_remove_item(&seg->registry_entries, &reg->item);
-	}
-	reg = next;
-    }
-
-
-    /* update trigger counters */
-    for (trig = (orte_gpr_replica_trigger_list_t*)ompi_list_get_first(&seg->triggers);
-	 trig != (orte_gpr_replica_trigger_list_t*)ompi_list_get_end(&seg->triggers);
-	 trig = (orte_gpr_replica_trigger_list_t*)ompi_list_get_next(trig)) {
-	if (orte_gpr_replica_check_key_list(trig->addr_mode, trig->num_keys, trig->keys,
-				       num_keys, keys)) {
-	    trig->count = trig->count - count;
-	}
-    }
-
-    return OMPI_SUCCESS;
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-ompi_list_t* orte_gpr_replica_index(char *segment)
+
+int orte_gpr_replica_index(char *segment, size_t *cnt, char **index)
 {
-    ompi_list_t* list;
-    orte_gpr_replica_segment_t *seg;
+    orte_gpr_replica_segment_t *seg=NULL;
+    int rc;
 
     if (orte_gpr_replica_compound_cmd_mode) {
-	   orte_gpr_base_pack_index(orte_gpr_replica_compound_cmd, segment);
-	   return NULL;
+	   rc = orte_gpr_base_pack_index(orte_gpr_replica_compound_cmd, segment);
+	   return rc;
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_mutex);
@@ -171,49 +156,21 @@ ompi_list_t* orte_gpr_replica_index(char *segment)
 	   seg = NULL;
     } else {
 	   /* locate the segment */
-	   seg = orte_gpr_replica_find_seg(false, segment, ORTE_JOBID_MAX);
+	   seg = orte_gpr_replica_find_seg(false, segment);
 	   if (NULL == seg) {
             OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
-	       return NULL;
+	        return ORTE_ERROR;
 	   }
     }
 
-    list = orte_gpr_replica_index_nl(seg);
+    rc = orte_gpr_replica_index_fn(seg, cnt, index);
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_mutex);
-    return list;
+    return rc;
 }
 
-ompi_list_t* orte_gpr_replica_index_nl(orte_gpr_replica_segment_t *seg)
+int orte_gpr_replica_index_nb(char *segment,
+                        orte_gpr_notify_cb_fn_t cbfunc, void *user_tag)
 {
-    ompi_list_t *answer;
-    orte_gpr_replica_keytable_t *ptr;
-    ompi_registry_index_value_t *ans;
-
-    if (orte_gpr_replica_debug) {
-	ompi_output(0, "[%d,%d,%d] gpr replica: index entered segment: %s",
-		    ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
-    }
-
-    answer = OBJ_NEW(ompi_list_t);
-
-    if (NULL == seg) { /* looking for index of global registry */
-	for (ptr = (orte_gpr_replica_keytable_t*)ompi_list_get_first(&orte_gpr_replica_head.segment_dict);
-	     ptr != (orte_gpr_replica_keytable_t*)ompi_list_get_end(&orte_gpr_replica_head.segment_dict);
-	     ptr = (orte_gpr_replica_keytable_t*)ompi_list_get_next(ptr)) {
-	    ans = OBJ_NEW(ompi_registry_index_value_t);
-	    ans->token = strdup(ptr->token);
-	    ompi_list_append(answer, &ans->item);
-	}
-    } else {  /* want index of specific segment */
-	for (ptr = (orte_gpr_replica_keytable_t*)ompi_list_get_first(&seg->keytable);
-	     ptr != (orte_gpr_replica_keytable_t*)ompi_list_get_end(&seg->keytable);
-	     ptr = (orte_gpr_replica_keytable_t*)ompi_list_get_next(ptr)) {
-	    ans = OBJ_NEW(ompi_registry_index_value_t);
-	    ans->token = strdup(ptr->token);
-	    ompi_list_append(answer, &ans->item);
-	}
-
-    }
-    return answer;
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }

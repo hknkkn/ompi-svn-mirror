@@ -26,10 +26,10 @@
 #include "gpr_replica.h"
 #include "gpr_replica_internals.h"
 
-mca_gpr_replica_keytable_t
+mca_gpr_replica_dict_t
 *mca_gpr_replica_find_dict_entry(mca_gpr_replica_segment_t *seg, char *token)
 {
-    mca_gpr_replica_keytable_t *ptr_key;
+    mca_gpr_replica_dict_t *ptr_key;
 
 
     if (NULL == token) { /* just want segment token-key pair */

@@ -23,16 +23,19 @@
 #include "orte_config.h"
 
 #include "mca/ns/ns_types.h"
-#include "mca/gpr/gpr_types.h"
+
+#include "mca/gpr/base/base.h"
 #include "mca/gpr/replica/gpr_replica.h"
 
 /*
  * The "fn" layer of the registry API functions - not accessible from outside
  * the replica
  */
-int orte_gpr_replica_notify_off_fn(orte_gpr_notify_id_t sub_number);
+int orte_gpr_replica_notify_off_fn(orte_process_name_t *proc,
+                                   orte_gpr_notify_id_t sub_number);
 
-int orte_gpr_replica_notify_on_fn(orte_gpr_notify_id_t sub_number);
+int orte_gpr_replica_notify_on_fn(orte_process_name_t *proc,
+                                  orte_gpr_notify_id_t sub_number);
 
 int orte_gpr_replica_triggers_active_fn(orte_jobid_t jobid);
 
@@ -42,16 +45,20 @@ int orte_gpr_replica_triggers_inactive_fn(orte_jobid_t jobid);
  * Delete-index functions
  */
 int orte_gpr_replica_delete_entries_fn(orte_gpr_addr_mode_t mode,
-                char *segment, char **tokens, char **keys);
+                    orte_gpr_replica_segment_t *seg,
+                    orte_gpr_replica_itag_t *token_itags, int num_tokens,
+                    orte_gpr_replica_itag_t *key_tags, int num_keys);
 
 int orte_gpr_replica_delete_entries_nb_fn(
-                            orte_gpr_addr_mode_t addr_mode,
-                            char *segment, char **tokens, char **keys,
-                            orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
+                    orte_gpr_addr_mode_t addr_mode,
+                    orte_gpr_replica_segment_t *seg,
+                    orte_gpr_replica_itag_t *token_itags, int num_tokens,
+                    orte_gpr_replica_itag_t *key_tags, int num_keys);
                             
-int orte_gpr_replica_index_fn(char *segment, size_t *cnt, char **index);
+int orte_gpr_replica_index_fn(orte_gpr_replica_segment_t *seg,
+                            size_t *cnt, char **index);
 
-int orte_gpr_replica_index_nb_fn(char *segment,
+int orte_gpr_replica_index_nb_fn(orte_gpr_replica_segment_t *seg,
                         orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
 
 
@@ -74,11 +81,11 @@ int orte_gpr_replica_put_nb_fn(orte_gpr_addr_mode_t addr_mode, char *segment,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
                       
 int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
-                                char *segment, char **tokens, char **keys,
+                                char *segment, char **tokens, char **itags,
                                 size_t *cnt, orte_gpr_keyval_t **keyvals);
 
 int orte_gpr_replica_get_nb_fn(orte_gpr_addr_mode_t addr_mode,
-                                char *segment, char **tokens, char **keys,
+                                char *segment, char **tokens, char **itags,
                                 orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
 
 
@@ -87,7 +94,7 @@ int orte_gpr_replica_get_nb_fn(orte_gpr_addr_mode_t addr_mode,
  */
 int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_notify_action_t action,
-                            char *segment, char **tokens, char **keys,
+                            char *segment, char **tokens, char **itags,
                             orte_gpr_notify_id_t *sub_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
@@ -99,7 +106,7 @@ int orte_gpr_replica_unsubscribe_fn(orte_gpr_notify_id_t sub_number);
  */
 int orte_gpr_replica_synchro_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_synchro_mode_t synchro_mode,
-                            char *segment, char **tokens, char **keys, int trigger,
+                            char *segment, char **tokens, char **itags, int trigger,
                             orte_gpr_notify_id_t *synch_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
@@ -109,15 +116,7 @@ int orte_gpr_replica_cancel_synchro_fn(orte_gpr_notify_id_t synch_number);
 /*
  * Dump function
  */
-int orte_gpr_replica_dump_fn(int output_id);
-
-
-/*
- * Messaging functions
- */
-int orte_gpr_replica_deliver_notify_msg_fn(orte_gpr_notify_action_t state,
-                      orte_gpr_notify_message_t *message);
-
+int orte_gpr_replica_dump_fn(orte_buffer_t *buffer);
 
 /*
  * Test internals
@@ -133,44 +132,56 @@ int orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
                                     size_t *cnt,
                                     orte_process_name_t **procs);
 
+/*
+ * Messaging functions
+ */
+int orte_gpr_replica_deliver_notify_msg_fn(orte_gpr_notify_action_t state,
+                      orte_gpr_notify_message_t *message);
+
+
+
+/*
+ * *********    INTERNAL UTILITY FUNCTIONS     **********
+ */
 
 /** Empty the specified segment and remove it from the registry
  */
 int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg);
 
-
 /*
  * DICTIONARY OPERATIONS
  */
  
-bool orte_gpr_replica_check_key_list(orte_gpr_addr_mode_t mode,
-				    orte_gpr_replica_key_t num_keys_search,
-				    orte_gpr_replica_key_t *keys,
-				    orte_gpr_replica_key_t num_keys_entry,
-				    orte_gpr_replica_key_t *entry_keys);
+bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t mode,
+				    orte_gpr_replica_itag_t num_itags_search,
+				    orte_gpr_replica_itag_t *itags,
+				    orte_gpr_replica_itag_t num_itags_entry,
+				    orte_gpr_replica_itag_t *entry_itags);
 
-orte_gpr_replica_trigger_list_t
-*orte_gpr_replica_construct_trigger(orte_gpr_synchro_mode_t synchro_mode,
+
+/*
+ * Trigger Operations
+ */
+int orte_gpr_replica_construct_trigger(orte_gpr_synchro_mode_t synchro_mode,
 				   orte_gpr_notify_action_t action,
 				   orte_gpr_addr_mode_t addr_mode,
 				   orte_gpr_replica_segment_t *seg,
-				   orte_gpr_replica_key_t *keys,
-				   int num_keys,
+				   orte_gpr_replica_itag_t *itags,
+				   int num_itags,
 				   int trigger,
 				   orte_gpr_notify_id_t id_tag,
                     orte_jobid_t owning_jobid);
 
-orte_gpr_notify_message_t
-*orte_gpr_replica_construct_notify_message(orte_gpr_replica_segment_t *seg,
-					  orte_gpr_replica_trigger_list_t *trig);
-
 bool orte_gpr_replica_process_triggers(orte_gpr_replica_segment_t *seg,
-				      orte_gpr_replica_trigger_list_t *trig,
+				      orte_gpr_replica_notify_request_tracker_t *trig,
 				      orte_gpr_notify_message_t *message);
 
 orte_gpr_notify_id_t
 orte_gpr_replica_remove_trigger(orte_gpr_notify_id_t idtag);
 
+/*
+ * Alert Operations
+ */
 orte_gpr_notify_id_t
 orte_gpr_replica_enter_notify_request(orte_gpr_replica_segment_t *seg,
 				     orte_gpr_notify_action_t action,
@@ -182,7 +193,7 @@ orte_gpr_replica_enter_notify_request(orte_gpr_replica_segment_t *seg,
 orte_gpr_notify_id_t
 orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t idtag);
 
-void orte_gpr_replica_process_callbacks(void);
+int orte_gpr_replica_process_callbacks(void);
 
 int orte_gpr_replica_check_synchros(orte_gpr_replica_segment_t *seg);
 
@@ -190,11 +201,20 @@ void orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_
 
 int orte_gpr_replica_purge_subscriptions(orte_process_name_t *proc);
 
-orte_buffer_t
-orte_gpr_replica_process_command_buffer(orte_buffer_t buffer,
+/*
+ * Proxy interface functions
+ */
+int
+orte_gpr_replica_process_command_buffer(orte_buffer_t *buffer,
 				       orte_process_name_t *sender,
-				       bool *return_requested,
 				       bool *compound_cmd_detected);
 
+orte_gpr_notify_message_t
+*orte_gpr_replica_construct_notify_message(orte_gpr_replica_segment_t *seg,
+                    orte_gpr_replica_notify_request_tracker_t *trig);
+
+
+void mca_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
+                 orte_gpr_notify_message_t *message);
 
 #endif
