@@ -82,7 +82,7 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
         return rc;
     }
     
-    if (0 > orte_pointer_array_add(cptr->itagvals, (void*)iptr)) {
+    if (0 > (iptr->index = orte_pointer_array_add(cptr->itagvals, (void*)iptr))) {
         OBJ_RELEASE(iptr);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
@@ -94,25 +94,60 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
 
 
 int orte_gpr_replica_update_keyval(orte_gpr_replica_segment_t *seg,
-                                   orte_gpr_replica_itagval_t *iptr,
+                                   orte_gpr_replica_container_t *cptr,
                                    orte_gpr_keyval_t **kptr)
 {
-    int rc;
-    orte_gpr_replica_itag_t itag;
+    int i;
+    orte_pointer_array_t *ptr;
+    orte_gpr_replica_itagval_t *iptr;
     
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&itag,
-                                            seg, (*kptr)->key))) {
-        return rc;
+    /* for each item in the search array, delete it */
+    ptr = orte_gpr_replica_globals.search;
+    
+    for (i = 0; i < ptr->size; i++) {
+        if (NULL != ptr->addr[i]) {
+            iptr = (orte_gpr_replica_itagval_t*)ptr->addr[i];
+            orte_pointer_array_set_item(cptr->itagvals, iptr->index, NULL);
+            OBJ_RELEASE(iptr);
+        }
     }
     
-    iptr->itag = itag;
-    iptr->type = (*kptr)->type;
-    
-    rc = orte_gpr_replica_xfer_payload(&(iptr->value), &((*kptr)->value), iptr->type);
+    /* now add new item in their place */
+   return orte_gpr_replica_add_keyval(seg, cptr, kptr);
+}
 
-    free(*kptr);
-    *kptr = NULL;
-    return rc;
+
+bool orte_gpr_replica_search_container(int *num_found,
+                                       orte_gpr_replica_itag_t itag,
+                                       orte_gpr_replica_container_t *cptr)
+{
+    orte_gpr_replica_itagval_t **ptr;
+    int i, cnt;
+    
+    /* ensure the search array is clear */
+    orte_pointer_array_clear(orte_gpr_replica_globals.search);
+    *num_found = 0;
+    cnt = 0;
+    
+    ptr = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
+    for (i=0; i < (cptr->itagvals)->size; i++) {
+        if (NULL != ptr[i] && itag == ptr[i]->itag) { /* found it! */
+            if (0 > orte_pointer_array_add(orte_gpr_replica_globals.search, ptr[i])) {
+                orte_pointer_array_clear(orte_gpr_replica_globals.search);
+                return false;
+            }
+            cnt++;
+        }
+    }
+    
+    *num_found = cnt;
+    
+    if (0 < cnt) {
+        return true;
+    }
+    
+    /* didn't find anything, so return false */
+    return false;
 }
 
 
@@ -194,26 +229,6 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
             break;
     }
     return ORTE_SUCCESS;
-}
-
-
-bool orte_gpr_replica_search_container(orte_gpr_replica_itagval_t **iptr,
-                                       orte_gpr_replica_itag_t itag,
-                                       orte_gpr_replica_container_t *cptr)
-{
-    orte_gpr_replica_itagval_t **ptr;
-    int i;
-    
-    ptr = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
-    for (i=0; i < (cptr->itagvals)->size; i++) {
-        if (NULL != ptr[i] && itag == ptr[i]->itag) { /* found it! */
-            *iptr = ptr[i];  /* send back the ptr to the itagval */
-            return true;
-        }
-    }
-    
-    /* didn't find it, so return false */
-    return false;
 }
 
 

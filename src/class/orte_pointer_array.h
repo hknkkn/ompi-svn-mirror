@@ -143,6 +143,29 @@ static inline int orte_pointer_array_get_size(orte_pointer_array_t *array)
 
 
 /**
+ * Clear the pointer array
+ *
+ * @param array Pointer to array (IN)
+ *
+ * @returns void
+ *
+ * Simple inline function to clear the pointer array and reset all
+ * counters.
+ */
+static inline void orte_pointer_array_clear(orte_pointer_array_t *array)
+{
+    int i;
+    OMPI_THREAD_LOCK(&(array->lock));
+    for (i=0; i < array->size; i++) {
+       array->addr[i] = NULL;
+    }
+    array->lowest_free = 0;
+    array->number_free = array->size;
+    OMPI_THREAD_UNLOCK(&(array->lock));
+}
+
+
+/**
  * Test whether a certain element is already in use. If not yet
  * in use, reserve it.
  *

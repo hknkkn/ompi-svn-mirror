@@ -116,12 +116,11 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
                             int cnt, orte_gpr_keyval_t **keyvals,
                             int8_t *action_taken)
 {
-    orte_gpr_replica_itagval_t *iptr;
     orte_gpr_replica_container_t **cptr, *cptr2;
     orte_gpr_replica_itag_t itag;
     orte_gpr_keyval_t **kptr;
     bool overwrite;
-    int rc, i;
+    int rc, i, num_found;
 
     if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s",
@@ -169,18 +168,22 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
         kptr = keyvals;
         for (i=0; i < cnt; i++) {
             if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, kptr[i]->key) &&
-                orte_gpr_replica_search_container(&iptr, itag, cptr2)) {
+                orte_gpr_replica_search_container(&num_found, itag, cptr2)) {
                 /* this key already exists - overwrite, if permission given
-                 * else error
+                 * else add this keyval to the container as a new entry
                  */
                  if (overwrite) {
-                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, iptr, (&kptr[i])))) {
+                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr2, (&kptr[i])))) {
                         return rc;
                     }
+                    overwrite = false;  /* only do it for the first one - rest get added */
+                    *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_UPDATED;
                  } else {
-                    return ORTE_ERROR;
+                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr2, &(kptr[i])))) {
+                        return rc;
+                    }
+                    *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_ADDED;
                  }
-                 *action_taken = *action_taken | ORTE_GPR_REPLICA_ENTRY_UPDATED;
             } else { /* new key - add to container */
                 if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr2, &(kptr[i])))) {
                     return rc;
@@ -218,9 +221,9 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     orte_gpr_replica_get_list_t *gptr;
     orte_gpr_replica_ival_list_t *ival_list;
     orte_gpr_replica_container_t **cptr, *cptr2;
-    orte_gpr_replica_itagval_t *iptr;
+    orte_gpr_replica_itagval_t **iptr;
     orte_gpr_keyval_t **kptr;
-    int rc, i, j;
+    int rc, i, j, k, num_found;
     
     if (orte_gpr_replica_globals.debug) {
         	ompi_output(0, "[%d,%d,%d] gpr replica: get entered", ORTE_NAME_ARGS(*(orte_process_info.my_name)));
@@ -230,6 +233,7 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     get_list = OBJ_NEW(ompi_list_t);
     *cnt = 0;
     *values = NULL;
+    iptr = (orte_gpr_replica_itagval_t**)((orte_gpr_replica_globals.search)->addr);
     
     /* find all containers that meet search criteria */
     cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
@@ -241,16 +245,18 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
             gptr->cptr = cptr[i];
             /* search container for matches and collect them onto list */
             for (j=0; j < num_keys; j++) {
-                if (orte_gpr_replica_search_container(&iptr, keytags[j], cptr[i])) {
-                    ival_list = OBJ_NEW(orte_gpr_replica_ival_list_t);
-                    ival_list->itag = keytags[j];
-                    ival_list->type = iptr->type;
-                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(
-                                &(ival_list->value), &(iptr->value), iptr->type))) {
-                        OBJ_RELEASE(ival_list);
-                        return rc;
+                if (orte_gpr_replica_search_container(&num_found, keytags[j], cptr[i])) {
+                    for (k=0; k < num_found; k++) {
+                        ival_list = OBJ_NEW(orte_gpr_replica_ival_list_t);
+                        ival_list->itag = keytags[j];
+                        ival_list->type = iptr[k]->type;
+                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(
+                                    &(ival_list->value), &(iptr[k]->value), iptr[k]->type))) {
+                            OBJ_RELEASE(ival_list);
+                            return rc;
+                        }
+                        ompi_list_append(gptr->ival_list, &ival_list->item);
                     }
-                    ompi_list_append(gptr->ival_list, &ival_list->item);
                 }
             }
             ompi_list_append(get_list, &gptr->item);

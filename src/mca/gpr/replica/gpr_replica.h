@@ -55,6 +55,7 @@ typedef struct {
     ompi_mutex_t wait_for_compound_mutex;
     ompi_condition_t compound_cmd_condition;
     int compound_cmd_waiting;
+    orte_pointer_array_t *search;
 } orte_gpr_replica_globals_t;
 
 
@@ -151,6 +152,7 @@ OBJ_CLASS_DECLARATION(orte_gpr_replica_container_t);
  */
 typedef struct {
     ompi_object_t super;                /* required for this to be an object */
+    int index;                          /* index of this itagval on the container array */
     orte_gpr_replica_itag_t itag;       /* itag for this value's key */
     orte_data_type_t type;              /* the type of value stored */
     orte_gpr_value_union_t value;

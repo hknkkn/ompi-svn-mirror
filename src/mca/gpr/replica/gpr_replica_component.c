@@ -208,6 +208,7 @@ OBJ_CLASS_INSTANCE(
 /* constructor - used to initialize state of itagval instance */
 static void orte_gpr_replica_itagval_construct(orte_gpr_replica_itagval_t* ptr)
 {
+    ptr->index = 0;
     ptr->itag = ORTE_GPR_REPLICA_ITAG_MAX;
     ptr->type = ORTE_NULL;
     (ptr->value).strptr = NULL;
@@ -460,6 +461,12 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
 	/* initialize the mode tracker */
 	OBJ_CONSTRUCT(&orte_gpr_replica.notify_offs, ompi_list_t);
 
+    /* initialize the search array for temporarily storing search results */
+    if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica_globals.search),
+                            100, orte_gpr_replica_globals.max_size, 100)) {
+        return NULL;
+    }
+    
  	/* issue the non-blocking receive */ 
     if (!orte_gpr_replica_globals.isolate) {
 	   rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
