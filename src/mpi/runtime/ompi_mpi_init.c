@@ -57,6 +57,7 @@
 #include "mca/gpr/gpr.h"
 #include "mca/rml/rml.h"
 #include "mca/soh/soh.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "runtime/runtime.h"
 #include "event/event.h"
@@ -74,7 +75,6 @@ int ompi_mpi_thread_provided = MPI_THREAD_SINGLE;
 
 ompi_thread_t *ompi_mpi_main_thread = NULL;
 
-
 int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
 {
     int ret, param;
@@ -83,32 +83,18 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     ompi_proc_t** procs;
     size_t nprocs;
     char *error = NULL;
-    char *jobid_string;
+    orte_gpr_value_t value;
+    orte_gpr_notify_id_t idtag;
     orte_jobid_t jobid;
-
-    /* Become an OMPI process */
-
-    if (OMPI_SUCCESS != (ret = ompi_init(argc, argv))) {
-        error = "ompi_init() failed";
-        goto error;
-    }
-
-    /* Open up the MCA */
-
-    if (OMPI_SUCCESS != (ret = mca_base_open())) {
-        error = "mca_base_open() failed";
-        goto error;
-    }
-
+    
     /* Join the run-time environment */
-    allow_multi_user_threads = true;
-    have_hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = orte_init(NULL, argc, argv))) {
-	goto error;
+    if (ORTE_SUCCESS != (ret = orte_init(NULL, argc, argv))) {
+	   goto error;
     }
 
     /* start recording the compound command that starts us up */
-    orte_gpr.begin_compound_cmd();
+    /* orte_gpr.begin_compound_cmd();
+     */
 
     /* Once we've joined the RTE, see if any MCA parameters were
        passed to the MPI level */
@@ -129,7 +115,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
         goto error;
     }
 
-    /* Open up relevant MCA modules. */
+    /* Open up MPI-related MCA modules. */
 
     if (OMPI_SUCCESS != (ret = mca_allocator_base_open())) {
         error = "mca_allocator_base_open() failed";
@@ -258,47 +244,57 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     /*
      *  Set my process status to "starting". Note that this must be done
      *  after the rte init is completed.
-     *
-     *  Ensure we own the job status and the oob segments first
      */
-    if (ORTE_SUCCESS != orte_ns.get_jobid(&jobid, orte_process_info.my_name)) {
-        error = "orte_ns - failed to get jobid";
+    if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
+                                ORTE_PROC_STATE_RUNNING, 0))) {
+        ORTE_ERROR_LOG(ret);
+        error = "set process state failed";
         goto error;
     }
-    if (ORTE_SUCCESS != orte_ns.get_jobid_string(&jobid_string, orte_process_info.my_name)) {
-        error = "orte_ns - failed to get jobid string";
-        goto error;
-    }
-/*    if (ORTE_SUCCESS != orte_ns.get_vpid((orte_vpid_t*)(&my_status.rank), orte_process_info.my_name)) {
-        error = "orte_ns - failed to get vpid";
-        goto error;
-    }
-    if (OMPI_SUCCESS != (ret = ompi_rte_set_process_status(&my_status, orte_process_info.my_name))) {
-        error = "ompi_mpi_init: failed in ompi_rte_set_process_status()\n";
-        goto error;
-    } 
-*/
+
     /*
-     * Set the virtual machine status for this node
+     * Setup the subscription to notify us when all procs have reached this point
      */
+    if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&jobid, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(ret);
+        error = "get jobid failed";
+        goto error;
+    }
+    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+    if (ORTE_SUCCESS != (ret = orte_schema.get_job_segment_name(&(value.segment), jobid))) {
+        ORTE_ERROR_LOG(ret);
+        error = "get job segment name failed";
+        OBJ_DESTRUCT(&value);
+        goto error;
+    }
     
-    /* execute the compound command - no return data requested
-    *  we'll get it all from the startup message
+    if (ORTE_SUCCESS != (ret = orte_gpr.subscribe(ORTE_GPR_TOKENS_OR, ORTE_GPR_NOTIFY_AT_LEVEL,
+                                    &value, orte_process_info.num_procs, &idtag,
+                                    orte_all_procs_registered, NULL))) {
+        ORTE_ERROR_LOG(ret);
+        error = "could not register subscription for first barrier";
+        OBJ_DESTRUCT(&value);
+        goto error;
+    }
+    OBJ_DESTRUCT(&value);
+    
+    /* execute the compound command 
     */
-    if (OMPI_SUCCESS != (ret = orte_gpr.exec_compound_cmd())) {
+/*    if (OMPI_SUCCESS != (ret = orte_gpr.exec_compound_cmd())) {
 	    error = "ompi_rte_init: orte_gpr.exec_compound_cmd failed";
 	    goto error;
     }
-    
+*/
 
-    /* wait to receive startup message and info distributed */
-    if (OMPI_SUCCESS != (ret = orte_rml.xcast(NULL, NULL, 0, NULL, orte_gpr.decode_startup_msg))) {
-	    error = "ompi_rte_init: failed to see all procs register\n";
+    /* FIRST BARRIER - WAIT FOR CONTACT INFO FROM OTHER PROCESSES TO ARRIVE */
+    if (ORTE_SUCCESS != (ret = orte_monitor_procs_registered())) {
+        ORTE_ERROR_LOG(ret);
+	    error = "ompi_mpi_init: failed to see all procs register\n";
 	    goto error;
     }
 
     if (orte_debug_flag) {
-	ompi_output(0, "[%d,%d,%d] process startup message received",
+	ompi_output(0, "[%d,%d,%d] process startup completed",
 		    ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 

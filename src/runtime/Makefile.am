@@ -31,16 +31,11 @@ headers = \
 
 libruntime_la_SOURCES = \
 	$(headers) \
-    ompi_abort.c \
-    ompi_finalize.c \
-    ompi_init.c \
+    orte_abort.c \
     ompi_progress.c \
     orte_finalize.c \
     orte_init.c \
     orte_monitor.c \
-    orte_job_startup.c \
-    orte_job_shutdown.c \
-    orte_wait_startup_shutdown_msg.c \
     orte_universe_exists.c \
     orte_parse_context.c \
     orte_proc_context.c \

@@ -46,21 +46,11 @@ int orte_gpr_proxy_finalize(void);
 /*
  * proxy-local types
  */
-typedef union {
-    orte_gpr_notify_action_t trig_action;   /**< If subscription, action that triggered message */
-    orte_gpr_synchro_mode_t trig_synchro;
-} orte_gpr_proxy_act_sync_t;
-
-
 struct orte_gpr_proxy_notify_tracker_t {
     ompi_object_t super;                    /**< Allows this to be an object */
     orte_gpr_notify_cb_fn_t callback;       /**< Function to be called for notificaiton */
     void *user_tag;                         /**< User-provided tag for callback function */
-    orte_gpr_notify_id_t local_idtag;       /**< Local ID tag of associated subscription */
     orte_gpr_notify_id_t remote_idtag;      /**< Remote ID tag of subscription */
-    char *segment;                          /**< Pointer to name of segment */
-    orte_gpr_cmd_flag_t cmd;                /**< command that generated the notify request */
-    orte_gpr_proxy_act_sync_t flag;
 };
 typedef struct orte_gpr_proxy_notify_tracker_t orte_gpr_proxy_notify_tracker_t;
 
@@ -101,10 +91,6 @@ int orte_gpr_proxy_exec_compound_cmd(void);
 int orte_gpr_proxy_notify_off(orte_gpr_notify_id_t sub_number);
 
 int orte_gpr_proxy_notify_on(orte_gpr_notify_id_t sub_number);
-
-int orte_gpr_proxy_triggers_active(orte_jobid_t jobid);
-
-int orte_gpr_proxy_triggers_inactive(orte_jobid_t jobid);
 
 /*
  * Delete-index functions
@@ -161,22 +147,11 @@ int orte_gpr_proxy_get_nb(orte_gpr_addr_mode_t addr_mode,
 int orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_notify_action_t action,
                             orte_gpr_value_t *value,
+                            int trigger_level,
                             orte_gpr_notify_id_t *sub_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
 int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number);
-
-
-/*
- * Synchro functions
- */
-int orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_synchro_mode_t synchro_mode,
-                            orte_gpr_value_t *value, int trigger,
-                            orte_gpr_notify_id_t *synch_number,
-                            orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
-
-int orte_gpr_proxy_cancel_synchro(orte_gpr_notify_id_t synch_number);
 
 
 /*
@@ -192,14 +167,11 @@ int orte_gpr_proxy_test_internals(int level, ompi_list_t **results);
 
 
 /*
- * Job-related functions
+ * General operations
  */
 int orte_gpr_proxy_preallocate_segment(char *name, int num_slots);
 
-int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
-                                    orte_buffer_t **msg,
-                                    size_t *cnt,
-                                    orte_process_name_t **procs);
+int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_message_t *message);
 
 /*
  * Functions that interface to the replica
@@ -215,8 +187,6 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
 
 int
 orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *idtag,
-                    char *segment, orte_gpr_cmd_flag_t cmd,
-                    orte_gpr_proxy_act_sync_t *flag,
 				   orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
 int
@@ -225,7 +195,5 @@ orte_gpr_proxy_remove_notify_request(orte_gpr_notify_id_t local_idtag,
 
 int orte_gpr_proxy_set_remote_idtag(orte_gpr_notify_id_t local_idtag,
                                      orte_gpr_notify_id_t remote_idtag);
-
-int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_message_t *message);
 
 #endif

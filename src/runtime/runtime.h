@@ -94,44 +94,22 @@ extern "C" {
 OMPI_DECLSPEC extern orte_universe_t orte_universe_info;
 
     /**
-     * Initialize the Open MPI support code
-     *
-     * This function initializes the Open MPI support code, including
-     * malloc debugging and threads.  It should be called exactly once
-     * by every application that utilizes any of the Open MPI support
-     * libraries (including MPI applications, mpirun, and mpicc).
-     *
-     * This function should be called before \code ompi_rte_init, if
-     * \code ompi_rte_init is to be called.
-     */
-OMPI_DECLSPEC    int ompi_init(int argc, char* argv[]);
-
-    /**
-     * Finalize the Open MPI support code
-     *
-     * Finalize the Open MPI support code.  Any function calling \code
-     * ompi_init should call \code ompi_finalize.  This function should
-     * be called after \code ompi_rte_finalize, if \code
-     * ompi_rte_finalize is called.
-     */
-OMPI_DECLSPEC    int ompi_finalize(void);
-
-    /**
      * Abort the current application with a pretty-print error message
      *
      * Aborts currently running application with \code abort(), pretty
      * printing an error message if possible.  Error message should be
      * specified using the standard \code printf() format.
      */
-OMPI_DECLSPEC    int ompi_abort(int status, char *fmt, ...);
+OMPI_DECLSPEC    int orte_abort(int status, char *fmt, ...);
 
 
     /**
      * Initialize the Open run time environment
      *
      * Initlize the Open MPI run time environment, including process
-     * control and out of band messaging.  This function should be
-     * called exactly once, after \code ompi_init.  This function should
+     * control, malloc debugging and threads, and out of band messaging.
+     * This function should be
+     * called exactly once.  This function should
      * be called by every application using the RTE interface, including
      * MPI applications and mpirun.
      */
@@ -145,18 +123,13 @@ OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
 OMPI_DECLSPEC    int orte_restart(orte_process_name_t* name);
 
     /**
-     * Finalize the Open run time environment
+     * Finalize the Open run time environment. Any function calling \code
+     * orte_init should call \code orte_finalize. 
      *
      */
 OMPI_DECLSPEC    int orte_finalize(void);
 
-    /**
-     * Hold for startup message to arrive, then decode it.
-     */
-
-OMPI_DECLSPEC    int orte_wait_startup_msg(void);
-
-    /**
+    /*
      * Change state as processes complete registration/unregistration
      */
 
@@ -216,24 +189,6 @@ OMPI_DECLSPEC    int orte_parse_daemon_context(ompi_cmd_line_t *cmd_line,
      * universe refused to allow connection.
      */
 OMPI_DECLSPEC    int orte_universe_exists(void);
-
-    /**
-     * Startup a job - notify processes that all ready to begin
-     */
-OMPI_DECLSPEC   int orte_job_startup(orte_jobid_t jobid);
-
-    /**
-     * Shutdown a job - notify processes that all ready to stop
-     */
-OMPI_DECLSPEC   int orte_job_shutdown(orte_jobid_t jobid);
-
-    /**
-     * Complete initialization of the RTE
-     */
-OMPI_DECLSPEC   int orte_init_cleanup(bool *allow_user_threads, bool *have_hidden_threads);
-
-
-OMPI_DECLSPEC int ompi_rte_wait_startup_msg(void);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

@@ -34,6 +34,7 @@
 int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
                             orte_gpr_value_t *value,
+                            int trigger_level,
                             orte_gpr_notify_id_t local_idtag)
 {
     orte_gpr_replica_triggers_t *trig;
@@ -62,6 +63,8 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
         trig->key_addr_mode = ORTE_GPR_REPLICA_OR;
     }
 
+    trig->trigger = trigger_level;
+    
     if (NULL != value->tokens && 0 < value->num_tokens) {
         num_tokens = value->num_tokens; /* indicates non-NULL terminated list */
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itags, seg,

@@ -159,89 +159,6 @@ typedef int (*orte_gpr_base_module_notify_off_fn_t)(orte_gpr_notify_id_t sub_num
  */
 typedef int (*orte_gpr_base_module_notify_on_fn_t)(orte_gpr_notify_id_t sub_number);
 
-/* Turn triggers on for this jobid
- * Activate all triggers for this jobid on the registry. Does not counteract the subscription on/off
- * for each process. When created, segments default to triggers being INACTIVE. All
- * subscriptions and synchros, therefore, are rendered inactive until the segment's
- * triggers are turned "on".
- *
- * @param jobid The jobid whose triggers are to be activated.
- *
- * @retval ORTE_SUCCESS Operation was successfully completed.
- * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
- * 
- * @code
- * status_code = orte_gpr.triggers_active(jobid);
- * @endcode
- */
-typedef int (*orte_gpr_base_module_triggers_active_fn_t)(orte_jobid_t jobid);
-
-/* Turn triggers off for this jobid.
- * Deactivate all triggers for the specified job. All subscriptions and synchros will be
- * rendered inactive regardless of recipients and/or conditions.
- *
- * @param jobid The jobid whose triggers are to be
- * deactivated.
- *
- * @retval ORTE_SUCCESS Operation was successfully completed.
- * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
- * 
- * @code
- * status_code = orte_gpr.triggers_inactive(jobid);
- * @endcode
- */
-typedef int (*orte_gpr_base_module_triggers_inactive_fn_t)(orte_jobid_t jobid);
-
-/*
- * Get the job startup message.
- * At the startup of any job, there is a set of information that needs to be sent to every
- * process - this is known as the job startup message. This function provides an entry point
- * for the controlling process (i.e., the one that is spawning the application - usually
- * mpirun) to obtain the job startup message so it can subsequently "broadcast" it to all
- * of the application's processes.
- *
- * @param jobid (IN) The id of the job being started.
- *
- * @param *msg (OUT) A pointer to a packed buffer containing all the information required. This
- * information is obtained by gathering all data on all segments "owned" by the specified
- * jobid. The registry has NO knowledge of what is in the data elements, where it should go,
- * etc. The data from each segment is preceded by the name of the segment from which it came.
- * A function for parsing this message and distributing the data is provided elsewhere - such
- * functionality is beyond the purview of the registry.
- *
- * @param *cnt (OUT) A pointer to the number of recipients.
- * @param recipients (OUT) An array of process names for the recipients. The caller
- * needs to provide the address of a pointer to the array.
- *
- * @retval ORTE_SUCCESS Operation was successfully completed.
- * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
- * 
- * @code
- * msg_buffer = orte_gpr.get_startup_msg(jobid, recipients);
- * @endcode
- *
- */
-typedef int (*orte_gpr_base_module_get_startup_msg_fn_t)(orte_jobid_t jobid,
-                                    orte_buffer_t **msg,
-                                    size_t *cnt,
-								  orte_process_name_t **procs);
-
-/*
- * Unpack the startup message.
- * When a startup message is received, it contains data required for
- * initializing several subsystems. This includes OOB contact info,
- * PTL contact info, and other things. Each of these subsystems has a
- * callback function that is used to receive updates from the registry
- * This function deconstructs the message and builds a notify
- * message for each segment, and then passes that message to the appropriate
- * callback function as if it came directly from the registry.
- */
-typedef int (*orte_gpr_base_module_decode_startup_msg_fn_t)(
-                                    int status, orte_process_name_t *peer,
-                                    orte_buffer_t* msg, orte_rml_tag_t tag,
-                                    void *cbdata);
-
-
 /* Cleanup a job from the registry
  * Remove all references to a given job from the registry. This includes removing
  * all segments "owned" by the job, and removing all process names from dictionaries
@@ -518,11 +435,16 @@ typedef int (*orte_gpr_base_module_index_nb_fn_t)(char *segment,
  * @param addr_mode (IN) The addressing mode to be used in specifying the objects to be
  * monitored by this subscription.
  * 
- * @param actions (IN) The actions which is to trigger the notification message. These can
+ * @param actions (IN) The actions which are to trigger the notification message. These can
  * be OR'd together from the defined registry action flags.
  * 
  * @param *value (IN) A pointer to an orte_gpr_value_t object that describes the segment,
  * tokens, and keys/values to which a subscription is requested.
+ * 
+ * @param trigger_level (IN) For subscriptions that begin when reaching a specified level,
+ * this value represents the level at which to begin notification. A notification message
+ * will be sent upon attaining the specified level, and for each event thereafter, as
+ * specified by the caller.
  * 
  * @param *sub_number (OUT) A notify id for the resulting subscription is returned in
  * the provided memory location. Callers should save this
@@ -549,6 +471,7 @@ typedef int (*orte_gpr_base_module_index_nb_fn_t)(char *segment,
 typedef int (*orte_gpr_base_module_subscribe_fn_t)(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_notify_action_t actions,
                             orte_gpr_value_t *value,
+                            int trigger_level,
                             orte_gpr_notify_id_t *sub_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
@@ -570,85 +493,6 @@ typedef int (*orte_gpr_base_module_subscribe_fn_t)(orte_gpr_addr_mode_t addr_mod
  */
 typedef int (*orte_gpr_base_module_unsubscribe_fn_t)(orte_gpr_notify_id_t sub_number);
 
-/*
- * Request a synchro call from the registry
- * Subscriptions indicate when a specified action has occurred on one or more data objects.
- * In some conditions, however, it is desirable to simply know when a specified number of
- * data objects is present on a given registry segment. For example, since each process must
- * register its contact information on the registry, knowing when the number of registrations
- * equals the number of processes can serve as an indicator that all process are ready to run.
- *
- * This function allows the caller to request notification of data object count meeting
- * specified criteria on the indicated registry segment. Supported counting modes include
- * "edge-triggered" (i.e., ascending or descending through a specified level) and "level"
- * (the count being equal to, above, or below a specified value).
- *
- * Any objects already on the specified segment prior to issuing the synchro request
- * will be counted when the request is registered on the registry.
- *
- * Upon triggering, the synchro returns all data objects included in the count in the
- * notification message.
- *
- * @param addr_mode (IN) The addressing mode to be used in specifying the objects to be
- * counted by this synchro.
- * 
- * @param synchro_mode (IN) The condition which is to trigger the notification message. These can
- * be OR'd together from the defined registry synchro mode flags.
- * 
- * @param *value (IN) A pointer to an orte_gpr_value_t object that describes the segment,
- * tokens, and keys/values that are to be monitored.
- * 
- * @param trigger (IN) An integer indicating the level at which the
- * specified synchro is to be triggered.
- * 
- * @param synch_number (OUT) A synchro number for the request. Callers should save this
- * number for later use if it is desired to permanently remove a synchro from the registry.
- * Note: ONE_SHOT synchros are automatically removed from the registry when triggered.
- *
- * @param cb_func (IN) The orte_gpr_notify_cb_fn_t callback function to be called when
- * the synchro is triggered. The data from each counted object will be returned
- * to the callback function in an orte_gpr_notify_message_t structure.
- * 
- * @param user_tag A void* user-provided storage location that the caller can
- * use for its own purposes. A NULL value is acceptable.
- *
- * @retval ORTE_SUCCESS Operation was successfully completed.
- * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
- *
- * @code
- * orte_gpr_notify_id_t synch_number;
- * 
- * status_code = orte_gpr.synchro(addr_mode, synch_mode, segment, tokens,
- *                                      trigger, &synch_number,
- *                                      cb_func, user_tag);
- * @endcode
- */
-typedef int (*orte_gpr_base_module_synchro_fn_t)(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_synchro_mode_t synchro_mode,
-                            orte_gpr_value_t *values, int trigger,
-                            orte_gpr_notify_id_t *synch_number,
-                            orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
-
-/*
- * Cancel a synchro.
- * Once a synchro has been entered on the registry, a caller may choose to
- * remove it at a later time. This function supports that request.
- *
- * Note: ONE_SHOT synchros are automatically removed from the registry when triggered.
- *
- * @param synch_number The orte_gpr_notify_id_t value returned by the original synchro
- * command.
- *
- * @retval ORTE_SUCCESS The synchro was removed.
- * @retval ORTE_ERROR The synchro could not be removed - most likely caused by specifying
- * a non-existent (or previously removed) synchro number.
- *
- * @code
- * status_code = orte_gpr.cancel_synchro(synch_number);
- * @endcode
- */
-typedef int (*orte_gpr_base_module_cancel_synchro_fn_t)(orte_gpr_notify_id_t synch_number);
-
 /* Output the registry's contents to an output stream
  * For debugging purposes, it is helpful to be able to obtain a complete formatted printout
  * of the registry's contents. This function provides that ability.
@@ -666,7 +510,7 @@ typedef int (*orte_gpr_base_module_cancel_synchro_fn_t)(orte_gpr_notify_id_t syn
 typedef int (*orte_gpr_base_module_dump_fn_t)(int output_id);
 
 /* Deliver a notify message.
- * The registry generates notify messages whenever a subscription or synchro is fired. Normally,
+ * The registry generates notify messages whenever a subscription is fired. Normally,
  * this happens completely "under the covers" - i.e., the notification process is transparent
  * to the rest of the system, with the message simply delivered to the specified callback function.
  * However, there are two circumstances when the system needs to explicitly deliver a notify
@@ -684,24 +528,18 @@ typedef int (*orte_gpr_base_module_dump_fn_t)(int output_id);
  * This function provides the necessary "hook" for an external program to request delivery of
  * a message via the publish/subscribe's notify mechanism.
  *
- * @param state The notify action associated with the message. Currently, only two values are
- * supported: ORTE_REGISTRY_NOTIFY_ON_STARTUP and ORTE_REGISTRY_NOTIFY_ON_SHUTDOWN. The function
- * will search the notification system for all requests that match this state and also match
- * the segment name specified in the message itself. Each of the matching requests will be
- * called with the message.
- *
  * @param message The message to be delivered.
  *
  * @retval ORTE_SUCCESS Operation was successfully completed.
  * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
  *
  * @code
- * status_code = orte_gpr.deliver_notify_msg(state, message);
+ * status_code = orte_gpr.deliver_notify_msg(message);
  * @endcode
  *
  */
-typedef int (*orte_gpr_base_module_deliver_notify_msg_fn_t)(orte_gpr_notify_action_t state,
-							    orte_gpr_notify_message_t *message);
+typedef int (*orte_gpr_base_module_deliver_notify_msg_fn_t)(orte_gpr_notify_message_t *message);
+
 /*
  * test interface for internal functions - optional to provide
  */
@@ -726,16 +564,12 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_delete_entries_nb_fn_t delete_entries_nb;
     orte_gpr_base_module_delete_segment_nb_fn_t delete_segment_nb;
     orte_gpr_base_module_index_nb_fn_t index_nb;
-    /* JOB-RELATED OPERATIONS */
+    /* GENERAL OPERATIONS */
     orte_gpr_base_module_preallocate_segment_fn_t preallocate_segment;
-    orte_gpr_base_module_get_startup_msg_fn_t get_startup_msg;
-    orte_gpr_base_module_decode_startup_msg_fn_t decode_startup_msg;
+    orte_gpr_base_module_deliver_notify_msg_fn_t deliver_notify_msg;
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_base_module_subscribe_fn_t subscribe;
     orte_gpr_base_module_unsubscribe_fn_t unsubscribe;
-    /* SYNCHRO OPERATIONS */
-    orte_gpr_base_module_synchro_fn_t synchro;
-    orte_gpr_base_module_cancel_synchro_fn_t cancel_synchro;
     /* COMPOUND COMMANDS */
     orte_gpr_base_module_begin_compound_cmd_fn_t begin_compound_cmd;
     orte_gpr_base_module_stop_compound_cmd_fn_t stop_compound_cmd;
@@ -745,8 +579,6 @@ struct orte_gpr_base_module_1_0_0_t {
     /* MODE OPERATIONS */
     orte_gpr_base_module_notify_on_fn_t notify_on;
     orte_gpr_base_module_notify_off_fn_t notify_off;
-    orte_gpr_base_module_triggers_active_fn_t triggers_active;
-    orte_gpr_base_module_triggers_inactive_fn_t triggers_inactive;
     /* CLEANUP OPERATIONS */
     orte_gpr_base_module_cleanup_job_fn_t cleanup_job;
     orte_gpr_base_module_cleanup_proc_fn_t cleanup_process;

@@ -111,21 +111,11 @@ extern "C" {
     OMPI_DECLSPEC int orte_gpr_base_unpack_index(orte_buffer_t *cmd, size_t *cnt,
                                                  char **index);
 
-    OMPI_DECLSPEC int orte_gpr_base_pack_synchro(orte_buffer_t *cmd,
-				  orte_gpr_synchro_mode_t synchro_mode,
-				  orte_gpr_addr_mode_t mode,
-				  orte_gpr_value_t *value, int trigger);
-    OMPI_DECLSPEC int orte_gpr_base_unpack_synchro(orte_buffer_t *buffer,
-				    orte_gpr_notify_id_t *remote_idtag);
-
-    OMPI_DECLSPEC int orte_gpr_base_pack_cancel_synchro(orte_buffer_t *cmd,
-					 orte_gpr_notify_id_t remote_idtag);
-    OMPI_DECLSPEC int orte_gpr_base_unpack_cancel_synchro(orte_buffer_t *buffer);
-
     OMPI_DECLSPEC int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
 				    orte_gpr_addr_mode_t addr_mode,
 				    orte_gpr_notify_action_t action,
-				    orte_gpr_value_t *value);
+				    orte_gpr_value_t *value,
+                     int trigger_level);
     OMPI_DECLSPEC int orte_gpr_base_unpack_subscribe(orte_buffer_t *buffer,
 				      orte_gpr_notify_id_t *remote_idtag);
 
@@ -167,24 +157,6 @@ extern "C" {
 				                orte_process_name_t *proc,
 				                orte_gpr_notify_id_t sub_number);
     OMPI_DECLSPEC int orte_gpr_base_unpack_notify_on(orte_buffer_t *buffer);
-
-    OMPI_DECLSPEC int orte_gpr_base_pack_get_startup_msg(orte_buffer_t *cmd, orte_jobid_t jobid);
-    OMPI_DECLSPEC int orte_gpr_base_unpack_get_startup_msg(orte_buffer_t *buffer,
-                                 orte_buffer_t **msg, size_t *cnt,
-                                 orte_process_name_t **recipients);
-
-    OMPI_DECLSPEC int orte_gpr_base_decode_startup_msg(int status,
-                                 orte_process_name_t *peer,
-                                 orte_buffer_t* msg,
-                                 orte_rml_tag_t tag, void *cbdata);
-
-    OMPI_DECLSPEC int orte_gpr_base_pack_triggers_active_cmd(orte_buffer_t *cmd,
-                                                             orte_jobid_t jobid);
-    OMPI_DECLSPEC int orte_gpr_base_unpack_triggers_active_cmd(orte_buffer_t *cmd);
-
-    OMPI_DECLSPEC int orte_gpr_base_pack_triggers_inactive_cmd(orte_buffer_t *cmd,
-                                                               orte_jobid_t jobid);
-    OMPI_DECLSPEC int orte_gpr_base_unpack_triggers_inactive_cmd(orte_buffer_t *cmd);
 
 
 #if defined(c_plusplus) || defined(__cplusplus)

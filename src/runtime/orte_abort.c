@@ -14,19 +14,29 @@
 
 #include "ompi_config.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
 #include "include/constants.h"
 #include "runtime/runtime.h"
-#include "util/malloc.h"
 #include "util/output.h"
 
 
-int ompi_finalize(void)
+int orte_abort(int status, char *fmt, ...)
 {
-    /* Shut down malloc debug stuff */
-    ompi_malloc_finalize();
-  
-    /* Shut down the output streams */
-    ompi_output_finalize();
+  va_list arglist;
 
-    return OMPI_SUCCESS;
+  /* If there was a message, output it */
+
+  va_start(arglist, fmt);
+  if (NULL != fmt) {
+    ompi_output(0, fmt);
+  }
+  va_end(arglist);
+
+  /* Shut down and exit */
+
+  orte_finalize();
+  exit(status);
 }

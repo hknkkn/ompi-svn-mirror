@@ -36,10 +36,6 @@ int orte_gpr_replica_notify_off_fn(orte_process_name_t *proc,
 int orte_gpr_replica_notify_on_fn(orte_process_name_t *proc,
                                   orte_gpr_notify_id_t sub_number);
 
-int orte_gpr_replica_triggers_active_fn(orte_jobid_t jobid);
-
-int orte_gpr_replica_triggers_inactive_fn(orte_jobid_t jobid);
-
 /*
  * Delete-index functions
  */
@@ -103,21 +99,10 @@ int orte_gpr_replica_get_nb_fn(orte_gpr_addr_mode_t addr_mode,
 int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_replica_segment_t *seg,
                             orte_gpr_value_t *value,
+                            int trigger_level,
                             orte_gpr_notify_id_t local_idtag);
 
 int orte_gpr_replica_unsubscribe_fn(orte_gpr_notify_id_t sub_number);
-
-
-/*
- * Synchro functions
- */
-int orte_gpr_replica_synchro_fn(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_replica_segment_t *seg,
-                            orte_gpr_value_t *value,
-                            int trigger,
-                            orte_gpr_notify_id_t local_idtag);
-
-int orte_gpr_replica_cancel_synchro_fn(orte_gpr_notify_id_t synch_number);
 
 
 /*
@@ -210,9 +195,6 @@ int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
 
 int
 orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
-                      orte_gpr_replica_segment_t *seg,
-				     orte_gpr_cmd_flag_t cmd,
-                      orte_gpr_replica_act_sync_t *flag,
 				     orte_process_name_t *requestor,
 				     orte_gpr_notify_id_t remote_idtag,
 				     orte_gpr_notify_cb_fn_t cb_func,

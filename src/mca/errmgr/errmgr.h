@@ -51,11 +51,25 @@
  */
 typedef void (*orte_errmgr_base_module_log_fn_t)(char *msg, char *filename, int line);
 
+
+/**
+ * Alert - process aborted
+ */
+typedef void (*orte_errmgr_base_module_proc_aborted_fn_t)(orte_process_name_t *proc);
+
+/**
+ * Alert - incomplete start of a job
+ */
+typedef void (*orte_errmgr_base_module_incomplete_start_fn_t)(orte_jobid_t job);
+
+
 /*
  * Ver 1.0.0
  */
 struct orte_errmgr_base_module_1_0_0_t {
     orte_errmgr_base_module_log_fn_t log;
+    orte_errmgr_base_module_proc_aborted_fn_t proc_aborted;
+    orte_errmgr_base_module_incomplete_start_fn_t incomplete_start;
 };
 
 typedef struct orte_errmgr_base_module_1_0_0_t orte_errmgr_base_module_1_0_0_t;

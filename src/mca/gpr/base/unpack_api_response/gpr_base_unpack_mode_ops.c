@@ -29,55 +29,6 @@
 
 #include "mca/gpr/base/base.h"
 
-int orte_gpr_base_unpack_triggers_active_cmd(orte_buffer_t *cmd)
-{
-    orte_gpr_cmd_flag_t command;
-    int32_t response;
-    int rc;
-    size_t n;
-    
-    n=1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &command, &n, ORTE_GPR_PACK_CMD))) {
-        return rc;
-    }
-    
-    if (ORTE_GPR_TRIGGERS_ACTIVE_CMD != command) {
-        return ORTE_ERR_COMM_FAILURE;
-    }
-
-    n=1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &response, &n, ORTE_INT32))) {
-        return rc;
-    }
-
-    return (int)response;
-}
-
-int orte_gpr_base_unpack_triggers_inactive_cmd(orte_buffer_t *cmd)
-{
-    orte_gpr_cmd_flag_t command;
-    int32_t response;
-    int rc;
-    size_t n;
-    
-    n=1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &command, &n, ORTE_GPR_PACK_CMD))) {
-        return rc;
-    }
-    
-    if (ORTE_GPR_TRIGGERS_INACTIVE_CMD != command) {
-        return ORTE_ERR_COMM_FAILURE;
-    }
-
-    n=1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &response, &n, ORTE_INT32))) {
-        return rc;
-    }
-
-    return (int)response;
-
-}
-
 int orte_gpr_base_unpack_notify_on(orte_buffer_t *cmd)
 {
     orte_gpr_cmd_flag_t command;

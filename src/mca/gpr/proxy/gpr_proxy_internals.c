@@ -27,6 +27,7 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 
+#include "mca/errmgr/errmgr.h"
 #include "mca/ns/ns_types.h"
 #include "mca/oob/oob_types.h"
 #include "mca/rml/rml.h"
@@ -35,8 +36,6 @@
 
 int
 orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
-                    char *segment, orte_gpr_cmd_flag_t cmd,
-                    orte_gpr_proxy_act_sync_t *flag,
                     orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
     orte_gpr_proxy_notify_tracker_t *trackptr;
@@ -46,34 +45,24 @@ orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
     
     trackptr = OBJ_NEW(orte_gpr_proxy_notify_tracker_t);
     if (NULL == trackptr) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    trackptr->cmd = cmd;
-    if (ORTE_GPR_SUBSCRIBE_CMD == cmd) {
-        trackptr->flag.trig_action = flag->trig_action;
-    } else if (ORTE_GPR_SYNCHRO_CMD == cmd) {
-        trackptr->flag.trig_synchro = flag->trig_synchro;
-    } else {
-        OBJ_RELEASE(trackptr);
-        return ORTE_ERR_BAD_PARAM;
-    }
-    
-    trackptr->segment = strdup(segment);
     trackptr->callback = cb_func;
     trackptr->user_tag = user_tag;
     trackptr->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
 
     if (0 > (idtag = orte_pointer_array_add(orte_gpr_proxy_globals.notify_tracker, trackptr))) {
-        return idtag;
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    trackptr->local_idtag = (orte_gpr_notify_id_t)idtag;
-    *local_idtag = trackptr->local_idtag;
+    *local_idtag = idtag;
     
     if (orte_gpr_proxy_globals.debug) {
-        ompi_output(0, "[%d,%d,%d] enter_notify_request: tracker created for segment %s action %X idtag %d",
-                    ORTE_NAME_ARGS(orte_process_info.my_name), segment, flag->trig_action, idtag);
+        ompi_output(0, "[%d,%d,%d] enter_notify_request: tracker %d created",
+                    ORTE_NAME_ARGS(orte_process_info.my_name), idtag);
     }
     
     return ORTE_SUCCESS;

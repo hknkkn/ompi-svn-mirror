@@ -353,11 +353,11 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     
     rc = orte_gpr.subscribe(
         ORTE_GPR_KEYS_OR | ORTE_GPR_TOKENS_OR,
-        	ORTE_GPR_NOTIFY_ADD_ENTRY|ORTE_GPR_NOTIFY_DELETE_ENTRY|
-        	ORTE_GPR_NOTIFY_MODIFICATION|
-		ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA|
-		ORTE_GPR_NOTIFY_PRE_EXISTING,
+        	ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_DEL_ENTRY |
+        	ORTE_GPR_NOTIFY_VALUE_CHG |
+		ORTE_GPR_NOTIFY_AT_LEVEL,
         	&value,
+         orte_process_info.num_procs,
          &rctag,
         	mca_base_modex_registry_callback,
         	NULL);

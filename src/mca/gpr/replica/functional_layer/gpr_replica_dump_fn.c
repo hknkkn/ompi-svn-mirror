@@ -146,114 +146,57 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     orte_gpr_replica_target_t **target;
     orte_gpr_replica_itagval_t **ival;
     
-    if (ORTE_GPR_SUBSCRIBE_CMD == trig->cmd) {  /* subscription */
-		asprintf(&tmp_out, "Data for trigger %d on segment %s\tType: SUBSCRIPTION",
-                            cnt, (trig->seg)->name);
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		asprintf(&tmp_out, "\tAssociated with notify number: %d",trig->local_idtag);
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		/* find recipient info from notify list */
-    		if (NULL == trig->requestor) {
-    		    asprintf(&tmp_out, "\tIntended recipient: LOCAL");
-        	} else {
-		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(trig->requestor));
-		}
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		tmp_out = strdup("\tActions:");
-        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		if (ORTE_GPR_NOTIFY_MODIFICATION & trig->flag.trig_action) {
-            tmp_out = strdup("\t\tORTE_GPR_NOTIFY_MODIFICATION");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_ADD_SUBSCRIBER & trig->flag.trig_action) {
-            tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ADD_SUBSCRIBER");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_DELETE_ENTRY & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_DELETE_ENTRY");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_ADD_ENTRY & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ADD_ENTRY");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_ON_STARTUP & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ON_STARTUP");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_ON_SHUTDOWN & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ON_SHUTDOWN");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_PRE_EXISTING & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_PRE_EXISTING");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_INCLUDE_SHUTDOWN_DATA & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_INCLUDE_SHUTDOWN_DATA");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_NOTIFY_ONE_SHOT & trig->flag.trig_action) {
-		    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ONE_SHOT");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-
-    } else {  /* synchro */
-		asprintf(&tmp_out, "Data for trigger %d on segment %s\tType: SYNCHRO",
-                                cnt, (trig->seg)->name);
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		asprintf(&tmp_out, "\tAssociated with notify number: %d",trig->local_idtag);
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-
+	asprintf(&tmp_out, "Data for trigger %d on segment %s",
+                        cnt, (trig->seg)->name);
+	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	asprintf(&tmp_out, "\tAssociated with notify number: %d",trig->local_idtag);
+	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	/* find recipient info from notify list */
 		if (NULL == trig->requestor) {
 		    asprintf(&tmp_out, "\tIntended recipient: LOCAL");
-		} else {
-		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(trig->requestor));
-		}
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		tmp_out = strdup("\tSynchro Mode:");
-        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		if (ORTE_GPR_SYNCHRO_MODE_ASCENDING & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_ASCENDING");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_SYNCHRO_MODE_DESCENDING & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_DESCENDING");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_SYNCHRO_MODE_LEVEL & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_LEVEL");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_SYNCHRO_MODE_GT_EQUAL & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_GT_EQUAL");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_SYNCHRO_MODE_LT_EQUAL & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_LT_EQUAL");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_SYNCHRO_MODE_CONTINUOUS & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_CONTINUOUS");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_SYNCHRO_MODE_ONE_SHOT & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_ONE_SHOT");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		if (ORTE_GPR_SYNCHRO_MODE_STARTUP & trig->flag.trig_synchro) {
-		    tmp_out = strdup("\t\tORTE_GPR_SYNCHRO_MODE_STARTUP");
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		}
-		asprintf(&tmp_out, "\tTrigger level: %d\tCurrent count: %d", trig->trigger, trig->count);
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-		asprintf(&tmp_out, "\tTransition status: %d", trig->above_below);
-		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    	} else {
+	    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(trig->requestor));
 	}
+	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	tmp_out = strdup("\tActions:");
+    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	if (ORTE_GPR_NOTIFY_VALUE_CHG & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_NOTIFY_VALUE_CHG");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	} else if (ORTE_GPR_NOTIFY_VALUE_CHG_TO & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_NOTIFY_VALUE_CHG_TO");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	} else if (ORTE_GPR_NOTIFY_VALUE_CHG_FRM & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_NOTIFY_VALUE_CHG_FRM");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+	if (ORTE_GPR_NOTIFY_DEL_ENTRY & trig->action) {
+	    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_DEL_ENTRY");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	}
+	if (ORTE_GPR_NOTIFY_ADD_ENTRY & trig->action) {
+	    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ADD_ENTRY");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	}
+	if (ORTE_GPR_NOTIFY_PRE_EXISTING & trig->action) {
+	    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_PRE_EXISTING");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	}
+	if (ORTE_GPR_NOTIFY_ONE_SHOT & trig->action) {
+	    tmp_out = strdup("\t\tORTE_GPR_NOTIFY_ONE_SHOT");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+	}
+    if (ORTE_GPR_NOTIFY_AT_LEVEL & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_NOTIFY_AT_LEVEL");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+    if (ORTE_GPR_NOTIFY_BEGIN & trig->action) {
+        tmp_out = strdup("\t\tORTE_GPR_NOTIFY_BEGIN");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    }
+
+	asprintf(&tmp_out, "\tTrigger level: %d\tCurrent count: %d", trig->trigger, trig->count);
+	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
     k = (int)orte_value_array_get_size(&(trig->tokentags));
     

@@ -26,6 +26,7 @@
 #include "class/ompi_list.h"
 
 #include "mca/mca.h"
+#include "mca/ns/ns_types.h"
 #include "mca/errmgr/errmgr.h"
 
 
@@ -52,6 +53,10 @@ OMPI_DECLSPEC    int orte_errmgr_base_close(void);
      */
 
 OMPI_DECLSPEC    void orte_errmgr_base_log(char *msg, char *filename, int line);
+
+OMPI_DECLSPEC    void orte_errmgr_base_proc_aborted(orte_process_name_t *proc);
+
+OMPI_DECLSPEC    void orte_errmgr_base_incomplete_job(orte_jobid_t job);
 
 /*
  * globals that might be needed

@@ -17,7 +17,9 @@
 
 #include "util/output.h"
 #include "util/proc_info.h"
-#include "mca/ns/ns_types.h"
+#include "mca/ns/ns.h"
+
+#include "mca/rmgr/rmgr.h"
 
 #include "mca/errmgr/base/base.h"
 
@@ -31,4 +33,22 @@ void orte_errmgr_base_log(char *msg, char *filename, int line)
         ompi_output(0, "[%d,%d,%d] ORTE_ERROR_LOG: %s in file %s at line %d",
                 ORTE_NAME_ARGS(orte_process_info.my_name), msg, filename, line);
     }
+}
+
+void orte_errmgr_base_proc_aborted(orte_process_name_t *proc)
+{
+    int rc;
+    orte_jobid_t job;
+    
+    if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&job, proc))) {
+        ORTE_ERROR_LOG(rc);
+        return;
+    }
+    
+    orte_rmgr.terminate_job(job);
+}
+
+void orte_errmgr_base_incomplete_job(orte_jobid_t job)
+{
+    orte_rmgr.terminate_job(job);
 }

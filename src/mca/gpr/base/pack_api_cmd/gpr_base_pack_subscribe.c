@@ -26,13 +26,15 @@
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
 #include "dps/dps.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "mca/gpr/base/base.h"
 
 int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
 				orte_gpr_addr_mode_t mode,
 				orte_gpr_notify_action_t action,
-                 orte_gpr_value_t *value)
+                 orte_gpr_value_t *value,
+                 int trigger_level)
 {
     orte_gpr_cmd_flag_t command;
     int rc;
@@ -40,19 +42,28 @@ int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
     command = ORTE_GPR_SUBSCRIBE_CMD;
 
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_CMD))) {
-	   return rc;
+        ORTE_ERROR_LOG(rc);
+	    return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_ADDR_MODE))) {
-	   return rc;
+        ORTE_ERROR_LOG(rc);
+	    return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &action, 1, ORTE_NOTIFY_ACTION))) {
-	   return rc;
+        ORTE_ERROR_LOG(rc);
+	    return rc;
     }
 
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &value, 1, ORTE_GPR_VALUE))) {
-	   return rc;
+        ORTE_ERROR_LOG(rc);
+	    return rc;
+    }
+
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &trigger_level, 1, ORTE_INT))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
     }
 
     return ORTE_SUCCESS;

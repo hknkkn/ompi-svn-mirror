@@ -34,9 +34,6 @@ static int orte_gpr_replica_trig_op_add_target(orte_gpr_replica_triggers_t *trig
 
 int
 orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
-                                      orte_gpr_replica_segment_t *seg,
-                                      orte_gpr_cmd_flag_t cmd,
-                                      orte_gpr_replica_act_sync_t *flag,
                                       orte_process_name_t *requestor,
                                       orte_gpr_notify_id_t remote_idtag,
                                       orte_gpr_notify_cb_fn_t cb_func,
@@ -53,18 +50,6 @@ orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    trig->cmd = cmd;
-    if (ORTE_GPR_SUBSCRIBE_CMD == cmd) {
-        trig->flag.trig_action = flag->trig_action;
-    } else if (ORTE_GPR_SYNCHRO_CMD == cmd) {
-        trig->flag.trig_synchro = flag->trig_synchro;
-    } else {
-        OBJ_RELEASE(trig);
-        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-        return ORTE_ERR_BAD_PARAM;
-    }
-
-    trig->seg = seg;
     if (NULL != requestor) {
         if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&(trig->requestor),
                                             requestor))) {
@@ -74,6 +59,7 @@ orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
     } else {
          trig->requestor = NULL;
     }
+
     trig->remote_idtag = remote_idtag;
     trig->callback = cb_func;
     trig->user_tag = user_tag;
@@ -312,13 +298,10 @@ int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    (*msg)->idtag = trig->local_idtag;
-    (*msg)->segment = strdup((trig->seg)->name);
-    (*msg)->cmd = trig->cmd;
-    if (ORTE_GPR_SYNCHRO_CMD == trig->cmd) {
-        (*msg)->flag.trig_action = trig->flag.trig_action;
-    } else {
-        (*msg)->flag.trig_synchro = trig->flag.trig_synchro;
+    if (NULL == trig->requestor) {  /* local recipient */
+        (*msg)->idtag = trig->local_idtag;
+    } else {  /* remote recipient */
+        (*msg)->idtag = trig->remote_idtag;
     }
 
     /* NEED TO FIX THIS LINE */

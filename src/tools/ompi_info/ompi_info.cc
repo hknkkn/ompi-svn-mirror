@@ -62,12 +62,6 @@ int main(int argc, char *argv[])
   bool acted = false;
   bool want_all = false;
 
-  // Start OMPI process
-
-  if (OMPI_SUCCESS != ompi_init(argc, argv)) {
-    return -1;
-  }
-
   // Initialize the argv parsing handle
 
   cmd_line = OBJ_NEW(ompi_cmd_line_t);
@@ -78,6 +72,12 @@ int main(int argc, char *argv[])
 #endif
     exit(ret);
   }
+  // Start OMPI process
+
+  if (OMPI_SUCCESS != orte_init(cmd_line, argc, argv)) {
+    return -1;
+  }
+
   ompi_cmd_line_make_opt(cmd_line, 'v', "version", 2, 
                          "Show version of Open MPI or a component");
   ompi_cmd_line_make_opt(cmd_line, '\0', "param", 2, 
@@ -208,7 +208,6 @@ int main(int argc, char *argv[])
 
   ompi_info::close_components();
   OBJ_RELEASE(cmd_line);
-  mca_base_close();
-  ompi_finalize();
+  orte_finalize();
   return 0;
 }

@@ -14,7 +14,7 @@
  */
 /** @file:
  *
- * The Open MPI General Purpose Registry - pack functions
+ * The Open MPI General Purpose Registry - proxy component
  *
  */
 
@@ -24,26 +24,17 @@
 #include "orte_config.h"
 
 #include "include/orte_constants.h"
-#include "include/orte_types.h"
-#include "dps/dps.h"
+#include "dps/dps_types.h"
+#include "util/output.h"
+#include "util/proc_info.h"
 
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns_types.h"
+#include "mca/oob/oob_types.h"
+#include "mca/rml/rml.h"
 
-int orte_gpr_base_pack_get_startup_msg(orte_buffer_t *cmd,
-				      orte_jobid_t jobid)
+#include "gpr_proxy.h"
+
+int orte_gpr_proxy_preallocate_segment(char *name, int num_slots)
 {
-    orte_gpr_cmd_flag_t command;
-    int rc;
-
-    command = ORTE_GPR_GET_STARTUP_MSG_CMD;
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
-		return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &jobid, 1, ORTE_JOBID))) {
-		return rc;
-    }
-
-    return ORTE_SUCCESS;
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }

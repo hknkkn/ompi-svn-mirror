@@ -29,45 +29,6 @@
 
 #include "mca/gpr/base/base.h"
 
-int orte_gpr_base_pack_triggers_active_cmd(orte_buffer_t *cmd,
-				          orte_jobid_t jobid)
-{
-    orte_gpr_cmd_flag_t command;
-    int rc;
-
-    command = ORTE_GPR_TRIGGERS_ACTIVE_CMD;
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
-	   return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &jobid, 1, ORTE_JOBID))) {
-	   return rc;
-    }
-
-    return ORTE_SUCCESS;
-}
-
-int orte_gpr_base_pack_triggers_inactive_cmd(orte_buffer_t *cmd,
-					    orte_jobid_t jobid)
-{
-    orte_gpr_cmd_flag_t command;
-    int rc;
-
-    command = ORTE_GPR_TRIGGERS_INACTIVE_CMD;
-    
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
-	   return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &jobid, 1, ORTE_JOBID))) {
-	   return rc;
-    }
-
-    return ORTE_SUCCESS;
-
-}
-
 int orte_gpr_base_pack_notify_on(orte_buffer_t *cmd,
 				orte_process_name_t *proc,
 				orte_gpr_notify_id_t sub_number)

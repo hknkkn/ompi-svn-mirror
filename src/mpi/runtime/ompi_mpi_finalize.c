@@ -12,9 +12,12 @@
  * $HEADER$
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include "include/constants.h"
+#include "include/orte_constants.h"
+#include "include/orte_schema.h"
+
 #include "mpi.h"
 #include "event/event.h"
 #include "group/group.h"
@@ -47,13 +50,16 @@
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
 #include "mca/soh/soh.h"
+#include "mca/errmgr/errmgr.h"
+
 
 
 int ompi_mpi_finalize(void)
 {
     int ret;
-    int my_rank;
-    orte_jobid_t my_jobid;
+    orte_jobid_t jobid;
+    orte_gpr_value_t value;
+    orte_gpr_notify_id_t idtag;
 
     ompi_mpi_finalized = true;
 #if OMPI_HAVE_THREADS == 0
@@ -61,33 +67,50 @@ int ompi_mpi_finalize(void)
 #endif
 
     /* begin recording compound command */
-    if (OMPI_SUCCESS != (ret = orte_gpr.begin_compound_cmd())) {
+/*    if (OMPI_SUCCESS != (ret = orte_gpr.begin_compound_cmd())) {
         return ret;
     }
-
+*/
     /* Set process status to "terminating"*/
+    if (ORTE_SUCCESS != (ret = orte_soh.set_proc_soh(orte_process_info.my_name,
+                                ORTE_PROC_STATE_FINALIZING, 0))) {
+        ORTE_ERROR_LOG(ret);
+    }
 
     /* execute the compound command - no return data requested
      */
-    if (OMPI_SUCCESS != (ret = orte_gpr.exec_compound_cmd())) {
+/*    if (OMPI_SUCCESS != (ret = orte_gpr.exec_compound_cmd())) {
         return ret;
     }
-
-    /* wait for all processes to reach same state */
-	mca_oob_barrier();
- 
- 	/* need the following code to cleanup the job in the registry.
- 	 * once the state-of-health monitoring system is available, we will
- 	 * have that system perform this function. until then, we will have the
- 	 * rank 0 process do it.
- 	 */
- 	 if (0 == my_rank) {
-         if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&my_jobid, orte_process_info.my_name))) {
-            return ret;
-         }
- 	 	 orte_job_shutdown(my_jobid);
- 	 }
- 	 
+*/
+    /*
+     * Setup the subscription to notify us when all procs have reached this point
+     */
+    if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&jobid, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+    if (ORTE_SUCCESS != (ret = orte_schema.get_job_segment_name(&(value.segment), jobid))) {
+        ORTE_ERROR_LOG(ret);
+        OBJ_DESTRUCT(&value);
+        return ret;
+    }
+    
+    if (ORTE_SUCCESS != (ret = orte_gpr.subscribe(ORTE_GPR_TOKENS_OR, ORTE_GPR_NOTIFY_AT_LEVEL,
+                                    &value, 0, &idtag,
+                                    orte_all_procs_unregistered, NULL))) {
+        ORTE_ERROR_LOG(ret);
+        OBJ_DESTRUCT(&value);
+        return ret;
+    }
+    
+    if (ORTE_SUCCESS != (ret = orte_monitor_procs_unregistered())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    OBJ_DESTRUCT(&value);
+    
     /* Shut down any bindings-specific issues: C++, F77, F90 (may or
        may not be necessary...?) */
 
@@ -197,18 +220,6 @@ int ompi_mpi_finalize(void)
 	return ret;
     }
 
-    /* Close down the MCA */
-
-    if (OMPI_SUCCESS != (ret = mca_base_close())) {
-	return ret;
-    }
-      
-    /* Leave OMPI land */
-
-    if (OMPI_SUCCESS != (ret = ompi_finalize())) {
-	return ret;
-    }
-      
     /* All done */
 
     return MPI_SUCCESS;

@@ -23,6 +23,7 @@
 #include "util/proc_info.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/gpr.h"
+#include "mca/errmgr/errmgr.h"
 
 
 /*
@@ -68,11 +69,17 @@ int ompi_attr_create_predefined(void)
     
     OBJ_CONSTRUCT(&value, orte_gpr_value_t);
     value.segment = strdup(ORTE_NODE_SEGMENT);
-
+    if (NULL == value.segment) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
      ret = orte_gpr.subscribe(
          ORTE_GPR_TOKENS_OR,
-	     ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA,
+	     ORTE_GPR_NOTIFY_AT_LEVEL | ORTE_GPR_NOTIFY_ONE_SHOT,
          &value,
+         orte_process_info.num_procs,
          &rc,
          ompi_attr_create_predefined_callback,
          NULL);

@@ -72,11 +72,12 @@ signal_callback(int fd, short event, void *arg)
             new_jobid = ORTE_JOBID_MAX;
         }
     }
-
+#if 0
     tv.tv_sec = 3;
     tv.tv_usec = 0;
     ompi_evtimer_set(&exit_handler, exit_callback, NULL);
     ompi_evtimer_add(&exit_handler, &tv);
+#endif
 }
 
 /*

@@ -59,34 +59,39 @@ OMPI_COMP_EXPORT mca_gpr_base_component_t mca_gpr_replica_component = {
  * setup the function pointers for the module
  */
 static orte_gpr_base_module_t orte_gpr_replica_module = {
+    /* INIT */
     orte_gpr_replica_module_init,
+    /* BLOCKING OPERATIONS */
     orte_gpr_replica_get,
     orte_gpr_replica_put,
     orte_gpr_replica_delete_entries,
     orte_gpr_replica_delete_segment,
     orte_gpr_replica_index,
+    /* NON-BLOCKING OPERATIONS */
     orte_gpr_replica_get_nb,
     orte_gpr_replica_put_nb,
     orte_gpr_replica_delete_entries_nb,
     orte_gpr_replica_delete_segment_nb,
     orte_gpr_replica_index_nb,
+    /* GENERAL OPERATIONS */
     orte_gpr_replica_preallocate_segment,
-    orte_gpr_replica_get_startup_msg,
-    orte_gpr_base_decode_startup_msg,
+    orte_gpr_replica_deliver_notify_msg,
+    /* SUBSCRIBE OPERATIONS */
     orte_gpr_replica_subscribe,
     orte_gpr_replica_unsubscribe,
-    orte_gpr_replica_synchro,
-    orte_gpr_replica_cancel_synchro,
+    /* COMPOUND COMMANDS */
     orte_gpr_replica_begin_compound_cmd,
     orte_gpr_replica_stop_compound_cmd,
     orte_gpr_replica_exec_compound_cmd,
+    /* DUMP */
     orte_gpr_replica_dump,
+    /* MODE OPERATIONS */
     orte_gpr_replica_notify_on,
     orte_gpr_replica_notify_off,
-    orte_gpr_replica_triggers_active,
-    orte_gpr_replica_triggers_inactive,
+    /* CLEANUP OPERATIONS */
     orte_gpr_replica_cleanup_job,
     orte_gpr_replica_cleanup_proc,
+    /* TEST INTERFACE */
     orte_gpr_replica_test_internals
 };
 
@@ -122,7 +127,6 @@ static void orte_gpr_replica_segment_construct(orte_gpr_replica_segment_t* seg)
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
 
-    seg->triggers_active = false;
 }
 
 /* destructor - used to free any resources held by instance */
@@ -249,11 +253,9 @@ static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
 
-    trig->cmd = 0;
-    trig->flag.trig_action = 0;
+    trig->action = 0;
     trig->trigger = 0;
     trig->count = 0;
-    trig->above_below = 0;
 }
 
 /* destructor - used to free any resources held by instance */
@@ -261,13 +263,21 @@ static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* tri
 {
     int i;
     orte_gpr_replica_target_t **targets;
+    orte_gpr_replica_itagval_t **ivals;
     
     if (NULL != trig->requestor) {
         free(trig->requestor);
     }
 
     OBJ_DESTRUCT(&(trig->tokentags));
-    OBJ_DESTRUCT(&(trig->itagvals));
+    
+    if (NULL != trig->itagvals) {
+       ivals = (orte_gpr_replica_itagval_t**)((trig->itagvals)->addr);
+       for (i=0; i < (trig->itagvals)->size; i++) {
+            if (NULL != ivals[i]) OBJ_RELEASE(ivals[i]);
+       }
+       OBJ_RELEASE(trig->itagvals);
+    }
 
     if (NULL != trig->targets) {
        targets = (orte_gpr_replica_target_t**)((trig->targets)->addr);

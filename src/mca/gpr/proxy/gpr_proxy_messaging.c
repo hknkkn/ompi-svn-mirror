@@ -18,6 +18,8 @@
 
 #include "orte_config.h"
 
+#include "util/proc_info.h"
+
 #include "gpr_proxy.h"
 
 

@@ -162,36 +162,6 @@ int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
             
             
             	    
-            	case ORTE_GPR_SYNCHRO_CMD:  /*****     SYNCHRO     *****/
-            
-            	    if (orte_gpr_replica_globals.debug) {
-            		    ompi_output(0, "\tsynchro cmd");
-            	    }
-            
-            	    if (ORTE_SUCCESS != (ret =
-                        orte_gpr_replica_recv_synchro_cmd(sender, input_buffer, answer))) {
-                     ORTE_ERROR_LOG(ret);
-            		    goto RETURN_ERROR;
-            	    }
-            	    break;
-            
-            
-            	    
-            	case ORTE_GPR_CANCEL_SYNCHRO_CMD:  /*****     CANCEL SYNCHRO    *****/
-            
-            	    if (orte_gpr_replica_globals.debug) {
-            		    ompi_output(0, "\tcancel synchro cmd");
-            	    }
-                        
-            	    if (ORTE_SUCCESS != (ret =
-                        orte_gpr_replica_recv_cancel_synchro_cmd(input_buffer, answer))) {
-                     ORTE_ERROR_LOG(ret);
-            		    goto RETURN_ERROR;
-            	    }
-            	    break;
-            
-            
-            	    
             	case ORTE_GPR_DUMP_CMD:  /*****     DUMP     *****/
             
             	    if (orte_gpr_replica_globals.debug) {
@@ -200,21 +170,6 @@ int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
             
             	    if (ORTE_SUCCESS != (ret = orte_gpr_replica_recv_dump_cmd(answer))) {
                      ORTE_ERROR_LOG(ret);
-                     goto RETURN_ERROR;
-                 }
-            	    break;
-            
-            
-            	    
-            	case ORTE_GPR_GET_STARTUP_MSG_CMD:  /*****     GET STARTUP MSG    *****/
-            
-            	    if (orte_gpr_replica_globals.debug) {
-            		    ompi_output(0, "\tget startup msg cmd");
-            	    }
-            
-            	    if (ORTE_SUCCESS != (rc =
-                    orte_gpr_replica_recv_get_startup_msg_cmd(input_buffer, answer))) {
-                     ORTE_ERROR_LOG(rc);
                      goto RETURN_ERROR;
                  }
             	    break;
@@ -244,36 +199,6 @@ int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
             
                  if (ORTE_SUCCESS != (ret =
                         orte_gpr_replica_recv_notify_off_cmd(input_buffer, answer))) {
-                     ORTE_ERROR_LOG(ret);
-                     goto RETURN_ERROR;
-                 }
-            	    break;
-            
-            
-            	    
-            	case ORTE_GPR_TRIGGERS_ACTIVE_CMD:  /*****     TRIGGERS ACTIVE     *****/
-            
-            	    if (orte_gpr_replica_globals.debug) {
-            		    ompi_output(0, "\ttriggers active cmd");
-            	    }
-            
-            	    if (ORTE_SUCCESS != (ret =
-                        orte_gpr_replica_recv_triggers_active_cmd(input_buffer, answer))) {
-                     ORTE_ERROR_LOG(ret);
-                     goto RETURN_ERROR;
-                 }
-            	    break;
-            
-            
-            	    
-            	case ORTE_GPR_TRIGGERS_INACTIVE_CMD:  /*****     TRIGGERS INACTIVE     *****/
-            
-            	    if (orte_gpr_replica_globals.debug) {
-            		    ompi_output(0, "\ttriggers inactive cmd");
-            	    }
-            
-                 if (ORTE_SUCCESS != (ret =
-                        orte_gpr_replica_recv_triggers_inactive_cmd(input_buffer, answer))) {
                      ORTE_ERROR_LOG(ret);
                      goto RETURN_ERROR;
                  }

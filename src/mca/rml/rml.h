@@ -26,6 +26,7 @@
 #include "mca/mca.h"
 #include "dps/dps_types.h"
 #include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr_types.h"
 #include "mca/rml/rml_types.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)

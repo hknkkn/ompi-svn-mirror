@@ -135,23 +135,18 @@ OBJ_CLASS_INSTANCE(
 /* constructor - used to initialize notify message instance */
 static void orte_gpr_notify_message_construct(orte_gpr_notify_message_t* msg)
 {
-    msg->segment = NULL;
     msg->cnt = 0;
     msg->values = NULL;
-    msg->cmd = 0;
-    msg->flag.cmd_return = 0;
 }
 
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_notify_message_destructor(orte_gpr_notify_message_t* msg)
 {
-
-    if (NULL != msg->segment) {
-	   free(msg->segment);
-    }
-
+    int i;
+    
     if (0 < msg->cnt && NULL != msg->values) {
-	   free(msg->values);
+        for (i=0; i < msg->cnt; i++) OBJ_RELEASE(msg->values[i]);
+	    free(msg->values);
     }
     
 }
