@@ -34,7 +34,7 @@ static orte_rmgr_base_module_t* orte_rmgr_urm_init(
     bool *have_hidden_threads);
 
 
-orte_rmgr_urm_component_t orte_rmgr_urm_component = {
+orte_rmgr_urm_component_t mca_rmgr_urm_component = {
     {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */

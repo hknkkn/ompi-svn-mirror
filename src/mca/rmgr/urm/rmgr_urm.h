@@ -34,7 +34,7 @@ struct orte_rmgr_urm_component_t {
 };
 typedef struct orte_rmgr_urm_component_t orte_rmgr_urm_component_t;
 
-OMPI_COMP_EXPORT extern orte_rmgr_urm_component_t orte_rmgr_urm_component;
+OMPI_COMP_EXPORT extern orte_rmgr_urm_component_t mca_rmgr_urm_component;
 OMPI_COMP_EXPORT extern orte_rmgr_base_module_t orte_rmgr_urm_module;
 
 

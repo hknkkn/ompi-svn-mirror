@@ -218,12 +218,12 @@ void orte_iof_proxy_svc_recv(
     free(hdr);
                                                                                                               
     /* repost receive */
-    orte_iof_proxy_component.proxy_iov[0].iov_base = NULL;
-    orte_iof_proxy_component.proxy_iov[0].iov_len = 0;
+    mca_iof_proxy_component.proxy_iov[0].iov_base = NULL;
+    mca_iof_proxy_component.proxy_iov[0].iov_len = 0;
                                                                                                               
     rc = orte_rml.recv_nb(
         ORTE_RML_NAME_ANY,
-        orte_iof_proxy_component.proxy_iov,
+        mca_iof_proxy_component.proxy_iov,
         1,
         ORTE_RML_TAG_IOF_SVC,
         ORTE_RML_ALLOC,

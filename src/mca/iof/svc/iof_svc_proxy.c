@@ -81,12 +81,12 @@ void orte_iof_svc_proxy_recv(
 done:
     free(hdr);
 
-    orte_iof_svc_component.svc_iov[0].iov_base = NULL;
-    orte_iof_svc_component.svc_iov[0].iov_len = 0;
+    mca_iof_svc_component.svc_iov[0].iov_base = NULL;
+    mca_iof_svc_component.svc_iov[0].iov_len = 0;
 
     rc = orte_rml.recv_nb(
         ORTE_RML_NAME_ANY,
-        orte_iof_svc_component.svc_iov,
+        mca_iof_svc_component.svc_iov,
         1,
         ORTE_RML_TAG_IOF_SVC,
         ORTE_RML_ALLOC,
@@ -110,14 +110,14 @@ static void orte_iof_svc_proxy_msg(
     unsigned char* data)
 {
     ompi_list_item_t* item;
-    if(orte_iof_svc_component.svc_debug > 1) {
+    if(mca_iof_svc_component.svc_debug > 1) {
         ompi_output(0, "orte_iof_svc_proxy_msg");
     }
 
     /* dispatch based on subscription list */
-    OMPI_THREAD_LOCK(&orte_iof_svc_component.svc_lock);
-    for(item  = ompi_list_get_first(&orte_iof_svc_component.svc_subscribed);
-        item != ompi_list_get_end(&orte_iof_svc_component.svc_subscribed);
+    OMPI_THREAD_LOCK(&mca_iof_svc_component.svc_lock);
+    for(item  = ompi_list_get_first(&mca_iof_svc_component.svc_subscribed);
+        item != ompi_list_get_end(&mca_iof_svc_component.svc_subscribed);
         item =  ompi_list_get_next(item)) {
         orte_iof_svc_subscript_t* sub = (orte_iof_svc_subscript_t*)item;
 
@@ -130,7 +130,7 @@ static void orte_iof_svc_proxy_msg(
             orte_iof_svc_subscript_forward(sub,src,hdr,data);
         }
     }
-    OMPI_THREAD_UNLOCK(&orte_iof_svc_component.svc_lock);
+    OMPI_THREAD_UNLOCK(&mca_iof_svc_component.svc_lock);
 }
 
 /**
@@ -141,7 +141,7 @@ static void orte_iof_svc_proxy_ack(
     const orte_process_name_t* src,
     orte_iof_base_msg_header_t* hdr)
 {
-    if(orte_iof_svc_component.svc_debug > 1) {
+    if(mca_iof_svc_component.svc_debug > 1) {
         ompi_output(0, "orte_iof_svc_proxy_ack");
     }
 }
@@ -156,7 +156,7 @@ static void orte_iof_svc_proxy_pub(
     orte_iof_base_pub_header_t* hdr)
 {
     int rc;
-    if(orte_iof_svc_component.svc_debug > 1) {
+    if(mca_iof_svc_component.svc_debug > 1) {
         ompi_output(0, "orte_iof_svc_proxy_pub");
     }
 
@@ -179,7 +179,7 @@ static void orte_iof_svc_proxy_unpub(
     orte_iof_base_pub_header_t* hdr)
 {
     int rc;
-    if(orte_iof_svc_component.svc_debug > 1) {
+    if(mca_iof_svc_component.svc_debug > 1) {
         ompi_output(0, "orte_iof_svc_proxy_unpub");
     }
 
@@ -202,7 +202,7 @@ static void orte_iof_svc_proxy_sub(
     orte_iof_base_sub_header_t* hdr)
 {
     int rc;
-    if(orte_iof_svc_component.svc_debug > 1) {
+    if(mca_iof_svc_component.svc_debug > 1) {
         ompi_output(0, "orte_iof_svc_proxy_sub");
     }
 
@@ -227,7 +227,7 @@ static void orte_iof_svc_proxy_unsub(
     orte_iof_base_sub_header_t* hdr)
 {
     int rc;
-    if(orte_iof_svc_component.svc_debug > 1) {
+    if(mca_iof_svc_component.svc_debug > 1) {
         ompi_output(0, "orte_iof_svc_proxy_unsub");
     }
 

@@ -35,7 +35,7 @@ static orte_iof_base_module_t* orte_iof_proxy_init(
     bool *have_hidden_threads);
 
 
-orte_iof_proxy_component_t orte_iof_proxy_component = {
+orte_iof_proxy_component_t mca_iof_proxy_component = {
     {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */
@@ -61,7 +61,9 @@ orte_iof_proxy_component_t orte_iof_proxy_component = {
       },
 
       orte_iof_proxy_init
-    }
+    },
+    false,
+    {{NULL, 0}}
 };
 
 #if 0
@@ -92,7 +94,7 @@ static  int orte_iof_proxy_param_register_int(
   */
 static int orte_iof_proxy_open(void)
 {
-    orte_iof_proxy_component.proxy_debug = orte_iof_proxy_param_register_int("debug",1);
+    mca_iof_proxy_component.proxy_debug = orte_iof_proxy_param_register_int("debug",1);
     return OMPI_SUCCESS;
 }
 
@@ -109,12 +111,12 @@ orte_iof_proxy_init(int* priority, bool *allow_multi_user_threads, bool *have_hi
     *have_hidden_threads = false;
 
     /* post receive with oob */
-    orte_iof_proxy_component.proxy_iov[0].iov_base = NULL;
-    orte_iof_proxy_component.proxy_iov[0].iov_len = 0;
+    mca_iof_proxy_component.proxy_iov[0].iov_base = NULL;
+    mca_iof_proxy_component.proxy_iov[0].iov_len = 0;
 
     rc = orte_rml.recv_nb(
         ORTE_RML_NAME_ANY,
-        orte_iof_proxy_component.proxy_iov,
+        mca_iof_proxy_component.proxy_iov,
         1,
         ORTE_RML_TAG_IOF_SVC,
         ORTE_RML_ALLOC,

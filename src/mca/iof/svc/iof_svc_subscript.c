@@ -49,9 +49,9 @@ int orte_iof_svc_subscript_create(
     sub->dst_mask = dst_mask;
     sub->dst_tag = dst_tag;
     sub->sub_endpoint = orte_iof_base_endpoint_match(&sub->dst_name, sub->dst_mask, sub->dst_tag);
-    OMPI_THREAD_LOCK(&orte_iof_svc_component.svc_lock);
-    ompi_list_append(&orte_iof_svc_component.svc_subscribed, &sub->super);
-    OMPI_THREAD_UNLOCK(&orte_iof_svc_component.svc_lock);
+    OMPI_THREAD_LOCK(&mca_iof_svc_component.svc_lock);
+    ompi_list_append(&mca_iof_svc_component.svc_subscribed, &sub->super);
+    OMPI_THREAD_UNLOCK(&mca_iof_svc_component.svc_lock);
     return OMPI_SUCCESS;
 }
 
@@ -68,9 +68,9 @@ int orte_iof_svc_subscript_delete(
     orte_iof_base_tag_t dst_tag)
 {
     ompi_list_item_t *item;
-    OMPI_THREAD_LOCK(&orte_iof_svc_component.svc_lock);
-    item =  ompi_list_get_first(&orte_iof_svc_component.svc_subscribed);
-    while(item != ompi_list_get_end(&orte_iof_svc_component.svc_subscribed)) {
+    OMPI_THREAD_LOCK(&mca_iof_svc_component.svc_lock);
+    item =  ompi_list_get_first(&mca_iof_svc_component.svc_subscribed);
+    while(item != ompi_list_get_end(&mca_iof_svc_component.svc_subscribed)) {
         ompi_list_item_t* next =  ompi_list_get_next(item);
         orte_iof_svc_subscript_t* sub = (orte_iof_svc_subscript_t*)item;
         if (sub->src_mask == src_mask &&
@@ -79,12 +79,12 @@ int orte_iof_svc_subscript_delete(
             sub->dst_mask == dst_mask &&
             orte_ns.compare(sub->dst_mask,&sub->dst_name,dst_name) == 0 &&
             sub->dst_tag == dst_tag) {
-            ompi_list_remove_item(&orte_iof_svc_component.svc_subscribed, item);
+            ompi_list_remove_item(&mca_iof_svc_component.svc_subscribed, item);
             OBJ_RELEASE(item);
         }
         item = next;
     }
-    OMPI_THREAD_UNLOCK(&orte_iof_svc_component.svc_lock);
+    OMPI_THREAD_UNLOCK(&mca_iof_svc_component.svc_lock);
     return OMPI_SUCCESS;
 }
 
@@ -117,8 +117,8 @@ int orte_iof_svc_subscript_forward(
     const unsigned char* data)
 {
     ompi_list_item_t* item;
-    for(item  = ompi_list_get_first(&orte_iof_svc_component.svc_published);
-        item != ompi_list_get_end(&orte_iof_svc_component.svc_published);
+    for(item  = ompi_list_get_first(&mca_iof_svc_component.svc_published);
+        item != ompi_list_get_end(&mca_iof_svc_component.svc_published);
         item =  ompi_list_get_next(item)) {
         orte_iof_svc_publish_t* pub = (orte_iof_svc_publish_t*)item;
         int rc;

@@ -31,7 +31,7 @@ static orte_ras_base_module_t* orte_ras_lsf_bproc_init(
     bool *have_hidden_threads);
 
 
-orte_ras_lsf_bproc_component_t orte_ras_lsf_bproc_component = {
+orte_ras_lsf_bproc_component_t mca_ras_lsf_bproc_component = {
     {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */
@@ -93,7 +93,7 @@ static  int orte_ras_lsf_bproc_param_register_int(
   */
 static int orte_ras_lsf_bproc_open(void)
 {
-    orte_ras_lsf_bproc_component.debug = orte_ras_lsf_bproc_param_register_int("debug",1);
+    mca_ras_lsf_bproc_component.debug = orte_ras_lsf_bproc_param_register_int("debug",1);
     return ORTE_SUCCESS;
 }
 

@@ -41,7 +41,7 @@ int orte_iof_svc_publish_create(
     pub->pub_mask = pub_mask;
     pub->pub_tag = pub_tag;
     pub->pub_endpoint = orte_iof_base_endpoint_match(pub_name,pub_mask,pub_tag);
-    ompi_list_append(&orte_iof_svc_component.svc_published, &pub->super);
+    ompi_list_append(&mca_iof_svc_component.svc_published, &pub->super);
     return OMPI_SUCCESS;
 }
 

@@ -142,7 +142,7 @@ struct orte_iof_svc_component_t {
 };
 typedef struct orte_iof_svc_component_t orte_iof_svc_component_t;
 
-extern orte_iof_svc_component_t orte_iof_svc_component;
+extern orte_iof_svc_component_t mca_iof_svc_component;
 extern orte_iof_base_module_t orte_iof_svc_module;
 
 

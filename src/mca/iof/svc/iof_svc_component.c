@@ -34,7 +34,7 @@ static orte_iof_base_module_t* orte_iof_svc_init(
     bool *have_hidden_threads);
 
 
-orte_iof_svc_component_t orte_iof_svc_component = {
+orte_iof_svc_component_t mca_iof_svc_component = {
     {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */
@@ -91,10 +91,10 @@ static  int orte_iof_svc_param_register_int(
   */
 static int orte_iof_svc_open(void)
 {
-    orte_iof_svc_component.svc_debug = orte_iof_svc_param_register_int("debug", 1);
-    OBJ_CONSTRUCT(&orte_iof_svc_component.svc_subscribed, ompi_list_t);
-    OBJ_CONSTRUCT(&orte_iof_svc_component.svc_published, ompi_list_t);
-    OBJ_CONSTRUCT(&orte_iof_svc_component.svc_lock, ompi_mutex_t);
+    mca_iof_svc_component.svc_debug = orte_iof_svc_param_register_int("debug", 1);
+    OBJ_CONSTRUCT(&mca_iof_svc_component.svc_subscribed, ompi_list_t);
+    OBJ_CONSTRUCT(&mca_iof_svc_component.svc_published, ompi_list_t);
+    OBJ_CONSTRUCT(&mca_iof_svc_component.svc_lock, ompi_mutex_t);
     return OMPI_SUCCESS;
 }
 
@@ -102,14 +102,14 @@ static int orte_iof_svc_open(void)
 static int orte_iof_svc_close(void)
 {
     ompi_list_item_t* item;
-    OMPI_THREAD_LOCK(&orte_iof_svc_component.svc_lock);
-    while((item = ompi_list_remove_first(&orte_iof_svc_component.svc_subscribed)) != NULL) {
+    OMPI_THREAD_LOCK(&mca_iof_svc_component.svc_lock);
+    while((item = ompi_list_remove_first(&mca_iof_svc_component.svc_subscribed)) != NULL) {
         OBJ_RELEASE(item);
     }
-    while((item = ompi_list_remove_first(&orte_iof_svc_component.svc_published)) != NULL) {
+    while((item = ompi_list_remove_first(&mca_iof_svc_component.svc_published)) != NULL) {
         OBJ_RELEASE(item);
     }
-    OMPI_THREAD_UNLOCK(&orte_iof_svc_component.svc_lock);
+    OMPI_THREAD_UNLOCK(&mca_iof_svc_component.svc_lock);
     orte_rml.recv_cancel(ORTE_RML_NAME_ANY, ORTE_RML_TAG_IOF_SVC);
     return OMPI_SUCCESS;
 }
@@ -129,12 +129,12 @@ orte_iof_svc_init(int* priority, bool *allow_multi_user_threads, bool *have_hidd
     *have_hidden_threads = false;
 
     /* post non-blocking recv */
-    orte_iof_svc_component.svc_iov[0].iov_base = NULL;
-    orte_iof_svc_component.svc_iov[0].iov_len = 0;
+    mca_iof_svc_component.svc_iov[0].iov_base = NULL;
+    mca_iof_svc_component.svc_iov[0].iov_len = 0;
 
     rc = orte_rml.recv_nb(
         ORTE_RML_NAME_ANY,
-        orte_iof_svc_component.svc_iov,
+        mca_iof_svc_component.svc_iov,
         1,
         ORTE_RML_TAG_IOF_SVC,
         ORTE_RML_ALLOC,
