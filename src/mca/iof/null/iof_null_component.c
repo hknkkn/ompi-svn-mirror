@@ -84,7 +84,7 @@ static int orte_iof_null_open(void)
     mca_iof_null_component.null_debug = 
         orte_iof_null_param_register_int("debug", 1);
     mca_iof_null_component.null_debug = 
-        orte_iof_null_param_register_int("override", 1);
+        orte_iof_null_param_register_int("override", 0);
     return OMPI_SUCCESS;
 }
 
