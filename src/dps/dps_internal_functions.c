@@ -33,17 +33,12 @@
  */
 size_t orte_dps_memory_required(bool packed, void *src, orte_pack_type_t type)
 {
-    orte_byte_object_t *ptr;
     char *strptr;
     uint8_t *d8;
     
     switch(type) {
-        case ORTE_BYTE_OBJECT:
-            if (NULL == src) {
-                return 0;
-            }
-            ptr = (orte_byte_object_t *) src;
-            return ptr->size;
+        case ORTE_BYTE:
+            return 1;
             break;
             
         case ORTE_INT8:

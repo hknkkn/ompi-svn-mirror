@@ -26,7 +26,9 @@ bool orte_dps_debug;
 orte_dps_t orte_dps = {
     orte_dps_pack,
     orte_dps_unpack,
-    orte_dps_peek
+    orte_dps_peek,
+    orte_dps_unload,
+    orte_dps_load
 };
 
 /**
@@ -45,6 +47,7 @@ static void orte_buffer_destruct (orte_buffer_t* buffer)
         if (NULL != buffer->base_ptr) free (buffer->base_ptr);
     }
 }
+
 OBJ_CLASS_INSTANCE(orte_buffer_t,
                    ompi_object_t,
                    orte_buffer_construct,

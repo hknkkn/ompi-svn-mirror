@@ -42,13 +42,15 @@ typedef enum {
     /* all the integer flavors */
     ORTE_INT,               /**< generic integer */
     ORTE_INT8,              /**< an 8-bit integer */
-    ORTE_INT16,             /**< a 16 bit integer */
-    ORTE_INT32,             /**< a 32 bit integer */
+    ORTE_INT16,             /**< a 16-bit integer */
+    ORTE_INT32,             /**< a 32-bit integer */
+    ORTE_INT64,             /**< a 64-bit integer */
     /* all the unsigned integer flavors */
     ORTE_UINT,              /**< generic unsigned integer */
-    ORTE_UINT8,             /**< an 8-bit integer */
-    ORTE_UINT16,            /**< a 16 bit integer */
-    ORTE_UINT32,            /**< a 32 bit integer */
+    ORTE_UINT8,             /**< an 8-bit unsigned integer */
+    ORTE_UINT16,            /**< a 16-bit unsigned integer */
+    ORTE_UINT32,            /**< a 32-bit unsigned integer */
+    ORTE_UINT64,            /**< a 64-bit unsigned integer */
     /* all the floating point flavors */
     ORTE_FLOAT,             /**< single-precision float */
     ORTE_FLOAT4,            /**< 4-byte float - usually equiv to single */

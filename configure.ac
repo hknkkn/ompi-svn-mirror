@@ -641,6 +641,8 @@ AC_DEFINE_UNQUOTED(OMPI_HAVE_UNDERSCORE_VA_COPY, $OMPI_HAVE_UNDERSCORE_VA_COPY,
 
 AC_CHECK_DECLS(__func__)
 
+AC_CHECK_LIB([m], [ceil])
+
 
 ##################################
 # System-specific tests

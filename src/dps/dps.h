@@ -189,6 +189,75 @@ typedef int (*orte_dps_peek_next_item_fn_t)(orte_buffer_t *buffer,
                                             orte_pack_type_t *type,
                                             size_t *number);
 
+/*
+ * Unload the data payload from a buffer
+ * The unload function provides the caller with a pointer to the data payload within
+ * the buffer and the size of that payload. This allows the user to directly access
+ * the payload - typically used in the RML to unload the payload from the buffer
+ * for transmission.
+ * 
+ * @note This is a destructive operation. While the payload is undisturbed, the function
+ * will clear the buffer's pointers to the payload. Thus, the buffer and the payload
+ * are completely separated, leaving the caller free to OBJ_RELEASE the buffer.
+ * 
+ * @param buffer A pointer to the buffer whose payload is to be unloaded.
+ * @param payload The address to a void* pointer that is to be loaded with the address
+ * of the data payload in the buffer.
+ * @param size The size (in bytes) of the data payload in the buffer.
+ * 
+ * @retval ORTE_SUCCESS The request was succesfully completed.
+ * @retval ORTE_ERROR(s) An appropriate error code indicating the problem will be
+ * returned. This should be handled appropriately by the caller.
+ *
+ * @code
+ * orte_buffer_t *buffer;
+ * uint8_t *bytes;
+ * size_t size;
+ * 
+ * status_code = orte_dps.unload(buffer, (void**)(&bytes), &size);
+ * OBJ_RELEASE(buffer);
+ * @endcode
+ */
+typedef int (*orte_dps_unload_fn_t)(orte_buffer_t *buffer,
+                                    void **payload,
+                                    size_t *size);
+
+/*
+ * Load a data payload into a buffer
+ * The load function allows the caller to replace the payload in a buffer with one
+ * provided by the caller. If a payload already exists in the buffer, the function will
+ * "free" the existing data to release it, and then replace the data payload with the
+ * one provided by the caller.
+ * 
+ * @note The buffer must be allocated in advance via the OBJ_NEW function call - failing
+ * to do so will cause the load function to return an error code.
+ * 
+ * @note The caller is responsible for pre-packing the provided payload - the load
+ * function cannot convert to network byte order any data contained in the provided
+ * payload.
+ * 
+ * @param buffer A pointer to the buffer into which lthe payload is to be loaded.
+ * @param payload A void* pointer to the payload to be loaded into the buffer.
+ * @param size The size (in bytes) of the provided payload.
+ * 
+ * @retval ORTE_SUCCESS The request was successfully completed
+ * @retval ORTE_ERROR(s) An appropriate error code indicating the problem will be
+ * returned. This should be handled appropriately by the caller.
+ *
+ * @code
+ * orte_buffer_t *buffer;
+ * uint8_t bytes;
+ * size_t size;
+ * 
+ * buffer = OBJ_NEW(orte_buffer_t);
+ * status_code = orte_dps.load(buffer, (void*)(&bytes), size);
+ * @endcode
+ */
+typedef int (*orte_dps_load_fn_t)(orte_buffer_t *buffer,
+                                  void *payload,
+                                  size_t size);
+
+
 /**
  * Base structure for the DPS
  *
@@ -199,6 +268,8 @@ struct orte_dps_t {
     orte_dps_pack_fn_t pack;
     orte_dps_unpack_fn_t unpack;
     orte_dps_peek_next_item_fn_t peek;
+    orte_dps_unload_fn_t unload;
+    orte_dps_load_fn_t load;
 };
 typedef struct orte_dps_t orte_dps_t;
 

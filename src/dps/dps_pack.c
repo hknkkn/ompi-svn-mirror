@@ -99,18 +99,18 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
         default:
             return ORTE_ERROR;
     }
-    
+
+    /* store the number of values as uint32_t */
+    d32 = (uint32_t *) dest;
+    *d32 = htonl((uint32_t)num_vals);
+    d32 += 4;
+    dest = (void *) d32;
+   
     /* pack the data */
     switch(type) {
         case ORTE_BYTE:
-            byte_ptr = (uint8_t *) src;
-            /* first store size - uint32_t */
-            d32 = (uint32_t *) dest;
-            *d32 = htonl(num_vals);
-            d32 += 4;
-            dest = (void *) d32;
-            /* now store bytes */
-            memcpy(dest, byte_ptr, num_vals);
+            s8 = (uint8_t *) src;
+            memcpy(dest, s8, num_vals);
             dest = (void *)((char *)dest + num_vals);
             break;
             
@@ -138,13 +138,19 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
             break;
 
         case ORTE_PROCESS_STATUS:
-            proc_status_dest = (orte_process_status_t *) dest;
             proc_status_src = (orte_process_status_t *) src;
-            proc_status_dest->rank = htonl(proc_status_src->rank);
-            proc_status_dest->local_pid = htonl(proc_status_src->local_pid);
-            tst = strlen(proc_status_dest->nodename);
-            
-            dest = (void *)((char *)dest + tst);  /* need to fix this */
+            proc_status_dest = (orte_process_status_t *) dest;
+            tst = sizeof(orte_process_status_t);
+            if (1 == tst) {  /* single byte field */
+                *proc_status_dest = *proc_status_src;
+            } else if (2 == tst) {  /* two byte field */
+                *proc_status_dest = htons(*proc_status_src);
+            } else if (4 == tst) { /* four byte field */
+                *proc_status_dest = htonl(*proc_status_src);
+            } else {  /* no idea what this is */
+                return ORTE_ERROR;
+            }
+            dest = (void *)((char *)dest + tst);
             break;
 
         case ORTE_EXIT_CODE:
@@ -152,11 +158,11 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
             exit_code_dest = (orte_exit_code_t *) dest;
             tst = sizeof(orte_exit_code_t);
             if (1 == tst) {  /* single byte field */
-                *node_state_dest = *node_state_src;
+                *exit_code_dest = *exit_code_src;
             } else if (2 == tst) {  /* two byte field */
-                *node_state_dest = htons(*node_state_src);
+                *exit_code_dest = htons(*exit_code_src);
             } else if (4 == tst) { /* four byte field */
-                *node_state_dest = htonl(*node_state_src);
+                *exit_code_dest = htonl(*exit_code_src);
             } else {  /* no idea what this is */
                 return ORTE_ERROR;
             }

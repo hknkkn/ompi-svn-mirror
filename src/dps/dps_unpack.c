@@ -37,7 +37,8 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
                     size_t max_num_vals,
                     orte_pack_type_t type)
 {
-    size_t pack_type_size, mem_req;
+    orte_pack_type_t stored_type;
+    size_t pack_type_size, mem_req, num_vals;
     int32_t mem_left, tst;
     void *src;
     size_t op_size=0;
@@ -47,7 +48,6 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
     uint32_t * d32;
     uint16_t * s16;
     uint32_t * s32;
-    orte_byte_object_t *sbyte, *dbyte;
     orte_node_state_t *node_state_src, *node_state_dest;
     orte_process_status_t *proc_status_src, *proc_status_dest;
     orte_exit_code_t *exit_code_src, *exit_code_dest;
@@ -73,19 +73,19 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
     switch(pack_type_size) {
         case 1:
             s8 = (uint8_t *) src;
-            *type = (orte_pack_type_t)*s8;
+            stored_type = (orte_pack_type_t)*s8;
             s8++;
             src = (void *) s8;
             break;
         case 2:
             s16 = (uint16_t *) src;
-            *type = (orte_pack_type_t)ntohs(*s16);
+            stored_type = (orte_pack_type_t)ntohs(*s16);
             s16 += 2;
             src = (void *) s16;
             break;
         case 4:
             s32 = (uint32_t *) src;
-            *type = (orte_pack_type_t)ntohl(*s32);
+            stored_type = (orte_pack_type_t)ntohl(*s32);
             s32 += 4;
             src = (void *) s32;
             break;
@@ -93,11 +93,16 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
             return ORTE_ERR_UNPACK_FAILURE;
     }
     
+    /* check for type match */
+    if (stored_type != type) {
+        return ORTE_PACK_MISMATCH;
+    }
+    
     /* account for the memory used */
     mem_left = mem_left - pack_type_size;
 
     /* calculate required data size */
-    if (0 == (mem_req = orte_dps_memory_required(true, src, *type))) {
+    if (0 == (mem_req = orte_dps_memory_required(true, src, type))) {
         return ORTE_ERR_UNPACK_FAILURE;
     }
     /* got enough left for data? */
@@ -108,20 +113,20 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
 
     /* ok, got enough memory, so we can now unpack it. */
 
-    switch(*type) {
-        case ORTE_BYTE_OBJECT:
-            sbyte = (orte_byte_object_t *) src;
-            dbyte = OBJ_NEW(orte_byte_object_t);
-            if (NULL == dbyte) {
-                return ORTE_ERR_OUT_OF_RESOURCE;
-            }
-            dbyte->size = ntohl(sbyte->size);
-            dbyte->bytes = (uint8_t*)malloc(sbyte->size);
-            if (NULL == dbyte->bytes) {
-                return ORTE_ERR_OUT_OF_RESOURCE;
-            }
-            memcpy(dbyte->bytes, sbyte->bytes, sbyte->size);
-            dest = (void *)dbyte;
+    /* unpack the number of values */
+    s32 = (uint32_t *) src;
+    num_vals = (size_t)ntohl(*s32);
+    if (num_vals > max_num_vals) {  /* not enough space provided */
+        return ORTE_UNPACK_INADEQUATE_SPACE;
+    }
+    src = (void *)((char *)src + 4);
+
+    switch(type) {
+        case ORTE_BYTE:
+            s8 = (uint8_t *) src;
+            d8 = (uint8_t *) dest;
+            memcpy(d8, s8, num_vals);
+            dest = (void *)d8;
             break;
             
         case ORTE_INT8:
@@ -160,16 +165,16 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
                 return ORTE_ERR_OUT_OF_RESOURCE;
             }
             proc_status_src = (orte_process_status_t *) src;
-//            if (1 == tst) {  /* single byte field */
-//                *proc_status_dest = *proc_status_src;
-//            } else if (2 == tst) {  /* two byte field */
-//                *proc_status_dest = ntohs(*proc_status_src);
-//            } else if (4 == tst) { /* four byte field */
-//                *proc_status_dest = ntohl(*proc_status_src);
-//            } else {  /* no idea what this is */
-//                return ORTE_ERROR;
-//            }
-            dest = (void *) proc_status_dest;
+            if (1 == tst) {  /* single byte field */
+                *proc_status_dest = *proc_status_src;
+            } else if (2 == tst) {  /* two byte field */
+                *proc_status_dest = ntohs(*proc_status_src);
+            } else if (4 == tst) { /* four byte field */
+                *proc_status_dest = ntohl(*proc_status_src);
+            } else {  /* no idea what this is */
+                return ORTE_ERR_UNPACK_FAILURE;
+            }
+            dest = (void*) proc_status_dest;
             break;
 
         case ORTE_EXIT_CODE:

@@ -29,6 +29,7 @@ libdps_la_SOURCES = \
     dps_pack.c \
     dps_unpack.c \
     dps_peek.c \
+    dps_load_unload.c \
     dps_internal_functions.c
 
 # Conditionally install the header files

@@ -51,7 +51,13 @@ int orte_dps_peek(orte_buffer_t *buffer,
                   orte_pack_type_t *type,
                   size_t *number);
 
+int orte_dps_unload(orte_buffer_t *buffer,
+                    void **payload,
+                    size_t *size);
 
+int orte_dps_load(orte_buffer_t *buffer,
+                  void *payload,
+                  size_t size);
 
 /*
  * Totally internal functions
