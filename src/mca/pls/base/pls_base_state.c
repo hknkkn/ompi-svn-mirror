@@ -211,6 +211,7 @@ int orte_pls_base_set_node_pid(orte_cellid_t cellid, char* node_name, orte_jobid
     kv_pid.value.ui32 = pid;
     keyvals[0] = &kv_pid;
     
+    value.segment = ORTE_NODE_SEGMENT;
     value.keyvals = keyvals;
     value.cnt = 1;
     values[0] = &value;
@@ -218,11 +219,64 @@ int orte_pls_base_set_node_pid(orte_cellid_t cellid, char* node_name, orte_jobid
     rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, values);
 
 cleanup:
-    free(value.segment);
     free(kv_pid.key);
     for(i=0; i<value.num_tokens; i++)
         free(value.tokens[i]);
     free(value.tokens);
+    return rc;
+}
+
+
+/**
+ *  Retreive all daemon pids for the specified job.
+ */
+int orte_pls_base_get_node_pids(orte_jobid_t jobid, pid_t **pids, size_t* num_pids)
+{
+    char *keys[2];
+    orte_gpr_value_t** values = NULL;
+    int i, num_values = 0;
+    int rc;
+    char *jobid_string;
+
+    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_string, jobid)))
+        goto cleanup;
+
+    asprintf(&keys[0], "%s-%s", ORTE_PROC_PID_KEY, jobid_string);
+    free(jobid_string);
+    keys[1] = NULL;
+
+    rc = orte_gpr.get(
+        ORTE_GPR_KEYS_OR|ORTE_GPR_TOKENS_OR,
+        ORTE_NODE_SEGMENT,
+        NULL,
+        keys,
+        &num_values,
+        &values
+        );
+    if(rc != ORTE_SUCCESS) {
+        free(keys[0]);
+        return rc;
+    }
+
+    if(0 == num_values) {
+        rc = ORTE_ERR_NOT_FOUND;
+        ORTE_ERROR_LOG(rc);
+        goto cleanup;
+    }
+
+    *pids = (pid_t*)malloc(sizeof(pid_t)*num_values);
+    for(i=0; i<num_values; i++) {
+        (*pids)[i] = values[i]->keyvals[0]->value.ui32;
+    }
+    *num_pids = num_values;
+
+cleanup:
+    if(NULL != values) {
+        for(i=0; i<num_values; i++)
+            OBJ_RELEASE(values[i]);
+        free(values);
+    }
+    free(keys[0]);
     return rc;
 }
 

@@ -655,7 +655,17 @@ int orte_pls_bproc_seed_terminate_job(orte_jobid_t jobid)
     size_t i, num_pids;
     int rc;
 
+    /* kill application process */
     if(ORTE_SUCCESS != (rc = orte_pls_base_get_proc_pids(jobid, &pids, &num_pids)))
+        return rc;
+    for(i=0; i<num_pids; i++) {
+        kill(pids[i], mca_pls_bproc_seed_component.terminate_sig);
+    }
+    if(NULL != pids)
+        free(pids);
+
+    /* kill daemons */
+    if(ORTE_SUCCESS != (rc = orte_pls_base_get_node_pids(jobid, &pids, &num_pids)))
         return rc;
     for(i=0; i<num_pids; i++) {
         kill(pids[i], mca_pls_bproc_seed_component.terminate_sig);
@@ -684,6 +694,7 @@ int orte_pls_bproc_seed_terminate_proc(const orte_process_name_t* proc_name)
             case EPERM:
                 return ORTE_ERR_PERM;
             default:
+                return ORTE_ERROR;
         }
     }
     return ORTE_SUCCESS;
