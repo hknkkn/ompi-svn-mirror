@@ -45,6 +45,8 @@
 #include "pls_fork.h"
 
 
+extern char **environ;
+
 static int orte_pls_fork_launch_threaded(orte_jobid_t);
 
 
