@@ -41,9 +41,6 @@ int orte_gpr_replica_triggers_inactive_fn(orte_jobid_t jobid);
 /*
  * Delete-index functions
  */
-int orte_gpr_replica_delete_segment_nb_fn(char *segment,
-                                orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
-
 int orte_gpr_replica_delete_entries_fn(orte_gpr_addr_mode_t mode,
                 char *segment, char **tokens, char **keys);
 

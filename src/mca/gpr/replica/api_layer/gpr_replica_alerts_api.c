@@ -25,8 +25,7 @@
 
 #include "mca/ns/ns.h"
 
-#include "gpr_replica.h"
-#include "gpr_replica_internals.h"
+#include "gpr_replica_api.h"
 
 
 void mca_gpr_replica_process_callbacks(void)

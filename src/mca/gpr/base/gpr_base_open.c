@@ -45,12 +45,16 @@ static void orte_gpr_keyval_construct(orte_gpr_keyval_t* keyval)
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_keyval_destructor(orte_gpr_keyval_t* keyval)
 {
+    orte_byte_object_t *byteptr;
+    
     if (NULL != keyval->key) {
         free(keyval->key);
     }
-    if (ORTE_BYTE_OBJECT == keyval->type && NULL != keyval->value.byteobject) {
-        free((keyval->value.byteobject)->bytes);
-        free(keyval->value.byteobject);
+    if (ORTE_BYTE_OBJECT == keyval->type) {
+        byteptr = &(keyval->value.byteobject);
+        if (NULL != byteptr->bytes) {
+            free(byteptr->bytes);
+        }
     }
 }
 
@@ -75,16 +79,10 @@ static void orte_gpr_value_construct(orte_gpr_value_t* reg_val)
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_value_destructor(orte_gpr_value_t* reg_val)
 {
-    orte_gpr_keyval_t **keyvals;
     char **tokens;
     uint32_t i;
     
     if (0 < reg_val->cnt && NULL != reg_val->keyvals) {
-        keyvals = reg_val->keyvals;
-        for (i=0; i < reg_val->cnt; i++) {
-            free(*keyvals);
-            keyvals++;
-        }
 	   free(reg_val->keyvals);
     }
     
@@ -145,20 +143,13 @@ static void orte_gpr_notify_message_construct(orte_gpr_notify_message_t* msg)
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_notify_message_destructor(orte_gpr_notify_message_t* msg)
 {
-    uint32_t i;
-    orte_gpr_value_t **ptr;
 
     if (NULL != msg->segment) {
 	   free(msg->segment);
     }
 
     if (0 < msg->cnt && NULL != msg->values) {
-        ptr = msg->values;
-        for (i=0; i < msg->cnt; i++) {
-            OBJ_RELEASE(*ptr);
-            ptr++;
-        }
-	   free(ptr);
+	   free(msg->values);
     }
     
 }
