@@ -21,7 +21,7 @@
 #include "include/orte_constants.h"
 #include "threads/mutex.h"
 #include "class/ompi_list.h"
-#include "util/bufpack.h"
+#include "dps/dps.h"
 #include "mca/oob/oob_types.h"
 #include "mca/ns/base/base.h"
 
@@ -80,7 +80,7 @@ int orte_ns_replica_finalize(void);
  */
 
 void orte_ns_replica_recv(int status, orte_process_name_t* sender,
-                          ompi_buffer_t buffer, int tag, void* cbdata);
+                          orte_buffer_t* buffer, orte_rml_tag_t tag, void* cbdata);
 
 /*
  * Implementation of create_cellid().

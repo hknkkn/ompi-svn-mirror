@@ -36,9 +36,7 @@
 
 #include "mca/mca.h"
 #include "mca/base/mca_base_param.h"
-
-#include "mca/oob/base/base.h"
-
+#include "mca/rml/rml.h"
 #include "ns_replica.h"
 
 
@@ -178,7 +176,7 @@ mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool 
     /* If we are to host a replica, then we want to be selected, so do all the
        setup and return the module */
 
-    if (NULL == ompi_process_info.ns_replica) {
+    if (NULL == orte_process_info.ns_replica) {
 
       int rc;
       orte_ns_replica_next_cellid = 0;
@@ -205,15 +203,15 @@ mca_ns_base_module_t* orte_ns_replica_init(bool *allow_multi_user_threads, bool 
       OBJ_CONSTRUCT(&orte_ns_replica_taglist, ompi_list_t);
       orte_ns_replica_next_rml_tag = ORTE_OOB_TAG_START_LIST;
 
-    /* setup the thread lock */
-    OBJ_CONSTRUCT(&orte_ns_replica_mutex, ompi_mutex_t);
+      /* setup the thread lock */
+      OBJ_CONSTRUCT(&orte_ns_replica_mutex, ompi_mutex_t);
     
      /* Return the module */
 
       initialized = true;
 
       /* issue non-blocking receive for call_back function */
-      rc = mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS, 0, orte_ns_replica_recv, NULL);
+      rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_NS, 0, orte_ns_replica_recv, NULL);
       if(rc != OMPI_SUCCESS && rc != OMPI_ERR_NOT_IMPLEMENTED) {
           ompi_output(0, "orte_ns_replica_init: unable to post non-blocking recv\n");
           return NULL;
@@ -249,9 +247,8 @@ int orte_ns_replica_finalize(void)
         initialized = false;
     }
 
-  /* All done */
-
-    mca_oob_recv_cancel(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS);
+    /* All done */
+    orte_rml.recv_cancel(ORTE_RML_NAME_ANY, ORTE_RML_TAG_NS);
     return ORTE_SUCCESS;
 }
 
@@ -261,30 +258,32 @@ int orte_ns_replica_finalize(void)
  */
 
 void orte_ns_replica_recv(int status, orte_process_name_t* sender,
-			             ompi_buffer_t buffer, int tag,
+			             orte_buffer_t* buffer, orte_rml_tag_t tag,
 			             void* cbdata)
 {
-    ompi_buffer_t answer, error_answer;
+    orte_buffer_t* answer = NULL, error_answer;
     orte_ns_cmd_flag_t command;
     orte_cellid_t cell;
     orte_jobid_t job;
     orte_vpid_t startvpid, range;
     char *tagname;
     orte_rml_tag_t oob_tag;
+    size_t count;
     int32_t return_code=ORTE_SUCCESS;
 
-    if (ORTE_SUCCESS != ompi_unpack(buffer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD)) {
+    count = 1;
+    if (ORTE_SUCCESS != orte_dps.unpack(buffer, (void*)&command, &count, ORTE_NS_OOB_PACK_CMD)) {
        return_code = ORTE_ERR_BAD_PARAM;
 	   goto RETURN_ERROR;
     }
 
-    if (OMPI_SUCCESS != ompi_buffer_init(&answer, 0)) {
+    if ((answer = OBJ_NEW(orte_buffer_t)) != NULL) {
         return_code = ORTE_ERR_OUT_OF_RESOURCE;
         goto RETURN_ERROR;
     }
 
     if (ORTE_NS_CREATE_CELLID_CMD == command) {   /* got a command to create a cellid */
-	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
 	       goto RETURN_ERROR;
 	   }
      
@@ -292,15 +291,15 @@ void orte_ns_replica_recv(int status, orte_process_name_t* sender,
             goto RETURN_ERROR;
        }
        
-	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&cell, 1, ORTE_NS_OOB_PACK_CELLID))) {
+	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&cell, 1, ORTE_NS_OOB_PACK_CELLID))) {
 	       goto RETURN_ERROR;
 	   }
-	   if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+	   if (0 > orte_rml.send_buffer(sender, answer, tag, 0)) {
 	    /* RHC -- not sure what to do if the return send fails */
 	   }
      
     } else if (ORTE_NS_CREATE_JOBID_CMD == command) {   /* got command to create jobid */
-	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
 	       goto RETURN_ERROR;
 	   }
      
@@ -308,20 +307,22 @@ void orte_ns_replica_recv(int status, orte_process_name_t* sender,
             goto RETURN_ERROR;
        }
        
-	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&job, 1, ORTE_NS_OOB_PACK_JOBID))) {
+	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&job, 1, ORTE_NS_OOB_PACK_JOBID))) {
 	       goto RETURN_ERROR;
 	   }
      
-	   if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+	   if (0 > orte_rml.send_buffer(sender, answer, tag, 0)) {
 	       /* RHC -- not sure what to do if the return send fails */
 	   }
      
     } else if (ORTE_NS_RESERVE_RANGE_CMD == command) {  /* got command to reserve vpid range */
-	   if (OMPI_SUCCESS != (return_code = ompi_unpack(buffer, (void*)&job, 1, ORTE_NS_OOB_PACK_JOBID))) {
+       count = 1;
+	   if (OMPI_SUCCESS != (return_code = orte_dps.unpack(buffer, (void*)&job, &count, ORTE_NS_OOB_PACK_JOBID))) {
 	       goto RETURN_ERROR;
 	   }
-
-	   if (OMPI_SUCCESS != (return_code = ompi_unpack(buffer, (void*)&range, 1, ORTE_NS_OOB_PACK_VPID))) {
+ 
+       count = 1;
+	   if (OMPI_SUCCESS != (return_code = orte_dps.unpack(buffer, (void*)&range, &count, ORTE_NS_OOB_PACK_VPID))) {
 	       goto RETURN_ERROR;
 	   }
 
@@ -329,21 +330,22 @@ void orte_ns_replica_recv(int status, orte_process_name_t* sender,
             goto RETURN_ERROR;
        }
        
-	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
 	       goto RETURN_ERROR;
 	   }
 
-	   if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&startvpid, 1, ORTE_NS_OOB_PACK_VPID))) {
+	   if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&startvpid, 1, ORTE_NS_OOB_PACK_VPID))) {
 	       goto RETURN_ERROR;
 	   }
      
-	   if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+	   if (0 > orte_rml.send_buffer(sender, answer, tag, 0)) {
 	       /* RHC -- not sure what to do if the return send fails */
 	   }
 
         
     } else if (ORTE_NS_ASSIGN_OOB_TAG_CMD == command) {  /* got command to assign an OOB tag */
-       if (0 > ompi_unpack_string(buffer, &tagname)) {
+       count = 1;
+       if (0 > orte_dps.unpack(buffer, &tagname, &count, ORTE_STRING)) {
          return_code = ORTE_ERR_UNPACK_FAILURE;
          goto RETURN_ERROR;
       }
@@ -358,29 +360,32 @@ void orte_ns_replica_recv(int status, orte_process_name_t* sender,
             }
        }
        
-      if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
+      if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD))) {
          goto RETURN_ERROR;
       }
 
-      if (OMPI_SUCCESS != (return_code = ompi_pack(answer, (void*)&oob_tag, 1, ORTE_NS_OOB_PACK_OOB_TAG))) {
+      if (OMPI_SUCCESS != (return_code = orte_dps.pack(answer, (void*)&oob_tag, 1, ORTE_NS_OOB_PACK_OOB_TAG))) {
           goto RETURN_ERROR;
       }
      
-      if (0 > mca_oob_send_packed(sender, answer, tag, 0)) {
+      if (0 > orte_rml.send_buffer(sender, answer, tag, 0)) {
          /* RHC -- not sure what to do if the return send fails */
       }
 
         
     } else {  /* got an unrecognized command */
     RETURN_ERROR:
-        ompi_buffer_free(answer);
-	    ompi_buffer_init(&error_answer, 0);
-	    ompi_pack(error_answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD);
-        ompi_pack(error_answer, (void*)&return_code, 1, ORTE_INT32);
-	    mca_oob_send_packed(sender, error_answer, tag, 0);
+	    OBJ_CONSTRUCT(&error_answer, orte_buffer_t);
+	    orte_dps.pack(&error_answer, (void*)&command, 1, ORTE_NS_OOB_PACK_CMD);
+        orte_dps.pack(&error_answer, (void*)&return_code, 1, ORTE_INT32);
+	    orte_rml.send_buffer(sender, &error_answer, tag, 0);
+        OBJ_DESTRUCT(&error_answer);
     }
-
     /* reissue the non-blocking receive */
-    mca_oob_recv_packed_nb(MCA_OOB_NAME_ANY, MCA_OOB_TAG_NS, 0, orte_ns_replica_recv, NULL);
+    orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_NS, 0, orte_ns_replica_recv, NULL);
+
+    /* cleanup */
+    if(answer != NULL)
+        OBJ_RELEASE(answer);
 }
 
