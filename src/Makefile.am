@@ -79,6 +79,7 @@ SUBDIRS = \
         mca \
         mpi \
         op \
+        plsnds \
         proc \
         request \
         runtime \
@@ -132,6 +133,7 @@ libmpi_la_LIBADD = \
         $(f90_lib) $(cxx_lib) \
         mpi/runtime/libmpiruntime.la \
         op/libop.la \
+        plsnds/libplsnds.la \
         proc/libproc.la \
         request/librequest.la \
         runtime/libruntime.la \

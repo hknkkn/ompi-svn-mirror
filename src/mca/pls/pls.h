@@ -50,6 +50,22 @@
  * the mapper placed on the registry - it is irrelevant to that launcher's operation
  * (although a warning to the user, in this case, might be appropriate).
  * 
+ * The PLS is tightly coupled to the PLSNDS - the PLS name discovery service - that
+ * each process uses to "discover" its official name. Each PLS MUST:
+ * 
+ * - set the environmental parameter OMPI_MCA_PLS_LAUNCHER to indicate the launcher
+ * used to spawn the process. 
+ * 
+ * - have a corresponding entry in the orte_plsnds table (defined in
+ * src/plsnds/plsnds_open_close.c) that identifies the launcher and its associated
+ * function for obtaining the process name
+ * 
+ * - where necessary, provide a function in the orte_plsnds directory that can
+ * define the process name from whatever info that corresponding launcher provided
+ * 
+ * More information on the requirements for the PLSNDS can be found in the header
+ * file src/plsnds/plsnds.h.
+ * 
  * Unless otherwise directed by
  * the user and/or the system configuration, the PLS will utilize a
  * daemon-based launch to maximize the availability of ORTE services. To accomplish
@@ -68,6 +84,11 @@
  * 
  * As part of the launch procedure, PLS components must provide the following
  * capabilities:
+ * 
+ * - set the OMPI_MCA_PLS_LAUNCHER environmental parameter indicating which launcher
+ * was used. This information
+ * is subsequently used by the name discovery service to determine a process' official
+ * name, as described above.
  * 
  * - setup I/O forwarding for all processes (where possible). Some environments will,
  * of course, not support this capability or will provide it natively. Those respective

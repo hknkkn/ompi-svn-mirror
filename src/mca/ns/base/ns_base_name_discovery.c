@@ -19,19 +19,16 @@
 #include "include/orte_constants.h"
 #include "include/orte_names.h"
 
-#include "util/sys_info.h"
+#include "plsnds/plsnds.h"
+
+#include "util/proc_info.h"
 #include "mca/base/mca_base_param.h"
 
 #include "mca/ns/base/base.h"
 
-/* storage for the results of the registrations and values returned */
-/* internal function */
-static int orte_ns_env_name(void);
-
-
 int orte_ns_base_set_my_name(void)
 {
-    int rc, launchid;
+    int i, rc, launchid;
     char *launcher;
     orte_jobid_t jobid;
     orte_vpid_t vpid;
@@ -44,16 +41,14 @@ int orte_ns_base_set_my_name(void)
     /* first check if we are seed or singleton that couldn't
      * join an existing universe - if so, name is mandated */
     if (orte_process_info.seed || NULL == orte_process_info.ns_replica) {
-        if (ORTE_SUCCESS != (rc = orte_ns_base_create_process_name(
-                                &(orte_process_info.my_name), 0, 0, 0))) {
-            return rc;
-        }
+        return orte_ns_base_create_process_name(
+                                &(orte_process_info.my_name), 0, 0, 0);
     }
     
     /* if not seed, then check to see if the name is simply available in
      * the environment
      */
-    if (ORTE_SUCCESS == orte_ns_env_name()) { /* got it! */
+    if (ORTE_SUCCESS == orte_plsnds[0].discover()) { /* got it! */
         return ORTE_SUCCESS;
     }
     
@@ -64,6 +59,11 @@ int orte_ns_base_set_my_name(void)
      launchid = mca_base_param_register_string("pls", "name", "launcher", "PLS_LAUNCHER", NULL);
      mca_base_param_lookup_string(launchid, &launcher);
      if (NULL != launcher) {  /* launcher identified */
+         for (i=0; i < orte_plsnds_max; i++) {
+              if (0 == strcmp(launcher, orte_plsnds[i].launcher)) {
+                    return orte_plsnds[i].discover;
+              }
+         }
      }
      
     /* if launcher didn't provide the name, then let's try to get
@@ -80,56 +80,6 @@ int orte_ns_base_set_my_name(void)
         return rc;
     }
 
-    return ORTE_SUCCESS;
-}
-
-static int orte_ns_env_name(void)
-{
-    int rc;
-    
-    int param_cellid;
-    int param_jobid;
-    int param_vpid_start;
-    int param_num_procs;
-    int param_procid;
-
-    int orte_ns_smn_cellid;
-    int orte_ns_smn_jobid;
-    int orte_ns_smn_vpid_start;
-    int orte_ns_smn_num_procs;
-    int orte_ns_smn_procid;
-
-    param_cellid = mca_base_param_register_int("ns", "name", "cellid", NULL, -1);
-    mca_base_param_lookup_int(param_cellid, &orte_ns_smn_cellid);
-    if (orte_ns_smn_cellid < 0) return ORTE_ERROR;
-
-    param_jobid = mca_base_param_register_int("ns", "name", "jobid", NULL, -1);
-    mca_base_param_lookup_int(param_jobid, &orte_ns_smn_jobid);
-    if (orte_ns_smn_jobid < 0) return ORTE_ERROR;
-
-    param_procid = mca_base_param_register_int("ns", "name", "procid", NULL, -1);
-    mca_base_param_lookup_int(param_procid, &orte_ns_smn_procid);
-    if (orte_ns_smn_procid < 0) return ORTE_ERROR;
-
-    param_vpid_start = mca_base_param_register_int("ns", "name", "vpid_start", NULL, 0);
-    mca_base_param_lookup_int(param_vpid_start, &orte_ns_smn_vpid_start);
-    if (orte_ns_smn_vpid_start < 0) return ORTE_ERROR;
-
-    param_num_procs = mca_base_param_register_int("ns", "name", "num_procs", NULL, -1);
-    mca_base_param_lookup_int(param_num_procs, &orte_ns_smn_num_procs);
-    if (orte_ns_smn_num_procs < 0) return ORTE_ERROR;
-
-    if (ORTE_SUCCESS != (rc = orte_ns_base_create_process_name(
-                            &(orte_process_info.my_name),
-                            orte_ns_smn_cellid,
-                            orte_ns_smn_jobid,
-                            orte_ns_smn_procid))) {
-        return rc;
-    }
-    
-    orte_process_info.vpid_start = orte_ns_smn_vpid_start;
-    orte_process_info.num_procs = orte_ns_smn_num_procs;
-    
     return ORTE_SUCCESS;
 }
 
