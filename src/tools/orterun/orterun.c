@@ -206,6 +206,10 @@ main(int argc, char *argv[], char* env[])
         app.cwd = strdup(cwd);
     }
 
+    /* Get the numprocs */
+
+    app.num_procs = orterun_globals.num_procs;
+
     /* Find the argv[0] in the path */
 
     app.app = ompi_path_findv(app.argv[0], 0, env, app.cwd); 
