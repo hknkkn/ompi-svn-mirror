@@ -108,7 +108,6 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
         free(segment);
         return rc;
     }
-    free(segment);  /* done with this string */
     
     /* get vpid start and range from "global" container */
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&toktag, seg, ORTE_JOB_GLOBALS))) {
@@ -194,122 +193,21 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
              /* ok, trigger is on specified segment and wants startup/shutdown data
               * use array of target pointers to collect data for return
               */
+             /* create notify message for delivery later */
+             notify = OBJ_NEW(orte_gpr_notify_message_t);
+             if (NULL == notify) {
+                 ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                 rc = ORTE_ERR_OUT_OF_RESOURCE;
+                 goto CLEANUP;
+             }
+             notify->segment = strdup(segment);
+             
+             targets = (orte_gpr_replica_target_t**)(trig[i]->targets)->addr;
+             for (j=0; j < (trig[i]->targets)->size; j++) {
+                 if (NULL != targets[i]) {
+                     
 
 
-	    include_data = false;
-
-	    /* construct the list of recipients and find out if data is desired */
-	    for (trig = (orte_gpr_replica_trigger_list_t*)ompi_list_get_first(&seg->triggers);
-		 trig != (orte_gpr_replica_trigger_list_t*)ompi_list_get_end(&seg->triggers);
-		 ) {
-		next_trig = (orte_gpr_replica_trigger_list_t*)ompi_list_get_next(trig);
-
-		if (OMPI_REGISTRY_NOTIFY_ON_STARTUP & trig->action) {
-
-		    /* see if data is requested - only one trig has to ask for it */
-		    if (OMPI_REGISTRY_NOTIFY_INCLUDE_STARTUP_DATA & trig->action) {
-				include_data = true;
-		    }
-
-		    /***** if notify_one_shot is set, need to remove subscription from system */
-
-		    /* find subscription on notify tracker */
-		    done = false;
-		    for (trackptr = (orte_gpr_replica_notify_request_tracker_t*)ompi_list_get_first(&orte_gpr_replica_notify_request_tracker);
-			 trackptr != (orte_gpr_replica_notify_request_tracker_t*)ompi_list_get_end(&orte_gpr_replica_notify_request_tracker)
-			     && !done;
-			 trackptr = (orte_gpr_replica_notify_request_tracker_t*)ompi_list_get_next(trackptr)) {
-			if (trackptr->local_idtag == trig->local_idtag) {
-			    done = true;
-			    if (NULL != trackptr->requestor) {
-				name = trackptr->requestor;
-			    } else {  /* local requestor */
-				name = ompi_rte_get_self();
-			    }
-			    /* see if process already on list of recipients */
-			    found = false;
-			    for (ptr = (orte_name_services_namelist_t*)ompi_list_get_first(recipients);
-				 ptr != (orte_name_services_namelist_t*)ompi_list_get_end(recipients) && !found;
-				 ptr = (orte_name_services_namelist_t*)ompi_list_get_next(ptr)) {
-                    if (ORTE_SUCCESS != orte_name_services.compare(&cmpval, ORTE_NS_CMP_ALL, name, ptr->name)) {
-                        return NULL;
-                    }
-				   if (0 == cmpval) {
-				       found = true;
-				   }
-			    }
-
-			    if (!found) {
-				/* check job status segment to verify recipient still alive */
-                    if (ORTE_SUCCESS != orte_name_services.get_proc_name_string(tokens[0], name)) {
-                        return NULL;
-                    }
-				   tokens[1] = NULL;
-
-				/* convert tokens to array of keys */
-				keys = orte_gpr_replica_get_key_list(proc_stat_seg, tokens, &num_keys);
-
-				returned_list = OBJ_NEW(ompi_list_t);
-				orte_gpr_replica_get_nl(returned_list,
-						       OMPI_REGISTRY_XAND,
-						       proc_stat_seg, keys, num_keys);
-
-				free(tokens[0]);
-				free(keys);
-
-				if (NULL != (value = (ompi_registry_value_t*)ompi_list_remove_first(returned_list))) {
-				    proc_status = ompi_rte_unpack_process_status(value);
-				    if ((OMPI_PROC_KILLED != proc_status->status_key) &&
-					(OMPI_PROC_STOPPED != proc_status->status_key)) {
-					/* add process to list of recipients */
-					peer = OBJ_NEW(orte_name_services_namelist_t);
-                     if (ORTE_SUCCESS != orte_name_services.copy_process_name(peer->name, name)) {
-                         return NULL;
-                     }
-					ompi_list_append(recipients, &peer->item);
-				    }
-				}
-			    }
-			}
-		    }
-		}
-		trig = next_trig;
-	    }
-
-	    if (include_data) {  /* add in the data from all the registry entries on this segment */
-
-		size = (int32_t)ompi_list_get_size(&seg->registry_entries); /* and number of data objects */
-		ompi_pack(msg, &size, 1, OMPI_INT32);
-
-
-		for (reg = (orte_gpr_replica_core_t*)ompi_list_get_first(&seg->registry_entries);
-		     reg != (orte_gpr_replica_core_t*)ompi_list_get_end(&seg->registry_entries);
-		     reg = (orte_gpr_replica_core_t*)ompi_list_get_next(reg)) {
-
-		    /* add info to msg payload */
-		    size = (int32_t)reg->object_size;
-		    ompi_pack(msg, &size, 1, MCA_GPR_OOB_PACK_OBJECT_SIZE);
-		    ompi_pack(msg, reg->object, reg->object_size, OMPI_BYTE);
-		}
-	    } else {
-		size = 0;
-		ompi_pack(msg, &size, 1, OMPI_INT32);
-	    }
-	}
-
-	if (orte_gpr_replica_globals.debug) {
-	    ompi_buffer_size(msg, &bufsize);
-	    ompi_output(0, "[%d,%d,%d] built startup_msg of length %d with %d recipients",
-			ORTE_NAME_ARGS(*ompi_rte_get_self()), bufsize, (int)ompi_list_get_size(recipients));
-	    for (peer = (orte_name_services_namelist_t*)ompi_list_get_first(recipients);
-		 peer != (orte_name_services_namelist_t*)ompi_list_get_end(recipients);
-		 peer = (orte_name_services_namelist_t*)ompi_list_get_next(peer)) {
-          if (ORTE_SUCCESS == orte_name_services.get_proc_name_string(procstring, peer->name)) {
-		  ompi_output(0, "\trecipient: %s", procstring);
-          }
-	    }
-	}
-    }
 #endif
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
