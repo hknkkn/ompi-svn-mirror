@@ -52,8 +52,8 @@ int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
     *cnt = 0;
     *procs = NULL;
     
-    if (orte_gpr_proxy_compound_cmd_mode) {
-	   return orte_gpr_base_pack_get_startup_msg(orte_gpr_proxy_compound_cmd, jobid);
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+	   return orte_gpr_base_pack_get_startup_msg(orte_gpr_proxy_globals.compound_cmd, jobid);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -66,12 +66,12 @@ int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
         return rc;
     }
 
-	if (orte_gpr_proxy_debug) {
+	if (orte_gpr_proxy_globals.debug) {
 		ompi_output(0, "[%d,%d,%d] gpr_proxy: getting startup msg for job %d",
 					ORTE_NAME_ARGS(*(orte_process_info.my_name)), (int)jobid);
 	}
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -80,7 +80,7 @@ int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
 	    return ORTE_ERR_COMM_FAILURE;
     }

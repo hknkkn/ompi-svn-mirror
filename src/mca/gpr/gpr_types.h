@@ -49,8 +49,8 @@
 
 typedef uint16_t orte_gpr_notify_action_t;
 
-typedef uint32_t orte_gpr_notify_id_t;
-#define ORTE_GPR_NOTIFY_ID_MAX UINT32_MAX
+typedef int32_t orte_gpr_notify_id_t;
+#define ORTE_GPR_NOTIFY_ID_MAX INT32_MAX
 
 /*
  * Define synchro mode flags - can be OR'd to create multiple actions

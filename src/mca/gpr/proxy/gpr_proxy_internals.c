@@ -34,32 +34,48 @@
 #include "gpr_proxy.h"
 
 int
-orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *idtag, char *segment,
-                    orte_gpr_notify_action_t action,
-                    orte_gpr_notify_cb_fn_t cb_func,
-                    void *user_tag)
+orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
+                    char *segment, orte_gpr_cmd_flag_t cmd,
+                    orte_gpr_proxy_act_sync_t *flag,
+                    orte_gpr_notify_cb_fn_t cb_func, void *user_tag)
 {
-    orte_gpr_proxy_notify_request_tracker_t *trackptr;
-
-    trackptr = OBJ_NEW(orte_gpr_proxy_notify_request_tracker_t);
+    orte_gpr_proxy_notify_tracker_t *trackptr;
+    int idtag;
+    
+    *local_idtag = ORTE_GPR_NOTIFY_ID_MAX;
+    
+    trackptr = OBJ_NEW(orte_gpr_proxy_notify_tracker_t);
     if (NULL == trackptr) {
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
+    trackptr->cmd = cmd;
+    if (ORTE_GPR_SUBSCRIBE_CMD == cmd) {
+        trackptr->flag.trig_action = flag->trig_action;
+    } else if (ORTE_GPR_SYNCHRO_CMD == cmd) {
+        trackptr->flag.trig_synchro = flag->trig_synchro;
+    } else {
+        OBJ_RELEASE(trackptr);
+        return ORTE_ERR_BAD_PARAM;
+    }
+    
     trackptr->segment = strdup(segment);
-    trackptr->action = action;
     trackptr->callback = cb_func;
     trackptr->user_tag = user_tag;
     trackptr->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
-	trackptr->local_idtag = orte_gpr_proxy_next_notify_id_tag;
-	orte_gpr_proxy_next_notify_id_tag++;
 
-    if (orte_gpr_proxy_debug) {
-        ompi_output(0, "[%d,%d,%d] enter_notify_request: tracker created for segment %s action %X idtag %d",
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), segment, action, trackptr->local_idtag);
+    if (0 > (idtag = orte_pointer_array_add(orte_gpr_proxy_globals.notify_tracker, trackptr))) {
+        return idtag;
     }
     
-    *idtag = trackptr->local_idtag;
+    trackptr->local_idtag = (orte_gpr_notify_id_t)idtag;
+    *local_idtag = trackptr->local_idtag;
+    
+    if (orte_gpr_proxy_globals.debug) {
+        ompi_output(0, "[%d,%d,%d] enter_notify_request: tracker created for segment %s action %X idtag %d",
+                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), segment, flag->trig_action, idtag);
+    }
+    
     return ORTE_SUCCESS;
 }
 
@@ -68,48 +84,30 @@ int
 orte_gpr_proxy_remove_notify_request(orte_gpr_notify_id_t local_idtag,
                                      orte_gpr_notify_id_t *remote_idtag)
 {
-    orte_gpr_proxy_notify_request_tracker_t *trackptr;
+    orte_gpr_proxy_notify_tracker_t *trackptr;
 
-    /* locate corresponding entry on proxy tracker list and remove it */
-    for (trackptr = (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_first(&orte_gpr_proxy_notify_request_tracker);
-	     trackptr != (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_end(&orte_gpr_proxy_notify_request_tracker);
-	     trackptr = (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_next(trackptr)) {
-         
-         if (local_idtag == trackptr->local_idtag) {  /* found it */
-             *remote_idtag = trackptr->remote_idtag;
-             ompi_list_remove_item(&orte_gpr_proxy_notify_request_tracker, &trackptr->item);
-        
-             if (orte_gpr_proxy_debug) {
-                 ompi_output(0, "[%d,%d,%d] remove_notify_request: tracker removed for segment %s action %X idtag %d",
-                        ORTE_NAME_ARGS(*(orte_process_info.my_name)), trackptr->segment, trackptr->action, local_idtag);
-             }
-        
-             /* release tracker item */
-             OBJ_RELEASE(trackptr);
-             return ORTE_SUCCESS;
-         }
+    trackptr = (orte_gpr_proxy_notify_tracker_t*)((orte_gpr_proxy_globals.notify_tracker)->addr[local_idtag]);
+    if (NULL == trackptr) {
+        return ORTE_ERR_BAD_PARAM;
     }
+    *remote_idtag = trackptr->remote_idtag;
+    OBJ_RELEASE(trackptr);
+    orte_pointer_array_set_item(orte_gpr_proxy_globals.notify_tracker, local_idtag, NULL);
 
-    return ORTE_ERR_BAD_PARAM;
+    return ORTE_SUCCESS;
 }
 
 
-int orte_gpr_proxy_set_remote_idtag(orte_gpr_notify_id_t local_idtag,
-                 orte_gpr_notify_id_t remote_idtag)
+int orte_gpr_proxy_set_remote_idtag(orte_gpr_notify_id_t local_idtag, orte_gpr_notify_id_t remote_idtag)
 {
-    orte_gpr_proxy_notify_request_tracker_t *trackptr;
+    orte_gpr_proxy_notify_tracker_t *trackptr;
 
-    /* locate corresponding entry on proxy tracker list  */
-    for (trackptr = (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_first(&orte_gpr_proxy_notify_request_tracker);
-	     trackptr != (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_end(&orte_gpr_proxy_notify_request_tracker);
-	     trackptr = (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_next(trackptr)) {
-     
-         if (trackptr->local_idtag == local_idtag) {  /* found it */
-             trackptr->remote_idtag = remote_idtag;
-             return ORTE_SUCCESS;
-         }
+    trackptr = (orte_gpr_proxy_notify_tracker_t*)((orte_gpr_proxy_globals.notify_tracker)->addr[local_idtag]);
+    if (NULL == trackptr) {
+        return ORTE_ERR_BAD_PARAM;
     }
-    return ORTE_ERR_BAD_PARAM;
+    trackptr->remote_idtag = remote_idtag;
+    return ORTE_SUCCESS;
 }
 
 
@@ -123,8 +121,8 @@ int orte_gpr_proxy_test_internals(int level, ompi_list_t **test_results)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (orte_gpr_proxy_compound_cmd_mode) {
-	   return orte_gpr_base_pack_test_internals(orte_gpr_proxy_compound_cmd, level);
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+	   return orte_gpr_base_pack_test_internals(orte_gpr_proxy_globals.compound_cmd, level);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -137,7 +135,7 @@ int orte_gpr_proxy_test_internals(int level, ompi_list_t **test_results)
 	    return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -146,7 +144,7 @@ int orte_gpr_proxy_test_internals(int level, ompi_list_t **test_results)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
 	    return ORTE_ERR_COMM_FAILURE;
     }

@@ -20,8 +20,10 @@
 #include "orte_config.h"
 
 #include "include/orte_types.h"
-#include "class/ompi_list.h"
+#include "class/ompi_object.h"
+#include "class/orte_pointer_array.h"
 #include "dps/dps_types.h"
+#include "util/proc_info.h"
 
 #include "mca/gpr/base/base.h"
 
@@ -43,35 +45,45 @@ int orte_gpr_proxy_finalize(void);
 /*
  * proxy-local types
  */
+typedef union {
+    orte_gpr_notify_action_t trig_action;   /**< If subscription, action that triggered message */
+    orte_gpr_synchro_mode_t trig_synchro;
+} orte_gpr_proxy_act_sync_t;
 
-struct orte_gpr_proxy_notify_request_tracker_t {
-    ompi_list_item_t item;                   /**< Allows this item to be placed on a list */
-    orte_gpr_notify_cb_fn_t callback;   /**< Function to be called for notificaiton */
-    void *user_tag;                          /**< User-provided tag for callback function */
-    orte_gpr_notify_id_t local_idtag;   /**< Local ID tag of associated subscription */
-    orte_gpr_notify_id_t remote_idtag;  /**< Remote ID tag of subscription */
-    char *segment;                           /**< Pointer to name of segment */
-    orte_gpr_notify_action_t action;    /**< Action that triggers notification */
+
+struct orte_gpr_proxy_notify_tracker_t {
+    ompi_object_t super;                    /**< Allows this to be an object */
+    orte_gpr_notify_cb_fn_t callback;       /**< Function to be called for notificaiton */
+    void *user_tag;                         /**< User-provided tag for callback function */
+    orte_gpr_notify_id_t local_idtag;       /**< Local ID tag of associated subscription */
+    orte_gpr_notify_id_t remote_idtag;      /**< Remote ID tag of subscription */
+    char *segment;                          /**< Pointer to name of segment */
+    orte_gpr_cmd_flag_t cmd;                /**< command that generated the notify request */
+    orte_gpr_proxy_act_sync_t flag;
 };
-typedef struct orte_gpr_proxy_notify_request_tracker_t orte_gpr_proxy_notify_request_tracker_t;
+typedef struct orte_gpr_proxy_notify_tracker_t orte_gpr_proxy_notify_tracker_t;
 
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_proxy_notify_request_tracker_t);
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_proxy_notify_tracker_t);
 
 
 /*
  * globals used within proxy component
  */
+typedef struct {
+    int debug;
+    int32_t block_size;
+    int32_t max_size;
+    orte_pointer_array_t *notify_tracker;
+    ompi_mutex_t mutex;
+    bool compound_cmd_mode;
+    orte_buffer_t *compound_cmd;
+    ompi_mutex_t wait_for_compound_mutex;
+    ompi_condition_t compound_cmd_condition;
+    int compound_cmd_waiting;
+} orte_gpr_proxy_globals_t;
 
-extern orte_process_name_t *orte_gpr_my_replica;
-extern ompi_list_t orte_gpr_proxy_notify_request_tracker;
-extern orte_gpr_notify_id_t orte_gpr_proxy_next_notify_id_tag;
-extern int orte_gpr_proxy_debug;
-extern ompi_mutex_t orte_gpr_proxy_mutex;
-extern bool orte_gpr_proxy_compound_cmd_mode;
-extern orte_buffer_t *orte_gpr_proxy_compound_cmd;
-extern ompi_mutex_t orte_gpr_proxy_wait_for_compound_mutex;
-extern ompi_condition_t orte_gpr_proxy_compound_cmd_condition;
-extern int orte_gpr_proxy_compound_cmd_waiting;
+
+extern orte_gpr_proxy_globals_t orte_gpr_proxy_globals;
 
 /*
  * Compound cmd functions
@@ -205,19 +217,18 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
  */
 
 int
-orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *idtag, char *segment,
-                    orte_gpr_notify_action_t action,
-				   orte_gpr_notify_cb_fn_t cb_func,
-				   void *user_tag);
+orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *idtag,
+                    char *segment, orte_gpr_cmd_flag_t cmd,
+                    orte_gpr_proxy_act_sync_t *flag,
+				   orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 
 int
 orte_gpr_proxy_remove_notify_request(orte_gpr_notify_id_t local_idtag,
-                    orte_gpr_notify_id_t *remote_idtag);
+                                     orte_gpr_notify_id_t *remote_idtag);
 
 int orte_gpr_proxy_set_remote_idtag(orte_gpr_notify_id_t local_idtag,
-				   orte_gpr_notify_id_t remote_idtag);
+                                     orte_gpr_notify_id_t remote_idtag);
 
-int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_action_t state,
-                    orte_gpr_notify_message_t *message);
+int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_message_t *message);
 
 #endif

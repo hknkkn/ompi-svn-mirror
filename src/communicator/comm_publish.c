@@ -26,6 +26,9 @@
 
 static ompi_mutex_t ompi_port_lock;
 
+#define OMPI_COMM_PORT_KEY  "ompi-port-name"
+
+
 int ompi_open_port(char *port_name)
 {
     ompi_proc_t **myproc=NULL;
@@ -92,7 +95,7 @@ int ompi_comm_namepublish ( char *service_name, char *port_name )
     token[1] = NULL;
     
     keyval = OBJ_NEW(orte_gpr_keyval_t);
-    keyval->key = strdup("port_name");
+    keyval->key = strdup(OMPI_COMM_PORT_KEY);
     keyval->type = ORTE_STRING;
     (keyval->value).strptr = strdup(port_name);
     rc = orte_gpr.put(ORTE_GPR_AND | ORTE_GPR_OVERWRITE,
@@ -114,7 +117,7 @@ char* ompi_comm_namelookup ( char *service_name )
     token[0] = service_name;
     token[1] = NULL;
     
-    key[0] = strdup("port_name");
+    key[0] = strdup(OMPI_COMM_PORT_KEY);
     key[1] = NULL;
     
     ret = orte_gpr.get(ORTE_GPR_AND, OMPI_NAMESPACE_SEGMENT,

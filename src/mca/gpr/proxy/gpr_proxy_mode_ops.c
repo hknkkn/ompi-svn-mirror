@@ -40,13 +40,13 @@ int orte_gpr_proxy_notify_off(orte_gpr_notify_id_t sub_number)
     orte_buffer_t *cmd, *answer;
     int rc;
     
-    if (orte_gpr_proxy_debug) {
+    if (orte_gpr_proxy_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_off entered for sub_number %X", 
                     ORTE_NAME_ARGS(*(orte_process_info.my_name)), sub_number);
     }
 
-    if (orte_gpr_proxy_compound_cmd_mode) {
-	    return orte_gpr_base_pack_notify_off(orte_gpr_proxy_compound_cmd,
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+	    return orte_gpr_base_pack_notify_off(orte_gpr_proxy_globals.compound_cmd,
 				            orte_process_info.my_name, sub_number);
     }
 
@@ -60,7 +60,7 @@ int orte_gpr_proxy_notify_off(orte_gpr_notify_id_t sub_number)
         return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -69,7 +69,7 @@ int orte_gpr_proxy_notify_off(orte_gpr_notify_id_t sub_number)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }
@@ -85,13 +85,13 @@ int orte_gpr_proxy_notify_on(orte_gpr_notify_id_t sub_number)
     orte_buffer_t *cmd, *answer;
     int rc;
 
-    if (orte_gpr_proxy_debug) {
+    if (orte_gpr_proxy_globals.debug) {
         ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_on entered for sub_number %X", 
                     ORTE_NAME_ARGS(*(orte_process_info.my_name)), sub_number);
     }
 
-    if (orte_gpr_proxy_compound_cmd_mode) {
-        return orte_gpr_base_pack_notify_on(orte_gpr_proxy_compound_cmd,
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+        return orte_gpr_base_pack_notify_on(orte_gpr_proxy_globals.compound_cmd,
                           orte_process_info.my_name, sub_number);
     }
 
@@ -105,7 +105,7 @@ int orte_gpr_proxy_notify_on(orte_gpr_notify_id_t sub_number)
         return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -114,7 +114,7 @@ int orte_gpr_proxy_notify_on(orte_gpr_notify_id_t sub_number)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }
@@ -130,13 +130,13 @@ int orte_gpr_proxy_triggers_active(orte_jobid_t jobid)
     orte_buffer_t *cmd, *answer;
     int rc;
 
-    if (orte_gpr_proxy_debug) {
+    if (orte_gpr_proxy_globals.debug) {
         ompi_output(0, "[%d,%d,%d] gpr_proxy_triggers_active entered for job %d", 
                     ORTE_NAME_ARGS(*(orte_process_info.my_name)), jobid);
     }
 
-    if (orte_gpr_proxy_compound_cmd_mode) {
-        return orte_gpr_base_pack_triggers_active_cmd(orte_gpr_proxy_compound_cmd, jobid);
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+        return orte_gpr_base_pack_triggers_active_cmd(orte_gpr_proxy_globals.compound_cmd, jobid);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -149,7 +149,7 @@ int orte_gpr_proxy_triggers_active(orte_jobid_t jobid)
         return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
       return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -158,7 +158,7 @@ int orte_gpr_proxy_triggers_active(orte_jobid_t jobid)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }
@@ -174,13 +174,13 @@ int orte_gpr_proxy_triggers_inactive(orte_jobid_t jobid)
     orte_buffer_t *cmd, *answer;
     int rc;
 
-    if (orte_gpr_proxy_debug) {
+    if (orte_gpr_proxy_globals.debug) {
         ompi_output(0, "[%d,%d,%d] gpr_proxy_triggers_inactive entered for job %d", 
                     ORTE_NAME_ARGS(*(orte_process_info.my_name)), jobid);
     }
 
-    if (orte_gpr_proxy_compound_cmd_mode) {
-        return orte_gpr_base_pack_triggers_inactive_cmd(orte_gpr_proxy_compound_cmd, jobid);
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+        return orte_gpr_base_pack_triggers_inactive_cmd(orte_gpr_proxy_globals.compound_cmd, jobid);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -193,7 +193,7 @@ int orte_gpr_proxy_triggers_inactive(orte_jobid_t jobid)
         return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
       return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -202,7 +202,7 @@ int orte_gpr_proxy_triggers_inactive(orte_jobid_t jobid)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }

@@ -41,28 +41,31 @@ orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
     orte_buffer_t *answer;
     int rc;
     orte_gpr_notify_id_t idtag, remote_idtag;
-
-    *synch_number = ORTE_GPR_NOTIFY_ID_MAX;
+    orte_gpr_proxy_act_sync_t flag;
     
-    if (orte_gpr_proxy_compound_cmd_mode) {
-        	if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_synchro(orte_gpr_proxy_compound_cmd,
+    *synch_number = ORTE_GPR_NOTIFY_ID_MAX;
+    flag.trig_synchro = synchro_mode;
+    
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+        	if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_synchro(orte_gpr_proxy_globals.compound_cmd,
         						      synchro_mode, addr_mode, segment, tokens, keys, trigger))) {
         	    return rc;
         	}
         
-        	OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        	OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         	/* store callback function and user_tag in local list for lookup */
         	/* generate id_tag to send to replica to identify lookup entry */
         
-        if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag,
-                                        segment, 0, cb_func, user_tag))) {
-            OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(synch_number,
+                                            segment, ORTE_GPR_SYNCHRO_CMD,
+                                            &flag, cb_func, user_tag))) {
+            OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
             return rc;
         }
         
-       	OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+       	OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         
-        	return orte_dps.pack(orte_gpr_proxy_compound_cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID);
+        	return orte_dps.pack(orte_gpr_proxy_globals.compound_cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -76,57 +79,59 @@ orte_gpr_proxy_synchro(orte_gpr_addr_mode_t addr_mode,
         return rc;
     }
 
-    OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
     /* store callback function and user_tag in local list for lookup */
     /* generate id_tag to send to replica to identify lookup entry */
-    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(&idtag, segment, 0, cb_func, user_tag))) {
-        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+    if (ORTE_SUCCESS != (rc = orte_gpr_proxy_enter_notify_request(synch_number,
+                                                    segment, ORTE_GPR_SYNCHRO_CMD,
+                                                    &flag, cb_func, user_tag))) {
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         OBJ_RELEASE(cmd);
         return rc;
     }
 
-    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
     
     if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &idtag, 1, ORTE_GPR_NOTIFY_ID))) {
        OBJ_RELEASE(cmd);
         return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, ORTE_RML_TAG_GPR, 0)) {
-         OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, ORTE_RML_TAG_GPR, 0)) {
+         OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
          orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
-         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+         OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return ORTE_ERR_COMM_FAILURE;
     }
 
     answer = OBJ_NEW(orte_buffer_t);
     if (NULL == answer) {
-        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
-        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, ORTE_RML_TAG_GPR)) {
-        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, ORTE_RML_TAG_GPR)) {
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
-        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }
 
     if (ORTE_SUCCESS != (rc = orte_gpr_base_unpack_synchro(answer, &remote_idtag))) {
-        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
-        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return rc;
     }
 
     /* set the remote id tag field */
     if (ORTE_SUCCESS != (rc = orte_gpr_proxy_set_remote_idtag(idtag, remote_idtag))) {
-        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
         orte_gpr_proxy_remove_notify_request(idtag, &remote_idtag);
-        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return rc;
     }
 
@@ -141,22 +146,22 @@ int orte_gpr_proxy_cancel_synchro(orte_gpr_notify_id_t synch_number)
     int rc;
     orte_gpr_notify_id_t remote_idtag;
 
-    if (orte_gpr_proxy_compound_cmd_mode) {
-        if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_cancel_synchro(orte_gpr_proxy_compound_cmd, synch_number))) {
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_cancel_synchro(orte_gpr_proxy_globals.compound_cmd, synch_number))) {
             return rc;
         }
 
-        OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
 
         /* remove the notify tag */
         if (ORTE_SUCCESS != (rc = orte_gpr_proxy_remove_notify_request(synch_number, &remote_idtag))) {
-            OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+            OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
             return rc;
         }
         
-        rc = orte_dps.pack(orte_gpr_proxy_compound_cmd, &remote_idtag, 1, ORTE_GPR_NOTIFY_ID);
+        rc = orte_dps.pack(orte_gpr_proxy_globals.compound_cmd, &remote_idtag, 1, ORTE_GPR_NOTIFY_ID);
            
-        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return rc;
     }
 
@@ -165,20 +170,20 @@ int orte_gpr_proxy_cancel_synchro(orte_gpr_notify_id_t synch_number)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+    OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
     if (ORTE_SUCCESS != (rc = orte_gpr_proxy_remove_notify_request(synch_number, &remote_idtag))) {
         OBJ_RELEASE(cmd);
-        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
+        OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
         return rc;
     }
-    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);    
+    OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);    
 
     if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_cancel_synchro(cmd, remote_idtag))) {
         OBJ_RELEASE(cmd);
         return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, ORTE_RML_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, ORTE_RML_TAG_GPR, 0)) {
        return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -187,7 +192,7 @@ int orte_gpr_proxy_cancel_synchro(orte_gpr_notify_id_t synch_number)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, ORTE_RML_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, ORTE_RML_TAG_GPR)) {
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }

@@ -46,8 +46,8 @@ int orte_gpr_proxy_dump(int output_id)
     int rc;
     size_t n;
     
-    if (orte_gpr_proxy_compound_cmd_mode) {
-	    return orte_gpr_base_pack_dump(orte_gpr_proxy_compound_cmd);
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+	    return orte_gpr_base_pack_dump(orte_gpr_proxy_globals.compound_cmd);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -60,7 +60,7 @@ int orte_gpr_proxy_dump(int output_id)
 	    return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
 	    return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -69,7 +69,7 @@ int orte_gpr_proxy_dump(int output_id)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
 	    return ORTE_ERR_COMM_FAILURE;
     }
 

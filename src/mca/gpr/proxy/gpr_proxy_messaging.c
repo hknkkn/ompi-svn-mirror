@@ -21,37 +21,31 @@
 #include "gpr_proxy.h"
 
 
-int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_action_t state,
-				      orte_gpr_notify_message_t *message)
+int orte_gpr_proxy_deliver_notify_msg(orte_gpr_notify_message_t *message)
 {
-    int namelen;
-    orte_gpr_proxy_notify_request_tracker_t *trackptr;
+    orte_gpr_proxy_notify_tracker_t *trackptr;
 
 	/* don't deliver messages with zero data in them */
-	if (0 < message->cnt) {
+	if (0 >= message->cnt) {
+        OBJ_RELEASE(message);
+        return ORTE_SUCCESS;
+    }
 		
 	    /* protect system from threadlock */
-	    if (ORTE_GPR_NOTIFY_ON_STARTUP & state) {
-	
-			OMPI_THREAD_LOCK(&orte_gpr_proxy_mutex);
+	    OMPI_THREAD_LOCK(&orte_gpr_proxy_globals.mutex);
 		
-			namelen = strlen(message->segment);
-		
-			/* find the request corresponding to this notify */
-			for (trackptr = (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_first(&orte_gpr_proxy_notify_request_tracker);
-			     trackptr != (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_end(&orte_gpr_proxy_notify_request_tracker);
-			     trackptr = (orte_gpr_proxy_notify_request_tracker_t*)ompi_list_get_next(trackptr)) {
-			    if ((trackptr->action & state) &&
-					(0 == strcmp(message->segment, trackptr->segment))) {
-					OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
-					/* process request - callback function responsible for releasing memory */
-					trackptr->callback(message, trackptr->user_tag);
-					return ORTE_SUCCESS;
-			    }
-			}
-             OMPI_THREAD_UNLOCK(&orte_gpr_proxy_mutex);
-    		}
-	}
+		/* locate the request corresponding to this notify */
+        trackptr = (orte_gpr_proxy_notify_tracker_t*)
+                    ((orte_gpr_proxy_globals.notify_tracker)->addr[message->idtag]);
+        if (NULL == trackptr) {
+            OMPI_THREAD_UNLOCK(&orte_gpr_proxy_globals.mutex);
+            OBJ_RELEASE(message);
+            return ORTE_ERR_BAD_PARAM;
+        }
+        
+		/* process request - callback function responsible for releasing memory */
+		trackptr->callback(message, trackptr->user_tag);
+
     OBJ_RELEASE(message);
-    return ORTE_ERROR;
+    return ORTE_SUCCESS;
 }

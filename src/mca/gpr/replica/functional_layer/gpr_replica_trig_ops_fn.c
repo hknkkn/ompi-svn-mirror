@@ -23,122 +23,81 @@
 
 #include "orte_config.h"
 
-#include "mca/ns/ns_types.h"
+#include "mca/ns/ns.h"
 
 #include "gpr_replica_fn.h"
 
-int orte_gpr_replica_construct_trigger(orte_gpr_synchro_mode_t synchro_mode,
-                  orte_gpr_notify_action_t action,
-                   orte_gpr_addr_mode_t addr_mode,
-                orte_gpr_replica_segment_t *seg,
-                   orte_gpr_replica_itag_t *itags,
-                int num_itags,
-                 int trigger,
-                   orte_gpr_notify_id_t id_tag)
-{
-#if 0
-    mca_gpr_replica_core_t *reg;
-    mca_gpr_replica_trigger_list_t *trig;
-    mca_gpr_replica_key_t *key2, *keyptr;
-    int i;
 
-
-    trig = OBJ_NEW(mca_gpr_replica_trigger_list_t);
-
-    trig->synch_mode = synchro_mode;
-    trig->action = action;
-    trig->addr_mode = addr_mode;
-    trig->owning_job = owning_jobid;
-    trig->trigger = trigger;
-    trig->count = 0;
-    trig->local_idtag = id_tag;
-
-    trig->num_keys = num_keys;
-    if (0 < num_keys) {
-	trig->keys = (mca_gpr_replica_key_t*)malloc(num_keys*sizeof(mca_gpr_replica_key_t));
-	keyptr = trig->keys;
-	key2 = keys;
-	for (i=0; i < num_keys; i++) {
-	    *keyptr = *key2;
-	    keyptr++; key2++;
-	}
-    } else {
-	trig->keys = NULL;
-    }
-
-    if (OMPI_REGISTRY_SYNCHRO_MODE_NONE != synchro_mode) { /* this is a synchro, so initialize the count */
-	/* traverse segment entries and initialize trigger count */
-	for (reg = (mca_gpr_replica_core_t*)ompi_list_get_first(&seg->registry_entries);
-	     reg != (mca_gpr_replica_core_t*)ompi_list_get_end(&seg->registry_entries);
-	     reg = (mca_gpr_replica_core_t*)ompi_list_get_next(reg)) {
-	    if (mca_gpr_replica_check_key_list(addr_mode, trig->num_keys, trig->keys,
-					       reg->num_keys, reg->keys)) {
-		trig->count++;
-	    }
-	}
-
-	/* initialize edge trigger state */
-	if (OMPI_REGISTRY_SYNCHRO_MODE_NONE != trig->synch_mode) { /* looking at synchro event */
-	    if (trig->count > trig->trigger) {
-		trig->above_below = MCA_GPR_REPLICA_TRIGGER_ABOVE_LEVEL;
-	    } else if (trig->count < trig->trigger) {
-		trig->above_below = MCA_GPR_REPLICA_TRIGGER_BELOW_LEVEL;
-	    } else {
-		trig->above_below = MCA_GPR_REPLICA_TRIGGER_AT_LEVEL;
-	    }
-	}
-    }
-
-
-    ompi_list_append(&seg->triggers, &trig->item);
-
-
-    return trig;
-#endif
-    return ORTE_ERR_NOT_IMPLEMENTED;
-}
-
-orte_gpr_notify_id_t
+int
 orte_gpr_replica_remove_trigger(orte_gpr_notify_id_t idtag)
 {
-#if 0
-    /* 
-     * need to register callback to remove entry on remote notify_id_tracker
-     * if remote_idtag != 0
-     */
-
-    mca_gpr_replica_notify_request_tracker_t *trackptr;
-    ompi_registry_notify_id_t remote_idtag;
-    mca_gpr_replica_segment_t *seg;
-    mca_gpr_replica_trigger_list_t *trig;
+    orte_gpr_replica_notify_tracker_t *trackptr;
+    int rc;
 
     /* find request on notify tracking system */
-    for (trackptr = (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_first(&mca_gpr_replica_notify_request_tracker);
-	 trackptr != (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_end(&mca_gpr_replica_notify_request_tracker);
-	 trackptr = (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_next(trackptr)) {
-
-	if (trackptr->local_idtag == idtag) {
-	    /* find the trigger on the segment and remove it */
-	    seg = trackptr->segptr;
-	    for (trig = (mca_gpr_replica_trigger_list_t*)ompi_list_get_first(&seg->triggers);
-		 trig != (mca_gpr_replica_trigger_list_t*)ompi_list_get_end(&seg->triggers);
-		 trig = (mca_gpr_replica_trigger_list_t*)ompi_list_get_next(trig)) {
-		if (trig->local_idtag == idtag) {
-		    ompi_list_remove_item(&seg->triggers, &trig->item);
-		    OBJ_RELEASE(trig);
-		    /* save the remote_idtag so it can be returned */
-		    remote_idtag = trackptr->remote_idtag;
-		    /* remove the request from the notify tracking system */
-		    ompi_list_remove_item(&mca_gpr_replica_notify_request_tracker, &trackptr->item);
-		    OBJ_RELEASE(trackptr);
-		    return remote_idtag;
-		}
-	    }
-	}
+    trackptr = (orte_gpr_replica_notify_tracker_t*)((orte_gpr_replica.triggers)->addr[idtag]);
+    if (NULL == trackptr) {
+        return ORTE_ERR_BAD_PARAM;
     }
-    return OMPI_REGISTRY_NOTIFY_ID_MAX; /* couldn't find the trigger */
-#endif
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    
+    /* purge this trigger from the specified segment */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_purge_trigger(trackptr->segptr, idtag))) {
+        return rc;
+    }
+    
+    /* remove trigger */
+    return orte_pointer_array_set_item(orte_gpr_replica.triggers, idtag, NULL);
+}
+
+
+int
+orte_gpr_replica_purge_trigger(orte_gpr_replica_segment_t *seg, orte_gpr_notify_id_t idtag)
+{
+    int i, j, k, m;
+    orte_gpr_replica_container_t **cptr;
+    orte_gpr_replica_itagval_t **iptr;
+    
+    /* check the segment itself */
+    j = (int)orte_value_array_get_size(&(seg->triggers));
+    for (i=0; i < j; i++) {
+        if (idtag == ORTE_VALUE_ARRAY_GET_ITEM(&(seg->triggers), orte_gpr_notify_id_t, i)) {
+           orte_value_array_remove_item(&(seg->triggers), i);
+           break;
+        }
+    }
+    
+    /* for each container */
+    cptr = (orte_gpr_replica_container_t**)((seg->containers)->addr);
+    for (i=0; i < (seg->containers)->size; i++) {
+        if (NULL != cptr[i]) {
+            /* check the container's triggers */
+            j = (int)orte_value_array_get_size(&(cptr[i]->triggers));
+            for (k=0; k < j; k++) {
+                if (idtag == ORTE_VALUE_ARRAY_GET_ITEM(&(cptr[i]->triggers),
+                                                orte_gpr_notify_id_t, k)) {
+                    orte_value_array_remove_item(&(cptr[i]->triggers), k);
+                    break;
+                }
+            }
+            /* for each itagval in the container */
+            iptr = (orte_gpr_replica_itagval_t**)((cptr[i]->itagvals)->addr);
+            for (j=0; j < (cptr[i]->itagvals)->size; j++) {
+                if (NULL != iptr[j]) {
+                    /* check the itagval's triggers */
+                    k = (int)orte_value_array_get_size(&(iptr[j]->triggers));
+                    for (m=0; m < k; m++) {
+                        if (idtag == ORTE_VALUE_ARRAY_GET_ITEM(&(iptr[j]->triggers),
+                                                    orte_gpr_notify_id_t, m)) {
+                            orte_value_array_remove_item(&(iptr[j]->triggers), m);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return ORTE_SUCCESS;
 }
 
 
@@ -332,78 +291,73 @@ int orte_gpr_replica_purge_subscriptions(orte_process_name_t *proc)
 
 int
 orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
-                      orte_gpr_replica_segment_t *seg,
-                     orte_gpr_notify_action_t action,
-                   orte_process_name_t *requestor,
-                    orte_gpr_notify_id_t remote_idtag,
-                     orte_gpr_notify_cb_fn_t cb_func,
-                   void *user_tag)
+                                      orte_gpr_replica_segment_t *seg,
+                                      orte_gpr_cmd_flag_t cmd,
+                                      orte_gpr_replica_act_sync_t *flag,
+                                      orte_process_name_t *requestor,
+                                      orte_gpr_notify_id_t remote_idtag,
+                                      orte_gpr_notify_cb_fn_t cb_func,
+                                      void *user_tag)
 {
-#if 0
-    mca_gpr_replica_notify_request_tracker_t *trackptr;
-    mca_gpr_idtag_list_t *ptr_free_id;
+    orte_gpr_replica_notify_tracker_t *trackptr;
+    int rc;
 
-    trackptr = OBJ_NEW(mca_gpr_replica_notify_request_tracker_t);
+    *local_idtag = ORTE_GPR_NOTIFY_ID_MAX;
+    
+    trackptr = OBJ_NEW(orte_gpr_replica_notify_tracker_t);
+    if (NULL == trackptr) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+
+    trackptr->cmd = cmd;
+    if (ORTE_GPR_SUBSCRIBE_CMD == cmd) {
+        trackptr->flag.trig_action = flag->trig_action;
+    } else if (ORTE_GPR_SYNCHRO_CMD == cmd) {
+        trackptr->flag.trig_synchro = flag->trig_synchro;
+    } else {
+        OBJ_RELEASE(trackptr);
+        return ORTE_ERR_BAD_PARAM;
+    }
+
     trackptr->segptr = seg;
-    trackptr->action = action;
     if (NULL != requestor) {
-        if (ORTE_SUCCESS != orte_name_services.copy_process_name(trackptr->requestor, requestor)) {
-              return OMPI_REGISTRY_NOTIFY_ID_MAX;
+        if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&(trackptr->requestor),
+                                            requestor))) {
+              return rc;
         }
     } else {
     		trackptr->requestor = NULL;
     }
-    trackptr->remote_idtag = idtag;
+    trackptr->remote_idtag = remote_idtag;
     trackptr->callback = cb_func;
     trackptr->user_tag = user_tag;
-    if (ompi_list_is_empty(&mca_gpr_replica_free_notify_id_tags)) {
-		trackptr->local_idtag = mca_gpr_replica_last_notify_id_tag;
-		mca_gpr_replica_last_notify_id_tag++;
-    } else {
-		ptr_free_id = (mca_gpr_idtag_list_t*)ompi_list_remove_first(&mca_gpr_replica_free_notify_id_tags);
-		trackptr->local_idtag = ptr_free_id->id_tag;
-    }
-    ompi_list_append(&mca_gpr_replica_notify_request_tracker, &trackptr->item);
 
-    return trackptr->local_idtag;
-#endif
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    if (0 > (rc = orte_pointer_array_add(orte_gpr_replica.triggers, trackptr))) {
+        return rc;
+    }
+    
+    trackptr->local_idtag = (orte_gpr_notify_id_t)rc;
+    *local_idtag = trackptr->local_idtag;
+
+    return ORTE_SUCCESS;
 }
 
 
-orte_gpr_notify_id_t
-orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t idtag)
+int
+orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t local_idtag,
+                                       orte_gpr_notify_id_t *remote_idtag)
 {
-#if 0
-    mca_gpr_replica_notify_request_tracker_t *trackptr;
-    mca_gpr_idtag_list_t *ptr_free_id;
-    ompi_registry_notify_id_t remote_idtag;
+    orte_gpr_replica_notify_tracker_t *trackptr;
 
-    /* find request on replica notify tracking system */
-    for (trackptr = (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_first(&mca_gpr_replica_notify_request_tracker);
-	 trackptr != (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_end(&mca_gpr_replica_notify_request_tracker) &&
-	     trackptr->local_idtag != idtag;
-	 trackptr = (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_next(trackptr));
-
-    if (trackptr != (mca_gpr_replica_notify_request_tracker_t*)ompi_list_get_end(&mca_gpr_replica_notify_request_tracker)) {
-	/* save the remote idtag */
-	remote_idtag = trackptr->remote_idtag;
-
-	/* ...and remove the request */
-	ompi_list_remove_item(&mca_gpr_replica_notify_request_tracker, &trackptr->item);
-	/* put local id tag on free list */
-	ptr_free_id = OBJ_NEW(mca_gpr_idtag_list_t);
-	ptr_free_id->id_tag = trackptr->local_idtag;
-	ompi_list_append(&mca_gpr_replica_free_notify_id_tags, &ptr_free_id->item);
-	/* release tracker item */
-	OBJ_RELEASE(trackptr);
-
-	return remote_idtag;
+    trackptr = (orte_gpr_replica_notify_tracker_t*)((orte_gpr_replica.triggers)->addr[local_idtag]);
+    if (NULL == trackptr) {
+        return ORTE_ERR_BAD_PARAM;
     }
-    /* error condition if reach here */
-    return OMPI_REGISTRY_NOTIFY_ID_MAX;
-#endif
-    return 1;
+    *remote_idtag = trackptr->remote_idtag;
+    OBJ_RELEASE(trackptr);
+    orte_pointer_array_set_item(orte_gpr_replica.triggers, local_idtag, NULL);
+
+    return ORTE_SUCCESS;
 }
 
 int orte_gpr_replica_check_synchros(orte_gpr_replica_segment_t *seg)

@@ -192,21 +192,16 @@ int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
 /*
  * Trigger Operations
  */
-int orte_gpr_replica_construct_trigger(orte_gpr_synchro_mode_t synchro_mode,
-				   orte_gpr_notify_action_t action,
-				   orte_gpr_addr_mode_t addr_mode,
-				   orte_gpr_replica_segment_t *seg,
-				   orte_gpr_replica_itag_t *itags,
-				   int num_itags,
-				   int trigger,
-				   orte_gpr_notify_id_t id_tag);
-
 bool orte_gpr_replica_process_triggers(orte_gpr_replica_segment_t *seg,
 				      orte_gpr_replica_notify_tracker_t *trig,
 				      orte_gpr_notify_message_t *message);
 
-orte_gpr_notify_id_t
+int
 orte_gpr_replica_remove_trigger(orte_gpr_notify_id_t idtag);
+
+int
+orte_gpr_replica_purge_trigger(orte_gpr_replica_segment_t *seg,
+                               orte_gpr_notify_id_t idtag);
 
 /*
  * Alert Operations
@@ -214,14 +209,16 @@ orte_gpr_replica_remove_trigger(orte_gpr_notify_id_t idtag);
 int
 orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
                       orte_gpr_replica_segment_t *seg,
-				     orte_gpr_notify_action_t action,
+				     orte_gpr_cmd_flag_t cmd,
+                      orte_gpr_replica_act_sync_t *flag,
 				     orte_process_name_t *requestor,
 				     orte_gpr_notify_id_t remote_idtag,
 				     orte_gpr_notify_cb_fn_t cb_func,
 				     void *user_tag);
 
-orte_gpr_notify_id_t
-orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t idtag);
+int
+orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t local_idtag,
+                                       orte_gpr_notify_id_t *remote_idtag);
 
 int orte_gpr_replica_process_callbacks(void);
 

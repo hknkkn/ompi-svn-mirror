@@ -81,8 +81,6 @@ int orte_gpr_replica_cleanup_proc_fn(orte_process_name_t *proc)
 {
     orte_gpr_replica_segment_t *seg;
     orte_gpr_replica_itag_t itag;
-    orte_gpr_notify_id_t *trigid;
-    orte_gpr_replica_notify_tracker_t **tracks;
     char *procname, *segment, *jobidstring;
     orte_jobid_t jobid;
     int rc, i;
@@ -124,7 +122,7 @@ int orte_gpr_replica_cleanup_proc_fn(orte_process_name_t *proc)
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
         return rc;
     }
-    
+#if 0    
     trigid = (orte_gpr_notify_id_t*)seg->triggers;
     tracks = (orte_gpr_replica_notify_tracker_t**)((orte_gpr_replica.triggers)->addr);
     for (i=0; i < seg->num_trigs; i++) {
@@ -134,7 +132,7 @@ int orte_gpr_replica_cleanup_proc_fn(orte_process_name_t *proc)
         }
         trigid++;
     }
-    
+#endif
     return orte_gpr_replica_check_synchros(seg);
 
 }

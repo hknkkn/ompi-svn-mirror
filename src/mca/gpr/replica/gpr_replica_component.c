@@ -23,6 +23,7 @@
  */
 #include "orte_config.h"
 
+#include "class/ompi_object.h"
 #include "util/output.h"
 #include "util/proc_info.h"
 
@@ -120,8 +121,9 @@ static void orte_gpr_replica_segment_construct(orte_gpr_replica_segment_t* seg)
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
 
-    seg->triggers = NULL;
-    seg->num_trigs = 0;
+    OBJ_CONSTRUCT(&(seg->triggers), orte_value_array_t);
+    orte_value_array_init(&(seg->triggers), sizeof(orte_gpr_notify_id_t));
+    
     seg->triggers_active = false;
 }
 
@@ -140,9 +142,7 @@ static void orte_gpr_replica_segment_destructor(orte_gpr_replica_segment_t* seg)
         OBJ_RELEASE(seg->containers);
     }
     
-    if (NULL != seg->triggers) {
-        free(seg->triggers);
-    }
+    OBJ_DESTRUCT(&(seg->triggers));
 
 }
 
@@ -164,8 +164,9 @@ static void orte_gpr_replica_container_construct(orte_gpr_replica_container_t* r
 
     reg->itags = NULL;
     reg->num_itags = 0;
-    reg->triggers = NULL;
-    reg->num_trigs = 0;
+    
+    OBJ_CONSTRUCT(&(reg->triggers), orte_value_array_t);
+    orte_value_array_init(&(reg->triggers), sizeof(orte_gpr_notify_id_t));
 
 }
 
@@ -179,10 +180,6 @@ static void orte_gpr_replica_container_destructor(orte_gpr_replica_container_t* 
          free(reg->itags);
     }
 
-    if (NULL != reg->triggers) {
-        free(reg->triggers);
-    }
-
     if (NULL != reg->itagvals) {
         ptr = (orte_gpr_replica_itagval_t*)((reg->itagvals)->addr);
         for (i=0; i < (reg->itagvals)->size; i++) {
@@ -193,7 +190,9 @@ static void orte_gpr_replica_container_destructor(orte_gpr_replica_container_t* 
         }
         OBJ_RELEASE(reg->itagvals);
     }
-    
+
+    OBJ_DESTRUCT(&(reg->triggers));
+
 }
 
 /* define instance of ompi_class_t */
@@ -212,6 +211,9 @@ static void orte_gpr_replica_itagval_construct(orte_gpr_replica_itagval_t* ptr)
     ptr->itag = ORTE_GPR_REPLICA_ITAG_MAX;
     ptr->type = ORTE_NULL;
     (ptr->value).strptr = NULL;
+    OBJ_CONSTRUCT(&(ptr->triggers), orte_value_array_t);
+    orte_value_array_init(&(ptr->triggers), sizeof(orte_gpr_notify_id_t));
+
 }
 
 /* destructor - used to free any resources held by instance */
@@ -220,6 +222,7 @@ static void orte_gpr_replica_itagval_destructor(orte_gpr_replica_itagval_t* ptr)
     if (ORTE_BYTE_OBJECT == ptr->type) {
         free(((ptr->value).byteobject).bytes);
     }
+    OBJ_DESTRUCT(&(ptr->triggers));
 }
 
 /* define instance of ompi_class_t */
@@ -241,9 +244,13 @@ static void orte_gpr_replica_notify_tracker_construct(orte_gpr_replica_notify_tr
     trig->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
     trig->segptr = NULL;
     trig->addr_mode = 0;
-    trig->tokens = NULL;
-    trig->num_tokens = 0;
-    trig->key = NULL;
+    
+    OBJ_CONSTRUCT(&(trig->tokentags), orte_value_array_t);
+    orte_value_array_init(&(trig->tokentags), sizeof(orte_gpr_replica_itag_t));
+
+    OBJ_CONSTRUCT(&(trig->keytags), orte_value_array_t);
+    orte_value_array_init(&(trig->keytags), sizeof(orte_gpr_replica_itag_t));
+
     trig->cmd = 0;
     trig->flag.trig_action = 0;
     trig->trigger = 0;
@@ -254,27 +261,13 @@ static void orte_gpr_replica_notify_tracker_construct(orte_gpr_replica_notify_tr
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_replica_notify_tracker_destructor(orte_gpr_replica_notify_tracker_t* trig)
 {
-    char **tok;
-    uint32_t i;
-
     if (NULL != trig->requestor) {
         free(trig->requestor);
     }
 
-    if (NULL != trig->tokens) {
- for (i=0, tok=trig->tokens; i< trig->num_tokens; i++) {
-        free(*tok);
-        *tok = NULL;
-       tok++;
- }
-  free(trig->tokens);
-    trig->tokens = NULL;
-    }
+    OBJ_DESTRUCT(&(trig->tokentags));
+    OBJ_DESTRUCT(&(trig->keytags));
 
-    if (NULL != trig->key) {
-        free(trig->key);
-    }
-    
 }
 
 /* define instance of ompi_class_t */

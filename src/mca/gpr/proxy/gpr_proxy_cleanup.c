@@ -39,8 +39,8 @@ int orte_gpr_proxy_cleanup_job(orte_jobid_t jobid)
     orte_buffer_t *cmd, *answer;
     int rc;
 
-    if (orte_gpr_proxy_compound_cmd_mode) {
-	   return orte_gpr_base_pack_cleanup_job(orte_gpr_proxy_compound_cmd, jobid);
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+	   return orte_gpr_base_pack_cleanup_job(orte_gpr_proxy_globals.compound_cmd, jobid);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -52,7 +52,7 @@ int orte_gpr_proxy_cleanup_job(orte_jobid_t jobid)
 	   return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
         return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -61,7 +61,7 @@ int orte_gpr_proxy_cleanup_job(orte_jobid_t jobid)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }
@@ -79,8 +79,8 @@ int orte_gpr_proxy_cleanup_proc(orte_process_name_t *proc)
     orte_buffer_t *cmd, *answer;
     int rc;
     
-    if (orte_gpr_proxy_compound_cmd_mode) {
-	   return orte_gpr_base_pack_cleanup_proc(orte_gpr_proxy_compound_cmd, proc);
+    if (orte_gpr_proxy_globals.compound_cmd_mode) {
+	   return orte_gpr_base_pack_cleanup_proc(orte_gpr_proxy_globals.compound_cmd, proc);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -92,7 +92,7 @@ int orte_gpr_proxy_cleanup_proc(orte_process_name_t *proc)
 	    return rc;
     }
 
-    if (0 > orte_rml.send_buffer(orte_gpr_my_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
+    if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {
         return ORTE_ERR_COMM_FAILURE;
     }
 
@@ -101,7 +101,7 @@ int orte_gpr_proxy_cleanup_proc(orte_process_name_t *proc)
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+    if (0 > orte_rml.recv_buffer(orte_process_info.gpr_replica, answer, MCA_OOB_TAG_GPR)) {
         OBJ_RELEASE(answer);
         return ORTE_ERR_COMM_FAILURE;
     }

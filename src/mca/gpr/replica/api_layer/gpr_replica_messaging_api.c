@@ -43,7 +43,6 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
     if (NULL != *procs) {
         return ORTE_ERR_BAD_PARAM;
     }
-    *procs = NULL;
     
     if (NULL != *msg) {
         OBJ_RELEASE(*msg);

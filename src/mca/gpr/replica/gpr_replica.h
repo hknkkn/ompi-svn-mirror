@@ -25,6 +25,7 @@
 #include <time.h>
 
 #include "class/orte_pointer_array.h"
+#include "class/orte_value_array.h"
 
 #include "threads/mutex.h"
 #include "threads/condition.h"
@@ -106,8 +107,7 @@ struct orte_gpr_replica_segment_t {
     orte_gpr_replica_itag_t itag;       /**< itag of this segment */
     orte_pointer_array_t *dict;         /**< Managed array of dict structs */
     orte_pointer_array_t *containers;   /**< Managed array of pointers to containers on this segment */
-    orte_gpr_notify_id_t *triggers;     /**< Array of indices for triggers on this segment */
-    int num_trigs;                      /**< Number of triggers in array */
+    orte_value_array_t triggers;        /**< Array of indices to triggers on this segment */
     bool triggers_active;               /**< Indicates if triggers are active or not */
 };
 typedef struct orte_gpr_replica_segment_t orte_gpr_replica_segment_t;
@@ -139,8 +139,7 @@ struct orte_gpr_replica_container_t {
     int index;                        /**< Location in the pointer array */
     orte_gpr_replica_itag_t *itags;   /**< Array of itags that define this container */
     int num_itags;                    /**< Number of itags in array */
-    orte_gpr_notify_id_t *triggers;   /**< Array of indices into notifier array */
-    int num_trigs;                    /**< Number of triggers in array */
+    orte_value_array_t triggers;      /**< Array of indices into notifier array */
     orte_pointer_array_t *itagvals;   /**< Array of itagval pointers */
 };
 typedef struct orte_gpr_replica_container_t orte_gpr_replica_container_t;
@@ -151,15 +150,20 @@ OBJ_CLASS_DECLARATION(orte_gpr_replica_container_t);
 /* The itag-value pair for storing data entries in the registry
  */
 typedef struct {
-    ompi_object_t super;                /* required for this to be an object */
-    int index;                          /* index of this itagval on the container array */
-    orte_gpr_replica_itag_t itag;       /* itag for this value's key */
-    orte_data_type_t type;              /* the type of value stored */
-    orte_gpr_value_union_t value;
+    ompi_object_t super;                /**< required for this to be an object */
+    int index;                          /**< index of this itagval on the container array */
+    orte_gpr_replica_itag_t itag;       /**< itag for this value's key */
+    orte_data_type_t type;              /**< the type of value stored */
+    orte_gpr_value_union_t value;       /**< Actual stored value */
+    orte_value_array_t triggers;        /**< Array of indices into notifier array */
 } orte_gpr_replica_itagval_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_itagval_t);
 
+typedef union {
+    orte_gpr_notify_action_t trig_action;   /**< If subscription, action that triggered message */
+    orte_gpr_synchro_mode_t trig_synchro;
+} orte_gpr_replica_act_sync_t;
 
 struct orte_gpr_replica_notify_tracker_t {
     ompi_object_t super;                    /**< Make this an object */
@@ -171,14 +175,10 @@ struct orte_gpr_replica_notify_tracker_t {
     orte_gpr_replica_segment_t *segptr;     /**< Pointer to segment that subscription was
                                                   placed upon */
     orte_gpr_addr_mode_t addr_mode;         /**< Addressing mode */
-    char **tokens;                          /**< Array of tokens defining which containers are affected */
-    uint32_t num_tokens;                    /**< Number of tokens in array */
-    char *key;                              /**< Key defining which key-value pairs are affected */
-    orte_gpr_cmd_flag_t cmd;                    /**< command that generated the notify msg */
-    union {
-        orte_gpr_notify_action_t trig_action;   /**< If subscription, action that triggered message */
-        orte_gpr_synchro_mode_t trig_synchro;   /**< If synchro, action that triggered message */
-    } flag;
+    orte_value_array_t tokentags;           /**< Array of tokens defining which containers are affected */
+    orte_value_array_t keytags;             /**< Keys defining which key-value pairs are affected */
+    orte_gpr_cmd_flag_t cmd;                /**< command that generated the notify msg */
+    orte_gpr_replica_act_sync_t flag;
     uint32_t trigger;                       /**< Number of objects that trigger notification */
     uint32_t count;                         /**< Number of qualifying objects currently in segment */
     int8_t above_below;                     /**< Tracks transitions across level */
