@@ -22,6 +22,7 @@
  */
 #include "orte_config.h"
 #include "include/orte_constants.h"
+#include "include/orte_types.h"
 
 #include "class/ompi_list.h"
 #include "mca/mca.h"
@@ -50,11 +51,19 @@ OMPI_DECLSPEC    int orte_rmgr_base_close(void);
 /*
  * Base functions that are common to all implementations - can be overridden
  */
+int orte_rmgr_base_init_not_available(
+    orte_app_context_t* app_context, 
+    size_t num_context, 
+    orte_jobid_t* jobid);
 int orte_rmgr_base_query_not_available(void);
 int orte_rmgr_base_allocate_not_available(orte_jobid_t);
 int orte_rmgr_base_deallocate_not_available(orte_jobid_t);
 int orte_rmgr_base_map_not_available(orte_jobid_t);
 int orte_rmgr_base_launch_not_available(orte_jobid_t);
+int orte_rmgr_base_spawn_not_available(
+    orte_app_context_t* app_context, 
+    size_t num_context, 
+    orte_jobid_t* jobid);
 int orte_rmgr_base_finalize_not_available(void);
 
 /*

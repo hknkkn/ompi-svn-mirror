@@ -61,6 +61,7 @@ process_site(xmlChar *site, xmlDoc *doc, xmlNode *a_node)
 
 int orte_rds_resfile_query(void)
 {
+#if 0
     xmlDoc *doc = NULL;
     xmlNode *root_element = NULL;
     xmlNode *cur = NULL;
@@ -112,7 +113,7 @@ int orte_rds_resfile_query(void)
      *have been allocated by the parser.
      */
     xmlCleanupParser();
-
+#endif
 
     return ORTE_SUCCESS;
 }

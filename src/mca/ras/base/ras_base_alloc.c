@@ -25,7 +25,7 @@
  * Try to allocate resources for the selected job from 
  * all available components.
  */
-int orte_ras_base_allocate(orte_jobid_t *jobid)
+int orte_ras_base_allocate(orte_jobid_t jobid)
 {
     ompi_list_item_t* item;
                                                                                                             

@@ -155,18 +155,12 @@
 /**
  * Allocate resources to a job.
  * 
- * @code
- * new_cellid = ompi_name_server.create_cellid()
- * @endcode
  */
-typedef int (*orte_ras_base_module_allocate_fn_t)(orte_jobid_t *jobid);
+typedef int (*orte_ras_base_module_allocate_fn_t)(orte_jobid_t jobid);
 
 /**
  * Deallocate resources from a job
  *
- * @code
- * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
- * @endcode
  */
 typedef int (*orte_ras_base_module_deallocate_fn_t)(orte_jobid_t jobid);
 

@@ -15,19 +15,6 @@
 #ifndef ORTE_RMGR_TYPES_H
 #define ORTE_RMGR_TYPES_H
 
-typedef struct {
-    ompi_object_t super;
-    char   *app;
-    int32_t num_procs;
-    int32_t argc;
-    char  **argv;
-    int32_t num_env;
-    char  **env;
-    char   *cwd;
-} orte_rmgr_app_context_t;
-
-OBJ_CLASS_DECLARATION(orte_rmgr_app_context_t);
-
 
 /*
  * REGISTRY KEY NAMES FOR COMMON DATA

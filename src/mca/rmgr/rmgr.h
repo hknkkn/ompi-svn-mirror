@@ -29,6 +29,7 @@
 
 #include "orte_config.h"
 #include "include/orte_constants.h"
+#include "include/orte_types.h"
 
 #include "mca/mca.h"
 #include "mca/ns/ns_types.h"
@@ -50,15 +51,33 @@
 typedef int (*orte_rmgr_base_module_query_fn_t)(void);
                                                                                                                                           
 /**
- * Allocate resources to a job.
+ * Initialize a job.
  * 
+ * @param app_context   Array of application context values.
+ * @param num_context   Number of entries in the app_context array.
+ * @param jobid         Returns id allocated to the job.
+ *
  * @code
  * orte_jobid_t jobid;
  * 
  * return_value = orte_rmgr.allocate(orte_jobid_t &jobid)
  * @endcode
  */
-typedef int (*orte_rmgr_base_module_allocate_fn_t)(orte_jobid_t *jobid);
+typedef int (*orte_rmgr_base_module_init_fn_t)(
+    orte_app_context_t* app_context, 
+    size_t num_context, 
+    orte_jobid_t *jobid);
+
+/**
+ * Allocate resources to a job.
+ * 
+ * @code
+ * orte_jobid_t jobid;
+ * 
+ * return_value = orte_rmgr.allocate(orte_jobid_t jobid)
+ * @endcode
+ */
+typedef int (*orte_rmgr_base_module_allocate_fn_t)(orte_jobid_t jobid);
 
 /**
  * Deallocate resources from a job
@@ -88,6 +107,25 @@ typedef int (*orte_rmgr_base_module_map_fn_t)(orte_jobid_t job);
 typedef int (*orte_rmgr_base_module_launch_fn_t)(orte_jobid_t job);
 
 /**
+ * Perform all required steps to launch the indicated application.
+ *
+ * (1) Initial the application context - create a jobid
+ * (2) Allocated resources to the job.
+ * (3) Map processes to allocated resources
+ * (4) Launch the job.
+ *
+ * @code
+ * return_value = orte_rmgr.spawn(orte_rmgr_app_context_t* context, 
+ *     size_t num_contexts, orte_jobid_t* jobid);
+ * @endcode
+ */
+typedef int (*orte_rmgr_base_module_spawn_fn_t)(
+    orte_app_context_t* app_context, 
+    size_t num_context, 
+    orte_jobid_t *jobid);
+
+
+/**
  * Cleanup resources held by rmgr.
  */
 
@@ -97,11 +135,13 @@ typedef int (*orte_rmgr_base_module_finalize_fn_t)(void);
  * Ver 1.0.0
  */
 struct orte_rmgr_base_module_1_0_0_t {
+    orte_rmgr_base_module_init_fn_t init;
     orte_rmgr_base_module_query_fn_t query;
     orte_rmgr_base_module_allocate_fn_t allocate;
     orte_rmgr_base_module_deallocate_fn_t deallocate;
     orte_rmgr_base_module_map_fn_t map;
     orte_rmgr_base_module_launch_fn_t launch;
+    orte_rmgr_base_module_spawn_fn_t spawn;
     orte_rmgr_base_module_finalize_fn_t finalize;
 };
 
