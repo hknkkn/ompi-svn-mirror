@@ -21,6 +21,16 @@
 #define MCA_IOF_BASE_H
 
 #include "ompi_config.h"
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include "include/ompi.h"
 #include "class/ompi_free_list.h"
 #include "threads/condition.h"
