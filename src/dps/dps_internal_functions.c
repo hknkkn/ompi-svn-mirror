@@ -38,9 +38,9 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     orte_byte_object_t *sbyteptr=NULL;
     
     switch(type) {
+
         case ORTE_BYTE:
             return num_vals;
-            break;
 
         case ORTE_BYTE_OBJECT:
             mem_req = 0;
@@ -49,52 +49,27 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
                 mem_req += sbyteptr->size + sizeof(sbyteptr->size);
             }
             return mem_req;
-            break;
             
         case ORTE_INT8:
         case ORTE_UINT8:
             return num_vals;
-            break;
-            
-        case ORTE_NODE_STATE:
-            return (size_t)(num_vals * sizeof(orte_node_state_t));
-            break;
-            
-        case ORTE_STATUS_KEY:
-            return (size_t)(num_vals * sizeof(orte_status_key_t));
-            break;
-            
-        case ORTE_EXIT_CODE:
-            return (size_t)(num_vals * sizeof(orte_exit_code_t));
-            break;
             
         case ORTE_INT16:
         case ORTE_UINT16:
             return (size_t)(num_vals * 2);
-            break;
             
         case ORTE_INT32:
         case ORTE_UINT32:
             return (size_t)(num_vals * 4);
-            break;
             
         case ORTE_INT64:
         case ORTE_UINT64:
             return (size_t)(num_vals * 8);
-            break;
-            
-        case ORTE_JOBID:
-            return (size_t)(num_vals * sizeof(orte_jobid_t));
-            break;
-            
-        case ORTE_CELLID:
-            return (size_t)(num_vals * sizeof(orte_cellid_t));
-            break;
             
         case ORTE_NAME:
             return (size_t)(num_vals * sizeof(orte_process_name_t));
-            break;
             
+        case ORTE_NULL:
         case ORTE_STRING:
             mem_req = 0;
             strptr = (char *) src;
@@ -103,7 +78,6 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
                 strptr++;
             }
             return mem_req;
-            break;
             
         default:
             return 0;  /* unrecognized type */
