@@ -286,6 +286,8 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
     orte_jobid_t job;
     
 
+    orte_gpr.dump_notify_data(data, 0);
+    
     /* get the jobid from the segment name */
     if (ORTE_SUCCESS != (rc = orte_schema.extract_jobid_from_segment_name(&job, data->segment))) {
         ORTE_ERROR_LOG(rc);

@@ -65,6 +65,7 @@ int orte_gpr_replica_process_callbacks(void)
 	        if (orte_gpr_replica_globals.debug) {
 		      ompi_output(0, "process_callbacks: local");
 	        }
+orte_gpr.dump_notify_msg(cb->message, 0);
             data = (cb->message)->data;
             sdata = (orte_gpr_replica_subscribed_data_t**)((trig->subscribed_data)->addr);
             for (i=0; i < (cb->message)->cnt; i++) {
@@ -81,6 +82,7 @@ int orte_gpr_replica_process_callbacks(void)
     		      ompi_output(0, "process_callbacks: remote to [%d,%d,%d]",
                         ORTE_NAME_ARGS(cb->requestor));
     	       }
+orte_gpr.dump_notify_msg(cb->message, 0);
     	       orte_gpr_replica_remote_notify(cb->requestor, cb->remote_idtag, cb->message);
         }
 CLEANUP:
