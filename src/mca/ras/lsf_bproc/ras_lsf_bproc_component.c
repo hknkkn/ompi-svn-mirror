@@ -96,9 +96,7 @@ static int orte_ras_lsf_bproc_open(void)
 
 static orte_ras_base_module_t *orte_ras_lsf_bproc_init(void)
 {
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = false;
-    return &orte_ras_lsf_bproc_module;
+    return NULL;
 }
 
 /**

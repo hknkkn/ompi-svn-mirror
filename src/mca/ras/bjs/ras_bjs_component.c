@@ -97,6 +97,9 @@ static int orte_ras_bjs_open(void)
 
 static orte_ras_base_module_t *orte_ras_bjs_init(void)
 {
+    if(getenv("NODES") == NULL) {
+        return NULL;
+    }
     return &orte_ras_bjs_module;
 }
 

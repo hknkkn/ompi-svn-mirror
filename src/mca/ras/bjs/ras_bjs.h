@@ -26,7 +26,7 @@ extern "C" {
 
 
 /**
- * RMGR Component 
+ * RAS Component 
  */
 struct orte_ras_bjs_component_t {
     orte_ras_base_component_t super;
