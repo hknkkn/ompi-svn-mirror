@@ -121,10 +121,10 @@ libmpi_la_LIBADD = \
         mca/pls/base/libmca_pls_base.la $(MCA_pls_STATIC_LTLIBS) \
         mca/pml/base/libmca_pml_base.la $(MCA_pml_STATIC_LTLIBS) \
         mca/ptl/base/libmca_ptl_base.la $(MCA_ptl_STATIC_LTLIBS) \
-        mca/ras/base/libmca_ras_base.la $(MCA_rml_STATIC_LTLIBS) \
-        mca/rds/base/libmca_rds_base.la $(MCA_rml_STATIC_LTLIBS) \
-        mca/rmaps/base/libmca_rmaps_base.la $(MCA_rml_STATIC_LTLIBS) \
-        mca/rmgr/base/libmca_orte_rmgr_base.la $(MCA_rml_STATIC_LTLIBS) \
+        mca/ras/base/libmca_ras_base.la $(MCA_ras_STATIC_LTLIBS) \
+        mca/rds/base/libmca_rds_base.la $(MCA_rds_STATIC_LTLIBS) \
+        mca/rmaps/base/libmca_rmaps_base.la $(MCA_rmaps_STATIC_LTLIBS) \
+        mca/rmgr/base/libmca_orte_rmgr_base.la $(MCA_rmgr_STATIC_LTLIBS) \
         mca/rml/base/libmca_rml_base.la $(MCA_rml_STATIC_LTLIBS) \
         mca/soh/base/libmca_soh_base.la $(MCA_soh_STATIC_LTLIBS) \
         mca/topo/base/libmca_topo_base.la $(MCA_topo_STATIC_LTLIBS) \
