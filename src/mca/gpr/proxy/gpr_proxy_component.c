@@ -280,7 +280,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
 {
     orte_gpr_cmd_flag_t command;
     orte_gpr_notify_id_t id_tag;
-    orte_gpr_notify_data_t *data;
+    orte_gpr_notify_data_t **data;
     orte_gpr_proxy_notify_tracker_t *trackptr;
     orte_gpr_proxy_subscriber_t **subs;
     size_t n;
@@ -322,27 +322,36 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
         goto RETURN_ERROR;
     }
 
-    for (i=0; i < cnt; i++) {  /* unpack each notify_data object */
-        
-        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &data, &n, ORTE_GPR_NOTIFY_DATA))) {
+    if(cnt > 0) {
+        /* allocate space for the array */
+        data = (orte_gpr_notify_data_t**)malloc(cnt * sizeof(orte_gpr_notify_data_t*));
+        if (NULL == data) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            goto RETURN_ERROR;
+        }
+
+        n = cnt;
+        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, data, &n, ORTE_GPR_NOTIFY_DATA))) {
             ORTE_ERROR_LOG(rc);
             goto RETURN_ERROR;
         }
     
-        /* locate the data callback */
-        subs = (orte_gpr_proxy_subscriber_t**)((trackptr->callbacks)->addr);
-        for (j=0; j < (trackptr->callbacks)->size; j++) {
-            if (NULL != subs[j] && subs[j]->index == data->cb_num) {
-                /* process request */
-                subs[j]->callback(data, subs[j]->user_tag);
-                break;
-            }
-        }
+
+        for (i=0; i < cnt; i++) {
+           /* locate the data callback */
+           subs = (orte_gpr_proxy_subscriber_t**)((trackptr->callbacks)->addr);
+           for (j=0; j < (trackptr->callbacks)->size; j++) {
+               if (NULL != subs[j] && subs[j]->index == data[i]->cb_num) {
+                   /* process request */
+                   subs[j]->callback(data[i], subs[j]->user_tag);
+                   break;
+               }
+           }
+       }
     }
     /* dismantle message and free memory */
 
  RETURN_ERROR:
-    OBJ_RELEASE(buffer);
 
     /* reissue non-blocking receive */
     orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, MCA_OOB_TAG_GPR_NOTIFY, 0, orte_gpr_proxy_notify_recv, NULL);
