@@ -186,7 +186,7 @@ int mca_oob_tcp_component_open(void)
     mca_oob_tcp_component.tcp_peer_retries =
         mca_oob_tcp_param_register_int("peer_retries", 60);
     mca_oob_tcp_component.tcp_debug =
-        mca_oob_tcp_param_register_int("debug", 1);
+        mca_oob_tcp_param_register_int("debug", 0);
     mca_oob_tcp_component.tcp_include =
         mca_oob_tcp_param_register_str("include", NULL);
     mca_oob_tcp_component.tcp_exclude =
@@ -625,7 +625,7 @@ int mca_oob_tcp_init(void)
     ompi_list_item_t* item;
 
     /* random delay to stagger connections back to seed */
-    usleep((orte_process_info.num_procs % 1000) * 1000);
+    usleep((orte_process_info.num_procs % 100) * 10000);
 
     /* get my jobid */
     if (ORTE_SUCCESS != (rc = orte_ns.get_jobid(&jobid, 
