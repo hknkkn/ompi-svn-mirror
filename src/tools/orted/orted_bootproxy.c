@@ -14,6 +14,9 @@
 /** @file **/
 
 #include "orte_config.h"
+#include "include/orte_constants.h"
+
+#include "orted.h"
 
 int orte_daemon_bootproxy(void)
 {

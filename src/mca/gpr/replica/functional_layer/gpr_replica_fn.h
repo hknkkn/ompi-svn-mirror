@@ -199,9 +199,10 @@ int orte_gpr_replica_check_trigger(orte_gpr_replica_segment_t *seg,
                     orte_gpr_replica_container_t *cptr,
                     orte_gpr_replica_itagval_t *iptr,
                     int8_t action);
-/*
- * Alert Operations
- */
+
+int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
+                                              orte_gpr_replica_triggers_t *trig);
+
 int
 orte_gpr_replica_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
                       orte_gpr_replica_segment_t *seg,

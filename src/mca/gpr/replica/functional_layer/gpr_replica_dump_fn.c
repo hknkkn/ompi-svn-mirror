@@ -142,7 +142,6 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
                                           orte_gpr_replica_triggers_t *trig)
 {
     char *tmp_out, *token;
-    orte_gpr_replica_target_t **targets;
     int i, k;
     
     if (ORTE_GPR_SYNCHRO_CMD == trig->cmd) {  /* subscription */
@@ -281,17 +280,6 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         }
     }
 
-    tmp_out = strdup("\t\tTargets:\n");
-    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-    targets = (orte_gpr_replica_target_t**)((trig->targets)->addr);
-    for (i=0; i < (trig->targets)->size; i++) {
-        if (NULL != targets[i]) {
-            asprintf(&tmp_out, "\t\t\tcontainer %d\titagval %d",
-                    targets[i]->container, targets[i]->itagval);
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-        }
-    }
-    
 	tmp_out = strdup("\n\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 

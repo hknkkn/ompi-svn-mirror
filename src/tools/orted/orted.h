@@ -15,9 +15,14 @@
 #ifndef ORTED_H
 #define ORTED_H
 
+#include "orte_config.h"
+
 #include <string.h>
 
 #include "class/ompi_list.h"
+#include "threads/mutex.h"
+#include "threads/condition.h"
+
 #include "util/cmd_line.h"
 #include "mca/mca.h"
 
@@ -38,6 +43,15 @@
  */
 
 typedef uint16_t ompi_daemon_cmd_flag_t;
+
+typedef struct {
+    bool debug;
+    bool bootproxy;
+    bool probe;
+    ompi_mutex_t mutex;
+    ompi_condition_t condition;
+    bool exit_condition;
+} orted_globals_t;
 
 extern orted_globals_t orted_globals;
 

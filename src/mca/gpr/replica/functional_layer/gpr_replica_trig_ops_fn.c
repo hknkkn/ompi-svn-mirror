@@ -234,26 +234,9 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
     }
     
     /* construct the message */
-    cb->message = OBJ_NEW(orte_gpr_notify_message_t);
-    if (NULL == cb->message) {
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    
-    (cb->message)->idtag = trig->local_idtag;
-    (cb->message)->segment = strdup((trig->seg)->name);
-    (cb->message)->cmd = trig->cmd;
-    if (ORTE_GPR_SYNCHRO_CMD == trig->cmd) {
-        (cb->message)->flag.trig_action = trig->flag.trig_action;
-    } else {
-        (cb->message)->flag.trig_synchro = trig->flag.trig_synchro;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(trig->addr_mode, trig->seg,
-        ORTE_VALUE_ARRAY_GET_BASE(&(trig->tokentags), orte_gpr_replica_itag_t),
-        (int)orte_value_array_get_size(&(trig->tokentags)),
-        ORTE_VALUE_ARRAY_GET_BASE(&(trig->keytags), orte_gpr_replica_itag_t),
-        (int)orte_value_array_get_size(&(trig->keytags)),
-        &((cb->message)->cnt), &((cb->message)->values))))  {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_construct_notify_message(&(cb->message), trig))) {
+        ORTE_ERROR_LOG(rc);
+        OBJ_RELEASE(cb);
         return rc;
     }
     
@@ -291,6 +274,40 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
     }
 
     return ORTE_SUCCESS;
+}
+
+
+int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
+                                              orte_gpr_replica_triggers_t *trig)
+{
+    int rc;
+    
+    /* construct the message */
+    *msg = OBJ_NEW(orte_gpr_notify_message_t);
+    if (NULL == *msg) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    (*msg)->idtag = trig->local_idtag;
+    (*msg)->segment = strdup((trig->seg)->name);
+    (*msg)->cmd = trig->cmd;
+    if (ORTE_GPR_SYNCHRO_CMD == trig->cmd) {
+        (*msg)->flag.trig_action = trig->flag.trig_action;
+    } else {
+        (*msg)->flag.trig_synchro = trig->flag.trig_synchro;
+    }
+
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_fn(trig->addr_mode, trig->seg,
+        ORTE_VALUE_ARRAY_GET_BASE(&(trig->tokentags), orte_gpr_replica_itag_t),
+        (int)orte_value_array_get_size(&(trig->tokentags)),
+        ORTE_VALUE_ARRAY_GET_BASE(&(trig->keytags), orte_gpr_replica_itag_t),
+        (int)orte_value_array_get_size(&(trig->keytags)),
+        &((*msg)->cnt), &((*msg)->values))))  {
+        ORTE_ERROR_LOG(rc);
+    }
+
+    return rc;
 }
 
 

@@ -39,8 +39,7 @@ bin_PROGRAMS = orted
 orted_SOURCES = \
         orted.h \
         orted.c \
-        orted_bootproxy.c \
-        orted_probe.c
+        orted_bootproxy.c 
 
 orted_LDADD = $(libs) $(LIBMPI_EXTRA_LIBS)
 orted_LDFLAGS = $(LIBMPI_EXTRA_LDFLAGS)

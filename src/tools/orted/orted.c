@@ -54,15 +54,6 @@
 
 #include "tools/orted/orted.h"
 
-typedef struct {
-    bool debug;
-    bool bootproxy;
-    bool probe;
-    ompi_mutex_t mutex;
-    ompi_condition_t condition;
-    bool exit_condition;
-} orted_globals_t;
-
 orted_globals_t orted_globals;
 
 static void orte_daemon_recv(int status, orte_process_name_t* sender,

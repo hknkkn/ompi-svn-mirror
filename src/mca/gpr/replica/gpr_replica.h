@@ -163,8 +163,8 @@ typedef union {
 } orte_gpr_replica_act_sync_t;
 
 typedef struct {
-    int container;      /**< index of container in the segment container array */
-    int itagval;        /**< index of itagval in the container's itagval array */
+    int container;
+    int itagval;
 } orte_gpr_replica_target_t;
 
 struct orte_gpr_replica_triggers_t {
@@ -183,8 +183,7 @@ struct orte_gpr_replica_triggers_t {
     uint32_t count;                         /**< Number of qualifying objects currently in segment */
     int8_t above_below;                     /**< Tracks transitions across level */
     orte_gpr_replica_segment_t *seg;        /**< Pointer to the segment to which this trigger applies */
-    orte_pointer_array_t *targets;          /**< Array of target_t indicating containers/itagvals
-                                                 that "belong" to this trigger */
+    orte_pointer_array_t *targets;
 };
 typedef struct orte_gpr_replica_triggers_t orte_gpr_replica_triggers_t;
 
