@@ -60,7 +60,7 @@ int orte_rmgr_base_select(bool *allow_multi_user_threads,
             /* If there was a previous best one, finalize */
 
             if (NULL != best_module) {
-                 best_module->rmgr_finalize();
+                 best_module->finalize();
             }
 
             /* Save the new best one */

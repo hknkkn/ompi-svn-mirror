@@ -40,7 +40,7 @@
  * Query/update a resource
  *
  * @code
- * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
+ * return_value = orte_rmgr.query();
  * @endcode
  */
 typedef int (*orte_rmgr_base_module_query_fn_t)(void);
@@ -49,7 +49,7 @@ typedef int (*orte_rmgr_base_module_query_fn_t)(void);
  * Allocate resources to a job.
  * 
  * @code
- * new_cellid = ompi_name_server.create_cellid()
+ * return_value = orte_rmgr.allocate(orte_jobid_t jobid)
  * @endcode
  */
 typedef int (*orte_rmgr_base_module_allocate_fn_t)(orte_jobid_t jobid);
@@ -58,19 +58,28 @@ typedef int (*orte_rmgr_base_module_allocate_fn_t)(orte_jobid_t jobid);
  * Deallocate resources from a job
  *
  * @code
- * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
+ * return_value = orte_rmgr.deallocate(orte_jobid_t jobid);
  * @endcode
  */
 typedef int (*orte_rmgr_base_module_deallocate_fn_t)(orte_jobid_t jobid);
 
 /**
- * Map resources to a job
+ * Map processes to resources assigned to a job.
  *
  * @code
- * return_value = ompi_name_server.assign_cellid_to_process(ompi_process_name_t* name);
+ * return_value = orte_mgr.map(orte_jobid_t jobid);
  * @endcode
  */
 typedef int (*orte_rmgr_base_module_map_fn_t)(orte_jobid_t job);
+
+/**
+ * Launch processes that have been mapped.
+ *
+ * @code
+ * return_value = orte_rmgr.launch(orte_jobid_t jobid);
+ * @endcode
+ */
+typedef int (*orte_rmgr_base_module_launch_fn_t)(orte_jobid_t job);
 
 /**
  * Cleanup resources held by rmgr.
@@ -86,14 +95,15 @@ struct orte_rmgr_base_module_1_0_0_t {
     orte_rmgr_base_module_allocate_fn_t allocate;
     orte_rmgr_base_module_deallocate_fn_t deallocate;
     orte_rmgr_base_module_map_fn_t map;
-    orte_rmgr_base_module_finalize_fn_t rmgr_finalize;
+    orte_rmgr_base_module_launch_fn_t launch;
+    orte_rmgr_base_module_finalize_fn_t finalize;
 };
 
 typedef struct orte_rmgr_base_module_1_0_0_t orte_rmgr_base_module_1_0_0_t;
 typedef orte_rmgr_base_module_1_0_0_t orte_rmgr_base_module_t;
 
 /*
- * RAS Component
+ * RMGR Component
  */
 
 typedef orte_rmgr_base_module_t* (*orte_rmgr_base_component_init_fn_t)(

@@ -26,7 +26,7 @@
 int orte_rmgr_base_close(void)
 {
     /* finalize the selected component */
-    orte_rmgr.rmgr_finalize();
+    orte_rmgr.finalize();
 
     /* Close all remaining available components (may be one if this is a
        Open RTE program, or [possibly] multiple if this is ompi_info) */

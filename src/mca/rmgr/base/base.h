@@ -54,6 +54,7 @@ int orte_rmgr_base_query_not_available(void);
 int orte_rmgr_base_allocate_not_available(orte_jobid_t);
 int orte_rmgr_base_deallocate_not_available(orte_jobid_t);
 int orte_rmgr_base_map_not_available(orte_jobid_t);
+int orte_rmgr_base_launch_not_available(orte_jobid_t);
 int orte_rmgr_base_finalize_not_available(void);
 
 /*

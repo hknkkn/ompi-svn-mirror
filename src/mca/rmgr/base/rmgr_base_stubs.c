@@ -26,6 +26,12 @@
  * "not available" functions
  */
 int
+orte_rmgr_base_query_not_available()
+{
+    return ORTE_ERR_UNREACH;
+}
+
+int
 orte_rmgr_base_allocate_not_available(orte_jobid_t jobid)
 {
     return ORTE_ERR_UNREACH;
@@ -37,3 +43,14 @@ orte_rmgr_base_deallocate_not_available(orte_jobid_t jobid)
     return ORTE_ERR_UNREACH;
 }
 
+int
+orte_rmgr_base_map_not_available(orte_jobid_t jobid)
+{
+    return ORTE_ERR_UNREACH;
+}
+
+int
+orte_rmgr_base_launch_not_available(orte_jobid_t jobid)
+{
+    return ORTE_ERR_UNREACH;
+}

@@ -41,6 +41,7 @@ orte_rmgr_base_module_t orte_rmgr = {
     orte_rmgr_base_allocate_not_available,
     orte_rmgr_base_deallocate_not_available,
     orte_rmgr_base_map_not_available,
+    orte_rmgr_base_launch_not_available,
     orte_rmgr_base_finalize_not_available
 };
 
