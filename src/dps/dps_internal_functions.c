@@ -23,7 +23,9 @@
 
 #include "util/output.h"
 
+#include "mca/gpr/gpr_types.h"
 #include "mca/ns/ns_types.h"
+#include "mca/rmgr/rmgr_types.h"
 
 #include "dps_internal.h"
 
@@ -41,19 +43,34 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     char **strptr=NULL;
     size_t i=0, mem_req=0;
     orte_byte_object_t *sbyteptr=NULL;
-    
+    orte_gpr_keyval_t **keyval;
+    orte_gpr_value_t **values;
+    orte_rmgr_app_info_t **app_info;
+    orte_rmgr_app_context_t **app_context;
+
     switch(type) {
 
+        case ORTE_DATA_TYPE:
+        case ORTE_NODE_STATE:
+        case ORTE_STATUS_KEY:
+        case ORTE_EXIT_CODE:
         case ORTE_BOOL:
         case ORTE_BYTE:
         case ORTE_INT8:
         case ORTE_UINT8:
             return num_vals;
             
+        case ORTE_NOTIFY_ACTION:
+        case ORTE_SYNCHRO_MODE:
+        case ORTE_GPR_CMD:
         case ORTE_INT16:
         case ORTE_UINT16:
             return (size_t)(num_vals * sizeof(uint16_t));
             
+        case ORTE_VPID:
+        case ORTE_JOBID:
+        case ORTE_CELLID:
+        case ORTE_GPR_NOTIFY_ID:
         case ORTE_INT32:
         case ORTE_UINT32:
             return (size_t)(num_vals * sizeof(uint32_t));
@@ -61,9 +78,6 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
         case ORTE_INT64:
         case ORTE_UINT64:
             return (size_t)(num_vals * sizeof(uint64_t));
-            
-        case ORTE_NAME:
-            return (size_t)(num_vals * sizeof(orte_process_name_t));
             
         case ORTE_NULL:
         case ORTE_STRING:
@@ -77,12 +91,69 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             }
             return mem_req;
             
+        case ORTE_NAME:
+            return (size_t)(num_vals * sizeof(orte_process_name_t));
+            
         case ORTE_BYTE_OBJECT:
             sbyteptr = (orte_byte_object_t *) src;
             for (i=0; i<num_vals; i++) {
                 mem_req += sizeof(uint32_t);  /* length */
                 mem_req += sbyteptr->size; /* bytes */
                 sbyteptr++;
+            }
+            return mem_req;
+
+        case ORTE_KEYVAL:
+            mem_req = 0;
+            keyval = (orte_gpr_keyval_t**) src;
+            for (i=0; i < num_vals; i++) {
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(keyval[i]->key)), 1, ORTE_STRING);
+                mem_req += sizeof(orte_data_type_t); /* store data type */
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(keyval[i]->value)), 1, keyval[i]->type);
+            }
+            return mem_req;
+            
+        case ORTE_GPR_VALUE:
+            mem_req = 0;
+            values = (orte_gpr_value_t**) src;
+            for (i=0; i<num_vals; i++) {
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(values[i]->segment)), 1, ORTE_STRING);
+                mem_req += sizeof(int32_t); /* number of tokens */
+                mem_req += orte_dps_memory_required(
+                                (void*)(values[i]->tokens), values[i]->num_tokens,
+                                ORTE_STRING);
+                mem_req += sizeof(int32_t);  /* number of keyvals */
+                mem_req += orte_dps_memory_required(
+                                (void*)(values[i]->keyvals), values[i]->cnt,
+                                ORTE_KEYVAL);
+            }
+            return mem_req;
+            
+        case ORTE_APP_INFO:
+            mem_req = 0;
+            app_info = (orte_rmgr_app_info_t**) src;
+            for (i=0; i < num_vals; i++) {
+                mem_req += orte_dps_memory_required(
+                                (void*)(&(app_info[i]->application)), 1, ORTE_STRING);
+                mem_req += sizeof(int32_t); /* number of instances */
+            }
+            return mem_req;
+            
+        case ORTE_APP_CONTEXT:
+            mem_req = 0;
+            app_context = (orte_rmgr_app_context_t**) src;
+            for (i=0; i < num_vals; i++) {
+                mem_req += sizeof(int32_t); /* number of argv entries */
+                mem_req += orte_dps_memory_required(
+                                (void*)(app_context[i]->argv),
+                                app_context[i]->argc, ORTE_STRING);
+                mem_req += sizeof(int32_t); /* number of enviro entries */
+                mem_req += orte_dps_memory_required(
+                                (void*)(app_context[i]->enviro),
+                                app_context[i]->num_enviro, ORTE_STRING);
             }
             return mem_req;
             

@@ -46,7 +46,6 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     size_t num_bytes;
     void *src;
     uint32_t * s32;
-    uint8_t * s8;
     orte_data_type_t stored_type;
 
     /* check for errors */
@@ -58,17 +57,17 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     mem_left = buffer->toend;  /* how much data is left in buffer */
 
     /* check to see if there is enough in the buffer to hold the pack type */
-    if (mem_left < sizeof(uint32_t)) {
+    if (mem_left < sizeof(orte_data_type_t)) {
         return ORTE_ERR_UNPACK_FAILURE;
     }
 
     /* first thing in the current buffer space must be the type */
-    s8 = (uint8_t *) src;
-    stored_type = (orte_data_type_t)*s8;
-    s8 ++;
-    src = (void *) s8;
-    mem_left -= sizeof(uint8_t);
-
+    if (ORTE_SUCCESS != (rc =orte_dps_unpack_nobuffer(&stored_type, src, 1,
+                                    ORTE_DATA_TYPE, &mem_left, &num_bytes))) {
+        return rc;
+    }
+    src = (void*)((char*)src + num_bytes);
+    
     if(type == ORTE_INT || type == ORTE_UINT) {
         switch(sizeof(int)) {
             case 1:

@@ -27,6 +27,7 @@
 
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
+#include "util/output.h"
 #include "mca/gpr/gpr_types.h"
 #include "mca/ns/ns_types.h"
 #include "mca/rmgr/rmgr_types.h"
@@ -64,7 +65,6 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     /* check to see if current buffer has enough room */
     if (op_size > buffer->space) {  /* need to extend the buffer */
         if (ORTE_SUCCESS != (rc = orte_dps_buffer_extend(buffer, op_size))) { /* got an error */
-            fprintf(stderr, "dps_pack: buffer extend failed\n");
             return rc;
         }
         dst = buffer->data_ptr;  /* need to reset the dst since it could have moved */
