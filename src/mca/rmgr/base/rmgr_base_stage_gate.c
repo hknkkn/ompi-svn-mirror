@@ -205,7 +205,9 @@ int orte_rmgr_base_proc_stage_gate_init(orte_jobid_t job)
              return rc;
          }
          free(sub.keys[0]);
+         sub.keys[0] = NULL;
          free(trig.keyvals[1]->key);
+         trig.keyvals[1]->key = NULL;
     }
     
     /* Next, setup the trigger that watches the NUM_ABORTED counter to see if

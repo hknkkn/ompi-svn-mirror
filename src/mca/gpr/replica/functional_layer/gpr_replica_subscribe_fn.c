@@ -104,9 +104,9 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action, int num_subs,
                 ORTE_ERROR_LOG(rc);
                 return rc;
             }
-            for (i=0; i < num_tokens; i++) {
+            for (j=0; j < num_tokens; j++) {
                 ORTE_VALUE_ARRAY_SET_ITEM(&(data->tokentags), orte_gpr_replica_itag_t,
-                                                i, tokentags[i]);
+                                                i, tokentags[j]);
             }
             free(tokentags);
             tokentags = NULL;
@@ -124,9 +124,9 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action, int num_subs,
                 ORTE_ERROR_LOG(rc);
                 return rc;
             }
-            for (i=0; i < num_keys; i++) {
+            for (j=0; j < num_keys; j++) {
                 ORTE_VALUE_ARRAY_SET_ITEM(&(data->keytags), orte_gpr_replica_itag_t,
-                                                i, keytags[i]);
+                                                i, keytags[j]);
             }
             free(keytags);
             keytags = NULL;

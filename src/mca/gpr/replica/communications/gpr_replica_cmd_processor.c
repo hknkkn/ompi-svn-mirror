@@ -45,7 +45,6 @@ int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
     *output_buffer = OBJ_NEW(orte_buffer_t);
     if (NULL == *output_buffer) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_RELEASE(input_buffer);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     answer = *output_buffer;  /* for convenience */
@@ -270,7 +269,7 @@ RETURN_ERROR:
 		ompi_output(0, "unrecognized command");
 	}
     OBJ_RELEASE(*output_buffer);
-    *output_buffer = OBJ_NEW(orte_buffer_t);
+    *output_buffer = answer = OBJ_NEW(orte_buffer_t);
     if (NULL == *output_buffer) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
@@ -282,9 +281,7 @@ RETURN_ERROR:
         orte_dps.pack(answer, &ret, 1, ORTE_INT);
         return ret;
     }
-    
     orte_dps.pack(answer, &rc, 1, ORTE_INT);
     return rc;
-
 }
 
