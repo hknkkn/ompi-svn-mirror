@@ -528,7 +528,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 *num_bytes+=n;
                 
                 /* skip the pointers for cb_func and user_tag */
-           }
+            }
             break;
             
         case ORTE_NULL:

@@ -80,6 +80,8 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
             return (size_t)(num_vals * sizeof(uint64_t));
             
         case ORTE_NULL:
+            return 0;
+
         case ORTE_STRING:
 
             strptr = (char **) src;
