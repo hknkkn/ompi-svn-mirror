@@ -163,7 +163,8 @@ int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number)
     orte_gpr_notify_id_t remote_idtag;
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
-        if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_unsubscribe(orte_gpr_proxy_globals.compound_cmd, sub_number))) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_unsubscribe(orte_gpr_proxy_globals.compound_cmd,
+                                    sub_number))) {
             return rc;
         }
 

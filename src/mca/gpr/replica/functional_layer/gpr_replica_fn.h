@@ -101,7 +101,6 @@ int orte_gpr_replica_get_nb_fn(orte_gpr_addr_mode_t addr_mode,
  * Subscribe functions
  */
 int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_notify_action_t action,
                             orte_gpr_replica_segment_t *seg,
                             orte_gpr_replica_itag_t *token_tags, int num_tokens,
                             orte_gpr_replica_itag_t *key_tags, int num_keys,
@@ -114,7 +113,6 @@ int orte_gpr_replica_unsubscribe_fn(orte_gpr_notify_id_t sub_number);
  * Synchro functions
  */
 int orte_gpr_replica_synchro_fn(orte_gpr_addr_mode_t addr_mode,
-                            orte_gpr_synchro_mode_t synchro_mode,
                             orte_gpr_replica_segment_t *seg,
                             orte_gpr_replica_itag_t *token_tags, int num_tokens,
                             orte_gpr_replica_itag_t *key_tags, int num_keys,
@@ -157,6 +155,9 @@ int orte_gpr_replica_create_container(orte_gpr_replica_container_t **cptr,
                                       int num_itags,
                                       orte_gpr_replica_itag_t *itags);
 
+int orte_gpr_replica_release_container(orte_gpr_replica_segment_t *seg,
+                                       orte_gpr_replica_container_t *cptr);
+
 int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
                                 orte_gpr_replica_container_t *cptr,
                                 orte_gpr_keyval_t **kptr);
@@ -193,15 +194,11 @@ int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
  * Trigger Operations
  */
 bool orte_gpr_replica_process_triggers(orte_gpr_replica_segment_t *seg,
-				      orte_gpr_replica_notify_tracker_t *trig,
+				      orte_gpr_replica_triggers_t *trig,
 				      orte_gpr_notify_message_t *message);
 
-int
-orte_gpr_replica_remove_trigger(orte_gpr_notify_id_t idtag);
-
-int
-orte_gpr_replica_purge_trigger(orte_gpr_replica_segment_t *seg,
-                               orte_gpr_notify_id_t idtag);
+int orte_gpr_replica_init_trigger(orte_gpr_replica_segment_t *seg,
+                    orte_gpr_replica_triggers_t *trig);
 
 /*
  * Alert Operations
@@ -220,6 +217,12 @@ int
 orte_gpr_replica_remove_notify_request(orte_gpr_notify_id_t local_idtag,
                                        orte_gpr_notify_id_t *remote_idtag);
 
+int orte_gpr_replica_register_callback(orte_gpr_replica_segment_t *seg,
+                       orte_gpr_replica_triggers_t *trig,
+                       orte_gpr_replica_container_t *cptr,
+                       orte_gpr_replica_itagval_t *iptr,
+                       int8_t action_taken);
+
 int orte_gpr_replica_process_callbacks(void);
 
 int orte_gpr_replica_check_synchros(orte_gpr_replica_segment_t *seg);
@@ -233,7 +236,7 @@ int orte_gpr_replica_purge_subscriptions(orte_process_name_t *proc);
  */
 orte_gpr_notify_message_t
 *orte_gpr_replica_construct_notify_message(orte_gpr_replica_segment_t *seg,
-                    orte_gpr_replica_notify_tracker_t *trig);
+                    orte_gpr_replica_triggers_t *trig);
 
 
 #endif

@@ -40,7 +40,7 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
                                                 orte_gpr_replica_itagval_t *iptr);
 
 static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
-                                          orte_gpr_replica_notify_tracker_t *trig);
+                                          orte_gpr_replica_triggers_t *trig);
 
 
 int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
@@ -49,19 +49,26 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
     orte_gpr_replica_container_t **cptr;
     orte_gpr_replica_itag_t *itaglist;
     orte_gpr_replica_itagval_t **iptr;
-    orte_gpr_replica_notify_tracker_t **trig;
+    orte_gpr_replica_triggers_t **trig;
     char *token;
     int num_objects;
     int i, j, k;
     char *tmp_out;
 
-    orte_dps.pack(buffer, "DUMP OF GENERAL PURPOSE REGISTRY\n\nTriggers:\n", 1, ORTE_STRING);
+    orte_dps.pack(buffer, "DUMP OF GENERAL PURPOSE REGISTRY\n\n", 1, ORTE_STRING);
     
+    trig = (orte_gpr_replica_triggers_t**)((orte_gpr_replica.triggers)->addr);
+    k = 0;
+    for (j=0; j < (orte_gpr_replica.triggers)->size; j++) {
+        if (NULL != trig[j]) k++;
+    }
+    
+    asprintf(&tmp_out, "Number of triggers: %d\n", k);
     /* dump the trigger info for the registry */
-    trig = (orte_gpr_replica_notify_tracker_t**)((orte_gpr_replica.triggers)->addr);
-    for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
-        if (NULL != trig[i]) {
-            orte_gpr_replica_dump_trigger(buffer, i, trig[i]);
+    for (j=0, k=0; j < (orte_gpr_replica.triggers)->size; j++) {
+        if (NULL != trig[j]) {
+            orte_gpr_replica_dump_trigger(buffer, k, trig[j]);
+            k++;
         }
     }
 
@@ -75,14 +82,8 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
             
             	num_objects = (seg[i]->containers)->size - (seg[i]->containers)->number_free;
             
-             k = (int)orte_value_array_get_size(&(seg[i]->triggers));
-            	asprintf(&tmp_out, "\tNumber of objects: %d\tNumber of triggers on segment: %d\n",
-                        num_objects, k);
+            	asprintf(&tmp_out, "\tNumber of objects: %d\n", num_objects);
             	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-            
-            if (0 < k) {
-                /* output the number of the triggers */
-            }
             
             	/* loop through all containers and print their info and contents */
              cptr = (orte_gpr_replica_container_t**)(seg[i]->containers)->addr;
@@ -136,13 +137,15 @@ int orte_gpr_replica_dump_fn(orte_buffer_t *buffer)
 }
 
 static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
-                                          orte_gpr_replica_notify_tracker_t *trig)
+                                          orte_gpr_replica_triggers_t *trig)
 {
     char *tmp_out, *token;
+    orte_gpr_replica_target_t **targets;
     int i, k;
     
     if (ORTE_GPR_SYNCHRO_CMD == trig->cmd) {  /* subscription */
-		asprintf(&tmp_out, "\tData for trigger %d\tType: SUBSCRIPTION", cnt);
+		asprintf(&tmp_out, "\tData for trigger %d on segment %s\tType: SUBSCRIPTION",
+                            cnt, (trig->seg)->name);
 		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 		asprintf(&tmp_out, "\t\tAssociated with notify number: %d",trig->local_idtag);
 		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
@@ -186,7 +189,8 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 		}
 
     } else {  /* synchro */
-		asprintf(&tmp_out, "\tData for trigger %d\tType: SYNCHRO", cnt);
+		asprintf(&tmp_out, "\tData for trigger %d on segment %s\tType: SYNCHRO",
+                                cnt, (trig->seg)->name);
 		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 		asprintf(&tmp_out, "\t\tAssociated with notify number: %d",trig->local_idtag);
 		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
@@ -253,8 +257,18 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
             orte_gpr_replica_dump_load_string(buffer, &tmp_out);
             free(token);
         }
-   }
+    }
 
+    orte_dps.pack(buffer, "\t\tTargets:\n", 1, ORTE_STRING);
+    targets = (orte_gpr_replica_target_t**)((trig->targets)->addr);
+    for (i=0; i < (trig->targets)->size; i++) {
+        if (NULL != targets[i]) {
+            asprintf(&tmp_out, "\t\t\tcontainer %d\titagval %d",
+                    targets[i]->container, targets[i]->itagval);
+            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+        }
+    }
+    
 	orte_dps.pack(buffer, "\n\n", 1, ORTE_STRING);
 
     return;

@@ -85,7 +85,7 @@ typedef struct orte_gpr_replica_dict_t orte_gpr_replica_dict_t;
  */
 struct orte_gpr_replica_t {
     orte_pointer_array_t *segments;  /**< Managed array of pointers to segment objects */
-    orte_pointer_array_t *triggers;  /**< Managed array of pointers to triggers */
+    orte_pointer_array_t *triggers;     /**< Managed array of pointers to triggers */
     ompi_list_t callbacks;          /**< List of callbacks to be processed */
     ompi_list_t notify_offs;        /**< List of processes with triggers inactive */
 };
@@ -107,7 +107,6 @@ struct orte_gpr_replica_segment_t {
     orte_gpr_replica_itag_t itag;       /**< itag of this segment */
     orte_pointer_array_t *dict;         /**< Managed array of dict structs */
     orte_pointer_array_t *containers;   /**< Managed array of pointers to containers on this segment */
-    orte_value_array_t triggers;        /**< Array of indices to triggers on this segment */
     bool triggers_active;               /**< Indicates if triggers are active or not */
 };
 typedef struct orte_gpr_replica_segment_t orte_gpr_replica_segment_t;
@@ -139,7 +138,6 @@ struct orte_gpr_replica_container_t {
     int index;                        /**< Location in the pointer array */
     orte_gpr_replica_itag_t *itags;   /**< Array of itags that define this container */
     int num_itags;                    /**< Number of itags in array */
-    orte_value_array_t triggers;      /**< Array of indices into notifier array */
     orte_pointer_array_t *itagvals;   /**< Array of itagval pointers */
 };
 typedef struct orte_gpr_replica_container_t orte_gpr_replica_container_t;
@@ -155,7 +153,6 @@ typedef struct {
     orte_gpr_replica_itag_t itag;       /**< itag for this value's key */
     orte_data_type_t type;              /**< the type of value stored */
     orte_gpr_value_union_t value;       /**< Actual stored value */
-    orte_value_array_t triggers;        /**< Array of indices into notifier array */
 } orte_gpr_replica_itagval_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_itagval_t);
@@ -165,15 +162,18 @@ typedef union {
     orte_gpr_synchro_mode_t trig_synchro;
 } orte_gpr_replica_act_sync_t;
 
-struct orte_gpr_replica_notify_tracker_t {
+typedef struct {
+    int container;      /**< index of container in the segment container array */
+    int itagval;        /**< index of itagval in the container's itagval array */
+} orte_gpr_replica_target_t;
+
+struct orte_gpr_replica_triggers_t {
     ompi_object_t super;                    /**< Make this an object */
     orte_process_name_t *requestor;         /**< Name of requesting process */
     orte_gpr_notify_cb_fn_t callback;       /**< Function to be called for notificaiton */
     void *user_tag;                         /**< User-provided tag for callback function */
     orte_gpr_notify_id_t local_idtag;       /**< Local ID tag of associated subscription */
     orte_gpr_notify_id_t remote_idtag;      /**< Remote ID tag of subscription */
-    orte_gpr_replica_segment_t *segptr;     /**< Pointer to segment that subscription was
-                                                  placed upon */
     orte_gpr_addr_mode_t addr_mode;         /**< Addressing mode */
     orte_value_array_t tokentags;           /**< Array of tokens defining which containers are affected */
     orte_value_array_t keytags;             /**< Keys defining which key-value pairs are affected */
@@ -182,11 +182,13 @@ struct orte_gpr_replica_notify_tracker_t {
     uint32_t trigger;                       /**< Number of objects that trigger notification */
     uint32_t count;                         /**< Number of qualifying objects currently in segment */
     int8_t above_below;                     /**< Tracks transitions across level */
-
+    orte_gpr_replica_segment_t *seg;        /**< Pointer to the segment to which this trigger applies */
+    orte_pointer_array_t *targets;          /**< Array of target_t indicating containers/itagvals
+                                                 that "belong" to this trigger */
 };
-typedef struct orte_gpr_replica_notify_tracker_t orte_gpr_replica_notify_tracker_t;
+typedef struct orte_gpr_replica_triggers_t orte_gpr_replica_triggers_t;
 
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_tracker_t);
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_triggers_t);
 
 /* define flags for synchro evaluation */
 #define ORTE_GPR_REPLICA_TRIGGER_ABOVE_LEVEL   (int8_t) 1
@@ -199,6 +201,7 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_notify_tracker_t);
 #define ORTE_GPR_REPLICA_ENTRY_DELETED     (int8_t) 2
 #define ORTE_GPR_REPLICA_ENTRY_UPDATED     (int8_t) 3
 #define ORTE_GPR_REPLICA_SUBSCRIBER_ADDED  (int8_t) 4
+#define ORTE_GPR_REPLICA_SYNCHRO_FIRED     (int8_t) 5
 
 /*
  * Callback list objects

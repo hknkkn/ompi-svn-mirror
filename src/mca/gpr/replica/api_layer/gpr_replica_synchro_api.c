@@ -100,7 +100,7 @@ orte_gpr_replica_synchro(orte_gpr_addr_mode_t addr_mode,
     }
 
     /* process synchro request */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_synchro_fn(addr_mode, synchro_mode,
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_synchro_fn(addr_mode,
 				    seg, token_itags, num_tokens,
                      key_itags, num_keys, trigger, *local_idtag))) {
         orte_gpr_replica_remove_notify_request(*local_idtag, &remote_idtag);
@@ -129,7 +129,7 @@ orte_gpr_replica_synchro(orte_gpr_addr_mode_t addr_mode,
 int orte_gpr_replica_cancel_synchro(orte_gpr_notify_id_t local_idtag)
 {
     int rc;
-
+    
     if (orte_gpr_replica_globals.compound_cmd_mode) {
 	   return orte_gpr_base_pack_cancel_synchro(orte_gpr_replica_globals.compound_cmd,
 						local_idtag);

@@ -147,7 +147,8 @@ int orte_gpr_proxy_cancel_synchro(orte_gpr_notify_id_t synch_number)
     orte_gpr_notify_id_t remote_idtag;
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
-        if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_cancel_synchro(orte_gpr_proxy_globals.compound_cmd, synch_number))) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_cancel_synchro(orte_gpr_proxy_globals.compound_cmd,
+                                        synch_number))) {
             return rc;
         }
 

@@ -101,7 +101,7 @@ orte_gpr_replica_subscribe(orte_gpr_addr_mode_t addr_mode,
     }
 
     /* register subscription */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(addr_mode, action, seg,
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(addr_mode, seg,
 				      token_itags, num_tokens, key_itags, num_keys, *local_idtag))) {
         orte_gpr_replica_remove_notify_request(*local_idtag, &remote_idtag);
         OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
@@ -134,7 +134,8 @@ int orte_gpr_replica_unsubscribe(orte_gpr_notify_id_t sub_number)
     int rc;
 
     if (orte_gpr_replica_globals.compound_cmd_mode) {
-	   return orte_gpr_base_pack_unsubscribe(orte_gpr_replica_globals.compound_cmd, sub_number);
+	   return orte_gpr_base_pack_unsubscribe(orte_gpr_replica_globals.compound_cmd,
+                        sub_number);
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);

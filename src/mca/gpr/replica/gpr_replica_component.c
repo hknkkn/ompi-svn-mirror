@@ -121,9 +121,6 @@ static void orte_gpr_replica_segment_construct(orte_gpr_replica_segment_t* seg)
                             orte_gpr_replica_globals.max_size,
                             orte_gpr_replica_globals.block_size);
 
-    OBJ_CONSTRUCT(&(seg->triggers), orte_value_array_t);
-    orte_value_array_init(&(seg->triggers), sizeof(orte_gpr_notify_id_t));
-    
     seg->triggers_active = false;
 }
 
@@ -141,9 +138,6 @@ static void orte_gpr_replica_segment_destructor(orte_gpr_replica_segment_t* seg)
     if (NULL != seg->containers) {
         OBJ_RELEASE(seg->containers);
     }
-    
-    OBJ_DESTRUCT(&(seg->triggers));
-
 }
 
 /* define instance of orte_gpr_replica_segment_t */
@@ -165,9 +159,6 @@ static void orte_gpr_replica_container_construct(orte_gpr_replica_container_t* r
     reg->itags = NULL;
     reg->num_itags = 0;
     
-    OBJ_CONSTRUCT(&(reg->triggers), orte_value_array_t);
-    orte_value_array_init(&(reg->triggers), sizeof(orte_gpr_notify_id_t));
-
 }
 
 /* destructor - used to free any resources held by instance */
@@ -190,9 +181,6 @@ static void orte_gpr_replica_container_destructor(orte_gpr_replica_container_t* 
         }
         OBJ_RELEASE(reg->itagvals);
     }
-
-    OBJ_DESTRUCT(&(reg->triggers));
-
 }
 
 /* define instance of ompi_class_t */
@@ -211,9 +199,6 @@ static void orte_gpr_replica_itagval_construct(orte_gpr_replica_itagval_t* ptr)
     ptr->itag = ORTE_GPR_REPLICA_ITAG_MAX;
     ptr->type = ORTE_NULL;
     (ptr->value).strptr = NULL;
-    OBJ_CONSTRUCT(&(ptr->triggers), orte_value_array_t);
-    orte_value_array_init(&(ptr->triggers), sizeof(orte_gpr_notify_id_t));
-
 }
 
 /* destructor - used to free any resources held by instance */
@@ -222,7 +207,6 @@ static void orte_gpr_replica_itagval_destructor(orte_gpr_replica_itagval_t* ptr)
     if (ORTE_BYTE_OBJECT == ptr->type) {
         free(((ptr->value).byteobject).bytes);
     }
-    OBJ_DESTRUCT(&(ptr->triggers));
 }
 
 /* define instance of ompi_class_t */
@@ -233,16 +217,16 @@ OBJ_CLASS_INSTANCE(
          orte_gpr_replica_itagval_destructor); /* destructor */
 
 
-/* NOTIFY TRACKER */
-/* constructor - used to initialize state of notify tracker instance */
-static void orte_gpr_replica_notify_tracker_construct(orte_gpr_replica_notify_tracker_t* trig)
+/* TRIGGERS */
+/* constructor - used to initialize state of trigger instance */
+static void orte_gpr_replica_trigger_construct(orte_gpr_replica_triggers_t* trig)
 {
     trig->requestor = NULL;
     trig->callback = NULL;
     trig->user_tag = NULL;
     trig->local_idtag = ORTE_GPR_NOTIFY_ID_MAX;
     trig->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
-    trig->segptr = NULL;
+    trig->seg = NULL;
     trig->addr_mode = 0;
     
     OBJ_CONSTRUCT(&(trig->tokentags), orte_value_array_t);
@@ -250,6 +234,10 @@ static void orte_gpr_replica_notify_tracker_construct(orte_gpr_replica_notify_tr
 
     OBJ_CONSTRUCT(&(trig->keytags), orte_value_array_t);
     orte_value_array_init(&(trig->keytags), sizeof(orte_gpr_replica_itag_t));
+
+    orte_pointer_array_init(&(trig->targets), orte_gpr_replica_globals.block_size,
+                            orte_gpr_replica_globals.max_size,
+                            orte_gpr_replica_globals.block_size);
 
     trig->cmd = 0;
     trig->flag.trig_action = 0;
@@ -259,7 +247,7 @@ static void orte_gpr_replica_notify_tracker_construct(orte_gpr_replica_notify_tr
 }
 
 /* destructor - used to free any resources held by instance */
-static void orte_gpr_replica_notify_tracker_destructor(orte_gpr_replica_notify_tracker_t* trig)
+static void orte_gpr_replica_trigger_destructor(orte_gpr_replica_triggers_t* trig)
 {
     if (NULL != trig->requestor) {
         free(trig->requestor);
@@ -268,14 +256,17 @@ static void orte_gpr_replica_notify_tracker_destructor(orte_gpr_replica_notify_t
     OBJ_DESTRUCT(&(trig->tokentags));
     OBJ_DESTRUCT(&(trig->keytags));
 
+    if (NULL != trig->targets) {
+        OBJ_RELEASE(trig->targets);
+    }
 }
 
 /* define instance of ompi_class_t */
 OBJ_CLASS_INSTANCE(
-         orte_gpr_replica_notify_tracker_t,           /* type name */
+         orte_gpr_replica_triggers_t,           /* type name */
          ompi_object_t,                 /* parent "class" name */
-         orte_gpr_replica_notify_tracker_construct,   /* constructor */
-         orte_gpr_replica_notify_tracker_destructor); /* destructor */
+         orte_gpr_replica_trigger_construct,   /* constructor */
+         orte_gpr_replica_trigger_destructor); /* destructor */
 
 
 /* CALLBACKS */
@@ -396,89 +387,82 @@ int orte_gpr_replica_close(void)
 
 orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bool *have_hidden_threads, int *priority)
 {
+    int rc;
 
     /* If we are to host a replica, then we want to be selected, so do all the
        setup and return the module */
 
     if (NULL == orte_process_info.gpr_replica) {
-        int rc;
 
-	/* Return a module (choose an arbitrary, positive priority --
-	   it's only relevant compared to other ns components).  If
-	   we're not the seed, then we don't want to be selected, so
-	   return NULL. */
-
-	*priority = 50;
-
-	/* We allow multi user threads but don't have any hidden threads */
-
-	*allow_multi_user_threads = true;
-	*have_hidden_threads = false;
-
-	/* setup the thread locks and condition variables */
-	OBJ_CONSTRUCT(&orte_gpr_replica_globals.mutex, ompi_mutex_t);
-	OBJ_CONSTRUCT(&orte_gpr_replica_globals.wait_for_compound_mutex, ompi_mutex_t);
-	OBJ_CONSTRUCT(&orte_gpr_replica_globals.compound_cmd_condition, ompi_condition_t);
-
-	/* initialize the registry compound mode */
-	orte_gpr_replica_globals.compound_cmd_mode = false;
-	orte_gpr_replica_globals.exec_compound_cmd_mode = false;
-	orte_gpr_replica_globals.compound_cmd_waiting = 0;
-	orte_gpr_replica_globals.compound_cmd = NULL;
-
-	/* initialize the registry head */
-    if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica.segments),
-                            orte_gpr_replica_globals.block_size,
-                            orte_gpr_replica_globals.max_size,
-                            orte_gpr_replica_globals.block_size)) {
-        return NULL;
-    }
-    if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica.triggers),
-                            orte_gpr_replica_globals.block_size,
-                            orte_gpr_replica_globals.max_size,
-                            orte_gpr_replica_globals.block_size)) {
-        return NULL;
-    }
-
-	/* initialize the notify request tracker */
-    if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica.triggers),
-                            orte_gpr_replica_globals.block_size,
-                            orte_gpr_replica_globals.max_size,
-                            orte_gpr_replica_globals.block_size)) {
-        return NULL;
-    }
-
-	/* initialize the callback list head */
-	OBJ_CONSTRUCT(&orte_gpr_replica.callbacks, ompi_list_t);
-
-	/* initialize the mode tracker */
-	OBJ_CONSTRUCT(&orte_gpr_replica.notify_offs, ompi_list_t);
-
-    /* initialize the search array for temporarily storing search results */
-    if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica_globals.search),
-                            100, orte_gpr_replica_globals.max_size, 100)) {
-        return NULL;
-    }
-    
- 	/* issue the non-blocking receive */ 
-    if (!orte_gpr_replica_globals.isolate) {
-	   rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
-                                 orte_gpr_replica_recv, NULL);
-	   if(rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) { 
-	    return NULL;
-	   }
-    }
-
-	if (orte_gpr_replica_globals.debug) {
-	    ompi_output(0, "nb receive setup");
-	}
-
-	/* Return the module */
-
-	initialized = true;
-	return &orte_gpr_replica_module;
+        	/* Return a module (choose an arbitrary, positive priority --
+        	   it's only relevant compared to other ns components).  If
+        	   we're not the seed, then we don't want to be selected, so
+        	   return NULL. */
+        
+        	*priority = 50;
+        
+        	/* We allow multi user threads but don't have any hidden threads */
+        
+        	*allow_multi_user_threads = true;
+        	*have_hidden_threads = false;
+        
+        	/* setup the thread locks and condition variables */
+        	OBJ_CONSTRUCT(&orte_gpr_replica_globals.mutex, ompi_mutex_t);
+        	OBJ_CONSTRUCT(&orte_gpr_replica_globals.wait_for_compound_mutex, ompi_mutex_t);
+        	OBJ_CONSTRUCT(&orte_gpr_replica_globals.compound_cmd_condition, ompi_condition_t);
+        
+        	/* initialize the registry compound mode */
+        	orte_gpr_replica_globals.compound_cmd_mode = false;
+        	orte_gpr_replica_globals.exec_compound_cmd_mode = false;
+        	orte_gpr_replica_globals.compound_cmd_waiting = 0;
+        	orte_gpr_replica_globals.compound_cmd = NULL;
+        
+        	/* initialize the registry head */
+            if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica.segments),
+                                    orte_gpr_replica_globals.block_size,
+                                    orte_gpr_replica_globals.max_size,
+                                    orte_gpr_replica_globals.block_size)) {
+                return NULL;
+            }
+        
+            if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica.triggers),
+                                    orte_gpr_replica_globals.block_size,
+                                    orte_gpr_replica_globals.max_size,
+                                    orte_gpr_replica_globals.block_size)) {
+                return NULL;
+            }
+            
+        	/* initialize the callback list head */
+        	OBJ_CONSTRUCT(&orte_gpr_replica.callbacks, ompi_list_t);
+        
+        	/* initialize the mode tracker */
+        	OBJ_CONSTRUCT(&orte_gpr_replica.notify_offs, ompi_list_t);
+        
+        /* initialize the search array for temporarily storing search results */
+        if (ORTE_SUCCESS != orte_pointer_array_init(&(orte_gpr_replica_globals.search),
+                                100, orte_gpr_replica_globals.max_size, 100)) {
+            return NULL;
+        }
+        
+     	/* issue the non-blocking receive */ 
+        if (!orte_gpr_replica_globals.isolate) {
+    	        rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
+                                     orte_gpr_replica_recv, NULL);
+    	        if (rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) { 
+    	            return NULL;
+    	        }
+        }
+        
+        	if (orte_gpr_replica_globals.debug) {
+        	    ompi_output(0, "nb receive setup");
+        	}
+        
+        	/* Return the module */
+        
+        	initialized = true;
+        	return &orte_gpr_replica_module;
     } else {
-	return NULL;
+    	   return NULL;
     }
 }
 
@@ -488,8 +472,8 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
 int orte_gpr_replica_finalize(void)
 {
     int i;
-    orte_gpr_replica_segment_t* seg;
-    orte_gpr_replica_notify_tracker_t* trig;
+    orte_gpr_replica_segment_t** seg;
+    orte_gpr_replica_triggers_t** trig;
     orte_gpr_replica_callbacks_t* cb;
     orte_gpr_replica_notify_off_t* no;
     
@@ -497,18 +481,17 @@ int orte_gpr_replica_finalize(void)
 	    ompi_output(0, "finalizing gpr replica");
     }
 
-    seg = (orte_gpr_replica_segment_t*)(orte_gpr_replica.segments)->addr;
+    seg = (orte_gpr_replica_segment_t**)(orte_gpr_replica.segments)->addr;
     for (i=0; i < (orte_gpr_replica.segments)->size; i++) {
-         if (NULL != seg) {
-             OBJ_RELEASE(seg);
+         if (NULL != seg[i]) {
+             OBJ_RELEASE(seg[i]);
          }
-         seg++;
     }
     
-    trig = (orte_gpr_replica_notify_tracker_t*)(orte_gpr_replica.triggers)->addr;
+    trig = (orte_gpr_replica_triggers_t**)(orte_gpr_replica.triggers)->addr;
     for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
-         if (NULL != trig) {
-             OBJ_RELEASE(trig);
+         if (NULL != trig[i]) {
+             OBJ_RELEASE(trig[i]);
          }
          trig++;
     }
