@@ -14,37 +14,31 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-        base \
-        coll \
-        common \
-        gpr \
-        io \
-        mpool \
-        ns \
-        one \
-        oob \
-	pcmclient \
-	pls \
-        pml \
-        ptl \
-	orte_ras \
-	orte_rds \
-	orte_rmaps \
-	orte_rmgr \
-        soh \
-        svc \
-        topo
+noinst_LTLIBRARIES = libmca_orte_rmgr_base.la
+
+# For VPATH builds, have to specify where static-modules.h will be found
+
+AM_CPPFLAGS = -I$(top_builddir)/src
 
 # Source code files
 
-headers = mca.h
+headers = \
+        base.h
+
+# Library
+
+libmca_orte_rmgr_base_la_SOURCES = \
+        $(headers) \
+        rmgr_base_close.c \
+        rmgr_base_select.c \
+        rmgr_base_open.c \
+        rmgr_base_local_fns.c
+
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca
+ompidir = $(includedir)/openmpi/mca/orte_rmgr/base
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)

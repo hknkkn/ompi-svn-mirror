@@ -14,37 +14,19 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = \
-	allocator \
-        base \
-        coll \
-        common \
-        gpr \
-        io \
-        mpool \
-        ns \
-        one \
-        oob \
-	pcmclient \
-	pls \
-        pml \
-        ptl \
-	orte_ras \
-	orte_rds \
-	orte_rmaps \
-	orte_rmgr \
-        soh \
-        svc \
-        topo
+SUBDIRS = base $(MCA_orte_rmgr_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_orte_rmgr_ALL_SUBDIRS)
 
 # Source code files
 
-headers = mca.h
+headers = \
+	orte_rmgr_types.h \
+	orte_rmgr.h
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca
+ompidir = $(includedir)/openmpi/mca/orte_rmgr
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)
