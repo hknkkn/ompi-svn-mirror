@@ -53,6 +53,7 @@ static bool test10(void);        /* verify GPR_VALUE */
 static bool test11(void);        /* verify APP_INFO (right now ??!!) */
 static bool test12(void);        /* verify APP_CONTEXT */
 static bool test13(void);        /* verify ORTE_GPR_SUBSCRIPTION */
+static bool test14(void);        /* verify ORTE_GPR_NOTIFY_DATA */
 
 FILE *test_out;
 
@@ -176,6 +177,15 @@ int main (int argc, char* argv[])
     }
     else {
       test_failure("orte_dps test13 failed");
+    }
+
+    test_finalize();
+    fprintf(test_out, "executing test14\n");
+    if (test14()) {
+        test_success();
+    }
+    else {
+      test_failure("orte_dps test14 failed");
     }
 
     test_finalize();
@@ -1321,4 +1331,158 @@ static bool test13(void)
 
     return (true);
 }
+
+/* ORTE_GPR_NOTIFY_DATA */
+static bool test14(void)
+{
+    orte_buffer_t *bufA;
+    int rc;
+    int32_t i, j, k, l;
+    orte_gpr_notify_data_t *src[NUM_ELEMS];
+    orte_gpr_notify_data_t *dst[NUM_ELEMS];
+
+    for(i=0; i<NUM_ELEMS; i++) {
+        src[i] = OBJ_NEW(orte_gpr_notify_data_t);
+		src[i]->cb_num = (uint32_t) i; 
+		src[i]->addr_mode = (uint16_t) i; 
+        src[i]->segment = strdup("test-segment-name");
+
+		/* test value counts of 0 to NUM_ELEMS-1 */
+		src[i]->cnt = (uint32_t) i; /* value count */
+
+		if (src[i]->cnt) { /* if to allow testing of GPR value count of zero */
+
+        	src[i]->values = (orte_gpr_value_t**)malloc(src[i]->cnt * sizeof(orte_gpr_value_t*));
+
+        	for (j=0; j < src[i]->cnt; j++) {
+            	src[i]->values[j] = OBJ_NEW(orte_gpr_value_t);
+				src[i]->values[j]->addr_mode = (uint16_t) i+j+1; 
+				src[i]->values[j]->segment = strdup("test-gpr-notify-value-segment-name");	/* ek segment name again! */
+
+				/* tokens */
+				src[i]->values[j]->num_tokens = j; /* test tokens within gpr values within notify message between 0-NUM_ELEMS-1 */
+				if (src[i]->values[j]->num_tokens) { /* if to allow testing of num_tokens count of zero */
+        			src[i]->values[j]->tokens = (char**)malloc(src[i]->values[j]->num_tokens * sizeof(char*));
+        			for (k=0; k < src[i]->values[j]->num_tokens; k++) {
+            			src[i]->values[j]->tokens[k] = strdup("test-grp-notify-value-token");
+        			} /* for each token */
+				} /* if tokens */
+
+				/* keyval pairs (field name is 'cnt' same as used for value count so be carefull) */
+				src[i]->values[j]->cnt = j; /* test keyval pairs within gpr values within notify message between 0-NUM_ELEMS-1 */
+				if (src[i]->values[j]->cnt) { /* if to allow testing of keyval pair count of zero */
+        			src[i]->values[j]->keyvals = (orte_gpr_keyval_t**)malloc(src[i]->values[j]->cnt * sizeof(orte_gpr_keyval_t*));
+        			for (k=0; k < src[i]->values[j]->cnt; k++) {
+            			src[i]->values[j]->keyvals[k] = OBJ_NEW (orte_gpr_keyval_t);
+            			src[i]->values[j]->keyvals[k]->key = strdup("test-grp-notify-value-key");
+            			src[i]->values[j]->keyvals[k]->type = (uint8_t) (ORTE_INT32); /* make it simplier */
+						src[i]->values[j]->keyvals[k]->value.i32 = (uint32_t) (i*100)+(j*10)+k; /* something variable */
+        			} /* for each keyval pair */
+				} /* if keyvals */
+
+        	} /* for each value */
+		}
+	}
+
+	/* source data set, now create buffer and pack source data */
+
+    bufA = OBJ_NEW(orte_buffer_t);
+    if (NULL == bufA) {
+        test_comment("orte_buffer failed init in OBJ_NEW");
+        fprintf(test_out, "OBJ_NEW failed\n");
+        return false;
+    }
+
+    
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_GPR_NOTIFY_DATA);
+        if (ORTE_SUCCESS != rc) {
+            test_comment ("orte_dps.pack failed");
+            fprintf(test_out, "orte_pack_value (ORTE_GPR_NOTIFY_DATA) failed with return code %d\n", rc);
+            return(false);
+        }
+    }
+
+    
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
+        memset(dst,-1,sizeof(dst));
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_GPR_NOTIFY_DATA);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("orte_dps.unpack failed");
+            fprintf(test_out, "orte_unpack_value (ORTE_GPR_NOTIFY_DATA) failed with return code %d (count=%d)\n", rc, count);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+
+            if ( 
+                src[j]->cb_num != dst[j]->cb_num ||
+				src[j]->addr_mode != dst[j]->addr_mode ||
+				0 != strcmp(src[j]->segment, dst[j]->segment) ||
+                src[j]->cnt != dst[j]->cnt 
+				) {
+                test_comment ("test14: invalid results from unpack");
+                return(false);
+            }
+
+			/* now compare each value of the cnt depedant values */
+            for (k=0; k<src[j]->cnt; k++) {
+
+				if (src[j]->values[k]->addr_mode != dst[j]->values[k]->addr_mode) {
+                   test_comment ("test14: invalid results (values-addr-mode) from unpack");
+                    return(false);
+				}
+
+                if (0 != strcmp(src[j]->values[k]->segment, dst[j]->values[k]->segment)) {
+                   test_comment ("test14: invalid results (values-segment) from unpack");
+                    return(false);
+                }
+
+				if (src[j]->values[k]->num_tokens != dst[j]->values[k]->num_tokens) {
+                   test_comment ("test14: invalid results (values-num_tokens) from unpack");
+                    return(false);
+				}
+            	for (l=0; l<src[j]->values[k]->num_tokens; l++) {
+				   if (0 != strcmp(src[j]->values[k]->tokens[l], dst[j]->values[k]->tokens[l])) {
+					  test_comment ("test14: invalid results (values-tokens) from unpack");
+					   return(false);
+				   }
+			    } /* for each token inside each grp value */
+
+				if (src[j]->values[k]->cnt != dst[j]->values[k]->cnt) {
+                   test_comment ("test14: invalid results (values-cnt (of keyval pairs)) from unpack");
+                    return(false);
+				}
+            	for (l=0; l< src[j]->values[k]->cnt; l++) { 
+                	if (0 != strcmp(src[j]->values[k]->keyvals[l]->key, dst[j]->values[k]->keyvals[l]->key)) {
+					   test_comment ("test14: invalid results (values-keyvals-key) from unpack");
+					   return(false);
+                	}
+                	if (src[j]->values[k]->keyvals[l]->type != dst[j]->values[k]->keyvals[l]->type) {
+					   test_comment ("test14: invalid results (values-keyvals-type) from unpack");
+					   return(false);
+                	}
+                	if (src[j]->values[k]->keyvals[l]->value.i32 != dst[j]->values[k]->keyvals[l]->value.i32) {
+					   test_comment ("test14: invalid results (values-keyvals-value.i32) from unpack");
+					   return(false);
+                	}
+			   }/* for each keyvalpair inside each grp value */
+            } /* for each grp value */
+
+        } /* for each ELEMENT */
+    }
+         
+    OBJ_RELEASE(bufA);
+    if (NULL != bufA) {
+        test_comment("OBJ_RELEASE did not NULL the buffer pointer");
+        fprintf(test_out, "OBJ_RELEASE did not NULL the buffer pointer");
+        return false;
+    }
+
+    return (true);
+}
+
 
