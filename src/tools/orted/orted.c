@@ -49,6 +49,7 @@
 #include "mca/base/base.h"
 #include "mca/errmgr/errmgr.h"
 #include "mca/ns/ns.h"
+#include "mca/ns/base/base.h"
 #include "mca/gpr/gpr.h"
 #include "mca/rml/rml.h"
 #include "mca/soh/soh.h"
@@ -78,6 +79,18 @@ ompi_cmd_line_init_t orte_cmd_line_opts[] = {
     { NULL, NULL, NULL, 'd', NULL, "debug", 0,
       &orted_globals.debug, OMPI_CMD_LINE_TYPE_BOOL,
       "Run in debug mode (not generally intended for users)" },
+    { NULL, NULL, NULL, '\0', NULL, "bootproxy", 1,
+      &orted_globals.bootproxy, OMPI_CMD_LINE_TYPE_INT,
+      "Run as boot proxy for <job-id>" },
+    { NULL, NULL, NULL, '\0', NULL, "name", 1,
+      &orted_globals.name, OMPI_CMD_LINE_TYPE_STRING,
+      "Set the orte process name"},
+    { NULL, NULL, NULL, '\0', NULL, "nsreplica", 1,
+      &orte_process_info.ns_replica_uri, OMPI_CMD_LINE_TYPE_STRING,
+      "Name service contact information."},
+    { NULL, NULL, NULL, '\0', NULL, "gprreplica", 1,
+      &orte_process_info.gpr_replica_uri, OMPI_CMD_LINE_TYPE_STRING,
+      "Registry contact information."},
 
     /* End of list */
     { NULL, NULL, NULL, '\0', NULL, NULL, 0,
@@ -93,6 +106,7 @@ int main(int argc, char *argv[])
     char *log_path = NULL;
 
     /* setup to check common command line options that just report and die */
+    memset(&orted_globals, 0, sizeof(orted_globals));
     cmd_line = OBJ_NEW(ompi_cmd_line_t);
     ompi_cmd_line_create(cmd_line, orte_cmd_line_opts);
     if (OMPI_SUCCESS != (ret = ompi_cmd_line_parse(cmd_line, true, 
@@ -123,6 +137,20 @@ int main(int argc, char *argv[])
     orte_proc_info();
     orte_process_info.daemon = true;
      
+
+    /*
+     * Attempt to parse the daemon name and save in proc_info
+     */
+    if (orted_globals.name) {
+        ret = orte_ns_base_convert_string_to_process_name(
+            &orte_process_info.my_name, orted_globals.name);
+        if(ORTE_SUCCESS != ret) {
+            ORTE_ERROR_LOG(ret);
+            return 1;
+        }
+    }
+
+
     if (!orte_process_info.seed) { /* if I'm not the seed... */
         /* start recording the compound command that starts us up */
        /* orte_gpr.begin_compound_cmd(); */
@@ -140,7 +168,7 @@ int main(int argc, char *argv[])
      * Detach from controlling terminal - setup stdin/stdout/stderr 
      */
 
-    if (orted_globals.debug == false || orte_universe_info.bootproxy > 0) {
+    if (orted_globals.debug == false || orted_globals.bootproxy > 0) {
         int fd;
         char log_file[PATH_MAX];
 
@@ -179,8 +207,8 @@ int main(int argc, char *argv[])
     }
 
     /* check to see if I'm a bootproxy */
-    if (orte_universe_info.bootproxy) { /* perform bootproxy-specific things */
-        ompi_output(0, "orted: bootproxy(%d)\n", orte_universe_info.bootproxy);
+    if (orted_globals.bootproxy) { /* perform bootproxy-specific things */
+        ompi_output(0, "orted: bootproxy(%d)\n", orted_globals.bootproxy);
         if (ORTE_SUCCESS != (ret = orte_daemon_bootproxy())) {
             ORTE_ERROR_LOG(ret);
         }

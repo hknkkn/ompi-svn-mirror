@@ -49,6 +49,8 @@ typedef struct {
     bool version;
     bool debug;
     bool probe;
+    char* name;
+    int bootproxy;
     ompi_mutex_t mutex;
     ompi_condition_t condition;
     bool exit_condition;

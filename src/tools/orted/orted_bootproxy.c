@@ -40,6 +40,6 @@ int orte_daemon_bootproxy(void)
     }
 
     /* launch the requested procs */
-    return pls->launch(orte_universe_info.bootproxy);
+    return pls->launch(orted_globals.bootproxy);
 }
 
