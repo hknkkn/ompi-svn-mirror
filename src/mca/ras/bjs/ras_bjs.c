@@ -15,44 +15,152 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/bproc.h>
 
 #include "include/orte_constants.h"
 #include "ras_bjs.h"
 
 
-static int orte_ras_bjs_allocate(orte_jobid_t jobid)
+static int orte_ras_bjs_node_status(int node)
 {
-    orte_app_context_t** app_context;
-    size_t i, num_context;
-    int rc = ORTE_SUCCESS;
-    size_t num_procs = 0;
+    char status[32];
+    bproc_nodestatus(node, status, sizeof(status));
+    if(strcmp(status, "up") == 0)
+        return ORTE_NODE_STATE_UP;
+    if(strcmp(status, "down") == 0)
+        return ORTE_NODE_STATE_DOWN;
+    return ORTE_NODE_STATE_UNKNOWN;
+}
+
+
+static int orte_ras_bjs_discover(ompi_list_t* nodelist)
+{
     char* nodes;
+    char* ptr;
+    ompi_list_item_t* item;
+    ompi_list_t new_nodes;
 
-    /* query for node list in the environment */
-    if(NULL == (nodes = getenv("NODELIST")))
-        return ORTE_NOT_FOUND;
-
-    /* get the application context for this job */
-    if(ORTE_SUCCESS != (rc = orte_rmgr_get_app_context(jobid,&app_context,&num_context)))
+    /* query the nodelist from the registry */
+    OBJ_CONSTRUCT(&new_nodes, ompi_list_t);
+    if(ORTE_SUCCESS != (rc = orte_ras_base_nodes_query(nodelist)))
         return rc;
 
-    /* determine total number of procs */
-    for(i=0; i<num_context; i++) {
-        num_procs += app_context[i]->num_procs;
+    /* validate that any user supplied nodes actually exist, etc. */
+    for(item =  ompi_list_get_first(nodelist);
+        item != ompi_list_get_end(nodelist);
+        item =  ompi_list_get_next(item)) {
+
+        orte_ras_base_node_t* node = (orte_ras_base_node_t*)item;
+        if(ORTE_SUCCESS != orte_ras_bjs_node_resolve(node->node_name, &node_num)) {
+            ompi_output(0, "error: a specified node (%s) is invalid.\n" node->node_name);
+            return ORTE_NODE_ERROR;
+        }
+
+        if(orte_ras_bjs_node_state(node_num) != ORTE_NODE_STATE_UP) {
+            ompi_output(0, "error: a specified node (%s) is not up.\n", 
+                node->node_name);
+            return ORTE_NODE_DOWN;
+        }
+
+        if(bproc_access(node_num, BPROC_X_OK) != 0) {
+            ompi_output(0, "error: a specified node (%s) is not accessible.\n", 
+                node->node_name);
+            return ORTE_NODE_ERROR;
+        }
+
+        /* try and determine the number of available slots */
+        if(node->node_processors == 0) {
+            node->node_slots_inuse = 0;
+            node->node_slots_max = 0;
+            node->node_processors = orte_ras_bjs_node_processors(node_num);
+        }
     }
 
-    /* parse the node list */
-    
+    /* parse the node list and check node status/access */
+    nodes = getenv("NODES");
+    if(NULL == nodes) {
+        return (ompi_list_get_size(&existing) ? ORTE_SUCCESS : ORTE_ERR_NOT_AVAIL;
+    }
 
+    OBJ_CONSTRUCT(&new_nodes, ompi_list_t);
+    while(NULL != (ptr = strsep(&nodes,","))) {
+        orte_ras_base_node_t *node;
+        orte_node_state_t node_state;
+        int node_num;
 
-    /* release application context */
+        /* is this node already in the list */
+        for(item =  ompi_list_get_first(nodelist);
+            item != ompi_list_get_end(nodelist);
+            item =  ompi_list_get_next(item)) {
+            node = (orte_ras_base_node_t*)item;
+            if(strcmp(node->node_name, ptr) == 0)
+                break;
+        }
+        if(item != ompi_list_get_end(nodelist))
+            continue;
+        if(sscanf(ptr, "%d", &node_num) != 1) {
+            continue;
+        }
+
+        if(ORTE_NODE_STATE_UP != (node_state = orte_ras_bjs_node_status(node_num))) {
+            ompi_output(0, "error: a specified node (%d) is not up.\n", node_num);
+            rc = ORTE_NODE_DOWN;
+            goto cleanup;
+        }
+        if(bproc_access(node, BPROC_X_OK) != 0) {
+            ompi_output(0, "error: a specified node (%d) is not accessible.\n", node_num);
+            rc = ORTE_NODE_ERROR;
+            goto cleanup;
+        }
+
+        /* create a new node entry */
+        node = OBJ_NEW(orte_ras_base_node_t);
+        node->node_name = strdup(ptr);
+        node->node_state = node_state;
+        node->node_cellid = 0;
+        node->node_slots_inuse = 0;
+        node->node_slots_max = 0;
+        node->node_processors = orte_ras_bjs_node_processors(node_num);
+        ompi_list_append(&new_nodes, &node->super);
+    }
+
+    /* add any newly discovered nodes to the registry */
+    rc = orte_ras_base_node_add(&new_nodes);
+
+    /* append them to the nodelist */
+    ompi_list_join(nodelist, ompi_list_get_first(&new_nodes), &new_nodes);
+
 cleanup:
-    for(i=0; i<num_context; i++)
-        OBJ_RELEASE(app_context[i]);
-    if(NULL != app_context)
-        free(app_context);
+    OBJ_DESTRUCT(&new_nodes);
     return rc;
 }
+
+
+/**
+ *  Discover available (pre-allocated) nodes. Allocate the
+ *  requested number of nodes/process slots to the job.
+ *  
+ */
+
+static int orte_ras_bjs_allocate(orte_jobid_t jobid)
+{
+    ompi_list_t nodes;
+    ompi_list_item_t* item;
+    int rc;
+
+    OBJ_CONSTRUCT(&nodes, ompi_list_t);
+    if(ORTE_SUCCESS != (rc = orte_ras_bjs_discover(&nodes))) {
+        return rc;
+    }
+    rc = orte_ras_base_allocate_nodes(jobid, &nodes);
+
+    while(NULL != (item = ompi_list_remove_first(&nodes)))
+        OBJ_RELEASE(item);
+    OBJ_DESTRUCT(&nodes);
+    return rc;
+}
+
+
 
 static int orte_ras_bjs_deallocate(orte_jobid_t jobid)
 {

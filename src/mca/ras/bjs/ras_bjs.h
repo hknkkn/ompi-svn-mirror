@@ -16,8 +16,8 @@
  *
  * Resource Allocation (LSF over BPROC)
  */
-#ifndef ORTE_RAS_LSF_BPROC_H
-#define ORTE_RAS_LSF_BPROC_H
+#ifndef ORTE_RAS_BJS_H
+#define ORTE_RAS_BJS_H
 
 #include "mca/ras/ras.h"
 #if defined(c_plusplus) || defined(__cplusplus)
