@@ -23,6 +23,9 @@
 #include "include/orte_constants.h"
 #include <limits.h>
 
+/**
+ * Constant tag values for well-known services
+ */
 
 typedef uint32_t orte_rml_tag_t;
 
@@ -34,6 +37,20 @@ typedef uint32_t orte_rml_tag_t;
 #define ORTE_RML_TAG_IOF_CLT     6
 #define ORTE_RML_TAG_XCAST       7
 #define ORTE_RML_TAG_MAX UINT32_MAX
+
+                                                                                                                                        
+/**
+ * Flags to send/recv
+ */
+
+#define ORTE_RML_PEEK  0x01   /**< flag to oob_recv to allow caller to peek a portion of the next available
+                               * message w/out removing the message from the queue.  */
+#define ORTE_RML_TRUNC 0x02   /**< flag to oob_recv to return the actual size of the message even if
+                               * the receive buffer is smaller than the number of bytes available */
+#define ORTE_RML_ALLOC 0x04   /**< flag to oob_recv to request the oob to allocate a buffer of the appropriate
+                               * size for the receive and return the allocated buffer and size in the first
+                               * element of the iovec array. */
+                                                                                                                                        
 
 /**
  * The wildcard for receives from any peer.
