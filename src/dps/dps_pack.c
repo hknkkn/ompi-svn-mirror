@@ -178,6 +178,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_byte_object_t *sbyteptr;
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
+	orte_app_context_t **app_context;
 
     /* initialize the number of bytes */
     *num_bytes = 0;
@@ -383,38 +384,69 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             }
             break;
             
-#if 0
         case ORTE_APP_CONTEXT:
-            /* array of pointers to rmgr_app_context objects - need to pack the objects */
-            app_context = (orte_rmgr_app_context_t**) src;
+            /* array of pointers to orte_app_context objects - need to pack the objects a set of fields at a time */
+            app_context = (orte_app_context_t**) src;
             for (i=0; i < num_vals; i++) {
+                /* pack the application name */
+				n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(app_context[i]->app)), 1, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
+                /* pack the number of processes */
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(app_context[i]->num_procs)), 1, ORTE_INT32, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the number of entries in the argv array */
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(app_context[i]->argc)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the argv entries */
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(app_context[i]->argv), app_context[i]->argc, ORTE_STRING, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the number of entries in the enviro array */
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)(&(app_context[i]->num_enviro)), 1, ORTE_INT32, &n)) {
+                                (void*)(&(app_context[i]->num_env)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
                 /* pack the enviro entries */
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                                (void*)(app_context[i]->enviro), app_context[i]->num_enviro, ORTE_STRING, &n)) {
+                                (void*)(app_context[i]->env), app_context[i]->num_env, ORTE_STRING, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
+
+                /* pack the cwd last */
+				n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                                (void*)(&(app_context[i]->cwd)), 1, ORTE_STRING, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+				*num_bytes+=n;
             }
             break;
-#endif
 
         case ORTE_NULL:
             break;
