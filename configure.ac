@@ -1114,8 +1114,6 @@ AC_CONFIG_FILES([
     src/mca/ns/base/Makefile
     src/mca/oob/Makefile
     src/mca/oob/base/Makefile
-    src/mca/pcmclient/Makefile
-    src/mca/pcmclient/base/Makefile
     src/mca/pls/Makefile
     src/mca/pls/base/Makefile
     src/mca/ras/Makefile
@@ -1156,7 +1154,6 @@ AC_CONFIG_FILES([
     src/dynamic-mca/gpr/Makefile
     src/dynamic-mca/ns/Makefile
     src/dynamic-mca/oob/Makefile
-    src/dynamic-mca/pcmclient/Makefile
     src/dynamic-mca/pls/Makefile
     src/dynamic-mca/ras/Makefile
     src/dynamic-mca/rds/Makefile
@@ -1201,5 +1198,7 @@ AC_CONFIG_FILES([
     test/rte/Makefile
     test/dps/Makefile
     test/mca/gpr/Makefile
+    test/mca/ns/Makefile
+    test/mca/rds/Makefile
 ])
 AC_OUTPUT

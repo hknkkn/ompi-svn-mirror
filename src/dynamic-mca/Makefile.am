@@ -24,7 +24,6 @@ SUBDIRS = \
     mpool \
     ns \
     oob \
-	pcmclient \
 	pls \
     pml \
     ptl \

@@ -142,6 +142,9 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
     mca_base_param_lookup_int(ret, &ompi_rte_debug_flag);
 
 
+    /* ensure that orte_process_info structure has been initialized */
+    orte_proc_info();
+    
     /*
      * Initialize the event library 
     */
@@ -180,34 +183,6 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
 	printf("show_help: ompi_rte_init failed in ns_base_open\n");
 	return ret;
     }
-
-    /*
-     * Process Control and Monitoring Client - just open for now
-     */
-    if (OMPI_SUCCESS != (ret = mca_pcmclient_base_open())) {
-	/* JMS show_help */
-	printf("show_help: ompi_rte_init failed in pcmclient_base_open\n");
-	return ret;
-    }
-
-    printname("component open");
-
-    /*
-     * Process Control and Monitoring Client -
-     * just complete selection of proper module
-     */
-    user_threads = true;
-    hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = mca_pcmclient_base_select(&user_threads, 
-							 &hidden_threads))) {
-	printf("show_help: ompi_rte_init failed in pcmclient_base_select\n");
-	/* JMS show_help */
-	return ret;
-    }
-    *allow_multi_user_threads &= user_threads;
-    *have_hidden_threads |= hidden_threads;
-
-    printname("pcm_select");
 
     /* complete setup of OOB */
     if (OMPI_SUCCESS != (ret = mca_oob_base_init(&user_threads, 
@@ -319,33 +294,11 @@ int ompi_rte_init(ompi_cmd_line_t *cmd_line, bool *allow_multi_user_threads, boo
  
     printname("gpr_select");
 
-    /*****    SET MY NAME IF NOT ALREADY PROVIDED IN ENVIRONMENT   *****/
-    cmpval = orte_ns.compare(ORTE_NS_CMP_ALL, orte_process_info.my_name, &illegal_name);
-    if (0 == cmpval) {
-        /* name not previously set */
-	   if (orte_process_info.seed || NULL == orte_process_info.ns_replica) {
-            /* seed or singleton - couldn't join existing univ */
-            if (ORTE_SUCCESS != (ret = orte_ns.create_process_name(&new_name, 0,0,0))) {
-                return ret;
-            }
-	        orte_process_info.my_name = new_name;
-	        printname("singleton/seed");
-	   } else {  
-            /* not seed or singleton - name server exists elsewhere - get a name for me */
-	       if (ORTE_SUCCESS != (ret = orte_ns.create_jobid(&jobid))) {
-                return ret;
-           }
-	       if (ORTE_SUCCESS != (ret = orte_ns.reserve_range(jobid, 1, &vpid))) {
-                return ret;
-           }
-           if (ORTE_SUCCESS != (ret = orte_ns.create_process_name(&new_name, 0, jobid, vpid))) {
-                return ret;
-           }
-	       orte_process_info.my_name = new_name;
-	       printname("name_server_provided");
-	   }
+    /*****    SET MY NAME    *****/
+    if (ORTE_SUCCESS != (ret = orte_ns.set_my_name())) {
+        return ret;
     }
-
+    
     /* setup my session directory */
     if (ORTE_SUCCESS != (ret = orte_ns.get_jobid_string(&jobid_str, orte_process_info.my_name))) {
         return ret;

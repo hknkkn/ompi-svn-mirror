@@ -28,6 +28,9 @@
 
 orte_proc_info_t orte_process_info = {
     /*  .init =                 */   false,
+    /*  .my_name =              */   NULL,
+    /*  .vpid_start =           */   0,
+    /*  .num_procs =            */   1,
     /*  .pid =                  */   0,
     /*  .seed =                 */   false,
     /*  .daemon =               */   false,

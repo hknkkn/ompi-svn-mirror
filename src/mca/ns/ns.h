@@ -522,6 +522,28 @@ typedef int (*orte_ns_base_module_assign_rml_tag_fn_t)(orte_rml_tag_t *tag,
                                                    char *name);
 
 /*
+ * Discover my name
+ * Upon startup, each process must discover its official ORTE process name. There are
+ * several ways this name could be passed to the process. This typicall involves an
+ * environmental parameter of some appropriate name, possibly followed by some
+ * computation of the vpid based on process rank. This function checks the different
+ * environmental parameters to find the one that has been set with the appropriate
+ * value, determines (based on that) the name of this process, and then sets that
+ * value in the orte_system_info global structure.
+ */
+typedef int (*orte_ns_base_module_set_my_name_fn_t)(void);
+
+/*
+ * Get my peers
+ * 
+ * THIS FUNCTION MAY BE ELIMINATED IN FUTURE VERSIONS TO REMOVE MULTIPLE STORAGE
+ * OF O(N) ARRAYS IN THE SYSTEM
+ */
+typedef int (*orte_ns_base_module_get_peers_fn_t)(orte_process_name_t **procs, 
+                                  size_t *num_procs);
+
+ 
+/*
  * Ver 1.0.0
  */
 struct mca_ns_base_module_1_0_0_t {
@@ -549,6 +571,8 @@ struct mca_ns_base_module_1_0_0_t {
     orte_ns_base_module_compare_fn_t compare;
     orte_ns_base_module_derive_vpid_fn_t derive_vpid;
     orte_ns_base_module_assign_rml_tag_fn_t assign_rml_tag;
+    orte_ns_base_module_set_my_name_fn_t set_my_name;
+    orte_ns_base_module_get_peers_fn_t get_peers;
 };
 
 typedef struct mca_ns_base_module_1_0_0_t mca_ns_base_module_1_0_0_t;

@@ -32,6 +32,7 @@ libmca_ns_base_la_SOURCES = \
         ns_base_close.c \
         ns_base_select.c \
         ns_base_open.c \
+        ns_base_name_discovery.c \
         ns_base_local_fns.c
 
 

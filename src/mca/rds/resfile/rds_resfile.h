@@ -24,6 +24,13 @@
 extern "C" {
 #endif
 
+/*
+ * RDS Resource file functions
+ */
+int orte_rds_resfile_query(void);
+
+int orte_rds_resfile_finalize(void);
+
 
 /**
  * RDS Resource file Component 

@@ -88,7 +88,9 @@ static mca_ns_base_module_t orte_ns_replica = {
     orte_ns_base_get_cellid,
     orte_ns_base_compare,
     orte_ns_base_derive_vpid,
-    orte_ns_replica_assign_rml_tag
+    orte_ns_replica_assign_rml_tag,
+    orte_ns_base_set_my_name,
+    orte_ns_base_get_peers
 };
 
 /*
