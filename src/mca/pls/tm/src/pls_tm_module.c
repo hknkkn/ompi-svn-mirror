@@ -102,8 +102,10 @@ static int pls_tm_launch(orte_jobid_t jobid)
             /* Bogus logic just to stop at the first failure */
             pid++;
         }
-        _exit(0);
+        exit(0);
     }
+    printf("tm child PID: %d\n", pid);
+    fflush(stdout);
 
     /* Parent */
 
@@ -187,6 +189,8 @@ static void do_wait_proc(pid_t pid, int status, void *cbdata)
 
     printf("Child TM proc has exited!\n");
     fflush(stdout);
+
+    free(cbdata);
 }
 
 

@@ -80,12 +80,11 @@ int orte_pls_tm_child_init(void)
     /* Re-start us as a new ORTE process */
 
     ompi_set_using_threads(false);
-    pthread_kill_other_threads_np();
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch:child: starting");
     if (NULL == (uri = orte_rml.get_uri())) {
         ORTE_ERROR_LOG(ORTE_ERROR);
-        _exit(-1);
+        exit(-1);
     }
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch:child: got uri: %s", uri);
@@ -98,20 +97,20 @@ int orte_pls_tm_child_init(void)
         ORTE_CELLID_MAX == new_cellid ||
         ORTE_VPID_MAX == new_vpid) {
         ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-        _exit(-1);
+        exit(-1);
     }
     ret = orte_ns.create_process_name(&new_child_name, new_cellid,
                                       new_jobid, new_vpid);
     if (ORTE_SUCCESS != ret) {
         ORTE_ERROR_LOG(ret);
-        _exit(-1);
+        exit(-1);
     }
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch:child: restarting ORTE");
     ret = orte_restart(new_child_name, uri);
     if (ORTE_SUCCESS != ret) {
         ORTE_ERROR_LOG(ret);
-        _exit(-1);
+        exit(-1);
     }
     ompi_output(orte_pls_base.pls_output,
                 "pls:tm:launch:child: am now a new ORTE process");
