@@ -37,7 +37,7 @@ const char *mca_pls_slurm_component_version_string =
 /*
  * Local variable
  */
-int param_priority = -1;
+static int param_priority = -1;
 
 
 /*
