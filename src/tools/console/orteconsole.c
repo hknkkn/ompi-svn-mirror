@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     /*
      * Intialize the ORTE environment
      */
-    if (OMPI_SUCCESS != orte_init(cmd_line, argc, argv)) {
+    if (OMPI_SUCCESS != orte_init()) {
         /* BWB show_help */
         printf("show_help: ompi_init failed\n");
         return ret;
