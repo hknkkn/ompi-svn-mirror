@@ -509,7 +509,7 @@ typedef int (*orte_ns_base_module_get_cellid_fn_t)(orte_cellid_t *cellid, const 
  * result = ompi_name_server.compare(bit_mask, &name1, &name2)
  * @endcode
  */
-typedef int (*orte_ns_base_module_compare_fn_t)(int *cmp, orte_ns_cmp_bitmask_t fields,
+typedef int (*orte_ns_base_module_compare_fn_t)(orte_ns_cmp_bitmask_t fields,
                                                 const orte_process_name_t* name1,
                                                 const orte_process_name_t* name2);
 

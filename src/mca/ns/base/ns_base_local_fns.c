@@ -421,21 +421,23 @@ int orte_ns_base_get_cellid(orte_cellid_t *cellid, const orte_process_name_t* na
 }
 
 
-int orte_ns_base_compare(int *cmp, orte_ns_cmp_bitmask_t fields,
+int orte_ns_base_compare(orte_ns_cmp_bitmask_t fields,
 		    const orte_process_name_t* name1,
 		    const orte_process_name_t* name2)
 {
-    if (NULL == name1 || NULL == name2) {  /* got an error */
-	   return ORTE_ERR_BAD_PARAM;
+    if (NULL == name1 && NULL == name2) {
+	   return 0;
+    } else if (NULL == name1) {
+       return -1;
+    } else if (NULL == name2) {
+       return 1;
     }
 
     if (ORTE_NS_CMP_CELLID & fields) { /* check cellid field */
 	if (name1->cellid < name2->cellid) {
-        *cmp = -1;
-	    return ORTE_SUCCESS;
+        return -1;
 	} else if (name1->cellid > name2->cellid) {
-        *cmp = 1;
-	    return ORTE_SUCCESS;
+        return 1;
 	}
     }
 
@@ -444,11 +446,9 @@ int orte_ns_base_compare(int *cmp, orte_ns_cmp_bitmask_t fields,
 
     if (ORTE_NS_CMP_JOBID & fields) {
 	if (name1->jobid < name2->jobid) {
-        *cmp = -1;
-	    return ORTE_SUCCESS;
+        return -1;
 	} else if (name1->jobid > name2->jobid) {
-        *cmp = 1;
-	    return ORTE_SUCCESS;
+        return 1;
 	}
     }
 
@@ -459,11 +459,9 @@ int orte_ns_base_compare(int *cmp, orte_ns_cmp_bitmask_t fields,
 
     if (ORTE_NS_CMP_VPID & fields) {
 	if (name1->vpid < name2->vpid) {
-        *cmp = -1;
-	    return ORTE_SUCCESS;
+        return -1;
 	} else if (name1->vpid > name2->vpid) {
-        *cmp = 1;
-	    return ORTE_SUCCESS;
+        return 1;
 	}
     }
 
@@ -473,8 +471,7 @@ int orte_ns_base_compare(int *cmp, orte_ns_cmp_bitmask_t fields,
      * only vpid being checked, and equal
      * return that fact
      */
-    *cmp = 0;
-    return ORTE_SUCCESS;
+    return 0;
 }
 
 

@@ -124,7 +124,7 @@ OMPI_DECLSPEC    int orte_ns_base_get_jobid(orte_jobid_t *jobid, const orte_proc
 
 OMPI_DECLSPEC    int orte_ns_base_get_cellid(orte_cellid_t *cellid, const orte_process_name_t* name);
 
-OMPI_DECLSPEC    int orte_ns_base_compare(int *cmp, orte_ns_cmp_bitmask_t fields,
+OMPI_DECLSPEC    int orte_ns_base_compare(orte_ns_cmp_bitmask_t fields,
 			const orte_process_name_t* name1,
 			const orte_process_name_t* name2);
 

@@ -91,7 +91,7 @@ int orte_ns_base_select(bool *allow_multi_user_threads,
   /* We have happiness -- save the component and module for later
      usage */
 
-  orte_name_services = *best_module;
+  orte_ns = *best_module;
   mca_ns_base_selected_component = *best_component;
   mca_ns_base_selected = true;
 
