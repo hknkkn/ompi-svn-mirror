@@ -30,6 +30,7 @@
 #include "event/event.h"
 #include "util/proc_info.h"
 #include "util/argv.h"
+#include "util/path.h"
 #include "util/cmd_line.h"
 #include "util/sys_info.h"
 #include "util/output.h"
@@ -81,80 +82,84 @@ signal_callback(int fd, short event, void *arg)
 
 
 int
-main(int argc, char *argv[])
+main(int argc, char *argv[], char* env[])
 {
-    ompi_cmd_line_t *cmd_line = NULL;
-    int num_procs = 1;
-    char cwd[MAXPATHLEN];
     orte_app_context_t app;
-    int ret;
+    orte_app_context_t *apps[1];
+    ompi_cmd_line_t cmd_line;
+    char cwd[MAXPATHLEN];
+    int rc;
+
 
     /*
-     * Parse application specific command line options.
+     * Parse application command line options.
      */
+    OBJ_CONSTRUCT(&app, orte_app_context_t);
+    OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
 
-    cmd_line = OBJ_NEW(ompi_cmd_line_t);
-    ompi_cmd_line_make_opt(cmd_line, 'v', "version", 0,
+    ompi_cmd_line_make_opt(&cmd_line, 'v', "version", 0,
 			   "Show version of Open MPI and this program");
-    ompi_cmd_line_make_opt(cmd_line, 'h', "help", 0,
+    ompi_cmd_line_make_opt(&cmd_line, 'h', "help", 0,
 			   "Show help for this function");
-    ompi_cmd_line_make_opt3(cmd_line, 'n', "np", "np", 1,
+    ompi_cmd_line_make_opt3(&cmd_line, 'n', "np", "np", 1,
                             "Number of processes to start");
-    ompi_cmd_line_make_opt3(cmd_line, '\0', "hostfile", "hostfile", 1,
+    ompi_cmd_line_make_opt3(&cmd_line, '\0', "hostfile", "hostfile", 1,
 			    "Host description file");
 
-    if (ORTE_SUCCESS != ompi_cmd_line_parse(cmd_line, true, argc, argv)) {
+    if (ORTE_SUCCESS != ompi_cmd_line_parse(&cmd_line, true, argc, argv)) {
         char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(cmd_line);
+        args = ompi_cmd_line_get_usage_msg(&cmd_line);
         ompi_show_help("help-orterun.txt", "orterun:usage", false,
                        argv[0], args);
         free(args);
         return 1;
     }
 
-    if (ompi_cmd_line_is_taken(cmd_line, "help") || 
-        ompi_cmd_line_is_taken(cmd_line, "h")) {
+    if (ompi_cmd_line_is_taken(&cmd_line, "help") || 
+        ompi_cmd_line_is_taken(&cmd_line, "h")) {
         char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(cmd_line);
+        args = ompi_cmd_line_get_usage_msg(&cmd_line);
         ompi_show_help("help-orterun.txt", "orterun:usage", false,
                        argv[0], args);
         free(args);
         return 1;
     }
 
-    if (ompi_cmd_line_is_taken(cmd_line, "version") ||
-	ompi_cmd_line_is_taken(cmd_line, "v")) {
+    if (ompi_cmd_line_is_taken(&cmd_line, "version") ||
+	ompi_cmd_line_is_taken(&cmd_line, "v")) {
 	printf("...showing off my version!\n");
 	return 1;
     }
 
 #if 0
     /* get our hostfile, if we have one */
-    if (ompi_cmd_line_is_taken(cmd_line, "hostfile")) {
+    if (ompi_cmd_line_is_taken(&cmd_line, "hostfile")) {
         /* BWB - XXX - fix me.  We really should be setting this via
          * an API rather than setenv.  But we don't have such an API just
          * yet. */
         char *buf = NULL;
         asprintf(&buf, "OMPI_MCA_hostfile=%s", 
-                 ompi_cmd_line_get_param(cmd_line, "hostfile", 0, 0));
+                 ompi_cmd_line_get_param(&cmd_line, "hostfile", 0, 0));
         /* yeah, it leaks.  Can't do nothin' about that */
         putenv(buf);
    }
 #endif
 
     /* get our numprocs */
-    if (ompi_cmd_line_is_taken(cmd_line, "np")) {
-        num_procs = atoi(ompi_cmd_line_get_param(cmd_line, "np", 0, 0));
+    if (ompi_cmd_line_is_taken(&cmd_line, "np")) {
+        app.num_procs = atoi(ompi_cmd_line_get_param(&cmd_line, "np", 0, 0));
+    } else {
+        app.num_procs = 1;
     }
 
     /*
      * Intialize our Open RTE environment
      */
 
-    if (ORTE_SUCCESS != orte_init(cmd_line, argc, argv)) {
+    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
         ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
-                       "orte_init()", ret);
-	return ret;
+                       "orte_init()", rc);
+	return rc;
     }
 
     /*****    PREP TO START THE APPLICATION    *****/
@@ -168,55 +173,28 @@ main(int argc, char *argv[])
     /* 
      * Setup application context 
      */
-    OBJ_CONSTRUCT(&app, orte_app_context_t);
-    ompi_cmd_line_get_tail(cmd_line, &app.argc, &app.argv);
+    apps[0] = &app;
+    ompi_cmd_line_get_tail(&cmd_line, &app.argc, &app.argv);
 
     if(app.argc == 0) {
         ompi_show_help("help-orterun.txt", "orterun:no-application", true, argv[0], argv[0]);
         return 1;
     }
-    return 0;
-    
-#if 0
-
-    /*
-     * build environment to be passed
-     */
-
-    mca_pcm_base_build_base_env(environ, &(sched->envc), &(sched->env));
-    /* set initial contact info */
-    if (ompi_process_info.seed) {  /* i'm the seed - direct them towards me */
-	my_contact_info = mca_oob_get_contact_info();
-    } else { /* i'm not the seed - direct them to it */
-	my_contact_info = strdup(ompi_universe_info.ns_replica);
-    }
-    asprintf(&tmp, "OMPI_MCA_ns_base_replica=%s", my_contact_info);
-    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-    free(tmp);
-    asprintf(&tmp, "OMPI_MCA_gpr_base_replica=%s", my_contact_info);
-    ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-    free(tmp);
-    if (NULL != ompi_universe_info.name) {
-	asprintf(&tmp, "OMPI_universe_name=%s", ompi_universe_info.name);
-	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-	free(tmp);
-    }
-    if (ompi_cmd_line_is_taken(cmd_line, "tmpdir")) {  /* user specified the tmp dir base */
-	asprintf(&tmp, "OMPI_tmpdir_base=%s", ompi_cmd_line_get_param(cmd_line, "tmpdir", 0, 0));
-	ompi_argv_append(&(sched->envc), &(sched->env), tmp);
-	free(tmp);
+    app.env = NULL;
+    app.num_env = 0;
+    getcwd(cwd,sizeof(cwd));
+    app.cwd = strdup(cwd);
+    app.app = ompi_path_findv(app.argv[0], 0, env, app.cwd); 
+ 
+    if(NULL == app.app) {
+        ompi_show_help("help-orterun.txt", "orterun:no-application", true, argv[0], argv[0]);
+        return 1;
     }
 
-    getcwd(cwd, MAXPATHLEN);
-    sched->cwd = strdup(cwd);
-    sched->nodelist = nodelist;
+    rc = orte_rmgr.spawn(apps, 1, &jobid);
 
-    if (sched->argc == 0) {
-        ompi_show_help("help-orterun.txt", "orterun:no-application", true,
-                       argv[0], argv[0]);
-	return 1;
-    }
-
-#endif
+    OBJ_DESTRUCT(&app);
+    OBJ_DESTRUCT(&cmd_line);
+    return rc;
 }
 
