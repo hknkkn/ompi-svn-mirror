@@ -46,8 +46,13 @@ int orte_restart(orte_process_name_t *name)
 {
     int rc;
 
-    orte_process_name_t* copy;
-    if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&copy, name))) {
+    orte_process_name_t* old_name;
+    orte_process_name_t* new_name;
+    if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&old_name, orte_process_info.my_name))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
+    }
+    if (ORTE_SUCCESS != (rc = orte_ns.copy_process_name(&new_name, name))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
@@ -76,7 +81,11 @@ int orte_restart(orte_process_name_t *name)
      * setup new global state
      */
     orte_process_info.seed = false;
-    orte_process_info.my_name = copy;
+    if(NULL == orte_process_info.ns_replica)
+        orte_process_info.ns_replica = old_name;
+    if(NULL == orte_process_info.gpr_replica)
+        orte_process_info.gpr_replica = old_name;
+    orte_process_info.my_name = new_name;
 
     /*
      * Re-start components.

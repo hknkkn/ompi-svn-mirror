@@ -29,6 +29,7 @@
 #include "mca/ns/base/base.h"
 #include "mca/pls/base/base.h"
 #include "mca/rmgr/base/base.h"
+#include "mca/rml/rml.h"
 #include "mca/ras/base/base.h"
 #include "mca/rmaps/base/rmaps_base_map.h"
 
@@ -237,6 +238,7 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
     size_t num_nodes;
     orte_vpid_t daemon_vpid_start;
     int rc, index;
+    char* uri;
 
     /* convert node names to bproc nodelist */
     if(ORTE_SUCCESS != (rc = orte_pls_bproc_nodelist(map, &node_list, &num_nodes))) {
@@ -257,6 +259,11 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
     /* allocate a range of vpids for the daemons */
     if(ORTE_SUCCESS != (rc = orte_ns.reserve_range(0, num_nodes, &daemon_vpid_start))) {
         ompi_output(0, "orte_pls_bproc_seed: unable to allocate name: %d\n", rc);
+        goto cleanup;
+    }
+
+    if(NULL == (uri = orte_rml.get_uri())) {
+        ompi_output(0, "orte_pls_bproc_seed: unable to determine uri: %d\n", rc);
         goto cleanup;
     }
 
@@ -306,11 +313,19 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         rc = orte_ns.create_process_name(
             &daemon_name, orte_process_info.my_name->cellid, 0, daemon_vpid_start + rc);
         if(ORTE_SUCCESS != rc) {
+            ompi_output(0, "orte_pls_bproc: unable to set daemon process name\n");
             exit(1);
         }
         ompi_output(0, "orte_pls_bproc: calling orte_restart\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
         orte_restart(daemon_name);
         ompi_output(0, "orte_pls_bproc: return from orte_restart\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
+        
+        /* setup contact info to the process that launched us */
+        rc = orte_rml.set_uri(uri);
+        if(ORTE_SUCCESS != rc) {
+            ompi_output(0, "orte_pls_bproc: unable to set daemon contact info\n");
+            exit(1);
+        }
 
         /* connect the daemons stdout/stderr to IOF framework */
 

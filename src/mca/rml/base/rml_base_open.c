@@ -57,8 +57,8 @@ orte_rml_module_t orte_rml = {
     (orte_rml_module_barrier_fn_t)mca_oob_barrier,
     (orte_rml_module_xcast_fn_t)mca_oob_xcast
 };
-orte_process_name_t orte_rml_name_any;
-orte_process_name_t orte_rml_name_seed;
+orte_process_name_t orte_rml_name_any = { ORTE_CELLID_MAX, ORTE_JOBID_MAX, ORTE_VPID_MAX };
+orte_process_name_t orte_rml_name_seed = { 0, 0, 0 };
 
 /**
  * Function for finding and opening either all MCA components, or the one
