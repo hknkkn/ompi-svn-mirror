@@ -27,6 +27,8 @@
 
 #include "dps_internal.h"
 
+#include <netinet/in.h> 
+
 /**
  * Internal-use only functions
  */
