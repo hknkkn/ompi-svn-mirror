@@ -494,16 +494,18 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 				*num_bytes+=n;
 
                 /* allocate the required space for the char * pointers */
-                app_context[i]->argv = (char **)malloc(app_context[i]->argc * sizeof(char*));
+                app_context[i]->argv = (char **)malloc((app_context[i]->argc+1) * sizeof(char*));
                 if (NULL == app_context[i]->argv) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
+                app_context[i]->argv[app_context[i]->argc] = NULL;
 
                 /* unpack the argv strings */
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->argv,
                             src, app_context[i]->argc, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
+
                 src = (void*)((char*)src + n);
 				*num_bytes+=n;
 
@@ -516,14 +518,23 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 				*num_bytes+=n;
 
                 /* allocate the required space for the char * pointers */
-                app_context[i]->env = (char **)malloc(app_context[i]->num_env * sizeof(char*));
+                app_context[i]->env = (char **)malloc((app_context[i]->num_env+1) * sizeof(char*));
                 if (NULL == app_context[i]->env) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
-
+                app_context[i]->env[app_context[i]->num_env] = NULL;
+        
                 /* unpack the env strings */
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->env,
                             src, app_context[i]->num_env, ORTE_STRING, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
+                /* unpack the cwd */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&app_context[i]->cwd,
+                            src, 1, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
                 src = (void*)((char*)src + n);
