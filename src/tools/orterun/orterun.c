@@ -92,6 +92,14 @@ main(int argc, char *argv[], char* env[])
     int i, rc;
     char *param, *value, *value2;
 
+    /* Intialize our Open RTE environment */
+
+    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
+        ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
+                       "orte_init()", rc);
+	return rc;
+    }
+
     /* Parse application command line options. */
 
     OBJ_CONSTRUCT(&app, orte_app_context_t);
@@ -135,20 +143,6 @@ main(int argc, char *argv[], char* env[])
 	return 1;
     }
 
-#if 0
-    /* get our hostfile, if we have one */
-    if (ompi_cmd_line_is_taken(&cmd_line, "hostfile")) {
-        /* BWB - XXX - fix me.  We really should be setting this via
-         * an API rather than setenv.  But we don't have such an API just
-         * yet. */
-        char *buf = NULL;
-        asprintf(&buf, "OMPI_MCA_hostfile=%s", 
-                 ompi_cmd_line_get_param(&cmd_line, "hostfile", 0, 0));
-        /* yeah, it leaks.  Can't do nothin' about that */
-        putenv(buf);
-   }
-#endif
-
     /* get our numprocs */
     if (ompi_cmd_line_is_taken(&cmd_line, "np")) {
         app.num_procs = atoi(ompi_cmd_line_get_param(&cmd_line, "np", 0, 0));
@@ -156,12 +150,10 @@ main(int argc, char *argv[], char* env[])
         app.num_procs = 1;
     }
 
-    /* Intialize our Open RTE environment */
-
-    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
-        ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
-                       "orte_init()", rc);
-	return rc;
+    /* get our hostfile, if we have one */
+    if (ompi_cmd_line_is_taken(&cmd_line, "hostfile")) {
+         int id = mca_base_param_find("rds","hostfile","path");
+         mca_base_param_set_string(id, ompi_cmd_line_get_param(&cmd_line, "hostfile", 0, 0));
     }
 
     /* Prep to start the application */
