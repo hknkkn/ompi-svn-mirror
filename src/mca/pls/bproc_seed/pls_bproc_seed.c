@@ -256,7 +256,6 @@ static int orte_pls_bproc_undump(orte_rmaps_base_proc_t* proc, uint8_t* image, s
 
 static void orte_pls_bproc_wait_proc(pid_t pid, int status, void* cbdata)
 {
-    ompi_output(0, "orte_pls_bproc_wait_proc\n");
     OMPI_THREAD_LOCK(&mca_pls_bproc_seed_component.lock);
     mca_pls_bproc_seed_component.num_children--;
     ompi_condition_signal(&mca_pls_bproc_seed_component.condition);
