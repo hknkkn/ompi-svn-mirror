@@ -233,6 +233,10 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
             orte_wait_cb(pid, orte_pls_rsh_wait_daemon, node);
             vpid++;
 
+            /* if required - add delay to avoid problems w/ X11 authentication */
+            if (mca_pls_rsh_component.debug && mca_pls_rsh_component.delay) {
+                sleep(mca_pls_rsh_component.delay);
+            }
         }
     }
 
