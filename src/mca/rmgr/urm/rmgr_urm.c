@@ -154,7 +154,7 @@ static int orte_rmgr_urm_spawn(
         ORTE_ERROR_LOG(rc);
         return rc;
     }
-    if (ORTE_SUCCESS != (rc = orte_ras_base_allocate(*jobid))) {
+    if (ORTE_SUCCESS != (rc = orte_rmgr_urm_allocate(*jobid))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
