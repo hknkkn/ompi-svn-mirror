@@ -23,7 +23,6 @@ SUBDIRS = \
     io \
     mpool \
     ns \
-    one \
     oob \
 	pcmclient \
 	pls \
