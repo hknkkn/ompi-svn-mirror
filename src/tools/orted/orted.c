@@ -91,7 +91,9 @@ ompi_cmd_line_init_t orte_cmd_line_opts[] = {
     { NULL, NULL, NULL, '\0', NULL, "gprreplica", 1,
       &orte_process_info.gpr_replica_uri, OMPI_CMD_LINE_TYPE_STRING,
       "Registry contact information."},
-
+    { NULL, NULL, NULL, '\0', NULL, "nodename", 1,
+      &orte_system_info.nodename, OMPI_CMD_LINE_TYPE_STRING,
+      "Node name as specified by host/resource description." },
     /* End of list */
     { NULL, NULL, NULL, '\0', NULL, NULL, 0,
       NULL, OMPI_CMD_LINE_TYPE_NULL, NULL }

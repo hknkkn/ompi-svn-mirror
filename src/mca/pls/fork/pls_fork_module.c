@@ -167,6 +167,8 @@ static int orte_pls_fork_proc(
         new_env = ompi_environ_merge(context->env, environ_copy);
         ompi_argv_free(environ_copy);
         execve(context->app, context->argv, new_env);
+        ompi_output(0, "orte_pls_fork: %s - %s\n", context->app, 
+            ompi_argv_join(context->argv, ' '));
         ompi_output(0, "orte_pls_fork: execv failed with errno=%d\n", errno);
         exit(-1);
 

@@ -98,8 +98,9 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
     ompi_list_t nodes;
     ompi_list_item_t* item;
     size_t num_nodes;
-    orte_vpid_t vpid_start;
-    int node_name_index;
+    orte_vpid_t vpid;
+    int node_name_index1;
+    int node_name_index2;
     int proc_name_index;
     char *jobid_string;
     char *uri, *param;
@@ -125,7 +126,7 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
     if(num_nodes == 0) {
         return ORTE_ERR_BAD_PARAM;
     }
-    rc = orte_ns.reserve_range(0, num_nodes, &vpid_start);
+    rc = orte_ns.reserve_range(0, num_nodes, &vpid);
     if(ORTE_SUCCESS != rc) {
         goto cleanup;
     }
@@ -139,7 +140,7 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
      */
     argv = ompi_argv_copy(mca_pls_rsh_component.argv);
     argc = mca_pls_rsh_component.argc;
-    node_name_index = argc;
+    node_name_index1 = argc;
     ompi_argv_append(&argc, &argv, "");  /* placeholder for node name */
 
     /* application */
@@ -151,6 +152,9 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
     ompi_argv_append(&argc, &argv, jobid_string);
     ompi_argv_append(&argc, &argv, "--name");
     proc_name_index = argc;
+    ompi_argv_append(&argc, &argv, "");
+    ompi_argv_append(&argc, &argv, "--nodename");
+    node_name_index2 = argc;
     ompi_argv_append(&argc, &argv, "");
 
     /* setup ns contact info */
@@ -187,7 +191,8 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
         pid_t pid;
 
         /* setup node name */
-        argv[node_name_index] = node->node_name;
+        argv[node_name_index1] = node->node_name;
+        argv[node_name_index2] = node->node_name;
 
         /* rsh a child to exec the rsh/ssh session */
         pid = fork();
@@ -204,7 +209,7 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
             int fd = open("/dev/null", O_RDWR);
 
             /* setup process name */
-            rc = orte_ns.create_process_name(&name, node->node_cellid, 0, vpid_start);
+            rc = orte_ns.create_process_name(&name, node->node_cellid, 0, vpid);
             if(ORTE_SUCCESS != rc) {
                 ompi_output(0, "orte_pls_rsh: unable to create process name");
                 exit(-1);
@@ -242,6 +247,8 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
 
             OBJ_RETAIN(node);
             orte_wait_cb(pid, orte_pls_rsh_wait_daemon, node);
+            vpid++;
+
         }
     }
 
