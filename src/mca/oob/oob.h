@@ -27,6 +27,7 @@
 #include "mca/ns/ns_types.h"
 #include "mca/gpr/gpr_types.h"
 
+#include "mca/oob/oob_types.h"
 #include "mca/oob/base/base.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
