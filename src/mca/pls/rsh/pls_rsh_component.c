@@ -114,7 +114,6 @@ static char* orte_pls_rsh_param_register_string(
 int orte_pls_rsh_component_open(void)
 {
     char* param;
-
     /* initialize globals */
     OBJ_CONSTRUCT(&mca_pls_rsh_component.lock, ompi_mutex_t);
     OBJ_CONSTRUCT(&mca_pls_rsh_component.cond, ompi_condition_t);
@@ -147,6 +146,9 @@ orte_pls_base_module_t *orte_pls_rsh_component_init(int *priority)
     extern char **environ;
 
     /* If we didn't find the agent in the path, then don't use this component */
+    if (NULL == mca_pls_rsh_component.argv || NULL == mca_pls_rsh_component.argv[0]) {
+        return NULL;
+    }
     mca_pls_rsh_component.path = ompi_path_findv(mca_pls_rsh_component.argv[0], 0, environ, NULL);
     if (NULL == mca_pls_rsh_component.path) {
         return NULL;
