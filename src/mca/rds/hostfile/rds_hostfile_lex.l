@@ -29,8 +29,9 @@ static int orte_rds_hostfile_wrap(void);
 /*
  * global variables
  */
-int  orte_rds_hostfile_line=1;
-bool orte_rds_hostfile_parse_done = false;
+int orte_rds_hostfile_line=1;
+orte_rds_value_t orte_rds_hostfile_value;
+bool orte_rds_hostfile_done = false;
 
 %}
 

@@ -34,6 +34,7 @@ LEX_OUTPUT_ROOT = lex.orte_rds_hostfile_
 
 proxy_SOURCES = \
     rds_hostfile_lex.l \
+    rds_hostfile_lex.c \
     rds_hostfile_lex.h \
     rds_hostfile.c \
     rds_hostfile.h \
