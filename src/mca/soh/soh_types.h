@@ -29,12 +29,12 @@ typedef int orte_exit_code_t;
 
 typedef int8_t orte_proc_state_t;
 
-#define ORTE_PROC_STATE_RUNNING        0x00
-#define ORTE_PROC_STATE_FINALIZING     0x01
-#define ORTE_PROC_STATE_INIT           0x02
-#define ORTE_PROC_STATE_TERMINATING    0x03
-#define ORTE_PROC_STATE_STARTING       0x04
-#define ORTE_PROC_STATE_LAUNCHING      0x05
+#define ORTE_PROC_STATE_INIT           0x01  /* process entry has been created by rmaps */
+#define ORTE_PROC_STATE_LAUNCHING      0x02  /* process has been launched by pls */
+#define ORTE_PROC_STATE_STARTING       0x03  /* process is in orte_init */
+#define ORTE_PROC_STATE_RUNNING        0x04  /* process has exited orte_init */
+#define ORTE_PROC_STATE_FINALIZING     0x05  /* process is in orte_finalize */
+#define ORTE_PROC_STATE_TERMINATED     0x06  /* process has terminated */
 
 
 /**

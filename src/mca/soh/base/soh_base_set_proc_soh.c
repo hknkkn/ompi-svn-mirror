@@ -58,6 +58,7 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
         return rc;
     }
     
+    value->cnt = 2;
     value->keyvals = (orte_gpr_keyval_t**)malloc(2 * sizeof(orte_gpr_keyval_t*));
     if (NULL == value->keyvals) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
