@@ -35,7 +35,7 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
 {
     orte_gpr_cmd_flag_t command=ORTE_GPR_SUBSCRIBE_CMD;
     orte_data_type_t type;
-    orte_gpr_notify_id_t local_idtag=0, idtag=0;
+    orte_gpr_notify_id_t local_idtag=ORTE_GPR_NOTIFY_ID_MAX, idtag=ORTE_GPR_NOTIFY_ID_MAX;
     int rc, ret, num_subs, num_trigs;
     size_t n;
     orte_gpr_notify_action_t action;
@@ -127,12 +127,6 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
             goto RETURN_ERROR;
         }
 
-        /* pack the local idtag for return to sender */
-        if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, &local_idtag, 1, ORTE_GPR_NOTIFY_ID))) {
-            ORTE_ERROR_LOG(rc);
-            goto RETURN_ERROR;
-        }
-
     } else {  /* local sender - idtag is for local notify tracking system */
         /* register subscription */
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe_fn(action,
@@ -143,15 +137,17 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
             goto RETURN_ERROR;
         }
         
-        /* pack the local idtag for return to local sender */
-        if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, &idtag, 1, ORTE_GPR_NOTIFY_ID))) {
-            ORTE_ERROR_LOG(rc);
-            goto RETURN_ERROR;
-        }
-
+        /* set the local idtag for return to local sender */
+        local_idtag = idtag;
     }
 
  RETURN_ERROR:
+    /* pack the local idtag for return to sender */
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(output_buffer, &local_idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+        ORTE_ERROR_LOG(rc);
+        goto RETURN_ERROR;
+    }
+
     if (ORTE_SUCCESS != (ret = orte_dps.pack(output_buffer, &rc, 1, ORTE_INT))) {
         ORTE_ERROR_LOG(ret);
         return ret;

@@ -44,15 +44,13 @@ int orte_gpr_replica_recv_delete_segment_cmd(orte_buffer_t *buffer, orte_buffer_
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &segment, &n, ORTE_STRING))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &segment, &n, ORTE_STRING))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_gpr_replica_find_seg(&seg, false, segment))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
@@ -90,23 +88,20 @@ int orte_gpr_replica_recv_delete_entries_cmd(orte_buffer_t *buffer, orte_buffer_
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &addr_mode, &n, ORTE_GPR_ADDR_MODE))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &addr_mode, &n, ORTE_GPR_ADDR_MODE))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &segment, &n, ORTE_STRING))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &segment, &n, ORTE_STRING))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &num_tokens, &n, ORTE_INT))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &num_tokens, &n, ORTE_INT))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
@@ -119,17 +114,15 @@ int orte_gpr_replica_recv_delete_entries_cmd(orte_buffer_t *buffer, orte_buffer_
             ret = ORTE_ERR_OUT_OF_RESOURCE;
             goto RETURN_ERROR;
         }
-        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, tokens, (size_t*)&num_tokens, ORTE_STRING))) {
-            ORTE_ERROR_LOG(rc);
-            ret = rc;
+        if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, tokens, (size_t*)&num_tokens, ORTE_STRING))) {
+            ORTE_ERROR_LOG(ret);
             goto RETURN_ERROR;
         }
      }
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &num_keys, &n, ORTE_INT))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &num_keys, &n, ORTE_INT))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
@@ -142,29 +135,25 @@ int orte_gpr_replica_recv_delete_entries_cmd(orte_buffer_t *buffer, orte_buffer_
             ret = ORTE_ERR_OUT_OF_RESOURCE;
             goto RETURN_ERROR;
         }
-        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, keys, (size_t*)&num_keys, ORTE_STRING))) {
-            ORTE_ERROR_LOG(rc);
-            ret = rc;
+        if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, keys, (size_t*)&num_keys, ORTE_STRING))) {
+            ORTE_ERROR_LOG(ret);
             goto RETURN_ERROR;
         }
      }
 
      /* locate the segment */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_gpr_replica_find_seg(&seg, false, segment))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&token_itags, seg, tokens, &num_tokens))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_gpr_replica_get_itag_list(&token_itags, seg, tokens, &num_tokens))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&key_itags, seg, keys, &num_keys))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_gpr_replica_get_itag_list(&key_itags, seg, keys, &num_keys))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
@@ -232,24 +221,21 @@ int orte_gpr_replica_recv_index_cmd(orte_buffer_t *buffer,
     
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
-    if (ORTE_SUCCESS != (rc = orte_dps.peek(buffer, &type, &n))) {
-        ORTE_ERROR_LOG(rc);
-        ret = rc;
+    if (ORTE_SUCCESS != (ret = orte_dps.peek(buffer, &type, &n))) {
+        ORTE_ERROR_LOG(ret);
         goto RETURN_ERROR;
     }
 
     if (ORTE_STRING != type) {  /* get index of segment names */
         seg = NULL;
     } else {
-        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &segment, &n, ORTE_STRING))) {
-            ORTE_ERROR_LOG(rc);
-            ret = rc;
+        if (ORTE_SUCCESS != (ret = orte_dps.unpack(buffer, &segment, &n, ORTE_STRING))) {
+            ORTE_ERROR_LOG(ret);
             goto RETURN_ERROR;
         }
         /* locate the segment */
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
-            ORTE_ERROR_LOG(rc);
-            ret = rc;
+        if (ORTE_SUCCESS != (ret = orte_gpr_replica_find_seg(&seg, false, segment))) {
+            ORTE_ERROR_LOG(ret);
             goto RETURN_ERROR;
         }
     }
@@ -262,18 +248,26 @@ int orte_gpr_replica_recv_index_cmd(orte_buffer_t *buffer,
     if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, &cnt, 1, ORTE_SIZE))) {
         ORTE_ERROR_LOG(rc);
         ret = rc;
-        goto RETURN_ERROR;
+        goto RETURN_PACK_ERROR;
     }
 
     if (0 < cnt) {  /* got a non-zero answer back */
         if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, index, cnt, ORTE_STRING))) {
             ORTE_ERROR_LOG(rc);
             ret = rc;
-            goto RETURN_ERROR;
+            goto RETURN_PACK_ERROR;
         }
     }
         
  RETURN_ERROR:
+    /* ensure that the minimum response is generated */
+    cnt = 0;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, &cnt, 1, ORTE_SIZE))) {
+        ORTE_ERROR_LOG(rc);
+        ret = rc;
+    }
+
+RETURN_PACK_ERROR:
     if (NULL != segment) {
         free(segment);
     }
