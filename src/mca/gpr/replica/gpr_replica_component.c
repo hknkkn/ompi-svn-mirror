@@ -382,6 +382,10 @@ static void orte_gpr_replica_callbacks_destructor(orte_gpr_replica_callbacks_t* 
         free(cb->requestor);
         cb->requestor = NULL;
     }
+    
+    if (NULL != cb->message) {
+        OBJ_RELEASE(cb->message);
+    }
 }
 
 /* define instance of ompi_class_t */

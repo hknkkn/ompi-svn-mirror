@@ -399,7 +399,9 @@ MOVEON:
                 return rc;
             }
         }
+        OBJ_RELEASE(values[i]);
     }  /* for i */
+    free(values);
     
     return ORTE_SUCCESS;
 }

@@ -274,10 +274,11 @@ int main(int argc, char **argv)
          1, &trigs,
          &sub);
 
+     OBJ_RELEASE(subscription);
+     OBJ_DESTRUCT(&trig);
+
      if(ORTE_SUCCESS != rc) {
          ORTE_ERROR_LOG(rc);
-         OBJ_RELEASE(subscription);
-         OBJ_DESTRUCT(&trig);
          return rc;
      }
 
@@ -324,7 +325,7 @@ int main(int argc, char **argv)
     
         orte_gpr.dump_all(0);
         
-        if (j == 1) {
+        if (j == 0) {
             fprintf(test_out, "updating value in keys[1] to test update_storage_locations\n");
             /* now update the value in keys[1] and do it again */
             value.addr_mode = value.addr_mode | ORTE_GPR_OVERWRITE;
@@ -337,6 +338,15 @@ int main(int argc, char **argv)
         OBJ_DESTRUCT(&value);
     }
     
+    orte_dps_close();
+    orte_gpr_base_close();
+    orte_sys_info_finalize();
+    orte_proc_info_finalize();
+    mca_base_close();
+    ompi_malloc_finalize();
+    ompi_output_finalize();
+    
+
     fclose( test_out );
 /*    result = system( cmd_str );
     if( result == 0 ) {
@@ -356,6 +366,4 @@ void test_cbfunc(orte_gpr_notify_data_t *data, void *tag)
     fprintf(test_out, "TRIGGER FIRED AND RECEIVED\n");
     
     orte_gpr.dump_notify_data(data, 0);
-    
-    OBJ_RELEASE(data);
 }
