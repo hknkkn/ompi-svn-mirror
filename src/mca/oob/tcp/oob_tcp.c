@@ -610,7 +610,7 @@ int mca_oob_tcp_resolve(mca_oob_tcp_peer_t* peer)
  */
 int mca_oob_tcp_init(void)
 {
-    char *keys[2], *jobid, *segment;
+    char keys[2], *jobid, *segment;
     orte_buffer_t *buffer;
     orte_process_name_t* peers;
     orte_gpr_value_t *value;
@@ -656,6 +656,12 @@ int mca_oob_tcp_init(void)
     OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
 
 #if 0
+    /* put our contact info in registry */
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&keys[0], orte_process_info.my_name))) {
+        return rc;
+    }
+    keys[1] = NULL;
+
     rc = orte_gpr.subscribe(
         ORTE_GPR_OR,
         ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA|
@@ -672,12 +678,6 @@ int mca_oob_tcp_init(void)
         return OMPI_ERROR;
     }
 #endif
-
-    /* put our contact info in registry */
-    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&keys[0], orte_process_info.my_name))) {
-        return rc;
-    }
-    keys[1] = NULL;
 
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.put(%s,%s)\n", 
@@ -704,15 +704,20 @@ int mca_oob_tcp_init(void)
     
     value->segment = strdup(segment);
     value->cnt = 1;
-    
-    value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == value->keyvals[0]) {
-       ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+    value->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    if(NULL == value->keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    
+    value->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == value->keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
     (value->keyvals[0])->type = ORTE_BYTE;
     (value->keyvals[0])->key = "oob-tcp";
+    orte_schema.get_proc_tokens(&value->tokens,NULL,orte_process_info.my_name);
+
     rc = orte_dps.unload(buffer, (void**)&(value->keyvals[0])->value.byteobject.bytes,
                                 &(value->keyvals[0])->value.byteobject.size);
     if(rc != OMPI_SUCCESS) {

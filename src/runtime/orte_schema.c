@@ -30,10 +30,10 @@
 
 #include "include/orte_schema.h"
 
-int orte_schema_get_proc_tokens(char ***tokens, orte_process_name_t *proc);
-int orte_schema_get_node_tokens(char ***tokens, orte_cellid_t cellid, char *nodename);
+int orte_schema_get_proc_tokens(char ***tokens, int32_t* num_tokens, orte_process_name_t *proc);
+int orte_schema_get_node_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid, char *nodename);
+int orte_schema_get_cell_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid);
 int orte_schema_get_job_segment_name(char **name, orte_jobid_t jobid);
-int orte_schema_get_cell_tokens(char ***tokens, orte_cellid_t cellid);
 
 /*
  * globals
@@ -51,42 +51,46 @@ int orte_schema_open(void)
     return ORTE_SUCCESS;
 }
 
-int orte_schema_get_proc_tokens(char ***tokens, orte_process_name_t *proc)
+int orte_schema_get_proc_tokens(char ***proc_tokens, int32_t* num_tokens, orte_process_name_t *proc)
 {
     int rc;
-    
-    *tokens = (char**)malloc(2 * sizeof(char*));
+    char** tokens;
+    tokens = (char**)malloc(3 * sizeof(char*));
     if (NULL == *tokens) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(tokens[0], proc))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&tokens[0], proc))) {
         ORTE_ERROR_LOG(rc);
         goto CLEANUP;
     }
-    if (ORTE_SUCCESS != (rc = orte_ns.get_vpid_string(tokens[1], proc))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_vpid_string(&tokens[1], proc))) {
         ORTE_ERROR_LOG(rc);
         goto CLEANUP;
     }
+    tokens[2] = NULL;
+    *proc_tokens = tokens;
+    if(num_tokens != NULL)
+        *num_tokens = 2;
     return ORTE_SUCCESS;
     
 CLEANUP:
-    if (NULL != *tokens) {
-        if (NULL != (*tokens)[0])
-            free((*tokens)[0]);
-        if (NULL != (*tokens)[1])
-            free((*tokens)[1]);
-        free(*tokens);
+    if (NULL != tokens) {
+        if (NULL != tokens[0])
+            free(tokens[0]);
+        if (NULL != tokens[1])
+            free(tokens[1]);
+        free(tokens);
     }
     return rc;
 }
 
-int orte_schema_get_node_tokens(char ***tokens, orte_cellid_t cellid, char *nodename)
+int orte_schema_get_node_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid, char *nodename)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-int orte_schema_get_cell_tokens(char ***tokens, orte_cellid_t cellid)
+int orte_schema_get_cell_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid)
 {
     return ORTE_ERR_NOT_IMPLEMENTED;
 }

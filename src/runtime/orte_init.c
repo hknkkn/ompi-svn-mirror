@@ -23,6 +23,7 @@
 #include "event/event.h"
 #include "util/output.h"
 #include "threads/mutex.h"
+#include "dps/dps.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
@@ -119,7 +120,9 @@ orte_universe_t orte_universe_info = {
 int orte_init(ompi_cmd_line_t *cmd_line)
 {
     int ret;
-    char *universe, *jobid_str, *procid_str;
+    char *universe;
+    char *jobid_str = NULL;
+    char *procid_str = NULL;
     pid_t pid;
 
     /* Open up the output streams */
@@ -172,7 +175,7 @@ int orte_init(ompi_cmd_line_t *cmd_line)
      * Initialize the error manager
      */
     if (ORTE_SUCCESS != (ret = orte_errmgr_base_open())) {
-        ompi_output(0, "orte_init: failed to open errmgr - aborting");
+        ORTE_ERROR_LOG(ret);
         return ret;
     }
     
@@ -201,6 +204,14 @@ int orte_init(ompi_cmd_line_t *cmd_line)
     }
 
     /*
+     * Initialize the data packing service.
+     */
+    if (ORTE_SUCCESS != (ret = orte_dps_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    
+    /*
      * Name Server 
      */
     if (OMPI_SUCCESS != (ret = orte_ns_base_open())) {
@@ -223,6 +234,16 @@ int orte_init(ompi_cmd_line_t *cmd_line)
         ORTE_ERROR_LOG(ret);
         return ret;
     }
+
+    /*
+     * Initialize schema utilities
+     */
+
+    if (ORTE_SUCCESS != (ret = orte_schema_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    
 
     /* parse ORTE environmental variables and fill corresponding info structures */
     orte_parse_environ();
