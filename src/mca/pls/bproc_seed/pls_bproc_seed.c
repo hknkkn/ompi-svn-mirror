@@ -330,9 +330,6 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         orte_process_name_t* daemon_name;
         int fd;
 
-        /* disable threading */
-        ompi_set_using_threads(false);
-
         /* connect stdout/stderr to a file */
         fd = open("/tmp/orte.log", O_CREAT|O_RDWR|O_TRUNC, 0666);
         if(fd > 0) {
@@ -341,6 +338,9 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         } else {
             _exit(-1);
         }
+
+        /* disable threading */
+        ompi_set_using_threads(false);
 
         /* find this node */
         index = 0;
