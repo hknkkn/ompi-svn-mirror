@@ -114,7 +114,8 @@ int main(int argc, char **argv)
     
     fprintf(stderr, "going to find seg\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, "test-segment"))) {
-        fprintf(test_out, "gpr_test: find_seg failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: find_seg failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: find_seg failed");
         test_finalize();
         return rc;
@@ -126,7 +127,8 @@ int main(int argc, char **argv)
     for (i=0; i<10; i++) {
         asprintf(&tmp, "test-tag-%d", i);
          if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&itag[i], seg, tmp))) {
-            fprintf(test_out, "gpr_test: create_itag failed with error code %d\n", rc);
+            fprintf(test_out, "gpr_test: create_itag failed with error code %s\n",
+                        ORTE_ERROR_NAME(rc));
             test_failure("gpr_test: create_itag failed");
             test_finalize();
             return rc;
@@ -141,7 +143,8 @@ int main(int argc, char **argv)
          asprintf(&tmp, "test-tag-%d", i);
          if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&itag2, seg, tmp)) ||
              itag2 != itag[i]) {
-            fprintf(test_out, "gpr_test: lookup failed with error code %d\n", rc);
+            fprintf(test_out, "gpr_test: lookup failed with error code %s\n",
+                        ORTE_ERROR_NAME(rc));
             test_failure("gpr_test: lookup failed");
             test_finalize();
             return rc;
@@ -157,7 +160,8 @@ int main(int argc, char **argv)
          asprintf(&tmp2, "test-tag-%d", i);
          if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_reverse_lookup(&tmp, seg, itag[i])) ||
              0 != strcmp(tmp2, tmp)) {
-            fprintf(test_out, "gpr_test: reverse lookup failed with error code %d\n", rc);
+            fprintf(test_out, "gpr_test: reverse lookup failed with error code %s\n",
+                        ORTE_ERROR_NAME(rc));
             test_failure("gpr_test: reverse lookup failed");
             test_finalize();
             return rc;
@@ -172,7 +176,8 @@ int main(int argc, char **argv)
     for (i=0; i<10; i++) {
          asprintf(&tmp, "test-tag-%d", i);
          if (ORTE_SUCCESS != (rc = orte_gpr_replica_delete_itag(seg, tmp))) {
-            fprintf(test_out, "gpr_test: delete tag failed with error code %d\n", rc);
+            fprintf(test_out, "gpr_test: delete tag failed with error code %s\n",
+                        ORTE_ERROR_NAME(rc));
             test_failure("gpr_test: delete tag failed");
             test_finalize();
             return rc;
@@ -189,7 +194,8 @@ int main(int argc, char **argv)
     names[14] = NULL;
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itaglist, seg,
                                                 names, &num_names))) {
-        fprintf(test_out, "gpr_test: get itag list failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: get itag list failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: get itag list failed");
         test_finalize();
         return rc;
@@ -206,7 +212,8 @@ int main(int argc, char **argv)
     fprintf(stderr, "creating container\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_container(&cptr, seg,
                                 3, itaglist))) {
-        fprintf(test_out, "gpr_test: create_container failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: create_container failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: create_container failed");
         test_finalize();
         return rc;
@@ -224,15 +231,16 @@ int main(int argc, char **argv)
     kptr->key = strdup("stupid-value");
     kptr->type = ORTE_INT16;
     kptr->value.i16 = 21;
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &kptr)) ||
-        NULL != kptr) {
-        fprintf(test_out, "gpr_test: add keyval failed with error code %d\n", rc);
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_add_keyval(seg, cptr, &kptr))) {
+        fprintf(test_out, "gpr_test: add keyval failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: add keyval failed");
         test_finalize();
         return rc;
     } else {
         fprintf(test_out, "gpr_test: add keyval passed\n");
     }
+    OBJ_RELEASE(kptr);
     
     ivals = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
     if (NULL != ivals[0]) {
@@ -264,7 +272,8 @@ int main(int argc, char **argv)
     kptr->type = ORTE_STRING;
     kptr->value.strptr = strdup("try-string-value");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr, &kptr))) {
-        fprintf(test_out, "gpr_test: update single keyval failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: update single keyval failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: update single keyval failed");
         test_finalize();
         return rc;
@@ -333,7 +342,6 @@ int main(int argc, char **argv)
     for (i=0; i < 14; i++) {
         asprintf(&(val->tokens[i]), "dummy%d", i);
     }
-    val->tokens[14] = NULL;
     val->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
     val->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     (val->keyvals[0])->key = strdup("stupid-value-next-one");
@@ -341,7 +349,8 @@ int main(int argc, char **argv)
     (val->keyvals[0])->value.i32 = 654321;
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
                                 1, &val))) {
-        fprintf(test_out, "gpr_test: put of 1 value/1 keyval failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: put of 1 value/1 keyval failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: put of 1 value/1 keyval failed");
         test_finalize();
         return rc;
@@ -359,7 +368,6 @@ int main(int argc, char **argv)
     for (i=0; i < 14; i++) {
         asprintf(&(val->tokens[i]), "dummy%d", i);
     }
-    val->tokens[14] = NULL;
     val->keyvals = (orte_gpr_keyval_t**)malloc(20*sizeof(orte_gpr_keyval_t*));
     for (i=0; i<20; i++) {
         val->keyvals[i] = OBJ_NEW(orte_gpr_keyval_t);
@@ -369,7 +377,8 @@ int main(int argc, char **argv)
     }
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
                                 1, &val))) {
-        fprintf(test_out, "gpr_test: put 1 value/multiple keyval failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: put 1 value/multiple keyval failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: put 1 value/multiple keyval failed");
         test_finalize();
         return rc;
@@ -381,7 +390,8 @@ int main(int argc, char **argv)
     val->num_tokens = 10;
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
                                 1, &val))) {
-        fprintf(test_out, "gpr_test: put 1 value/multiple keyval in second container failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: put 1 value/multiple keyval in second container failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: put 1 value/multiple keyval in second container failed");
         test_finalize();
         return rc;
@@ -392,7 +402,8 @@ int main(int argc, char **argv)
     
     fprintf(stderr, "dump\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_dump(0))) {
-        fprintf(test_out, "gpr_test: dump failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: dump failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: dump failed");
         test_finalize();
         return rc;
@@ -401,6 +412,7 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, "get\n");
+    names[0] = strdup("dummy0");
     names[1] = NULL;
     keys[0] = strdup("stupid-test-1");
     keys[1] = NULL;
@@ -408,7 +420,8 @@ int main(int argc, char **argv)
                                 "test-put-segment",
                                 names, keys,
                                 &cnt, &values))) {
-        fprintf(test_out, "gpr_test: get failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: get failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: get failed");
         test_finalize();
         return rc;
@@ -433,7 +446,6 @@ int main(int argc, char **argv)
     free(values);
     
     fprintf(stderr, "get multiple in one segment, multiple containers\n");
-    names[1] = NULL;
     keys[0] = strdup("stupid-test-1");
     keys[1] = strdup("stupid-test-3");
     keys[2] = strdup("stupid-test-5");
@@ -443,7 +455,8 @@ int main(int argc, char **argv)
                                 "test-put-segment",
                                 names, keys,
                                 &cnt, &values))) {
-        fprintf(test_out, "gpr_test: get failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: get failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: get failed");
         test_finalize();
         return rc;
@@ -471,11 +484,11 @@ int main(int argc, char **argv)
     val = OBJ_NEW(orte_gpr_value_t);
     val->cnt = 1;
     val->segment = strdup("test-put-segment");
-    val->num_tokens = 14;
-    for (i=0; i < 14; i++) {
-        asprintf(&(val->tokens[i]), "dummy%d", i);
+    val->num_tokens = 5;
+    val->tokens = (char**)malloc(val->num_tokens * sizeof(char*));
+    for (i=0; i < 5; i++) {
+        asprintf(&(val->tokens[i]), "multi-dum-dum-%d", i);
     }
-    val->tokens[14] = NULL;
     val->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
     val->keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
     (val->keyvals[0])->key = strdup("stupid-value-next-one");
@@ -485,7 +498,8 @@ int main(int argc, char **argv)
         fprintf(stderr, "\tputting copy %d\n", i);
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND,
                                     1, &val))) {
-            fprintf(test_out, "gpr_test: put multiple copies of one keyval in a container failed with error code %d\n", rc);
+            fprintf(test_out, "gpr_test: put multiple copies of one keyval in a container failed with error code %s\n",
+                        ORTE_ERROR_NAME(rc));
             test_failure("gpr_test: put multiple copies of one keyval in a container failed");
             test_finalize();
             return rc;
@@ -500,15 +514,19 @@ int main(int argc, char **argv)
     }
     
     cptrs = (orte_gpr_replica_container_t**)((seg->containers)->addr);
-    cptr = cptrs[2];
+    for (i=0; i < (seg->containers)->size; i++) {
+        if (NULL != cptrs[i]) {
+            cptr = cptrs[i];
+        }
+    }
 
     /* now look for the values */
     kptr = OBJ_NEW(orte_gpr_keyval_t);
-    kptr->key = strdup("really-stupid-value");
+    kptr->key = strdup("stupid-value-next-one");
     kptr->type = ORTE_STRING;
     kptr->value.strptr = strdup("try-string-value");
     orte_gpr_replica_create_itag(&itag2, seg, kptr->key);
-    if (!orte_gpr_replica_search_container(&num_found, 49, cptr) ||
+    if (!orte_gpr_replica_search_container(&num_found, itag2, cptr) ||
         num_found != 10) {
         fprintf(test_out, "gpr_test: search container for multiple entries failed - found %d\n", num_found);
         test_failure("gpr_test: search container for multiple entries failed");
@@ -525,7 +543,8 @@ int main(int argc, char **argv)
     kptr->type = ORTE_INT32;
     kptr->value.i32 = 123456;
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_update_keyval(seg, cptr, &kptr))) {
-        fprintf(test_out, "gpr_test: update multiple keyvals failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: update multiple keyvals failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: update multiple keyvals failed");
         test_finalize();
         return rc;
@@ -539,7 +558,8 @@ int main(int argc, char **argv)
     fprintf(stderr, "\nreleasing segment\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(&seg)) ||
         NULL != seg) {
-        fprintf(test_out, "gpr_test: release segment failed with error code %d\n", rc);
+        fprintf(test_out, "gpr_test: release segment failed with error code %s\n",
+                    ORTE_ERROR_NAME(rc));
         test_failure("gpr_test: release segment failed");
         test_finalize();
         return rc;

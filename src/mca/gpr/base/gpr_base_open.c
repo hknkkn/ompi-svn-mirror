@@ -81,7 +81,7 @@ static void orte_gpr_value_destructor(orte_gpr_value_t* reg_val)
 {
     char **tokens;
     int32_t i;
-    
+
     if (0 < reg_val->cnt && NULL != reg_val->keyvals) {
         for (i=0; i < reg_val->cnt; i++) {
             OBJ_RELEASE(reg_val->keyvals[i]);
@@ -92,8 +92,7 @@ static void orte_gpr_value_destructor(orte_gpr_value_t* reg_val)
     if (0 < reg_val->num_tokens && NULL != reg_val->tokens) {
         tokens = reg_val->tokens;
         for (i=0; i < reg_val->num_tokens; i++) {
-            free(*tokens);
-            tokens++;
+            free(tokens[i]);
         }
         free(tokens);
     }

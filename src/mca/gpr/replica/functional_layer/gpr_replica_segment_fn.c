@@ -147,9 +147,7 @@ int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
         OBJ_RELEASE(iptr);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    
-    free(*kptr);
-    *kptr = NULL;
+
     return ORTE_SUCCESS;
 }
 

@@ -23,6 +23,8 @@
 
 #include "orte_config.h"
 
+#include "mca/errmgr/errmgr.h"
+
 #include "gpr_replica_fn.h"
 
 /*
@@ -106,11 +108,13 @@ int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
                                     orte_gpr_replica_itag_t *src, int num_itags)
 {
     if (0 == num_itags || NULL == src) {
+        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         return ORTE_ERR_BAD_PARAM;
     }
     
     *dest = (orte_gpr_replica_itag_t*)malloc(num_itags * sizeof(orte_gpr_replica_itag_t));
     if (NULL == *dest) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     memcpy(*dest, src, num_itags*sizeof(orte_gpr_replica_itag_t));

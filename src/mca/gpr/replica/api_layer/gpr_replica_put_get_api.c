@@ -37,7 +37,6 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
     orte_gpr_value_t *val;
     orte_gpr_replica_segment_t *seg=NULL;
     orte_gpr_replica_itag_t *itags=NULL;
-    int num_tokens=0;
 
     /* protect ourselves against errors */
     if (NULL == values) {
@@ -71,14 +70,16 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
             return rc;
         }
     
-        if (ORTE_SUCCESS != (rc = orte_gpr_replica_put_fn(mode, seg, itags, num_tokens,
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_put_fn(mode, seg, itags, val->num_tokens,
     				val->cnt, val->keyvals, &action_taken))) {
             goto CLEANUP;
         }
     
         free(itags);
+        itags = NULL;
     }
-    
+
+#if 0    
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_subscriptions(seg, action_taken))) {
         goto CLEANUP;
     }
@@ -86,7 +87,8 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_synchros(seg))) {
         goto CLEANUP;
     }
-    
+#endif
+
 CLEANUP:
     /* release list of itags */
     if (NULL != itags) {
@@ -94,10 +96,12 @@ CLEANUP:
     }
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-    
+
+#if 0    
     if (ORTE_SUCCESS == rc) {
         return orte_gpr_replica_process_callbacks();
     }
+#endif
 
     return rc;
 
