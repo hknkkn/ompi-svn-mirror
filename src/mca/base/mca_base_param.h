@@ -54,7 +54,7 @@
 #ifndef OMPI_MCA_BASE_PARAM_H
 #define OMPI_MCA_BASE_PARAM_H
 
-#include "mpi.h"
+#include "ompi_config.h"
 
 #include "class/ompi_value_array.h"
 #include "class/ompi_list.h"

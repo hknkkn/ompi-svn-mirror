@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "mpi.h"
 #include "include/constants.h"
 #include "class/ompi_value_array.h"
 #include "class/ompi_hash_table.h"
