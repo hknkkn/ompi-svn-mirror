@@ -38,6 +38,7 @@
 
 #include "mca/gpr/gpr.h"
 #include "mca/ns/ns.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "oob_tcp.h"
 #include "oob_tcp_peer.h"
@@ -438,6 +439,11 @@ void mca_oob_tcp_peer_close(mca_oob_tcp_peer_t* peer)
             peer,
             peer->peer_sd,
             peer->peer_state);
+    }
+
+    /* if we lose the connection to the seed - abort */
+    if(memcmp(&peer->peer_name,&mca_oob_name_seed,sizeof(mca_oob_name_seed)) == 0) {
+        orte_errmgr.abort();
     }
 
     /* giving up and cleanup any pending messages */

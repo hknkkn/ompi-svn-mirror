@@ -62,6 +62,8 @@ OMPI_DECLSPEC    void orte_errmgr_base_error_detected(int error_code);
 
 OMPI_DECLSPEC    int orte_errmgr_base_register_job(orte_jobid_t job);
 
+OMPI_DECLSPEC    void orte_errmgr_base_abort(void);
+
 /*
  * globals that might be needed
  */

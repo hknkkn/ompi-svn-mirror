@@ -14,10 +14,13 @@
 
 
 #include "orte_config.h"
+#include <unistd.h>
+#include <stdlib.h>
 #include "include/orte_constants.h"
 #include "include/orte_schema.h"
 
 #include "runtime/runtime.h"
+#include "runtime/orte_wait.h"
 #include "util/output.h"
 #include "util/proc_info.h"
 #include "mca/ns/ns.h"
@@ -60,6 +63,15 @@ void orte_errmgr_base_incomplete_start(orte_jobid_t job)
 
 void orte_errmgr_base_error_detected(int error_code)
 {
+}
+
+void orte_errmgr_base_abort()
+{
+    /* kill and reap all children */
+    orte_wait_kill(9);
+
+    /* abnormal exit */
+    _exit(-1);
 }
 
 int orte_errmgr_base_register_job(orte_jobid_t job)

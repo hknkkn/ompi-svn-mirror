@@ -98,6 +98,13 @@ typedef void (*orte_errmgr_base_module_error_detected_fn_t)(int error_code);
  */
 typedef int (*orte_errmgr_base_module_register_job_fn_t)(orte_jobid_t job);
 
+/**
+ * Alert - self aborting
+ * This function is called when a process is aborting. The routine will kill
+ * any child processes and terminate the calling process.
+ */
+typedef void (*orte_errmgr_base_module_abort_fn_t)(void);
+
 /*
  * Ver 1.0.0
  */
@@ -107,6 +114,7 @@ struct orte_errmgr_base_module_1_0_0_t {
     orte_errmgr_base_module_incomplete_start_fn_t incomplete_start;
     orte_errmgr_base_module_error_detected_fn_t error_detected;
     orte_errmgr_base_module_register_job_fn_t register_job;
+    orte_errmgr_base_module_abort_fn_t abort;
 };
 
 typedef struct orte_errmgr_base_module_1_0_0_t orte_errmgr_base_module_1_0_0_t;

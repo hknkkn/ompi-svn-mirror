@@ -192,13 +192,37 @@ orte_wait_finalize(void)
     return OMPI_SUCCESS;
 }
 
+int 
+orte_wait_kill(int sig)
+{
+    ompi_list_t children;
+    ompi_list_item_t* item;
+
+    OBJ_CONSTRUCT(&children, ompi_list_t);
+    OMPI_THREAD_LOCK(&mutex);
+    do_waitall(0);
+    while (NULL != (item = ompi_list_remove_first(&registered_cb))) {
+        registered_cb_item_t *cb = (registered_cb_item_t*)item;
+        pending_pids_item_t *pending = find_pending_pid(cb->pid,false);
+        if(NULL == pending) {
+            int status;
+            kill(cb->pid, sig);
+            waitpid(cb->pid,&status,0);
+        } else {
+            OBJ_RELEASE(pending);
+        }
+        OBJ_RELEASE(item);
+    } 
+    OMPI_THREAD_UNLOCK(&mutex);
+    return OMPI_SUCCESS;
+}
+
 
 pid_t
 orte_waitpid(pid_t wpid, int *status, int options)
 {
     pending_pids_item_t *pending = NULL;
     blk_waitpid_data_t *data = NULL;
-    ompi_mutex_t *cond_mutex;
     struct timespec spintime;
     pid_t ret;
 
@@ -235,22 +259,14 @@ orte_waitpid(pid_t wpid, int *status, int options)
             goto cleanup;
         }
 
-        cond_mutex = OBJ_NEW(ompi_mutex_t);
-        if (NULL == cond_mutex) {
-            ret = -1;
-            goto cleanup;
-        }
-
         /* must use mutex_lock to match what is in the condition_wait */
-        ompi_mutex_lock(cond_mutex);
         register_callback(wpid, blk_waitpid_cb, data);
-        OMPI_THREAD_UNLOCK(&mutex);
         
         while (0 == data->done) {
             spintime.tv_sec = 0;
             spintime.tv_nsec = 1 * 1000 * 1000; /* 1 milliseconds */
             ompi_condition_timedwait(data->cond, 
-                                     cond_mutex, 
+                                     &mutex, 
                                      &spintime);
 #if OMPI_HAVE_THREADS
             if (ompi_event_progress_thread()) {
@@ -261,7 +277,6 @@ orte_waitpid(pid_t wpid, int *status, int options)
 #endif
 	    do_waitall(0);
         }
-        ompi_mutex_unlock(cond_mutex);
 
         ret = wpid;
         *status = data->status;
@@ -282,7 +297,6 @@ orte_waitpid(pid_t wpid, int *status, int options)
         }
 
         OBJ_RELEASE(data);
-        OBJ_RELEASE(cond_mutex);
         goto done;
 
     } else {
@@ -455,13 +469,7 @@ find_waiting_cb(pid_t pid, bool create)
 static void
 do_waitall(int options)
 {
-    pid_t ret;
-    int status;
-    pending_pids_item_t *pending;
-    registered_cb_item_t *reg_cb;
-
     if (!cb_enabled) return;
-
     while (1) {
         int status;
         pid_t ret = internal_waitpid(-1, &status, WNOHANG);

@@ -76,6 +76,10 @@ int orte_wait_cb_enable(void);
  */
 int orte_wait_init(void);
 
+/**
+ * Kill all processes we are waiting on.
+ */
+int orte_wait_kill(int sig);
 
 /**
  * \internal

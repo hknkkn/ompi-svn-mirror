@@ -212,10 +212,8 @@ static void mca_base_modex_registry_callback(
     bool isnew = false;
     int rc;
 
-#if 0
 ompi_output(0, "mca_base_modex: [%d,%d,%d]\n", ORTE_NAME_ARGS(orte_process_info.my_name));
 orte_gpr.dump_notify_data(data,0);
-#endif
 
     /* process the callback */
     value = data->values;
