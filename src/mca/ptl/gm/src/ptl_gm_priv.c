@@ -18,6 +18,7 @@
 #include "ompi_config.h"
 
 #include "include/types.h"
+#include "datatype/datatype.h"
 #include "mca/pml/base/pml_base_sendreq.h"
 #include "mca/ptl/base/ptl_base_header.h"
 #include "ptl_gm.h"
@@ -656,6 +657,7 @@ mca_ptl_gm_recv_frag_frag( struct mca_ptl_gm_module_t* ptl,
     uint32_t iov_count, max_data;
     int32_t freeAfter, rc;
     mca_ptl_gm_recv_frag_t* frag;
+    bool need_free_convertor = false;
 
     if( hdr->hdr_frag.hdr_common.hdr_flags & PTL_FLAG_GM_HAS_FRAGMENT ) {
 	frag = (mca_ptl_gm_recv_frag_t*)hdr->hdr_frag.hdr_dst_ptr.pval;
@@ -671,8 +673,15 @@ mca_ptl_gm_recv_frag_frag( struct mca_ptl_gm_module_t* ptl,
 	    ompi_proc_t* proc = ompi_comm_peer_lookup( request->req_base.req_comm,
 						       request->req_base.req_ompi.req_status.MPI_SOURCE ); 
 	    convertor = &local_convertor;
+#if 0
+            /* JMS: This is from the trunk -- does not exist on the
+               tim branch.  George's suggested workaround is... */
 	    convertor->stack_size = 0;  /* dont let the convertor free the stack */
             ompi_convertor_copy( proc->proc_convertor, convertor );
+#else
+            convertor = ompi_convertor_get_copy(proc->proc_convertor);
+            need_free_convertor = true;
+#endif
 	    frag = NULL;
 	} else {  /* large message => we have to create a receive fragment */
 	    frag = mca_ptl_gm_alloc_recv_frag( (struct mca_ptl_base_module_t*)ptl );
@@ -731,6 +740,9 @@ mca_ptl_gm_recv_frag_frag( struct mca_ptl_gm_module_t* ptl,
 		ompi_output( 0, "Cannot register receiver memory (%p, %ld) bytes offset %ld\n",
 			     (char*)request->req_base.req_addr + hdr->hdr_frag.hdr_frag_offset,
 			     pipeline->length, hdr->hdr_frag.hdr_frag_offset );
+                if (need_free_convertor) {
+                    OBJ_RELEASE(convertor);
+                }
 		return NULL;
 	    }
 	    pipeline->offset = hdr->hdr_frag.hdr_frag_offset;
@@ -756,6 +768,9 @@ mca_ptl_gm_recv_frag_frag( struct mca_ptl_gm_module_t* ptl,
 	}
     }
 
+    if (need_free_convertor) {
+        OBJ_RELEASE(convertor);
+    }
     return NULL;
 }
 
