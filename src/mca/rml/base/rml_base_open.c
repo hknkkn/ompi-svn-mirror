@@ -20,6 +20,8 @@
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"
+#include "mca/oob/oob.h"
+#include "mca/oob/base/base.h"
 #include "mca/rml/base/base.h"
 
 /*
@@ -36,7 +38,24 @@
  */
 
 orte_rml_base_t orte_rml_base;
-orte_rml_module_t orte_rml;
+orte_rml_module_t orte_rml = {
+    mca_oob_base_module_init,
+    NULL,
+    (orte_rml_module_get_uri_fn_t)mca_oob_get_contact_info,
+    (orte_rml_module_set_uri_fn_t)mca_oob_set_contact_info,
+    (orte_rml_module_ping_fn_t)mca_oob_ping,
+    (orte_rml_module_send_fn_t)mca_oob_send,
+    (orte_rml_module_send_nb_fn_t)mca_oob_send_nb,
+    (orte_rml_module_send_buffer_fn_t)mca_oob_send_packed,
+    (orte_rml_module_send_buffer_nb_fn_t)mca_oob_send_packed_nb,
+    (orte_rml_module_recv_fn_t)mca_oob_recv,
+    (orte_rml_module_recv_nb_fn_t)mca_oob_recv_nb,
+    (orte_rml_module_recv_buffer_fn_t)mca_oob_recv_packed,
+    (orte_rml_module_recv_buffer_nb_fn_t)mca_oob_recv_packed_nb,
+    (orte_rml_module_recv_cancel_fn_t)mca_oob_recv_cancel,
+    (orte_rml_module_barrier_fn_t)mca_oob_barrier,
+    (orte_rml_module_xcast_fn_t)mca_oob_xcast
+};
 orte_process_name_t orte_rml_name_any;
 orte_process_name_t orte_rml_name_seed;
 

@@ -74,13 +74,13 @@ int orte_gpr_proxy_cleanup_job(orte_jobid_t jobid)
 }
 
 
-int orte_gpr_proxy_cleanup_proc(bool purge, orte_process_name_t *proc)
+int orte_gpr_proxy_cleanup_proc(orte_process_name_t *proc)
 {
     orte_buffer_t *cmd, *answer;
     int rc;
     
     if (orte_gpr_proxy_compound_cmd_mode) {
-	   return orte_gpr_base_pack_cleanup_proc(orte_gpr_proxy_compound_cmd, purge, proc);
+	   return orte_gpr_base_pack_cleanup_proc(orte_gpr_proxy_compound_cmd, proc);
     }
 
     cmd = OBJ_NEW(orte_buffer_t);
@@ -88,7 +88,7 @@ int orte_gpr_proxy_cleanup_proc(bool purge, orte_process_name_t *proc)
 	    return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_cleanup_proc(cmd, purge, proc))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_base_pack_cleanup_proc(cmd, proc))) {
 	    return rc;
     }
 

@@ -28,9 +28,9 @@
 #include "gpr_replica_fn.h"
 
 
-int orte_gpr_replica_store_keyval(orte_gpr_replica_segment_t *seg,
-                                  orte_gpr_replica_container_t *cptr,
-                                  orte_gpr_keyval_t **kptr)
+int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
+                                orte_gpr_replica_container_t *cptr,
+                                orte_gpr_keyval_t **kptr)
 {
     orte_gpr_replica_itagval_t *iptr;
     int rc;
@@ -51,9 +51,21 @@ int orte_gpr_replica_store_keyval(orte_gpr_replica_segment_t *seg,
         return rc;
     }
     
+    if (0 > orte_pointer_array_add(cptr->itagvals, (void*)iptr)) {
+        OBJ_RELEASE(iptr);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
     free(*kptr);
     *kptr = NULL;
     return ORTE_SUCCESS;
+}
+
+
+int orte_gpr_replica_update_keyval(orte_gpr_replica_itagval_t *iptr,
+                                   orte_gpr_keyval_t *kptr)
+{
+    return orte_gpr_replica_xfer_payload(iptr, kptr);
 }
 
 
@@ -134,6 +146,14 @@ int orte_gpr_replica_xfer_payload(orte_gpr_replica_itagval_t *iptr,
             return ORTE_ERR_BAD_PARAM;
             break;
     }
+}
+
+
+bool orte_gpr_replica_search_container(orte_gpr_replica_itagval_t **iptr,
+                                       orte_gpr_replica_container_t *cptr,
+                                       orte_gpr_keyval_t *kptr)
+{
+    return false;
 }
 
 

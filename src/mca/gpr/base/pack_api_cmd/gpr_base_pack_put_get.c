@@ -31,7 +31,7 @@
 
 int orte_gpr_base_pack_put(orte_buffer_t *cmd,
 			  orte_gpr_addr_mode_t mode, char *segment,
-			  char **tokens, size_t cnt, orte_gpr_keyval_t *keyvals)
+			  char **tokens, int cnt, orte_gpr_keyval_t *keyvals)
 {
     orte_gpr_cmd_flag_t command;
     char **ptr;
@@ -61,7 +61,7 @@ int orte_gpr_base_pack_put(orte_buffer_t *cmd,
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keyvals, cnt, ORTE_KEYVAL))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keyvals, (size_t)cnt, ORTE_KEYVAL))) {
 	   return rc;
     }
 

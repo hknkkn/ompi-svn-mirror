@@ -55,7 +55,7 @@ int orte_gpr_base_unpack_put(orte_buffer_t *buffer)
 }
 
 
-int orte_gpr_base_unpack_get(orte_buffer_t *buffer, size_t *cnt, orte_gpr_keyval_t **keyvals)
+int orte_gpr_base_unpack_get(orte_buffer_t *buffer, int *cnt, orte_gpr_keyval_t **keyvals)
 {
     orte_gpr_cmd_flag_t command;
     int rc;
@@ -68,7 +68,7 @@ int orte_gpr_base_unpack_get(orte_buffer_t *buffer, size_t *cnt, orte_gpr_keyval
     }
     
     if (ORTE_GPR_GET_CMD != command) {
-    return ORTE_ERR_COMM_FAILURE;
+        return ORTE_ERR_COMM_FAILURE;
     }
 
     /* find out how many values came back */
@@ -89,7 +89,7 @@ int orte_gpr_base_unpack_get(orte_buffer_t *buffer, size_t *cnt, orte_gpr_keyval
         return rc;
     }
     
-    *cnt = n;
+    *cnt = (int)n;
 
     return ORTE_SUCCESS;
 }

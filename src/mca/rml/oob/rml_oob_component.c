@@ -38,7 +38,7 @@ orte_rml_oob_init(int* priority, bool *allow_multi_user_threads, bool *have_hidd
  * component definition
  */
 
-orte_rml_component_t orte_rml_oob_component = {
+orte_rml_component_t mca_rml_oob_component = {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */
 

@@ -46,7 +46,7 @@ int orte_gpr_base_pack_cleanup_job(orte_buffer_t *buffer, orte_jobid_t jobid)
 }
 
 
-int orte_gpr_base_pack_cleanup_proc(orte_buffer_t *buffer, bool purge, orte_process_name_t *proc)
+int orte_gpr_base_pack_cleanup_proc(orte_buffer_t *buffer, orte_process_name_t *proc)
 {
     orte_gpr_cmd_flag_t command;
     int rc;
@@ -54,10 +54,6 @@ int orte_gpr_base_pack_cleanup_proc(orte_buffer_t *buffer, bool purge, orte_proc
     command = ORTE_GPR_CLEANUP_PROC_CMD;
 
     if (ORTE_SUCCESS != (rc = orte_dps.pack(buffer, &command, 1, ORTE_GPR_PACK_CMD))) {
-	   return rc;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(buffer, &purge, 1, ORTE_BOOL))) {
 	   return rc;
     }
 
