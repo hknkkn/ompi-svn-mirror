@@ -26,11 +26,25 @@
 
 int orte_ns_nds_pipe_get(void)
 {
+#if 0
+    int fd, rc;
+    int id = mca_base_param_register_int("nds","pipe","fd", NULL, 3);
+    mca_base_param_lookup_int(id, &fd);
+
+    rc = read(fd,&name,sizeof(name));
+    if(rc != sizeof(name)) {
+        ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
+        return ORTE_ERR_NOT_FOUND;
+    }
+
+    rc = read(fd,&orte_process_info.num_procs, sizeof(orte_process_info.num_procs));
+#endif
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
-int orte_ns_nds_pipe_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs)
+int orte_ns_nds_pipe_put(const orte_process_name_t* name, orte_vpid_t vpid_start, size_t num_procs, int fd)
 {
+
     return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
