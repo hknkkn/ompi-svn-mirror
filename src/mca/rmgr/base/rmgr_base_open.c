@@ -37,8 +37,8 @@
 
 orte_rmgr_base_t orte_rmgr_base;
 orte_rmgr_base_module_t orte_rmgr = {
-    orte_rmgr_base_init_not_available,
     orte_rmgr_base_query_not_available,
+    orte_rmgr_base_create_not_available,
     orte_rmgr_base_allocate_not_available,
     orte_rmgr_base_deallocate_not_available,
     orte_rmgr_base_map_not_available,

@@ -43,6 +43,7 @@
 
 #include "dps/dps_types.h"
 #include "mca/gpr/gpr_types.h"
+#include "mca/rml/rml_types.h"
 
 
 #if defined(c_plusplus) || defined(__cplusplus)

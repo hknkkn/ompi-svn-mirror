@@ -21,19 +21,20 @@
 #include "mca/rds/base/base.h"
 #include "mca/ras/base/base.h"
 #include "mca/rmaps/base/base.h"
+#include "mca/rmgr/base/base.h"
 #include "mca/pls/base/base.h"
 #include "mca/gpr/gpr.h"
 #include "mca/ns/ns.h"
 #include "rmgr_urm.h"
 
 
-static int orte_rmgr_urm_init(
-    orte_app_context_t* app_context,
+static int orte_rmgr_urm_create(
+    orte_app_context_t** app_context,
     size_t num_context,
     orte_jobid_t* jobid);
 
 static int orte_rmgr_urm_spawn(
-    orte_app_context_t* app_context,
+    orte_app_context_t** app_context,
     size_t num_context,
     orte_jobid_t* jobid);
 
@@ -45,8 +46,8 @@ static int orte_rmgr_urm_finalize(void)
 
 
 orte_rmgr_base_module_t orte_rmgr_urm_module = {
-    orte_rmgr_urm_init,
     orte_rds_base_query,
+    orte_rmgr_urm_create,
     orte_ras_base_allocate,
     orte_ras_base_deallocate,
     orte_rmaps_base_map,
@@ -60,63 +61,22 @@ orte_rmgr_base_module_t orte_rmgr_urm_module = {
  *  Create the job segment and initialize the application context.
  */
 
-static int orte_rmgr_urm_init(
-    orte_app_context_t* app_context,
+static int orte_rmgr_urm_create(
+    orte_app_context_t** app_context,
     size_t num_context,
-    orte_jobid_t* jobid_return)
+    orte_jobid_t* jobid)
 {
-    orte_jobid_t jobid;
-    char *jobid_string;
-    char *segment;
-    char *tokens[2];
-    orte_gpr_keyval_t** keyvals;
-    size_t i;
     int rc;
 
     /* allocate a jobid  */
-    if(ORTE_SUCCESS != (rc = orte_ns.create_jobid(&jobid)))
+    if(ORTE_SUCCESS != (rc = orte_ns.create_jobid(jobid)))
         return rc;
 
-    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_string, jobid)))
+    /* create and initialize job segment */
+    if(ORTE_SUCCESS != (rc = orte_rmgr_base_put_app_context(*jobid, app_context, num_context)))
         return rc;
 
-    /* create the job segment on the registry */
-    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid_string);
-    tokens[0] = "global";
-    tokens[1] = NULL;
-
-    keyvals = (orte_gpr_keyval_t**)malloc(num_context * sizeof(orte_gpr_keyval_t*));
-    if(NULL == keyvals) 
-        return OMPI_ERR_OUT_OF_RESOURCE;
-    memset(keyvals, 0, num_context * sizeof(orte_gpr_keyval_t*));
-
-    for(i=0; i<num_context; i++) {
-        orte_gpr_keyval_t* keyval = OBJ_NEW(orte_gpr_keyval_t);
-        if(NULL == keyval) {
-            rc = ORTE_ERR_OUT_OF_RESOURCE;
-            goto cleanup;
-        }
-        keyval->key = strdup(ORTE_APP_CONTEXT_KEY);
-        keyval->type = ORTE_APP_CONTEXT;
-        keyval->value.app_context = app_context + i;
-    }
-            
-    rc = orte_gpr.put(
-        ORTE_GPR_OVERWRITE,
-        segment,
-        tokens,
-        num_context,
-        keyvals);
- 
-cleanup:
-    for(i=0; i<num_context; i++) {
-        keyvals[i]->value.app_context = NULL;
-        OBJ_RELEASE(keyvals[i]);
-    }
-    free(keyvals);
-    free(segment);
-    free(jobid_string);
-    return rc;
+    return ORTE_SUCCESS;
 }
 
 
@@ -125,12 +85,12 @@ cleanup:
  */
 
 static int orte_rmgr_urm_spawn(
-    orte_app_context_t* app_context,
+    orte_app_context_t** app_context,
     size_t num_context,
     orte_jobid_t* jobid)
 {
     int rc;
-    if(ORTE_SUCCESS != (rc = orte_rmgr_urm_init(app_context,num_context,jobid)))
+    if(ORTE_SUCCESS != (rc = orte_rmgr_urm_create(app_context,num_context,jobid)))
         return rc;
     if(ORTE_SUCCESS != (rc = orte_ras_base_allocate(*jobid)))
         return rc;

@@ -98,6 +98,7 @@ struct mca_ptl_gm_module_t {
 typedef struct mca_ptl_gm_module_t mca_ptl_gm_module_t;
 extern mca_ptl_gm_module_t mca_ptl_gm_module;
 
+
 /**
  * Register GM module parameters with the MCA framework
  */

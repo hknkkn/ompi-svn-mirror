@@ -29,6 +29,7 @@ headers = \
 
 libmca_orte_rmgr_base_la_SOURCES = \
         $(headers) \
+        rmgr_base_context.c \
         rmgr_base_close.c \
         rmgr_base_open.c \
         rmgr_base_select.c \

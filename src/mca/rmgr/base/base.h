@@ -43,16 +43,26 @@ extern "C" {
 /*
  * function definitions
  */
-OMPI_DECLSPEC    int orte_rmgr_base_open(void);
-OMPI_DECLSPEC    int orte_rmgr_base_select(bool *allow_multi_user_threads,
+OMPI_DECLSPEC int orte_rmgr_base_open(void);
+OMPI_DECLSPEC int orte_rmgr_base_select(bool *allow_multi_user_threads,
 			                               bool *have_hidden_threads);
-OMPI_DECLSPEC    int orte_rmgr_base_close(void);
+OMPI_DECLSPEC int orte_rmgr_base_close(void);
+
+OMPI_DECLSPEC int orte_rmgr_base_put_app_context(
+    orte_jobid_t jobid,
+    orte_app_context_t** app_context,
+    size_t num_context);
+
+OMPI_DECLSPEC int orte_rmgr_base_get_app_context(
+    orte_jobid_t jobid,
+    orte_app_context_t*** app_context,
+    size_t* num_context);
 
 /*
  * Base functions that are common to all implementations - can be overridden
  */
-int orte_rmgr_base_init_not_available(
-    orte_app_context_t* app_context, 
+int orte_rmgr_base_create_not_available(
+    orte_app_context_t** app_context, 
     size_t num_context, 
     orte_jobid_t* jobid);
 int orte_rmgr_base_query_not_available(void);
@@ -61,7 +71,7 @@ int orte_rmgr_base_deallocate_not_available(orte_jobid_t);
 int orte_rmgr_base_map_not_available(orte_jobid_t);
 int orte_rmgr_base_launch_not_available(orte_jobid_t);
 int orte_rmgr_base_spawn_not_available(
-    orte_app_context_t* app_context, 
+    orte_app_context_t** app_context, 
     size_t num_context, 
     orte_jobid_t* jobid);
 int orte_rmgr_base_finalize_not_available(void);
