@@ -408,4 +408,36 @@ static void printname(char *loc)
     }
 }
 
+orte_process_name_t*
+ompi_rte_get_self(void)
+{
+    if (NULL == mca_pcmclient.pcmclient_get_self) {
+        errno = OMPI_ERR_NOT_IMPLEMENTED;
+        return NULL;
+    }
+
+    return mca_pcmclient.pcmclient_get_self();
+}
+
+
+int
+ompi_rte_get_peers(orte_process_name_t **peers, size_t *npeers)
+{
+    orte_process_name_t *useless;
+    orte_process_name_t **peers_p;
+
+    if (NULL == mca_pcmclient.pcmclient_get_peers) {
+        return OMPI_ERR_NOT_IMPLEMENTED;
+    }
+
+    if (NULL == peers) {
+        /* the returned value is a pointer to a static buffer, so no
+           free is neeeded.  This is therefore completely safe.  Yay */
+        peers_p = &useless;
+    } else {
+        peers_p = peers;
+    }
+
+    return mca_pcmclient.pcmclient_get_peers(peers_p, npeers);
+}
 
