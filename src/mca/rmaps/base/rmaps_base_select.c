@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "include/orte_constants.h"
+#include "util/output.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/rmaps/base/base.h"

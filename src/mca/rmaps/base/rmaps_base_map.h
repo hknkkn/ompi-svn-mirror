@@ -43,14 +43,33 @@ extern "C" {
  */
 
 /*
+ * Mapping of nodes to process ranks.
+ */
+
+struct orte_rmaps_base_node_t {
+    ompi_list_item_t super;
+    char* node_name;
+    ompi_list_t node_procs;
+};
+typedef struct orte_rmaps_base_node_t orte_rmaps_base_node_t;
+
+OBJ_CLASS_DECLARATION(orte_rmaps_base_node_t);
+
+
+/*
  * Mapping of a process rank to a specific node.
  */
 
 struct orte_rmaps_base_proc_t {
-    orte_ras_base_node_t *proc_node;
+    ompi_list_item_t super;
+    orte_rmaps_base_node_t* proc_node;
     orte_process_name_t proc_name;
+    int proc_rank;
 };
 typedef struct orte_rmaps_base_proc_t orte_rmaps_base_proc_t;
+
+OBJ_CLASS_DECLARATION(orte_rmaps_base_proc_t);
+
 
 /*
  * Structure that represents the mapping of an application to an
@@ -58,18 +77,20 @@ typedef struct orte_rmaps_base_proc_t orte_rmaps_base_proc_t;
  */
 
 struct orte_rmaps_base_map_t {
-    ompi_list_item_t super;
-    orte_app_context_t *context;
-    orte_rmaps_base_proc_t* procs;
+    ompi_object_t super;
+    orte_app_context_t *app;
+    orte_rmaps_base_proc_t** procs;
     size_t num_procs;
+    orte_rmaps_base_node_t** nodes;
+    size_t num_nodes;
 };
 typedef struct orte_rmaps_base_map_t orte_rmaps_base_map_t;
 
 OBJ_CLASS_DECLARATION(orte_rmaps_base_map_t);
 
 
-int orte_rmaps_base_get_map(orte_jobid_t, ompi_list_t* mapping);
-int orte_rmaps_base_set_map(orte_jobid_t, ompi_list_t* mapping);
+int orte_rmaps_base_get_map(orte_jobid_t, orte_rmaps_base_map_t*** mapping, size_t* cnt);
+int orte_rmaps_base_set_map(orte_jobid_t, orte_rmaps_base_map_t** mapping, size_t cnt);
 
 
 #if defined(c_plusplus) || defined(__cplusplus)
