@@ -63,7 +63,7 @@ typedef struct orte_svc_base_module_t orte_svc_base_module_t;
  */
 #define ORTE_SVC_BASE_VERSION_1_0_0 \
   /* svc v1.0 is chained to ORTE v1.0 */ \
-  ORTE_BASE_VERSION_1_0_0, \
+  MCA_BASE_VERSION_1_0_0, \
   /* svc v1.0 */ \
   "svc", 1, 0, 0
 
