@@ -112,12 +112,17 @@ typedef int8_t orte_status_key_t;
  * Node State
  */
 
-typedef int8_t orte_node_state_t;
+enum orte_node_state_t {
+    ORTE_NODE_STATE_UNKNOWN,
+    ORTE_NODE_STATE_DOWN,
+    ORTE_NODE_STATE_UP,
+    ORTE_NODE_STATE_REBOOT,
 
-#define ORTE_NODE_STATE_UNKNOWN  0x00
-#define ORTE_NODE_STATE_DOWN     0x01
-#define ORTE_NODE_STATE_UP       0x02
-#define ORTE_NODE_STATE_REBOOT   0x03
+    ORTE_NODE_STATE_MAX
+};
+
+typedef enum orte_node_state_t orte_node_state_t;
+
 
 
 #endif  /* ORTE_TYPES_H */
