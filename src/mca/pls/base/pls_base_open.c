@@ -35,7 +35,7 @@
  */
 static void cmp_constructor(orte_pls_base_cmp_t *cmp);
 static void cmp_destructor(orte_pls_base_cmp_t *cmp);
-static int compare(ompi_list_item_t *a, ompi_list_item_t *b);
+static int compare(ompi_list_item_t **a, ompi_list_item_t **b);
 
 /*
  * Global variables
@@ -139,14 +139,19 @@ static void cmp_destructor(orte_pls_base_cmp_t *cmp)
 }
 
 
-static int compare(ompi_list_item_t *a, ompi_list_item_t *b)
+/*
+ * Need to make this an *opposite* compare (this is invoked by qsort)
+ * so that we get the highest priority first (i.e., so the sort is
+ * highest->lowest, not lowest->highest)
+ */
+static int compare(ompi_list_item_t **a, ompi_list_item_t **b)
 {
-    orte_pls_base_cmp_t *aa = (orte_pls_base_cmp_t *) a;
-    orte_pls_base_cmp_t *bb = (orte_pls_base_cmp_t *) b;
+    orte_pls_base_cmp_t *aa = *((orte_pls_base_cmp_t **) a);
+    orte_pls_base_cmp_t *bb = *((orte_pls_base_cmp_t **) b);
 
-    if (aa->priority > bb->priority) {
+    if (bb->priority > aa->priority) {
         return 1;
-    } else if (aa->priority == bb->priority) {
+    } else if (bb->priority == aa->priority) {
         return 0;
     } else {
         return -1;
