@@ -81,19 +81,37 @@ static  int orte_iof_null_param_register_int(
   */
 static int orte_iof_null_open(void)
 {
-    mca_iof_null_component.null_debug = orte_iof_null_param_register_int("debug",1);
+    mca_iof_null_component.null_debug = 
+        orte_iof_null_param_register_int("debug", 1);
+    mca_iof_null_component.null_debug = 
+        orte_iof_null_param_register_int("override", 1);
     return OMPI_SUCCESS;
 }
 
 
 static orte_iof_base_module_t* 
-orte_iof_null_init(int* priority, bool *allow_multi_user_threads, bool *have_hidden_threads)
+orte_iof_null_init(int* priority, bool *allow_multi_user_threads, 
+                   bool *have_hidden_threads)
 {
-    *priority = 50;
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = false;
+    int param, override;
 
-    return &orte_iof_null_module;
+    param = mca_base_param_find("iof", "null", "override");
+    mca_base_param_lookup_int(param, &override);
+
+    /* Only be used in a PBS environment -- this component is
+       currently *only* for debugging */
+
+    if (0 != override ||
+        (NULL != getenv("PBS_ENVIRONMENT") &&
+         NULL != getenv("PBS_JOBID"))) {
+        *priority = 50;
+        *allow_multi_user_threads = true;
+        *have_hidden_threads = false;
+
+        return &orte_iof_null_module;
+    } 
+
+    return NULL;
 }
 
 /**
