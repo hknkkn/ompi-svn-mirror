@@ -49,8 +49,8 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action, int num_subs,
     bool found;
 
     if (orte_gpr_replica_globals.debug) {
-	   ompi_output(0, "[%d,%d,%d] gpr replica: subscribe entered: segment %s",
-		    ORTE_NAME_ARGS(orte_process_info.my_name), seg->name);
+	   ompi_output(0, "[%d,%d,%d] gpr replica: subscribe entered",
+		    ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     trig = (orte_gpr_replica_triggers_t*)((orte_gpr_replica.triggers)->addr[idtag]);
