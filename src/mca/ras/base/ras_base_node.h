@@ -24,20 +24,55 @@
 extern "C" {
 #endif
 
+
 /*
  * Convience routines to query/set node state in the registry
  */
 
+/**
+ * Struct for holding information about a node (a local copy of what
+ * is in the node segment in the registry).
+ */
 struct orte_ras_base_node_t {
+    /** Base object */
     ompi_list_item_t super;
+    /** String node name */
     char *node_name;
+    /** The cell ID of this node */
     orte_cellid_t node_cellid;
+    /** State of this node; see include/orte_types.h */
     orte_node_state_t node_state;
-    size_t node_slots;              /* number of process slots */
-    size_t node_slots_inuse;        /* number of slots already assigned to existing jobs */
-    size_t node_slots_alloc;        /* number of slots that are being allocated to a new job */
-    size_t node_slots_max;          /* maximum number of slots that can be allocated on this node */
+    /** A "soft" limit on the number of slots available on the node.
+        This will typically correspond to the number of physical CPUs
+        that we have been allocated on this note and would be the
+        "ideal" number of processes for us to launch. */
+    size_t node_slots;
+    /** How many processes have already been launched, used by one or
+        more jobs on this node. */
+    size_t node_slots_inuse;
+    /** This represents the number of slots we (the allocator) are
+        attempting to allocate to the current job - or the number of
+        slots allocated to a specific job on a query for the jobs
+        allocations */
+    size_t node_slots_alloc;
+    /** A "hard" limit (if set -- a value of 0 implies no hard limit)
+        on the number of slots that can be allocated on a given
+        node. This is for some environments (e.g. grid) there may be
+        fixed limits on the number of slots that can be used.
+
+        This value also could have been a boolean - but we may want to
+        allow the hard limit be different than the soft limit - in
+        other words allow the node to be oversubscribed up to a
+        specified limit.  For example, if we have two processors, we
+        may want to allow up to four processes but no more. */
+    size_t node_slots_max;
 };
+
+
+
+/**
+ * Convenience typedef
+ */
 typedef struct orte_ras_base_node_t orte_ras_base_node_t;
 
 
