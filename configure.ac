@@ -1114,14 +1114,14 @@ AC_CONFIG_FILES([
     src/mca/pcmclient/base/Makefile
     src/mca/pls/Makefile
     src/mca/pls/base/Makefile
-    src/mca/orte_ras/Makefile
-    src/mca/orte_ras/base/Makefile
-    src/mca/orte_rds/Makefile
-    src/mca/orte_rds/base/Makefile
-    src/mca/orte_rmaps/Makefile
-    src/mca/orte_rmaps/base/Makefile
-    src/mca/orte_rmgr/Makefile
-    src/mca/orte_rmgr/base/Makefile
+    src/mca/ras/Makefile
+    src/mca/ras/base/Makefile
+    src/mca/rds/Makefile
+    src/mca/rds/base/Makefile
+    src/mca/rmaps/Makefile
+    src/mca/rmaps/base/Makefile
+    src/mca/rmgr/Makefile
+    src/mca/rmgr/base/Makefile
     src/mca/soh/Makefile
     src/mca/soh/base/Makefile
     src/mca/svc/Makefile
@@ -1151,10 +1151,10 @@ AC_CONFIG_FILES([
     src/dynamic-mca/oob/Makefile
     src/dynamic-mca/pcmclient/Makefile
     src/dynamic-mca/pls/Makefile
-    src/dynamic-mca/orte_ras/Makefile
-    src/dynamic-mca/orte_rds/Makefile
-    src/dynamic-mca/orte_rmaps/Makefile
-    src/dynamic-mca/orte_rmgr/Makefile
+    src/dynamic-mca/ras/Makefile
+    src/dynamic-mca/rds/Makefile
+    src/dynamic-mca/rmaps/Makefile
+    src/dynamic-mca/rmgr/Makefile
     src/dynamic-mca/soh/Makefile
     src/dynamic-mca/svc/Makefile
 
