@@ -33,44 +33,6 @@
 extern "C" {
 #endif
 
-/**
- * Supported datatypes for conversion operations.
- *
- */
-typedef enum {
-    ORTE_BYTE,              /**< a byte of data */
-    /* all the integer flavors */
-    ORTE_INT,               /**< generic integer */
-    ORTE_INT8,              /**< an 8-bit integer */
-    ORTE_INT16,             /**< a 16-bit integer */
-    ORTE_INT32,             /**< a 32-bit integer */
-    ORTE_INT64,             /**< a 64-bit integer */
-    /* all the unsigned integer flavors */
-    ORTE_UINT,              /**< generic unsigned integer */
-    ORTE_UINT8,             /**< an 8-bit unsigned integer */
-    ORTE_UINT16,            /**< a 16-bit unsigned integer */
-    ORTE_UINT32,            /**< a 32-bit unsigned integer */
-    ORTE_UINT64,            /**< a 64-bit unsigned integer */
-    /* all the floating point flavors */
-    ORTE_FLOAT,             /**< single-precision float */
-    ORTE_FLOAT4,            /**< 4-byte float - usually equiv to single */
-    ORTE_DOUBLE,            /**< double-precision float */
-    ORTE_FLOAT8,            /**< 8-byte float - usually equiv to double */
-    ORTE_LONG_DOUBLE,       /**< long-double precision float */
-    ORTE_FLOAT12,           /**< 12-byte float - used as long-double on some systems */
-    ORTE_FLOAT16,           /**< 16-byte float - used as long-double on some systems */
-    /* string */
-    ORTE_STRING,            /**< a NULL terminated string */
-    /* orte-specific typedefs */
-    ORTE_NAME,              /**< an ompi_process_name_t */
-    ORTE_JOBID,             /**< a jobid */
-    ORTE_CELLID,            /**< a cellid */
-    ORTE_NODE_STATE,        /**< node status flag */
-    ORTE_PROCESS_STATUS,    /**< process status key */
-    ORTE_EXIT_CODE          /**< process exit code */
-} orte_pack_type_t ;
-
-
 typedef struct orte_buffer_t {
     /* first member must be the objects parent */
     ompi_object_t parent;

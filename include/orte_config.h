@@ -20,8 +20,5 @@
 
 #include "ompi_config.h"
 
-#include "include/orte_constants.h"
-
-#include "include/orte_types.h"
 
 #endif

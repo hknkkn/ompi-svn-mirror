@@ -51,62 +51,6 @@ extern "C" {
 #endif
 
 /*
- * Define flag values for remote commands - only used internally
- */
-#define MCA_GPR_DELETE_SEGMENT_CMD     (uint16_t)0x0001
-#define MCA_GPR_PUT_CMD                (uint16_t)0x0002
-#define MCA_GPR_DELETE_OBJECT_CMD      (uint16_t)0x0004
-#define MCA_GPR_INDEX_CMD              (uint16_t)0x0008
-#define MCA_GPR_SUBSCRIBE_CMD          (uint16_t)0x0010
-#define MCA_GPR_UNSUBSCRIBE_CMD        (uint16_t)0x0020
-#define MCA_GPR_SYNCHRO_CMD            (uint16_t)0x0040
-#define MCA_GPR_CANCEL_SYNCHRO_CMD     (uint16_t)0x0080
-#define MCA_GPR_GET_CMD                (uint16_t)0x0100
-#define MCA_GPR_TEST_INTERNALS_CMD     (uint16_t)0x0200
-#define MCA_GPR_NOTIFY_CMD             (uint16_t)0x0400   /**< Indicates a notify message */
-#define MCA_GPR_DUMP_CMD               (uint16_t)0x0800
-#define MCA_GPR_ASSIGN_OWNERSHIP_CMD   (uint16_t)0x1000
-#define MCA_GPR_NOTIFY_ON_CMD          (uint16_t)0x2000
-#define MCA_GPR_NOTIFY_OFF_CMD         (uint16_t)0x4000
-#define MCA_GPR_COMPOUND_CMD           (uint16_t)0x8000
-#define MCA_GPR_GET_STARTUP_MSG_CMD    (uint16_t)0x8020
-#define MCA_GPR_GET_SHUTDOWN_MSG_CMD   (uint16_t)0x8040
-#define MCA_GPR_TRIGGERS_ACTIVE_CMD    (uint16_t)0x8080
-#define MCA_GPR_TRIGGERS_INACTIVE_CMD  (uint16_t)0x8100
-#define MCA_GPR_CLEANUP_JOB_CMD        (uint16_t)0x8200
-#define MCA_GPR_CLEANUP_PROC_CMD       (uint16_t)0x8400
-#define MCA_GPR_ERROR                  (uint16_t)0xffff
-
-typedef uint16_t mca_gpr_cmd_flag_t;
-
-/*
- * packing type definitions
- */
-/* CAUTION - any changes here must also change corresponding
- * typedefs above
- */
-#define MCA_GPR_OOB_PACK_CMD                OMPI_INT16
-#define MCA_GPR_OOB_PACK_ACTION             OMPI_INT16
-#define MCA_GPR_OOB_PACK_MODE               OMPI_INT16
-#define MCA_GPR_OOB_PACK_OBJECT_SIZE        OMPI_INT32
-#define MCA_GPR_OOB_PACK_SYNCHRO_MODE       OMPI_INT16
-#define MCA_GPR_OOB_PACK_NOTIFY_ID          OMPI_INT32
-#define MCA_GPR_OOB_PACK_BOOL               OMPI_INT8
-#define MCA_GPR_OOB_PACK_STATUS_KEY         OMPI_INT8
-#define MCA_GPR_OOB_PACK_EXIT_CODE          OMPI_INT8
-#define MCA_GPR_OOB_PACK_JOBID              OMPI_JOBID
-#define MCA_GPR_OOB_PACK_NAME               OMPI_NAME
-
-struct mca_gpr_idtag_list_t {
-    ompi_list_item_t item;
-    ompi_registry_notify_id_t id_tag;
-};
-typedef struct mca_gpr_idtag_list_t mca_gpr_idtag_list_t;
-
-OMPI_DECLSPEC OBJ_CLASS_DECLARATION(mca_gpr_idtag_list_t);
-
-
-/*
  * Component functions that MUST be provided
  */
 
@@ -126,8 +70,8 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(mca_gpr_idtag_list_t);
  * record commands are held on a lock until given access in their turn.
  *
  * @param None
- * @retval OMPI_SUCCESS Compound command recorder is active.
- * @retval OMPI_ERROR Compound command recorder did not activate.
+ * @retval ORTE_SUCCESS Compound command recorder is active.
+ * @retval ORTE_ERROR Compound command recorder did not activate.
  *
  * @code
  * ompi_registry.begin_compound_cmd();
@@ -141,89 +85,62 @@ typedef int (*mca_gpr_base_module_begin_compound_cmd_fn_t)(void);
  * Terminates the recording process and clears the buffer of any previous commands
  *
  * @param None
- * @retval OMPI_SUCCESS Recording stopped and buffer successfully cleared
- * @retval OMPI_ERROR Didn't work - no idea why it wouldn't
+ * @retval ORTE_SUCCESS Recording stopped and buffer successfully cleared
+ * @retval ORTE_ERROR Didn't work - no idea why it wouldn't
  *
  * @code
- * ompi_registry.stop_compound_cmd();
+ * orte_registry.stop_compound_cmd();
  * @endcode
  *
  */
 typedef int (*mca_gpr_base_module_stop_compound_cmd_fn_t)(void);
 
 /*
- * Execute the compound command
- * Execute the compound command that has been recorded. Any output from each command
- * is captured in a list that can be returned to the caller, depending upon the
- * value of the input parameter.
+ * Execute the compound command (BLOCKING)
+ * Execute the compound command that has been recorded. The function returns a status
+ * code that indicates whether or not all the included commands were successfully
+ * executed. Failure of any command contained in the compound command will terminate
+ * execution of the compound command list and return an error to the caller.
  *
- * @param OMPI_REGISTRY_RETURN_REQUESTED Data and status codes returned by commands in
- * the recorded compound command are to be returned in a list of ompi_registry_compound_cmd_value_t
- * structures.
- * @param OMPI_REGISTRY_NO_RETURN_REQUESTED Data and status codes returned by commands
- * in the recorded compound command are to be discarded.
- *
- * @retval return_values A list of ompi_registry_compound_cmd_value_t structures that
- * contain the results from each command (in sequence they were issued) of the compound command.
- * @retval NULL No values returned.
+ * @retval ORTE_SUCCESS All commands in the list were successfully executed.
+ * @retval ORTE_ERROR(s) A command in the list failed, returning the indicated
+ * error code.
  *
  * @code
- * return_values = ompi_registry.exec_compound_cmd(OMPI_REGISTRY_RETURN_REQUESTED);
- *
- * ompi_registry.exec_compound_cmd(OMPI_REGISTRY_NO_RETURN_REQUESTED);
+ * status_code = orte_registry.exec_compound_cmd();
  * @endcode
  *
  */
-typedef ompi_list_t* (*mca_gpr_base_module_exec_compound_cmd_fn_t)(bool return_requested);
+typedef int (*mca_gpr_base_module_exec_compound_cmd_fn_t)(void);
 
 /*
- * Turn return of status codes OFF.
- * All registry functions normally return a status code, with the exception of those
- * functions that return data values. This function sets a flag that turns OFF the
- * status code returns. Normally used to reduce network traffic by eliminating the
- * return of status codes. Commands will automatically return a default value of OMPI_SUCCESS.
- *
- * @param None
- * @retval None
- *
- * @code
- * ompi_registry.silent_mode_on();
- * @endcode
+ * Execute the compound command (NON-BLOCKING)
+ * A non-blocking version of execute compound command
  */
-typedef void (*mca_gpr_base_module_silent_mode_on_fn_t)(void);
-
-/* Turn return of status codes ON.
- * All registry functions normally return a status code, with the exception of those
- * functions that return data values. This function sets a flag that turns ON the
- * status code returns (i.e., restores the default condition).
- *
- * @param None
- * @retval None
- *
- * @code
- * ompi_registry.silent_mode_off();
- * @endcode
- */
-typedef void (*mca_gpr_base_module_silent_mode_off_fn_t)(void);
+typedef int (*mca_gpr_base_module_exec_compound_cmd_nb_fn_t)(
+                            orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
 
 /* Turn off subscriptions for this process
  * Temporarily turn off subscriptions for this process on the registry. Until restored,
  * the specified subscription will be ignored - no message will be sent. Providing a
- * value of OMPI_REGISTRY_NOTIFY_ID_MAX for the subscription number will turn off ALL
+ * value of ORTE_REGISTRY_NOTIFY_ID_MAX for the subscription number will turn off ALL
  * subscriptions with this process as the subscriber.
  *
  * Note: synchro messages will continue to be sent - only messages from subscriptions
  * are affected.
  *
  * @param sub_number Notify id number of the subscription to be turned "off". A value
- * of OMPI_REGISTRY_NOTIFY_ID_MAX indicates that ALL subscriptions with this process as the subscriber are to be
+ * of ORTE_REGISTRY_NOTIFY_ID_MAX indicates that ALL subscriptions with this process as the subscriber are to be
  * turned "off" until further notice.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * ompi_registry.notify_off(subscription_number);
+ * status_code = orte_registry.notify_off(subscription_number);
  * @endcode
  */
-typedef void (*mca_gpr_base_module_notify_off_fn_t)(ompi_registry_notify_id_t sub_number);
+typedef int (*mca_gpr_base_module_notify_off_fn_t)(orte_registry_notify_id_t sub_number);
 
 /* Turn on subscriptions for this process
  * Turn on subscriptions for this process on the registry. This is the default condition
@@ -231,14 +148,17 @@ typedef void (*mca_gpr_base_module_notify_off_fn_t)(ompi_registry_notify_id_t su
  * be sent to the subscribing process.
  *
  * @param sub_number Notify id number of the subscription to be turned "on". A value
- * of OMPI_REGISTRY_NOTIFY_ID_MAX indicates that ALL subscriptions with this process as the subscriber are to be
+ * of ORTE_REGISTRY_NOTIFY_ID_MAX indicates that ALL subscriptions with this process as the subscriber are to be
  * turned "on" until further notice.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * ompi_registry.notify_on(subscription_number);
+ * status_code = orte_registry.notify_on(subscription_number);
  * @endcode
  */
-typedef void (*mca_gpr_base_module_notify_on_fn_t)(ompi_registry_notify_id_t sub_number);
+typedef int (*mca_gpr_base_module_notify_on_fn_t)(orte_registry_notify_id_t sub_number);
 
 /* Turn triggers on for this jobid
  * Activate all triggers for this jobid on the registry. Does not counteract the subscription on/off
@@ -248,11 +168,14 @@ typedef void (*mca_gpr_base_module_notify_on_fn_t)(ompi_registry_notify_id_t sub
  *
  * @param jobid The jobid whose triggers are to be activated.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * ompi_registry.triggers_active(jobid);
+ * status_code = orte_registry.triggers_active(jobid);
  * @endcode
  */
-typedef void (*mca_gpr_base_module_triggers_active_fn_t)(orte_jobid_t jobid);
+typedef int (*mca_gpr_base_module_triggers_active_fn_t)(orte_jobid_t jobid);
 
 /* Turn triggers off for this jobid.
  * Deactivate all triggers for the specified job. All subscriptions and synchros will be
@@ -261,11 +184,14 @@ typedef void (*mca_gpr_base_module_triggers_active_fn_t)(orte_jobid_t jobid);
  * @param jobid The jobid whose triggers are to be
  * deactivated.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * ompi_registry.triggers_inactive(jobid);
+ * status_code = orte_registry.triggers_inactive(jobid);
  * @endcode
  */
-typedef void (*mca_gpr_base_module_triggers_inactive_fn_t)(orte_jobid_t jobid);
+typedef int (*mca_gpr_base_module_triggers_inactive_fn_t)(orte_jobid_t jobid);
 
 /*
  * Get the job startup message.
@@ -275,24 +201,28 @@ typedef void (*mca_gpr_base_module_triggers_inactive_fn_t)(orte_jobid_t jobid);
  * mpirun) to obtain the job startup message so it can subsequently "broadcast" it to all
  * of the application's processes.
  *
- * @param jobid The id of the job being started.
+ * @param jobid (IN) The id of the job being started.
  *
- * @param recipients A list of process names for the recipients - the input parameter
- * is a pointer to the list; the function returns the list in that location.
- *
- * @retval msg A packed buffer containing all the information required. This
+ * @param msg (OUT) A pointer to a packed buffer containing all the information required. This
  * information is obtained by gathering all data on all segments "owned" by the specified
  * jobid. The registry has NO knowledge of what is in the data elements, where it should go,
  * etc. The data from each segment is preceded by the name of the segment from which it came.
  * A function for parsing this message and distributing the data is provided elsewhere - such
  * functionality is beyond the purview of the registry.
  *
+ * @param recipients (OUT) A list of process names for the recipients - the input parameter
+ * is a pointer to the list; the function returns the list in that location.
+ *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * msg_buffer = ompi_registry.get_startup_msg(jobid, recipients);
+ * msg_buffer = orte_registry.get_startup_msg(jobid, recipients);
  * @endcode
  *
  */
-typedef ompi_buffer_t (*mca_gpr_base_module_get_startup_msg_fn_t)(orte_jobid_t jobid,
+typedef int (*mca_gpr_base_module_get_startup_msg_fn_t)(orte_jobid_t jobid,
+                                    orte_buffer_t *msg,
 								  ompi_list_t *recipients);
 
 /* Cleanup a job from the registry
@@ -302,12 +232,15 @@ typedef ompi_buffer_t (*mca_gpr_base_module_get_startup_msg_fn_t)(orte_jobid_t j
  *
  * @param jobid The jobid to be cleaned up.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * ompi_registry.cleanup_job(jobid);
+ * status_code = orte_registry.cleanup_job(jobid);
  * @endcode
  *
  */
-typedef void (*mca_gpr_base_module_cleanup_job_fn_t)(orte_jobid_t jobid);
+typedef int (*mca_gpr_base_module_cleanup_job_fn_t)(orte_jobid_t jobid);
 
 /* Cleanup a process from the registry
  * Remove all references to a given process from the registry. This includes removing
@@ -316,154 +249,217 @@ typedef void (*mca_gpr_base_module_cleanup_job_fn_t)(orte_jobid_t jobid);
  *
  * @param proc A pointer to the process name to be cleaned up.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * ompi_registry.cleanup_process(&proc);
+ * status_code = orte_registry.cleanup_process(&proc);
  * @endcode
  *
  */
-typedef void (*mca_gpr_base_module_cleanup_proc_fn_t)(bool purge, orte_process_name_t *proc);
+typedef int (*mca_gpr_base_module_cleanup_proc_fn_t)(bool purge, orte_process_name_t *proc);
 
 /*
- * Delete a segment from the registry
+ * Delete a segment from the registry (BLOCKING)
  * This command removes an entire segment from the registry, including all data objects,
  * associated subscriptions, and synchros. This is a non-reversible process, so it should
  * be used with care.
  *
  * @param segment Character string specifying the name of the segment to be removed.
  *
- * @retval OMPI_SUCCESS Segment successfully removed.
- * @retval OMPI_ERROR Segment could not be removed for some reason - most
+ * @retval ORTE_SUCCESS Segment successfully removed.
+ * @retval ORTE_ERROR(s) Segment could not be removed for some reason - most
  * likely, the segment name provided was not found in the registry.
  *
  * @code
- * status_code = ompi_registry.delete_segment(segment);
+ * status_code = orte_registry.delete_segment(segment);
  * @endcode
  */
 typedef int (*mca_gpr_base_module_delete_segment_fn_t)(char *segment);
 
 /*
- * Put a data object on the registry
+ * Delete a segment from the registry (NON-BLOCKING)
+ * A non-blocking version of delete segment.
+ */
+typedef int (*mca_gpr_base_module_delete_segment_nb_fn_t)(char *segment,
+                                orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
+
+
+/*
+ * Put a data object on the registry (BLOCKING)
+ * Place a data item on the registry using a blocking operation - i.e., the calling
+ * program will be blocked until the operation completes.
  * 
- * @param mode The addressing mode to be used. Addresses are defined by the tokens provided
+ * @param addr_mode The addressing mode to be used. Addresses are defined by the tokens provided
  * that describe the object being stored. The caller has the option of specifying how
  * those tokens are to be combined in describing the object. Passing a value of
- * "OMPI_REGISTRY_AND", for example, indicates that all provided tokens are to be used.
- * In contrast, a value of "OMPI_REGISTRY_OR" indicates that any of the provided tokens
- * can adequately describe the object. For the "put" command, only "OMPI_REGISTRY_XAND"
+ * "ORTE_REGISTRY_AND", for example, indicates that all provided tokens are to be used.
+ * In contrast, a value of "ORTE_REGISTRY_OR" indicates that any of the provided tokens
+ * can adequately describe the object. For the "put" command, only "ORTE_REGISTRY_XAND"
  * is accepted - in other words, the tokens must exactly match those of any existing
- * object in order for the object to be updated. In addition, the "OMPI_REGISTRY_OVERWRITE"
+ * object in order for the object to be updated. In addition, the "ORTE_REGISTRY_OVERWRITE"
  * flag must be or'd into the mode to enable update of the data object. If a data object
- * is found with the identical token description, but OMPI_REGISTRY_OVERWRITE is NOT specified,
+ * is found with the identical token description, but ORTE_REGISTRY_OVERWRITE is NOT specified,
  * then an error will be generated - the data object will NOT be overwritten in this
  * situation.
  *
  * Upon completing the "put", all subscription and synchro requests registered on the
  * specified segment are checked and appropriately processed.
  *
- * @param segment A character string specifying the name of the segment upon which
- * the data object is to be placed.
+ * @param *segment A character string specifying the name of the segment upon which
+ * the data is to be placed.
  *
- * @param tokens A **char list of tokens describing the object.
+ * @param **tokens A **char list of tokens describing the data.
  *
- * @param object An ompi_registry_object_t data object that is to be placed
- * on the registry. The registry will copy this data object onto the specified segment - the
+ * @param cnt The number of key-value pair structures to be stored.
+ * 
+ * @param *keyval An orte_registry_keyval_t pointer to one or more key_value pair
+ * structures to be stored. The registry will copy this data onto the specified segment - the
  * calling program is responsible for freeing any memory, if appropriate.
  *
- * @param size An ompi_registry_object_size_t value indicating the size of the data
- * object in bytes.
+ * @retval ORTE_SUCCESS The data has been stored on the specified segment, or the
+ * corresponding existing data has been updated.
  *
- * @retval OMPI_SUCCESS The data object has been stored on the specified segment, or the
- * corresponding existing data object has been updated.
- *
- * @retval OMPI_ERROR The data object was not stored on the specified segment, or the
- * corresponding existing data object was not found, or the object was found but the overwrite
+ * @retval ORTE_ERROR(s) The data was not stored on the specified segment, or the
+ * corresponding existing data was not found, or the data was found but the overwrite
  * flag was not set.
  *
  * @code
- * status_code = ompi_registry.put(mode, segment, tokens, object, object_size);
+ * orte_registry_keyval_t keyval;
+ * 
+ * status_code = orte_registry.put(mode, segment, tokens, 1, &keyval);
  * @endcode
  */
-typedef int (*mca_gpr_base_module_put_fn_t)(ompi_registry_mode_t mode, char *segment,
-					    char **tokens, ompi_registry_object_t object,
-					    ompi_registry_object_size_t size);
+typedef int (*mca_gpr_base_module_put_fn_t)(orte_registry_addr_mode_t addr_mode, char *segment,
+					    char **tokens, int32_t cnt, orte_registry_keyval_t *keyvals);
 
 /*
- * Get data from the registry.
+ * Put data on the registry (NON-BLOCKING)
+ * A non-blocking version of put.
+ */
+typedef int (*mca_gpr_base_module_put_nb_fn_t)(orte_registry_addr_mode_t addr_mode, char *segment,
+                      char **tokens, int32_t cnt, orte_registry_keyval_t *keyvals,
+                      orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
+
+
+/*
+ * Get data from the registry (BLOCKING)
  * Returns data from the registry. Given an addressing mode, segment name, and a set
- * of tokens describing the data object, the "get" function will search the specified
+ * of tokens describing the data to be retrieved, the "get" function will search the specified
  * registry segment and return all data items that "match" the description. Addressing
  * modes specify how the provided tokens are to be combined to determine the match -
- * a value of "OMPI_REGISTRY_AND", for example, indictates that all the tokens must be
+ * a value of "ORTE_REGISTRY_AND", for example, indictates that all the tokens must be
  * included in the object's description, but allows for other tokens to also be present.
- * A value of "OMPI_REGISTRY_XAND", in contrast, requires that all the tokens be present,
+ * A value of "ORTE_REGISTRY_XAND", in contrast, requires that all the tokens be present,
  * and that ONLY those tokens be present.
  *
- * The data is returned as a list of ompi_registry_value_t objects. The caller is
+ * The data is returned as a list of orte_registry_value_t objects. The caller is
  * responsible for freeing this data storage. Only copies of the registry data are
  * returned - thus, any actions taken by the caller will NOT impact data stored on the
  * registry.
  *
- * @param addr_mode The addressing mode to be used in the search.
- * @param segment A character string indicating the name of the segment to be searched.
- * @param tokens A NULL-terminated **char list of tokens describing the objects to be
+ * @param addr_mode (IN) The addressing mode to be used in the search.
+ * @param *segment (IN) A character string indicating the name of the segment to be searched.
+ * @param **tokens (IN) A NULL-terminated **char list of tokens describing the objects to be
  * returned. A value of NULL indicates that ALL data on the segment is to be returned.
  *
- * @retval data_list A list of ompi_registry_value_t objects containing the data objects
- * returned by the specified search.
+ * @param *keyval_list (OUT) A list of orte_registry_value_t objects containing the data
+ * (in key-value pair structures) returned by the specified search.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * data_list = ompi_registry.get(mode, segment, tokens);
+ * ompi_list_t *keyval_list;
+ * 
+ * status_code = orte_registry.get(addr_mode, segment, tokens, keyval_list);
  * @endcode
  */
-typedef ompi_list_t* (*mca_gpr_base_module_get_fn_t)(ompi_registry_mode_t addr_mode,
-						     char *segment, char **tokens);
+typedef int (*mca_gpr_base_module_get_fn_t)(orte_registry_addr_mode_t addr_mode,
+						     char *segment, char **tokens, ompi_list_t *keyval_list);
 
 /*
- * Delete an object from the registry
+ * Get data from the registry (NON-BLOCKING)
+ * A non-blocking version of get. Data is returned to the callback function in the
+ * notify message format.
+ */
+typedef int (*mca_gpr_base_module_get_nb_fn_t)(orte_registry_addr_mode_t addr_mode,
+                             char *segment, char **tokens,
+                             orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
+
+
+/*
+ * Delete an object from the registry (BLOCKING)
  * Remove an object from the registry. Given an addressing mode, segment name, and a set
  * of tokens describing the data object, the function will search the specified
  * registry segment and delete all data items that "match" the description. Addressing
  * modes specify how the provided tokens are to be combined to determine the match -
- * a value of "OMPI_REGISTRY_AND", for example, indictates that all the tokens must be
+ * a value of "ORTE_REGISTRY_AND", for example, indictates that all the tokens must be
  * included in the object's description, but allows for other tokens to also be present.
- * A value of "OMPI_REGISTRY_XAND", in contrast, requires that all the tokens be present,
+ * A value of "ORTE_REGISTRY_XAND", in contrast, requires that all the tokens be present,
  * and that ONLY those tokens be present.
  *
  * Note: A value of NULL for the tokens will delete ALL data items from the specified
  * segment. 
  *
  * @param addr_mode The addressing mode to be used in the search.
- * @param segment A character string indicating the name of the segment to be searched.
- * @param tokens A NULL-terminated **char list of tokens describing the objects to be
+ * @param *segment A character string indicating the name of the segment to be searched.
+ * @param **tokens A NULL-terminated **char list of tokens describing the objects to be
  * returned. A value of NULL indicates that ALL data on the segment is to be removed.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * status_code = ompi_registry.delete_object(mode, segment, tokens);
+ * status_code = orte_registry.delete_object(mode, segment, tokens);
  * @endcode
  */
-typedef int (*mca_gpr_base_module_delete_object_fn_t)(ompi_registry_mode_t addr_mode,
+typedef int (*mca_gpr_base_module_delete_object_fn_t)(orte_registry_addr_mode_t addr_mode,
 						      char *segment, char **tokens);
 
 /*
- * Obtain an index of a specified dictionary
+ * Delete an object from the registry (NON-BLOCKING)
+ * A non-blocking version of delete object. Result of the command is returned
+ * to the callback function in the notify msg format.
+ */
+typedef int (*mca_gpr_base_module_delete_object_nb_fn_t)(
+                            orte_registry_addr_mode_t addr_mode,
+                            char *segment, char **tokens,
+                            orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
+/*
+ * Obtain an index of a specified dictionary (BLOCKING)
  * The registry contains a dictionary at the global level (containing names of all the
  * segments) and a dictionary for each segment (containing the names of all tokens used
  * in that segment). This command allows the caller to obtain a list of all entries
  * in the specified dictionary.
  *
- * @param segment A character string indicating the segment whose dictionary is to be
+ * @param *segment (IN) A character string indicating the segment whose dictionary is to be
  * indexed. A value of NULL indicates that the global level dictionary is to be used.
  *
- * @retval index_list A list of ompi_registry_index_value_t objects containing the
- * dictionary entries. A list of zero length is returned if the specified segment
- * cannot be found, or if the specified dictionary is empty.
+ * @param *index (OUT) A list of orte_registry_index_value_t objects containing the
+ * dictionary entries. A list of zero length is returned if the specified dictionary
+ * is empty.
  *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ * 
  * @code
- * index_list = ompi_registry.index(segment);
+ * ompi_list_t *index;
+ * char *segment;
+ * 
+ * status_code = orte_registry.index(segment, index);
  * @endcode
  */
-typedef ompi_list_t* (*mca_gpr_base_module_index_fn_t)(char *segment);
+typedef int (*mca_gpr_base_module_index_fn_t)(char *segment, ompi_list_t *index);
 
+/*
+ * Obtain an index of a specified dictionary (NON-BLOCKING)
+ * A non-blocking version of index. Result of the command is returned to the
+ * callback function in the notify msg format.
+ */
+typedef ompi_list_t* (*mca_gpr_base_module_index_nb_fn_t)(char *segment,
+                        orte_registry_notify_cb_fn_t cbfunc, void *user_tag);
+                        
 /*
  * Subscribe to be notified upon a specified action
  * The registry includes a publish/subscribe mechanism by which callers can be notified
@@ -471,54 +467,67 @@ typedef ompi_list_t* (*mca_gpr_base_module_index_fn_t)(char *segment);
  * allows the caller to register for such notifications. The registry allows a subscription
  * to be placed upon any segment, and upon the entire registry if desired.
  *
- * @param addr_mode The addressing mode to be used in specifying the objects to be
+ * @param addr_mode (IN) The addressing mode to be used in specifying the objects to be
  * monitored by this subscription.
- * @param action The actions which are to trigger a notification message. These can
+ * 
+ * @param action (IN) The actions which are to trigger a notification message. These can
  * be OR'd together from the defined registry action flags.
- * @param segment A character string indicating the name of the segment upon which the
+ * 
+ * @param *segment (IN) A character string indicating the name of the segment upon which the
  * subscription is being requested. A value of NULL indicates that the subscription
  * is to be placed on the entire registry - this should be done with caution as the
  * subscription will trigger on ALL registry events matching the specified action and
  * addressing, potentially including those from jobs other than the one generating the
  * subscription request.
- * @param tokens A NULL-terminated **char list of tokens describing the objects to be
+ * 
+ * @param **tokens (IN) A NULL-terminated **char list of tokens describing the objects to be
  * monitored. A value of NULL indicates that ALL data on the segment is to be monitored.
- * @param cb_func The ompi_registry_notify_cb_fn_t callback function to be called when
+ * 
+ * @param *sub_number (OUT) The notify id of the resulting subscription is returned in
+ * the provided memory location. Callers should save this
+ * number for later use if (for example) it is desired to temporarily turn "off" the
+ * subscription or to permanently remove the subscription from the registry
+ * 
+ * @param cb_func (IN) The orte_registry_notify_cb_fn_t callback function to be called when
  * a subscription is triggered. The data from each monitored object will be returned
- * to the callback function in an ompi_registry_notify_message_t structure.
- * @param user_tag A void* user-provided storage location that the caller can
+ * to the callback function in an orte_registry_notify_message_t structure.
+ * 
+ * @param user_tag (IN) A void* user-provided storage location that the caller can
  * use for its own purposes. A NULL value is acceptable.
  *
- * @retval sub_number The subscription number of this request. Callers should save this
- * number for later use if (for example) it is desired to temporarily turn "off" the subscription
- * or to permanently remove the subscription from the registry.
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
  *
  * @code
- * sub_number = ompi_registry.subscribe(addr_mode, action, segment, tokens, cb_func, user_tag);
+ * orte_registry_notify_id_t sub_number;
+ * 
+ * status_code = orte_registry.subscribe(addr_mode, action, segment, tokens,
+ *                                       &sub_number, cb_func, user_tag);
  * @endcode
  */
-typedef ompi_registry_notify_id_t (*mca_gpr_base_module_subscribe_fn_t)(ompi_registry_mode_t addr_mode,
-						  ompi_registry_notify_action_t action,
-						  char *segment, char **tokens,
-						  ompi_registry_notify_cb_fn_t cb_func, void *user_tag);
+typedef int (*mca_gpr_base_module_subscribe_fn_t)(orte_registry_addr_mode_t addr_mode,
+                            orte_registry_notify_action_t action,
+                            char *segment, char **tokens,
+                            orte_registry_notify_id_t *sub_number,
+                            orte_registry_notify_cb_fn_t cb_func, void *user_tag);
 
 /*
  * Cancel a subscription.
  * Once a subscription has been entered on the registry, a caller may choose to permanently
  * remove it at a later time. This function supports that request.
  *
- * @param sub_number The ompi_registry_notify_id_t value returned by the original subscribe
+ * @param sub_number The orte_registry_notify_id_t value returned by the original subscribe
  * command.
  *
- * @retval OMPI_SUCCESS The subscription was removed.
- * @retval OMPI_ERROR The subscription could not be removed - most likely caused by specifying
+ * @retval ORTE_SUCCESS The subscription was removed.
+ * @retval ORTE_ERROR The subscription could not be removed - most likely caused by specifying
  * a non-existent (or previously removed) subscription number.
  *
  * @code
- * status_code = ompi_registry.unsubscribe(sub_number);
+ * status_code = orte_registry.unsubscribe(sub_number);
  * @endcode
  */
-typedef int (*mca_gpr_base_module_unsubscribe_fn_t)(ompi_registry_notify_id_t sub_number);
+typedef int (*mca_gpr_base_module_unsubscribe_fn_t)(orte_registry_notify_id_t sub_number);
 
 /*
  * Request a synchro call from the registry
@@ -539,35 +548,51 @@ typedef int (*mca_gpr_base_module_unsubscribe_fn_t)(ompi_registry_notify_id_t su
  * Upon triggering, the synchro returns all data objects included in the count in the
  * notification message.
  *
- * @param addr_mode The addressing mode to be used in specifying the objects to be
+ * @param addr_mode (IN) The addressing mode to be used in specifying the objects to be
  * counted by this synchro.
- * @param segment A character string indicating the name of the segment upon which the
+ * 
+ * @param synchro_mode (IN) The conditions which are to trigger a notification message. These can
+ * be OR'd together from the defined registry synchro mode flags.
+ * 
+ * @param *segment (IN) A character string indicating the name of the segment upon which the
  * synchro is being requested. A value of NULL indicates that the synchro
  * is to be placed on the entire registry - this should be done with caution as the
  * synchro will fire based on counting  ALL registry objects matching the specified
  * addressing, potentially including those from jobs other than the one generating the
  * synchro request.
- * @param tokens A NULL-terminated **char list of tokens describing the objects to be
+ * 
+ * @param **tokens A NULL-terminated **char list of tokens describing the objects to be
  * counted. A value of NULL indicates that ALL objects on the segment are to be counted.
- * @param cb_func The ompi_registry_notify_cb_fn_t callback function to be called when
- * the synchro is triggered. The data from each counted object will be returned
- * to the callback function in an ompi_registry_notify_message_t structure.
- * @param user_tag A void* user-provided storage location that the caller can
- * use for its own purposes. A NULL value is acceptable.
- *
- * @retval synch_number The synchro number of this request. Callers should save this
+ * 
+ * @param trigger (IN) The level at which the synchro is to be triggered.
+ * 
+ * @param *sub_number (OUT) The synchro number of this request. Callers should save this
  * number for later use if it is desired to permanently remove the synchro from the registry.
  * Note: ONE_SHOT synchros are automatically removed from the registry when triggered.
  *
+ * @param cb_func (IN) The orte_registry_notify_cb_fn_t callback function to be called when
+ * the synchro is triggered. The data from each counted object will be returned
+ * to the callback function in an orte_registry_notify_message_t structure.
+ * 
+ * @param user_tag A void* user-provided storage location that the caller can
+ * use for its own purposes. A NULL value is acceptable.
+ *
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
+ *
  * @code
- * synch_number = ompi_registry.synchro(synch_mode, addr_mode, segment, tokens, trigger,
+ * orte_registry_notify_id_t synch_number;
+ * 
+ * status_code = orte_registry.synchro(addr_mode, synch_mode, segment, tokens,
+ *                                      trigger, &synch_number,
  *                                      cb_func, user_tag);
  * @endcode
  */
-typedef ompi_registry_notify_id_t (*mca_gpr_base_module_synchro_fn_t)(ompi_registry_synchro_mode_t synchro_mode,
-						ompi_registry_mode_t addr_mode,
-						char *segment, char **tokens, int trigger,
-						ompi_registry_notify_cb_fn_t cb_func, void *user_tag);
+typedef int (*mca_gpr_base_module_synchro_fn_t)(orte_registry_addr_mode_t addr_mode,
+                            orte_registry_synchro_mode_t synchro_mode,
+                            char *segment, char **tokens, int trigger,
+                            orte_registry_notify_id_t *synch_number,
+                            orte_registry_notify_cb_fn_t cb_func, void *user_tag);
 
 /*
  * Cancel a synchro.
@@ -576,18 +601,18 @@ typedef ompi_registry_notify_id_t (*mca_gpr_base_module_synchro_fn_t)(ompi_regis
  *
  * Note: ONE_SHOT synchros are automatically removed from the registry when triggered.
  *
- * @param synch_number The ompi_registry_notify_id_t value returned by the original synchro
+ * @param synch_number The orte_registry_notify_id_t value returned by the original synchro
  * command.
  *
- * @retval OMPI_SUCCESS The synchro was removed.
- * @retval OMPI_ERROR The synchro could not be removed - most likely caused by specifying
+ * @retval ORTE_SUCCESS The synchro was removed.
+ * @retval ORTE_ERROR The synchro could not be removed - most likely caused by specifying
  * a non-existent (or previously removed) synchro number.
  *
  * @code
- * status_code = ompi_registry.cancel_synchro(synch_number);
+ * status_code = orte_registry.cancel_synchro(synch_number);
  * @endcode
  */
-typedef int (*mca_gpr_base_module_cancel_synchro_fn_t)(ompi_registry_notify_id_t synch_number);
+typedef int (*mca_gpr_base_module_cancel_synchro_fn_t)(orte_registry_notify_id_t synch_number);
 
 /* Output the registry's contents to an output stream
  * For debugging purposes, it is helpful to be able to obtain a complete formatted printout
@@ -596,33 +621,14 @@ typedef int (*mca_gpr_base_module_cancel_synchro_fn_t)(ompi_registry_notify_id_t
  * @param output_id The output stream id to which the registry's contents are to be
  * printed.
  *
- * @retval None
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
  *
  * @code
- * ompi_registry.dump(output_id);
+ * orte_registry.dump(output_id);
  * @endcode
  */
-typedef void (*mca_gpr_base_module_dump_fn_t)(int output_id);
-
-/* Assume ownership of a segment.
- * Although each segment of the registry can contain data from anywhere, each segment is "owned"
- * by a specific job at any given time. This allows the registry to associate a segment with a jobid,
- * thus enabling support for startup and shutdown processes. Transferring ownership of registry
- * segments can occur when the segment is shared by multiple jobs, one or more of which subsequently
- * terminate. In this case, another job must assume "ownership" of the segment.
- *
- * @param segment A character string indicating the segment whose ownership is being assigned.
- * @param jobid The jobid to be given ownership of the segment.
- *
- * @retval OMPI_SUCCESS Ownership successfully transferred.
- * @retval OMPI_ERROR Ownership could not be transferred, most likely due to specifying a non-existing
- * segment (or one that has been previously removed).
- *
- * @code
- * status_code = ompi_registry.assign_ownership(segment, jobid);
- * @endcode
- */
-typedef int (*mca_gpr_base_module_assign_ownership_fn_t)(char *segment, orte_jobid_t jobid);
+typedef int (*mca_gpr_base_module_dump_fn_t)(int output_id);
 
 /* Deliver a notify message.
  * The registry generates notify messages whenever a subscription or synchro is fired. Normally,
@@ -643,58 +649,70 @@ typedef int (*mca_gpr_base_module_assign_ownership_fn_t)(char *segment, orte_job
  * This function provides the necessary "hook" for an external program to request delivery of
  * a message via the publish/subscribe's notify mechanism.
  *
- * @param state The notify action associated with the message. In this case, only two values are
- * supported: OMPI_REGISTRY_NOTIFY_ON_STARTUP and OMPI_REGISTRY_NOTIFY_ON_SHUTDOWN. The function
+ * @param state The notify action associated with the message. Currently, only two values are
+ * supported: ORTE_REGISTRY_NOTIFY_ON_STARTUP and ORTE_REGISTRY_NOTIFY_ON_SHUTDOWN. The function
  * will search the notification system for all requests that match this state and also match
  * the segment name specified in the message itself. Each of the matching requests will be
  * called with the message.
  *
  * @param message The message to be delivered.
  *
- * @retval None
+ * @retval ORTE_SUCCESS Operation was successfully completed.
+ * @retval ORTE_ERROR(s) Operation failed, returning the provided error code.
  *
  * @code
- * ompi_registry.deliver_notify_msg(state, message);
+ * status_code = orte_registry.deliver_notify_msg(state, message);
  * @endcode
  *
  */
-typedef void (*mca_gpr_base_module_deliver_notify_msg_fn_t)(ompi_registry_notify_action_t state,
-							    ompi_registry_notify_message_t *message);
+typedef int (*mca_gpr_base_module_deliver_notify_msg_fn_t)(orte_registry_notify_action_t state,
+							    orte_registry_notify_message_t *message);
 /*
  * test interface for internal functions - optional to provide
  */
-typedef ompi_list_t* (*mca_gpr_base_module_test_internals_fn_t)(int level);
+typedef int (*mca_gpr_base_module_test_internals_fn_t)(int level, ompi_list_t *results);
 
 
 /*
  * Ver 1.0.0
  */
 struct mca_gpr_base_module_1_0_0_t {
+   /* BLOCKING OPERATIONS */
     mca_gpr_base_module_get_fn_t get;
     mca_gpr_base_module_put_fn_t put;
+    mca_gpr_base_module_delete_object_fn_t delete_object;
     mca_gpr_base_module_delete_segment_fn_t delete_segment;
+    /* NON-BLOCKING OPERATIONS */
+    mca_gpr_base_module_get_nb_fn_t get_nb;
+    mca_gpr_base_module_put_nb_fn_t put_nb;
+    mca_gpr_base_module_delete_object_nb_fn_t delete_object_nb;
+    mca_gpr_base_module_delete_segment_nb_fn_t delete_segment_nb;
+    /* SUBSCRIBE OPERATIONS */
     mca_gpr_base_module_subscribe_fn_t subscribe;
     mca_gpr_base_module_unsubscribe_fn_t unsubscribe;
+    /* SYNCHRO OPERATIONS */
     mca_gpr_base_module_synchro_fn_t synchro;
     mca_gpr_base_module_cancel_synchro_fn_t cancel_synchro;
-    mca_gpr_base_module_delete_object_fn_t delete_object;
-    mca_gpr_base_module_index_fn_t index;
-    mca_gpr_base_module_test_internals_fn_t test_internals;
+    /* COMPOUND COMMANDS */
     mca_gpr_base_module_begin_compound_cmd_fn_t begin_compound_cmd;
     mca_gpr_base_module_stop_compound_cmd_fn_t stop_compound_cmd;
     mca_gpr_base_module_exec_compound_cmd_fn_t exec_compound_cmd;
+    /* DUMP/INDEX */
     mca_gpr_base_module_dump_fn_t dump;
-    mca_gpr_base_module_silent_mode_on_fn_t silent_mode_on;
-    mca_gpr_base_module_silent_mode_off_fn_t silent_mode_off;
-    mca_gpr_base_module_notify_off_fn_t notify_off;
+    mca_gpr_base_module_index_fn_t index;
+    /* MODE OPERATIONS */
     mca_gpr_base_module_notify_on_fn_t notify_on;
-    mca_gpr_base_module_assign_ownership_fn_t assign_ownership;
+    mca_gpr_base_module_notify_off_fn_t notify_off;
     mca_gpr_base_module_triggers_active_fn_t triggers_active;
     mca_gpr_base_module_triggers_inactive_fn_t triggers_inactive;
+    /* MESSAGING OPERATIONS */
     mca_gpr_base_module_get_startup_msg_fn_t get_startup_msg;
+    mca_gpr_base_module_deliver_notify_msg_fn_t deliver_notify_msg;
+    /* CLEANUP OPERATIONS */
     mca_gpr_base_module_cleanup_job_fn_t cleanup_job;
     mca_gpr_base_module_cleanup_proc_fn_t cleanup_process;
-    mca_gpr_base_module_deliver_notify_msg_fn_t deliver_notify_msg;
+    /* TEST INTERFACE */
+    mca_gpr_base_module_test_internals_fn_t test_internals;
 };
 typedef struct mca_gpr_base_module_1_0_0_t mca_gpr_base_module_1_0_0_t;
 typedef mca_gpr_base_module_1_0_0_t mca_gpr_base_module_t;
@@ -741,6 +759,6 @@ typedef mca_gpr_base_component_1_0_0_t mca_gpr_base_component_t;
 /*
  * global module that holds function pointers
  */
-extern mca_gpr_base_module_t ompi_registry; /* holds selected module's function pointers */
+extern mca_gpr_base_module_t orte_registry; /* holds selected module's function pointers */
 
 #endif

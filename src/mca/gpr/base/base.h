@@ -37,7 +37,7 @@
  * the program. However, for speed purposes, tokens are translated into
  * integer keys prior to storing an object. A table of token-key pairs
  * is independently maintained for each registry segment. Users can obtain
- * an index of tokens within a dictionary by requesting it through the ompi_registry_index()
+ * an index of tokens within a dictionary by requesting it through the orte_registry_index()
  * function.
  *
  * The registry also provides a subscription capability whereby a caller
@@ -49,8 +49,8 @@
  * 
  */
 
-#ifndef MCA_GPR_BASE_H_
-#define MCA_GRP_BASE_H_
+#ifndef ORTE_GPR_BASE_H_
+#define ORTE_GRP_BASE_H_
 
 /*
  * includes
@@ -92,90 +92,107 @@
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
+
+/*
+ * packing type definitions for GPR-specific types
+ */
+/* CAUTION - any changes here must also change corresponding
+ * typedefs above
+ */
+#define ORTE_GPR_PACK_CMD                OMPI_INT16
+#define ORTE_GPR_PACK_ACTION             OMPI_INT16
+#define ORTE_GPR_PACK_MODE               OMPI_INT16
+#define ORTE_GPR_PACK_SYNCHRO_MODE       OMPI_INT16
+#define ORTE_GPR_PACK_NOTIFY_ID          OMPI_INT32
+
+typedef struct {
+    ompi_list_item_t item;
+    orte_registry_notify_id_t id_tag;
+} orte_gpr_idtag_list_t;
+
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_idtag_list_t);
+
+
     OMPI_DECLSPEC int mca_gpr_base_open(void);
     OMPI_DECLSPEC int mca_gpr_base_select(bool *allow_multi_user_threads,
 			    bool *have_hidden_threads);
     OMPI_DECLSPEC int mca_gpr_base_close(void);
 
     /* general usage functions */
-    OMPI_DECLSPEC int mca_gpr_base_pack_delete_segment(ompi_buffer_t cmd, bool silent, char *segment);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_delete_segment(ompi_buffer_t buffer);
+    OMPI_DECLSPEC int mca_gpr_base_pack_delete_segment(orte_buffer_t *cmd, bool silent, char *segment);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_delete_segment(orte_buffer_t *buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_delete_object(ompi_buffer_t buffer, bool silent,
-					ompi_registry_mode_t mode,
+    OMPI_DECLSPEC int mca_gpr_base_pack_delete_object(orte_buffer_t *buffer, bool silent,
+					orte_registry_addr_mode_t mode,
 					char *segment, char **tokens);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_delete_object(ompi_buffer_t buffer);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_delete_object(orte_buffer_t *buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_index(ompi_buffer_t cmd, char *segment);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_index(ompi_buffer_t cmd, ompi_list_t *return_list);
+    OMPI_DECLSPEC int mca_gpr_base_pack_index(orte_buffer_t *cmd, char *segment);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_index(orte_buffer_t *cmd, ompi_list_t *return_list);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup(ompi_buffer_t cmd, orte_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup(orte_buffer_t *cmd, orte_jobid_t jobid);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_synchro(ompi_buffer_t cmd,
-				  ompi_registry_synchro_mode_t synchro_mode,
-				  ompi_registry_mode_t mode,
+    OMPI_DECLSPEC int mca_gpr_base_pack_synchro(orte_buffer_t *cmd,
+				  orte_registry_synchro_mode_t synchro_mode,
+				  orte_registry_addr_mode_t mode,
 				  char *segment, char **tokens, int trigger);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_synchro(ompi_buffer_t buffer,
-				    ompi_registry_notify_id_t *remote_idtag);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_synchro(orte_buffer_t *buffer,
+				    orte_registry_notify_id_t *remote_idtag);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_cancel_synchro(ompi_buffer_t cmd,
+    OMPI_DECLSPEC int mca_gpr_base_pack_cancel_synchro(orte_buffer_t *cmd,
 					 bool silent,
-					 ompi_registry_notify_id_t remote_idtag);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_cancel_synchro(ompi_buffer_t buffer);
+					 orte_registry_notify_id_t remote_idtag);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_cancel_synchro(orte_buffer_t *buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_subscribe(ompi_buffer_t cmd,
-				    ompi_registry_mode_t mode,
-				    ompi_registry_notify_action_t action,
+    OMPI_DECLSPEC int mca_gpr_base_pack_subscribe(orte_buffer_t *cmd,
+				    orte_registry_addr_mode_t mode,
+				    orte_registry_notify_action_t action,
 				    char *segment, char **tokens);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_subscribe(ompi_buffer_t buffer,
-				      ompi_registry_notify_id_t *remote_idtag);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_subscribe(orte_buffer_t *buffer,
+				      orte_registry_notify_id_t *remote_idtag);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_unsubscribe(ompi_buffer_t cmd, bool silent,
-				      ompi_registry_notify_id_t remote_idtag);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_unsubscribe(ompi_buffer_t buffer);
+    OMPI_DECLSPEC int mca_gpr_base_pack_unsubscribe(orte_buffer_t *cmd, bool silent,
+				      orte_registry_notify_id_t remote_idtag);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_unsubscribe(orte_buffer_t *buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_put(ompi_buffer_t cmd, bool silent,
-			      ompi_registry_mode_t mode, char *segment,
-			      char **tokens, ompi_registry_object_t object,
-			      ompi_registry_object_size_t size);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_put(ompi_buffer_t buffer);
+    OMPI_DECLSPEC int mca_gpr_base_pack_put(orte_buffer_t *cmd, bool silent,
+			      orte_registry_addr_mode_t mode, char *segment,
+			      char **tokens, orte_registry_object_t object,
+			      orte_registry_object_size_t size);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_put(orte_buffer_t *buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_get(ompi_buffer_t cmd,
-			      ompi_registry_mode_t mode,
+    OMPI_DECLSPEC int mca_gpr_base_pack_get(orte_buffer_t *cmd,
+			      orte_registry_addr_mode_t mode,
 			      char *segment, char **tokens);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_get(ompi_buffer_t buffer, ompi_list_t *return_list);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_get(orte_buffer_t *buffer, ompi_list_t *return_list);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_dump(ompi_buffer_t cmd);
-    OMPI_DECLSPEC void mca_gpr_base_print_dump(ompi_buffer_t buffer, int output_id);
+    OMPI_DECLSPEC int mca_gpr_base_pack_dump(orte_buffer_t *cmd);
+    OMPI_DECLSPEC void mca_gpr_base_print_dump(orte_buffer_t *buffer, int output_id);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_job(ompi_buffer_t buffer, orte_jobid_t jobid);
-    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_proc(ompi_buffer_t buffer, bool purge, orte_process_name_t *proc);
+    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_job(orte_buffer_t *buffer, orte_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_proc(orte_buffer_t *buffer, bool purge, orte_process_name_t *proc);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_test_internals(ompi_buffer_t cmd, int level);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_test_internals(ompi_buffer_t buffer, ompi_list_t *return_list);
+    OMPI_DECLSPEC int mca_gpr_base_pack_test_internals(orte_buffer_t *cmd, int level);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_test_internals(orte_buffer_t *buffer, ompi_list_t *return_list);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_notify_off(ompi_buffer_t cmd,
+    OMPI_DECLSPEC int mca_gpr_base_pack_notify_off(orte_buffer_t *cmd,
        			             orte_process_name_t *proc,
-				     ompi_registry_notify_id_t sub_number);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_notify_off(ompi_buffer_t buffer);
+				     orte_registry_notify_id_t sub_number);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_notify_off(orte_buffer_t *buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_notify_on(ompi_buffer_t cmd,
+    OMPI_DECLSPEC int mca_gpr_base_pack_notify_on(orte_buffer_t *cmd,
 				    orte_process_name_t *proc,
-				    ompi_registry_notify_id_t sub_number);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_notify_on(ompi_buffer_t buffer);
+				    orte_registry_notify_id_t sub_number);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_notify_on(orte_buffer_t *buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_assign_ownership(ompi_buffer_t cmd, bool silent,
-					   orte_jobid_t jobid, char *segment);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_assign_ownership(ompi_buffer_t buffer);
+    OMPI_DECLSPEC int mca_gpr_base_pack_get_startup_msg(orte_buffer_t *cmd, orte_jobid_t jobid);
+    OMPI_DECLSPEC orte_buffer_t *mca_gpr_base_unpack_get_startup_msg(orte_buffer_t *buffer, ompi_list_t *recipients);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_get_startup_msg(ompi_buffer_t cmd, orte_jobid_t jobid);
-    OMPI_DECLSPEC ompi_buffer_t mca_gpr_base_unpack_get_startup_msg(ompi_buffer_t buffer, ompi_list_t *recipients);
+    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_active_cmd(orte_buffer_t *cmd, orte_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_triggers_active_cmd(orte_buffer_t *cmd);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_active_cmd(ompi_buffer_t cmd, orte_jobid_t jobid);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_triggers_active_cmd(ompi_buffer_t cmd);
-
-    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_inactive_cmd(ompi_buffer_t cmd, orte_jobid_t jobid);
-    OMPI_DECLSPEC int mca_gpr_base_unpack_triggers_inactive_cmd(ompi_buffer_t cmd);
+    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_inactive_cmd(orte_buffer_t *cmd, orte_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_unpack_triggers_inactive_cmd(orte_buffer_t *cmd);
 
 
 #if defined(c_plusplus) || defined(__cplusplus)

@@ -167,7 +167,7 @@ typedef int (*orte_dps_pack_fn_t)(orte_buffer_t *buffer, void *src,
  * 
  * num_values = 5;
  * string_array = malloc(num_values*sizeof(char *));
- * status_code = orte_dps.unpack(buffer, (void*)(&string_array), &num_values, ORTE_STRING);
+ * status_code = orte_dps.unpack(buffer, (void*)(string_array), &num_values, ORTE_STRING);
  * 
  * @endcode
  * 
