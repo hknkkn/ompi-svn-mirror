@@ -237,6 +237,12 @@ static void orte_gpr_replica_itagval_destructor(orte_gpr_replica_itagval_t* ptr)
 {
     if (ORTE_BYTE_OBJECT == ptr->type) {
         free(((ptr->value).byteobject).bytes);
+    } else if (ORTE_STRING == ptr->type) {
+        if (NULL != ptr->value.strptr)
+            free(ptr->value.strptr);
+    } else if (ORTE_APP_CONTEXT == ptr->type) {
+        if (NULL != ptr->value.app_context)
+            OBJ_RELEASE(ptr->value.app_context);
     }
 }
 
