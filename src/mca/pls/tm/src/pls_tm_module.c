@@ -52,7 +52,7 @@ static int pls_tm_finalize(void);
 static int do_tm_resolve(char *hostnames, tm_node_id *tnodeid);
 static int query_tm_hostnames(void);
 static char* get_tm_hostname(tm_node_id node);
-static void kill_tids(tm_task_id *tids, int num_tids);
+static int kill_tids(tm_task_id *tids, int num_tids);
 
 
 /*
@@ -66,12 +66,14 @@ orte_pls_base_module_1_0_0_t orte_pls_tm_module = {
 };
 
 extern char **environ;
-#define NUM_SIGTEM_POLL_ITERS 50
+#define NUM_SIGNAL_POLL_ITERS 50
 
 
 /*
  * Local variables
  */
+static bool tm_connected = false;
+static struct tm_roots tm_root;
 static char **tm_hostnames = NULL;
 static tm_node_id *tm_node_ids;
 static int num_node_ids, num_tm_hostnames;
@@ -82,7 +84,6 @@ static int pls_tm_launch(orte_jobid_t jobid)
 {
     int ret, local_errno;
     size_t i, j, count;
-    struct tm_roots root;
     tm_event_t event;
     char *flat;
     char old_cwd[OMPI_PATH_MAX];
@@ -99,10 +100,11 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
     /* Open up our connection to tm */
 
-    ret = tm_init(NULL, &root);
+    ret = tm_init(NULL, &tm_root);
     if (TM_SUCCESS != ret) {
         return ORTE_ERR_RESOURCE_BUSY;
     }
+    tm_connected = true;
 
     /* Get the hostnames from the output of the mapping.  Since we
        have to cross reference against TM, it's much more efficient to
@@ -215,6 +217,7 @@ static int pls_tm_launch(orte_jobid_t jobid)
         OBJ_DESTRUCT(&mapping);
     }
     tm_finalize();
+    tm_connected = false;
     return ret;
 }
 
@@ -225,12 +228,29 @@ static int pls_tm_terminate_job(orte_jobid_t jobid)
     size_t num_tids;
     int ret;
 
+    /* Open up our connection to tm.  Note that we may be called from
+       launch, above, in which case we don't need to tm_init */
+
+    if (!tm_connected) {
+        ret = tm_init(NULL, &tm_root);
+        if (TM_SUCCESS != ret) {
+            return ORTE_ERR_RESOURCE_BUSY;
+        }
+    }
+
+    /* Get the TIDs from the registry */
+
     ret = orte_pls_tm_get_tids(jobid, &tids, &num_tids);
     if (ORTE_SUCCESS == ret) {
-        kill_tids(tids, num_tids);
+        ret = kill_tids(tids, num_tids);
         free(tids);
     }
 
+    /* All done */
+
+    if (!tm_connected) {
+        tm_finalize();
+    }
     return ret;
 }
 
@@ -249,9 +269,11 @@ static int pls_tm_terminate_proc(const orte_process_name_t *name)
  */
 static int pls_tm_finalize(void)
 {
-    free(tm_node_ids);
-    ompi_argv_free(tm_hostnames);
-    tm_hostnames = NULL;
+    if (NULL != tm_hostnames) {
+        free(tm_node_ids);
+        ompi_argv_free(tm_hostnames);
+        tm_hostnames = NULL;
+    }
 
     return ORTE_SUCCESS;
 }
@@ -381,7 +403,7 @@ static char* get_tm_hostname(tm_node_id node)
  * Kill a bunch of tids.  Don't care about errors here -- just make a
  * best attempt to kill kill kill; if we fail, oh well.
  */
-static void kill_tids(tm_task_id *tids, int num_tids)
+static int kill_tids(tm_task_id *tids, int num_tids)
 {
     int j, i, ret, local_errno, exit_status;
     tm_event_t event;
@@ -392,60 +414,98 @@ static void kill_tids(tm_task_id *tids, int num_tids)
         /* First, kill with SIGTERM */
 
         ret = tm_kill(tids[i], SIGTERM, &event);
-        if (TM_SUCCESS == ret) {
-            tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
+        if (TM_SUCCESS != ret) {
+            ompi_output(orte_pls_base.pls_output,
+                        "pls:tm:kill: tm_kill failed with %d", ret);
+            ret = ORTE_ERROR;
+            ORTE_ERROR_LOG(ret);
+            return ret;
         }
+        tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
+        ompi_output(orte_pls_base.pls_output,
+                    "pls:tm:kill: killed TID %d with SIGTERM", tids[i]);
 
         /* Did it die? */
 
         ret = tm_obit(tids[i], &exit_status, &event);
-        if (TM_SUCCESS == ret) {
-            tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+        if (TM_SUCCESS != ret) {
+            ompi_output(orte_pls_base.pls_output,
+                        "pls:tm:kill: tm_obit failed with %d", ret);
+            ret = ORTE_ERROR;
+            ORTE_ERROR_LOG(ret);
+            return ret;
+        }
 
-            /* It didn't seem to die right away; poll a few times */
+        tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
 
-            if (TM_NULL_EVENT == event) {
-                killed = false;
-                for (j = 0; j < NUM_SIGTEM_POLL_ITERS; ++j) {
-                    tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
-                    if (TM_NULL_EVENT != event) {
-                        killed = true;
-                        break;
-                    }
-                    usleep(1);
+        /* It didn't seem to die right away; poll a few times */
+
+        if (TM_NULL_EVENT == event) {
+            killed = false;
+            for (j = 0; j < NUM_SIGNAL_POLL_ITERS; ++j) {
+                tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+                if (TM_NULL_EVENT != event) {
+                    killed = true;
+                    ompi_output(orte_pls_base.pls_output,
+                                "pls:tm:kill: TID %d died", tids[i]);
+                    break;
                 }
+                usleep(1);
+            }
 
-                /* No, it did not die.  Try with SIGKILL */
+            /* No, it did not die.  Try with SIGKILL */
 
-                if (!killed) {
-                    ret = tm_kill(tids[i], SIGKILL, &event);
-                    if (TM_SUCCESS == ret) {
-                        tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
+            if (!killed) {
+                ret = tm_kill(tids[i], SIGKILL, &event);
+                if (TM_SUCCESS != ret) {
+                    ompi_output(orte_pls_base.pls_output,
+                                "pls:tm:kill: tm_kill failed with %d", ret);
+                    ret = ORTE_ERROR;
+                    ORTE_ERROR_LOG(ret);
+                    return ret;
+                }
+                tm_poll(TM_NULL_EVENT, &event, 1, &local_errno);
+                ompi_output(orte_pls_base.pls_output,
+                            "pls:tm:kill: killed TID %d with SIGKILL", tids[i]);
+                /* Did it die this time? */
+                
+                ret = tm_obit(tids[i], &exit_status, &event);
+                if (TM_SUCCESS != ret) {
+                    ompi_output(orte_pls_base.pls_output,
+                                "pls:tm:kill: tm_obit failed with %d", ret);
+                    ret = ORTE_ERROR;
+                    ORTE_ERROR_LOG(ret);
+                    return ret;
+                }
+                 
+                tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+
+                /* No -- poll a few times -- just to try to clean it
+                   up...  If we don't get it here, oh well.  Just let
+                   the resources hang; TM will clean them up when the
+                   job completed */
+
+                if (TM_NULL_EVENT == event) {
+                    for (j = 0; j < NUM_SIGNAL_POLL_ITERS; ++j) {
+                        tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
+                        if (TM_NULL_EVENT != event) {
+                            ompi_output(orte_pls_base.pls_output,
+                                        "pls:tm:kill: TID %d died", tids[i]);
+                            break;
+                        }
+                        usleep(1);
                     }
 
-                    /* Did it die this time? */
-
-                    ret = tm_obit(tids[i], &exit_status, &event);
-                    if (TM_SUCCESS == ret) {
-                        tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
-
-                        /* No -- poll a few times -- just to try to
-                           clean it up...  If we don't get it here, oh
-                           well.  Just let the resources hang; TM will
-                           clean them up when the job completed */
-
-                        if (TM_NULL_EVENT == event) {
-                            for (j = 0; j < NUM_SIGTEM_POLL_ITERS; ++j) {
-                                tm_poll(TM_NULL_EVENT, &event, 0, &local_errno);
-                                if (TM_NULL_EVENT != event) {
-                                    break;
-                                }
-                                usleep(1);
-                            }
-                        }
+                    if (j >= NUM_SIGNAL_POLL_ITERS) {
+                        ompi_output(orte_pls_base.pls_output,
+                                    "pls:tm:kill: TID %d did not die!", tids[i]);
                     }
                 }
             }
         }
     }
+
+    /* All done */
+
+    return ORTE_SUCCESS;
 }
