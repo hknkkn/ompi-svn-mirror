@@ -62,7 +62,7 @@ int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, orte_gpr_noti
     }
 
     for (i=0; i < message->cnt; i++) {
-        if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, &message->data, 1, ORTE_GPR_NOTIFY_DATA))) {
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, message->data, 1, ORTE_GPR_NOTIFY_DATA))) {
             ORTE_ERROR_LOG(rc);
             return rc;
         }
