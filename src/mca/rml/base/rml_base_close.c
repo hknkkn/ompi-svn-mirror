@@ -25,7 +25,7 @@
 int orte_rml_base_close(void)
 {
     /* shutdown any remaining opened components */
-    if (0 != ompi_list_get_size(&orte_rml_base.rml_components)) {
+    if (! ompi_list_is_empty(&orte_rml_base.rml_components)) {
         mca_base_components_close(orte_rml_base.rml_output, 
                               &orte_rml_base.rml_components, NULL);
     }
