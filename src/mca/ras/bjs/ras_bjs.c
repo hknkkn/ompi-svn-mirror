@@ -18,10 +18,19 @@
 #include <sys/bproc.h>
 
 #include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "util/argv.h"
+#include "util/output.h"
+#include "mca/ras/base/base.h"
+#include "mca/ras/base/ras_base_node.h"
 #include "ras_bjs.h"
 
 
-static int orte_ras_bjs_node_status(int node)
+/**
+ * Query the bproc node status 
+ */
+
+static int orte_ras_bjs_node_state(int node)
 {
     char status[32];
     bproc_nodestatus(node, status, sizeof(status));
@@ -33,26 +42,69 @@ static int orte_ras_bjs_node_status(int node)
 }
 
 
+/**
+ * Parse the NODELIST to determine the number of process
+ * slots/processors available on the node.
+ */
+
+static size_t orte_ras_bjs_node_slots(char* node_name)
+{
+    static char** nodelist = NULL;
+    char** ptr;
+    size_t count = 0;
+    if(nodelist == NULL)
+        nodelist = ompi_argv_split(getenv("NODELIST"), ',');
+    ptr = nodelist;
+    while(ptr && *ptr) {
+        if(strcmp(*ptr, node_name) == 0)
+            count++;
+        ptr++;
+    }
+    return count;
+}
+
+
+/**
+ * Resolve the node name to node number.
+ */
+
+static int orte_ras_bjs_node_resolve(char* node_name, int* node_num)
+{
+    /* for now we expect this to be the node number */
+    if(sscanf(node_name, "%d", node_num) != 1)
+        return ORTE_NODE_ERROR;
+    return ORTE_SUCCESS;
+}
+
+
+/**
+ *  Discover the available resources. 
+ *  - validate any nodes specified via hostfile/commandline
+ *  - check for additional nodes that have already been allocated
+ */
+
 static int orte_ras_bjs_discover(ompi_list_t* nodelist)
 {
     char* nodes;
     char* ptr;
     ompi_list_item_t* item;
     ompi_list_t new_nodes;
+    int rc;
 
     /* query the nodelist from the registry */
     OBJ_CONSTRUCT(&new_nodes, ompi_list_t);
-    if(ORTE_SUCCESS != (rc = orte_ras_base_nodes_query(nodelist)))
+    if(ORTE_SUCCESS != (rc = orte_ras_base_node_query(nodelist)))
         return rc;
 
     /* validate that any user supplied nodes actually exist, etc. */
     for(item =  ompi_list_get_first(nodelist);
         item != ompi_list_get_end(nodelist);
         item =  ompi_list_get_next(item)) {
+        int node_num;
 
         orte_ras_base_node_t* node = (orte_ras_base_node_t*)item;
         if(ORTE_SUCCESS != orte_ras_bjs_node_resolve(node->node_name, &node_num)) {
-            ompi_output(0, "error: a specified node (%s) is invalid.\n" node->node_name);
+            ompi_output(0, "error: a specified node (%s) is invalid.\n", node->node_name);
             return ORTE_NODE_ERROR;
         }
 
@@ -69,17 +121,17 @@ static int orte_ras_bjs_discover(ompi_list_t* nodelist)
         }
 
         /* try and determine the number of available slots */
-        if(node->node_processors == 0) {
+        if(node->node_slots == 0) {
             node->node_slots_inuse = 0;
             node->node_slots_max = 0;
-            node->node_processors = orte_ras_bjs_node_processors(node_num);
+            node->node_slots = orte_ras_bjs_node_slots(node->node_name);
         }
     }
 
     /* parse the node list and check node status/access */
     nodes = getenv("NODES");
     if(NULL == nodes) {
-        return (ompi_list_get_size(&existing) ? ORTE_SUCCESS : ORTE_ERR_NOT_AVAIL;
+        return ompi_list_get_size(nodelist) ? ORTE_SUCCESS : ORTE_ERR_NOT_AVAILABLE;
     }
 
     OBJ_CONSTRUCT(&new_nodes, ompi_list_t);
@@ -102,7 +154,7 @@ static int orte_ras_bjs_discover(ompi_list_t* nodelist)
             continue;
         }
 
-        if(ORTE_NODE_STATE_UP != (node_state = orte_ras_bjs_node_status(node_num))) {
+        if(ORTE_NODE_STATE_UP != (node_state = orte_ras_bjs_node_state(node_num))) {
             ompi_output(0, "error: a specified node (%d) is not up.\n", node_num);
             rc = ORTE_NODE_DOWN;
             goto cleanup;
@@ -120,12 +172,12 @@ static int orte_ras_bjs_discover(ompi_list_t* nodelist)
         node->node_cellid = 0;
         node->node_slots_inuse = 0;
         node->node_slots_max = 0;
-        node->node_processors = orte_ras_bjs_node_processors(node_num);
+        node->node_slots = orte_ras_bjs_node_slots(node->node_name);
         ompi_list_append(&new_nodes, &node->super);
     }
 
     /* add any newly discovered nodes to the registry */
-    rc = orte_ras_base_node_add(&new_nodes);
+    rc = orte_ras_base_node_insert(&new_nodes);
 
     /* append them to the nodelist */
     ompi_list_join(nodelist, ompi_list_get_first(&new_nodes), &new_nodes);
