@@ -68,6 +68,8 @@ extern char *orte_error_strings[];
 #define ORTE_CELLID_KEY           "orte-cellid"
 #define ORTE_IOF_INFO             "orte-iof-info"
 #define ORTE_APP_CONTEXT_KEY      "orte-app-context"
+#define ORTE_JOB_VPID_START       "orte-job-vpid-start"
+#define ORTE_JOB_VPID_RANGE       "orte-job-vpid-range"
 #define ORTE_PROC_NAME_KEY        "orte-proc-name"
 #define ORTE_PROC_RANK_KEY        "orte-proc-rank"
 #define ORTE_PROC_PID_KEY         "orte-proc-pid"
