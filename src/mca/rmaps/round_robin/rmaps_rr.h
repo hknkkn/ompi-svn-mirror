@@ -31,6 +31,7 @@ extern "C" {
 struct orte_rmaps_round_robin_component_t {
     orte_rmaps_base_component_t super;
     int debug;
+    int priority;
 };
 typedef struct orte_rmaps_round_robin_component_t orte_rmaps_round_robin_component_t;
 

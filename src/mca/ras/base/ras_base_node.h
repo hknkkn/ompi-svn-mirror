@@ -86,6 +86,11 @@ ORTE_DECLSPEC OBJ_CLASS_DECLARATION(orte_ras_base_node_t);
 int orte_ras_base_node_query(ompi_list_t*);
 
 /*
+ * Query the registry for all nodes allocated to a specific job
+ */
+int orte_ras_base_node_query_alloc(ompi_list_t*, orte_jobid_t);
+
+/*
  * Add the specified node definitions to the registry
  */
 int orte_ras_base_node_insert(ompi_list_t*);

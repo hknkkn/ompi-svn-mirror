@@ -15,7 +15,7 @@
 #include "orte_config.h"
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
-#include "include/orte_names.h"
+#include "include/orte_schema.h"
 
 #include "util/output.h"
 #include "mca/mca.h"
@@ -24,6 +24,7 @@
 #include "mca/rmgr/base/base.h"
 #include "mca/base/mca_base_param.h"
 #include "mca/rmaps/base/rmaps_base_map.h"
+#include "mca/soh/soh_types.h"
 
 
 /**
@@ -181,7 +182,7 @@ orte_rmaps_lookup_node(ompi_list_t* nodes, char* node_name, orte_rmaps_base_proc
  *  Query the process mapping from the registry.
  */
 
-int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping_out, size_t* num_mapping_out)
+int orte_rmaps_base_get_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
 {
     orte_app_context_t** app_context = NULL;
     orte_rmaps_base_map_t** mapping = NULL;
@@ -290,12 +291,13 @@ int orte_rmaps_base_get_map(orte_jobid_t jobid, orte_rmaps_base_map_t*** mapping
     }
 
     /* release temporary variables */
+    for(i=0; i<num_context; i++) {
+        ompi_list_append(mapping_list, &mapping[i]->super);
+    }
     free(segment);
     free(jobid_str);
     free(app_context);
-
-    *mapping_out = mapping;
-    *num_mapping_out = num_context;
+    free(mapping);
     return ORTE_SUCCESS;
 
 cleanup:
@@ -323,17 +325,21 @@ cleanup:
  * Set the process mapping in the registry.
  */
 
-int orte_rmaps_base_set_map(orte_jobid_t jobid, orte_rmaps_base_map_t** mapping, size_t num_maps)
+int orte_rmaps_base_set_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
 {
     size_t i;
     size_t index=0;
     size_t num_procs = 0;
     size_t size;
     int rc = ORTE_SUCCESS;
-
+    ompi_list_item_t* item;
     orte_gpr_value_t** values;
-    for(i=0; i<num_maps; i++) {
-        num_procs += mapping[i]->num_procs;
+
+    for(item =  ompi_list_get_first(mapping_list);
+        item != ompi_list_get_end(mapping_list);
+        item =  ompi_list_get_next(item)) {
+        orte_rmaps_base_map_t* map = (orte_rmaps_base_map_t*)item;
+        num_procs += map->num_procs;
     }
     if(num_procs == 0)
         return ORTE_ERR_BAD_PARAM;
@@ -356,10 +362,13 @@ int orte_rmaps_base_set_map(orte_jobid_t jobid, orte_rmaps_base_map_t** mapping,
          }
     }
 
+
     /* iterate through all processes and initialize value array */
-    for(i=0; i<num_maps; i++) {
+    for(item =  ompi_list_get_first(mapping_list);
+        item != ompi_list_get_end(mapping_list);
+        item =  ompi_list_get_next(item)) {
+        orte_rmaps_base_map_t* map = (orte_rmaps_base_map_t*)item;
         size_t p;
-        orte_rmaps_base_map_t* map = mapping[i];
         for(p=0; p<map->num_procs; p++) {
             orte_rmaps_base_proc_t* proc = map->procs[p];
             orte_gpr_value_t* value = values[index++];
@@ -389,9 +398,29 @@ int orte_rmaps_base_set_map(orte_jobid_t jobid, orte_rmaps_base_map_t** mapping,
             keyvals[0]->type = ORTE_INT32;
             keyvals[0]->value.i32 = proc->proc_rank;
 
-            /* and so on.... */
+            keyvals[1]->key = strdup(ORTE_PROC_NAME_KEY);
+            keyvals[1]->type = ORTE_NAME;
+            keyvals[1]->value.proc = proc->proc_name;
+
+            keyvals[2]->key = strdup(ORTE_NODE_NAME_KEY);
+            keyvals[2]->type = ORTE_INT32;
+            keyvals[2]->value.strptr = strdup(proc->proc_node->node_name);
+
+            keyvals[3]->key = strdup(ORTE_APP_CONTEXT_KEY);
+            keyvals[3]->type = ORTE_INT32;
+            keyvals[3]->value.i32 = map->app->idx;
+
+            keyvals[4]->key = strdup(ORTE_PROC_STATUS_KEY);
+            keyvals[4]->type = ORTE_PROC_STATE;
+            keyvals[4]->value.proc_status = ORTE_PROC_STATUS_INIT;
 
             value->keyvals = keyvals;
+            if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&value->segment,jobid))) {
+                goto cleanup;
+            }
+            if(ORTE_SUCCESS != (rc = orte_schema.get_proc_tokens(&value->tokens,&value->num_tokens,&proc->proc_name))) {
+                goto cleanup;
+            }
         }
     }
 
@@ -404,7 +433,8 @@ cleanup:
             OBJ_RELEASE(values[i]);
         }
     }
-    free(values);
+    if(NULL != values)
+        free(values);
     return rc;
 }
 

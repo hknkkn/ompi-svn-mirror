@@ -77,7 +77,7 @@ OBJ_CLASS_DECLARATION(orte_rmaps_base_proc_t);
  */
 
 struct orte_rmaps_base_map_t {
-    ompi_object_t super;
+    ompi_list_item_t super;
     orte_app_context_t *app;
     orte_rmaps_base_proc_t** procs;
     size_t num_procs;
@@ -88,8 +88,8 @@ typedef struct orte_rmaps_base_map_t orte_rmaps_base_map_t;
 OBJ_CLASS_DECLARATION(orte_rmaps_base_map_t);
 
 
-int orte_rmaps_base_get_map(orte_jobid_t, orte_rmaps_base_map_t*** mapping, size_t* cnt);
-int orte_rmaps_base_set_map(orte_jobid_t, orte_rmaps_base_map_t** mapping, size_t cnt);
+int orte_rmaps_base_get_map(orte_jobid_t, ompi_list_t* mapping);
+int orte_rmaps_base_set_map(orte_jobid_t, ompi_list_t* mapping);
 
 
 #if defined(c_plusplus) || defined(__cplusplus)

@@ -26,9 +26,7 @@
 
 static int orte_rmaps_round_robin_open(void);
 static int orte_rmaps_round_robin_close(void);
-static orte_rmaps_base_module_t* orte_rmaps_round_robin_init(
-    bool *allow_multi_user_threads,
-    bool *have_hidden_threads);
+static orte_rmaps_base_module_t* orte_rmaps_round_robin_init(int* priority);
 
 
 orte_rmaps_round_robin_component_t mca_rmaps_round_robin_component = {
@@ -76,34 +74,21 @@ static  int orte_rmaps_round_robin_param_register_int(
 }
  
 
-#if 0
-static char* orte_rmaps_round_robin_param_register_string(
-    const char* param_name,
-    const char* default_value)
-{
-    char *param_value;
-    int id = mca_base_param_register_string("rmaps","round_robin",param_name,NULL,default_value);
-    mca_base_param_lookup_string(id, &param_value);
-    return param_value;
-}
-#endif
-
-
 /**
   * component open/close/init function
   */
 static int orte_rmaps_round_robin_open(void)
 {
     mca_rmaps_round_robin_component.debug = orte_rmaps_round_robin_param_register_int("debug",1);
+    mca_rmaps_round_robin_component.priority = orte_rmaps_round_robin_param_register_int("priority",1);
     return ORTE_SUCCESS;
 }
 
 
 static orte_rmaps_base_module_t* 
-orte_rmaps_round_robin_init(bool *allow_multi_user_threads, bool *have_hidden_threads)
+orte_rmaps_round_robin_init(int *priority)
 {
-    *allow_multi_user_threads = true;
-    *have_hidden_threads = false;
+    *priority = mca_rmaps_round_robin_component.priority;
     return &orte_rmaps_round_robin_module;
 }
 

@@ -51,7 +51,7 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
 
         case ORTE_DATA_TYPE:
         case ORTE_NODE_STATE:
-        case ORTE_STATUS_KEY:
+        case ORTE_PROC_STATE:
         case ORTE_EXIT_CODE:
         case ORTE_BOOL:
         case ORTE_BYTE:

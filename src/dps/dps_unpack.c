@@ -169,7 +169,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
        
         case ORTE_DATA_TYPE:
         case ORTE_NODE_STATE:
-        case ORTE_STATUS_KEY:
+        case ORTE_PROC_STATE:
         case ORTE_EXIT_CODE:
         case ORTE_BYTE:
         case ORTE_INT8:
