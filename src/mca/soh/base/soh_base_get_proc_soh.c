@@ -33,7 +33,7 @@ int orte_soh_base_get_proc_soh(orte_proc_state_t *state,
 {
     orte_gpr_value_t **values;
     orte_gpr_keyval_t **keyvals;
-    int rc, cnt, num_tokens;
+    int rc, cnt, num_tokens, i, j;
     char *segment, **tokens, *keys[3];
     orte_jobid_t jobid;
 
@@ -56,10 +56,8 @@ int orte_soh_base_get_proc_soh(orte_proc_state_t *state,
     keys[1] = strdup(ORTE_PROC_EXIT_CODE_KEY);
     keys[2] = NULL;
     
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get(ORTE_GPR_XAND,
-                                segment,
-                                tokens, keys,
-                                &cnt, &values))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr.get(ORTE_GPR_XAND, segment,
+                                tokens, keys, &cnt, &values))) {
         ORTE_ERROR_LOG(rc);
         goto CLEANUP;
     }

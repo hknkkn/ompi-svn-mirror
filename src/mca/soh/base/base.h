@@ -48,7 +48,7 @@ OMPI_DECLSPEC    int orte_soh_base_close(void);
 
 OMPI_DECLSPEC    int orte_soh_base_module_slave_init_not_available (void);
 OMPI_DECLSPEC    int orte_soh_base_module_slave_poll_not_available (void);
-OMPI_DECLSPEC    int orte_soh_base_module_slave_do_heatbeat_not_available (void);
+OMPI_DECLSPEC    int orte_soh_base_module_slave_do_heartbeat_not_available (void);
 OMPI_DECLSPEC    int orte_soh_base_module_slave_request_monitor_not_available (orte_soh_entity_type_t type, 
                                                                                orte_soh_entity_value_t value);
 OMPI_DECLSPEC    int orte_soh_base_module_slave_end_monitor_not_available (void);

@@ -81,11 +81,11 @@ int orte_soh_base_set_proc_soh(orte_process_name_t *proc,
         OBJ_RELEASE(value);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    (value->keyvals[1])->key = strdup(ORTE_EXIT_CODE_KEY);
+    (value->keyvals[1])->key = strdup(ORTE_PROC_EXIT_CODE_KEY);
     (value->keyvals[0])->type = ORTE_EXIT_CODE;
     (value->keyvals[0])->value.exit_code = status;
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_put(ORTE_GPR_XAND, 1, &value))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr.put(ORTE_GPR_XAND, 1, &value))) {
         ORTE_ERROR_LOG(rc);
     }
     
