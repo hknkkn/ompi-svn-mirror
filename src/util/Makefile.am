@@ -28,6 +28,7 @@ headers = \
     argv.h \
     bit_ops.h \
     cmd_line.h \
+    environ.h \
     few.h \
     if.h \
     malloc.h \
@@ -53,6 +54,7 @@ libutil_la_SOURCES = \
     assembly.s \
     argv.c \
     cmd_line.c \
+    environ.c \
     few.c \
     if.c \
     malloc.c \
