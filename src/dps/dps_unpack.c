@@ -25,7 +25,11 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "mca/gpr/gpr_types.h"
 #include "mca/ns/ns_types.h"
+#include "mca/rmgr/rmgr_types.h"
 #include "dps_internal.h"
 
 /**
@@ -142,6 +146,10 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_process_name_t* dn;
     orte_process_name_t* sn;
     orte_byte_object_t* dbyteptr;
+    orte_gpr_keyval_t **keyval;
+    orte_gpr_value_t **values;
+    orte_rmgr_app_info_t **app_info;
+    orte_rmgr_app_context_t **app_context;
     uint32_t len;
     char *str, *sstr;
     void *sptr;
@@ -152,6 +160,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     
     switch(type) {
        
+        case ORTE_DATA_TYPE:
         case ORTE_NODE_STATE:
         case ORTE_STATUS_KEY:
         case ORTE_EXIT_CODE:
@@ -239,19 +248,6 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             *num_bytes = num_vals * sizeof(uint8_t);
             break;
 
-        case ORTE_NAME:
-
-            dn = (orte_process_name_t*) dst;
-            sn = (orte_process_name_t*) src;
-            for (i=0; i<num_vals; i++) {
-                dn->cellid = ntohl(sn->cellid);
-                dn->jobid = ntohl(sn->jobid);
-                dn->vpid = ntohl(sn->vpid);
-                dn++; sn++;
-            }
-            *num_bytes = num_vals * sizeof(orte_process_name_t);
-            break;
-        
         case ORTE_STRING:
  
             dstr = (char**)dst;
@@ -281,6 +277,19 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             return ORTE_SUCCESS;
             break;
 
+        case ORTE_NAME:
+
+            dn = (orte_process_name_t*) dst;
+            sn = (orte_process_name_t*) src;
+            for (i=0; i<num_vals; i++) {
+                dn->cellid = ntohl(sn->cellid);
+                dn->jobid = ntohl(sn->jobid);
+                dn->vpid = ntohl(sn->vpid);
+                dn++; sn++;
+            }
+            *num_bytes = num_vals * sizeof(orte_process_name_t);
+            break;
+        
         case ORTE_BYTE_OBJECT:
  
             dbyteptr = (orte_byte_object_t*)dst;
@@ -310,9 +319,155 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             break;
 
         case ORTE_KEYVAL:
+        
+            /* unpack into an array of keyval objects */
+            keyval = (orte_gpr_keyval_t**) dst;
+            for (i=0; i < num_vals; i++) {
+                keyval[i] = OBJ_NEW(orte_gpr_keyval_t);
+                if (NULL == keyval[i]) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(keyval[i]->key),
+                            src, 1, ORTE_STRING, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(keyval[i]->type),
+                            src, 1, ORTE_DATA_TYPE, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(keyval[i]->value),
+                            src, 1, keyval[i]->type, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+            }
             break;
         
         case ORTE_GPR_VALUE:
+        
+            /* unpack into array of value objects */
+            values = (orte_gpr_value_t**) dst;
+            for (i=0; i < num_vals; i++) {
+                /* create the value object */
+                values[i] = OBJ_NEW(orte_gpr_value_t);
+                if (NULL == values[i]) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* unpack the segment name */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->segment),
+                            src, 1, ORTE_STRING, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* get the number of tokens */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->num_tokens),
+                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* allocate the required space for the char * pointers */
+                values[i]->tokens = (char **)malloc(values[i]->num_tokens * sizeof(char*));
+                if (NULL == values[i]->tokens) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* unpack the tokens */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->tokens,
+                            src, values[i]->num_tokens, ORTE_STRING, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* get the number of keyval pairs */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(values[i]->cnt),
+                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* allocate the required space for the keyval object pointers */
+                values[i]->keyvals = (orte_gpr_keyval_t**)malloc(values[i]->cnt * sizeof(orte_gpr_keyval_t*));
+                if (NULL == values[i]->keyvals) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* unpack the keyval pairs */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(values[i]->keyvals,
+                            src, values[i]->cnt, ORTE_KEYVAL, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+            }
+            break;
+            
+        case ORTE_APP_INFO:
+        
+            /* unpack into array of app_info objects */
+            app_info = (orte_rmgr_app_info_t**) dst;
+            for (i=0; i < num_vals; i++) {
+                /* create the app_info object */
+                app_info[i] = OBJ_NEW(orte_rmgr_app_info_t);
+                if (NULL == app_info[i]) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* unpack the application name */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_info[i]->application,
+                            src, 1, ORTE_STRING, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* unpack the number of instances of this application */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_info[i]->num_procs),
+                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+            }
+            break;
+            
+        case ORTE_APP_CONTEXT:
+            
+            /* unpack into array of app_context objects */
+            app_context = (orte_rmgr_app_context_t**) dst;
+            for (i=0; i < num_vals; i++) {
+                /* create the app_context object */
+                app_context[i] = OBJ_NEW(orte_rmgr_app_context_t);
+                if (NULL == app_context[i]) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* get the number of argv strings */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->argc),
+                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* allocate the required space for the char * pointers */
+                app_context[i]->argv = (char **)malloc(app_context[i]->argc * sizeof(char*));
+                if (NULL == app_context[i]->argv) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* unpack the argv strings */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->argv,
+                            src, app_context[i]->argc, ORTE_STRING, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* get the number of enviro strings */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_enviro),
+                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+                /* allocate the required space for the char * pointers */
+                app_context[i]->enviro = (char **)malloc(app_context[i]->num_enviro * sizeof(char*));
+                if (NULL == app_context[i]->enviro) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* unpack the enviro strings */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->enviro,
+                            src, app_context[i]->num_enviro, ORTE_STRING, mem_left, num_bytes))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + *num_bytes);
+            }
             break;
             
         case ORTE_NULL:

@@ -18,7 +18,7 @@
 typedef struct {
     ompi_object_t super;
     char *application;
-    int num_procs;
+    int32_t num_procs;
 } orte_rmgr_app_info_t;
 
 OBJ_CLASS_DECLARATION(orte_rmgr_app_info_t);
@@ -26,9 +26,9 @@ OBJ_CLASS_DECLARATION(orte_rmgr_app_info_t);
 
 typedef struct {
     ompi_object_t super;
-    int argc;
+    int32_t argc;
     char **argv;
-    int num_enviro;
+    int32_t num_enviro;
     char **enviro;
 } orte_rmgr_app_context_t;
 

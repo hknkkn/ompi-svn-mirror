@@ -15,7 +15,9 @@
  *
  * The Open RTE Resource Manager (RMGR) Subsystem
  * 
- * 
+ * The resource manager (RMGR) subsystem serves as the central switchyard for all
+ * resource management activities, including resource discovery, resource allocation,
+ * process mapping, and process launch. 
  */
 
 #ifndef ORTE_RMGR_H
@@ -51,10 +53,12 @@ typedef int (*orte_rmgr_base_module_query_fn_t)(void);
  * Allocate resources to a job.
  * 
  * @code
- * return_value = orte_rmgr.allocate(orte_jobid_t jobid)
+ * orte_jobid_t jobid;
+ * 
+ * return_value = orte_rmgr.allocate(orte_jobid_t &jobid)
  * @endcode
  */
-typedef int (*orte_rmgr_base_module_allocate_fn_t)(orte_jobid_t jobid);
+typedef int (*orte_rmgr_base_module_allocate_fn_t)(orte_jobid_t *jobid);
 
 /**
  * Deallocate resources from a job

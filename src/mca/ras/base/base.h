@@ -52,8 +52,8 @@ ORTE_DECLSPEC int orte_ras_base_open(void);
 ORTE_DECLSPEC int orte_ras_base_select(bool *allow_multi_user_threads,
                                        bool *have_hidden_threads);
 ORTE_DECLSPEC int orte_ras_base_close(void);
-ORTE_DECLSPEC int orte_ras_base_allocate(orte_jobid_t);
-ORTE_DECLSPEC int orte_ras_base_deallocate(orte_jobid_t);
+ORTE_DECLSPEC int orte_ras_base_allocate(orte_jobid_t *job);
+ORTE_DECLSPEC int orte_ras_base_deallocate(orte_jobid_t job);
 
 /*
  * globals that might be needed
