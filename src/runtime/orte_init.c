@@ -29,9 +29,12 @@
 #include "mca/base/mca_base_param.h"
 #include "mca/rml/base/base.h"
 #include "mca/errmgr/base/base.h"
+#include "mca/iof/base/base.h"
 #include "mca/ns/base/base.h"
 #include "mca/gpr/base/base.h"
 #include "mca/rmgr/base/base.h"
+#include "mca/soh/base/base.h"
+#include "plsnds/plsnds.h"
 #include "util/proc_info.h"
 #include "util/session_dir.h"
 #include "util/sys_info.h"
@@ -106,9 +109,11 @@
 /* globals used by RTE */
 int orte_debug_flag=0;
 orte_universe_t orte_universe_info = {
+    /* .path =                */    NULL,
     /* .name =                */    NULL,
     /* .host =                */    NULL,
     /* .uid =                 */    NULL,
+    /* .bootproxy =           */    false,
     /* .persistence =         */    false,
     /* .scope =               */    NULL,
     /* .console =             */    false,
@@ -117,7 +122,7 @@ orte_universe_t orte_universe_info = {
     /* .scriptfile =          */    NULL,
 };
 
-int orte_init(ompi_cmd_line_t *cmd_line)
+int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv)
 {
     int ret;
     char *universe;
@@ -127,7 +132,6 @@ int orte_init(ompi_cmd_line_t *cmd_line)
 
     /* Open up the output streams */
     if (!ompi_output_init()) {
-        ORTE_ERROR_LOG(OMPI_ERROR);
         return OMPI_ERROR;
     }
                                                                                                                    
@@ -139,20 +143,37 @@ int orte_init(ompi_cmd_line_t *cmd_line)
     /* For malloc debugging */
     ompi_malloc_init();
 
-    /* Get the local system information and populate the ompi_system_info structure */
+    /* Ensure the system_info structure is instantiated and initialized */
     if (ORTE_SUCCESS != (ret = orte_sys_info())) {
-        ORTE_ERROR_LOG(ret);
         return ret;
     }
-                                                                                                                   
+
+    /* Ensure the process info structure is instantiated and initialized */
+    if (ORTE_SUCCESS != (ret = orte_proc_info())) {
+        return ret;
+    }
+    
     /*
      * Initialize the MCA framework 
      */
     if (OMPI_SUCCESS != (ret = mca_base_open())) {
-        ORTE_ERROR_LOG(ret);
         return ret;
     }
  
+    /*
+     * Open the name services to ensure access to local functions 
+     */
+    if (OMPI_SUCCESS != (ret = orte_ns_base_open())) {
+        return ret;
+    }
+
+    /* Open the error manager to activate error logging - needs local name services */
+    if (ORTE_SUCCESS != (ret = orte_errmgr_base_open())) {
+        return ret;
+    }
+    
+    /*****   ERROR LOGGING NOW AVAILABLE *****/
+    
     /*
      * Parse mca command line arguments
      */
@@ -166,27 +187,37 @@ int orte_init(ompi_cmd_line_t *cmd_line)
             ORTE_ERROR_LOG(ret);
             return ret;
         }
+        
+        if (OMPI_SUCCESS != ompi_cmd_line_parse(cmd_line, true, argc, argv)) {
+            ORTE_ERROR_LOG(ret);
+            return ret;
+        }
     }
-                                                                                                                   
-    ret =  mca_base_param_register_int("orte", "debug", NULL, NULL, 1);
-    mca_base_param_lookup_int(ret, &orte_debug_flag);
 
-    /* 
-     * Initialize the error manager
-     */
-    if (ORTE_SUCCESS != (ret = orte_errmgr_base_open())) {
+    /* Parse the process context */
+    if (ORTE_SUCCESS != (ret = orte_parse_proc_context(cmd_line, argc, argv))) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }
     
-    /* 
-     * Initialize the orte_process_info structure
-     */
-    if (ORTE_SUCCESS != (ret = orte_proc_info())) {
+    /* If I'm a daemon or the seed, then process the daemon context */
+    if (orte_process_info.seed || orte_process_info.daemon) {
+        if (ORTE_SUCCESS != (ret = orte_parse_daemon_context(cmd_line, argc, argv))) {
+            ORTE_ERROR_LOG(ret);
+            return ret;
+        }
+    }
+    
+    /* check for debug flag */
+    if (0 > (ret =  mca_base_param_register_int("orte", "debug", NULL, NULL, 1))) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }
-    
+    if (ORTE_SUCCESS != (ret = mca_base_param_lookup_int(ret, &orte_debug_flag))) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+
     /*
      * Initialize the event library 
     */
@@ -212,14 +243,6 @@ int orte_init(ompi_cmd_line_t *cmd_line)
     }
     
     /*
-     * Name Server 
-     */
-    if (OMPI_SUCCESS != (ret = orte_ns_base_open())) {
-        ORTE_ERROR_LOG(ret);
-        return ret;
-    }
-
-    /*
      * Runtime Messaging Layer
      */
     if (OMPI_SUCCESS != (ret = orte_rml_base_open())) {
@@ -242,24 +265,6 @@ int orte_init(ompi_cmd_line_t *cmd_line)
     if (ORTE_SUCCESS != (ret = orte_schema_open())) {
         ORTE_ERROR_LOG(ret);
         return ret;
-    }
-    
-
-    /* parse ORTE environmental variables and fill corresponding info structures */
-    orte_parse_environ();
-
-    if (NULL != cmd_line) {
-            /* parse the cmd_line for rte options - override settings from enviro, where necessary
-             * copy everything into enviro variables for passing later on
-             */
-            orte_parse_cmd_line(cmd_line);
-        
-            /* parse the cmd_line for daemon options - gets all the options relating
-             * specifically to seed behavior, in case i'm a seed, but also gets
-             * options about scripts and hostfiles that might be of use to me
-             * overrride enviro variables where necessary
-             */
-            orte_parse_daemon_cmd_line(cmd_line);
     }
 
     /* check for existing universe to join */
@@ -317,6 +322,14 @@ int orte_init(ompi_cmd_line_t *cmd_line)
         return ret;
     }
  
+    /*
+     * PLS Name Discovery Service
+     */
+    if (ORTE_SUCCESS != (ret = orte_plsnds_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    
     /*****    SET MY NAME    *****/
     if (ORTE_SUCCESS != (ret = orte_ns.set_my_name())) {
         ORTE_ERROR_LOG(ret);
@@ -385,6 +398,30 @@ int orte_init(ompi_cmd_line_t *cmd_line)
         return ret;
     }
     if (ORTE_SUCCESS != (ret = orte_rmgr_base_select())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    
+    /*
+     * setup the state-of-health monitor
+     */
+    if (ORTE_SUCCESS != (ret = orte_soh_base_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    if (ORTE_SUCCESS != (ret = orte_soh_base_select())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    
+    /*
+     * setup I/O forwarding system
+     */
+    if (ORTE_SUCCESS != (ret = orte_iof_base_open())) {
+        ORTE_ERROR_LOG(ret);
+        return ret;
+    }
+    if (ORTE_SUCCESS != (ret = orte_iof_base_select())) {
         ORTE_ERROR_LOG(ret);
         return ret;
     }

@@ -31,6 +31,7 @@
 
 #include "runtime/runtime_types.h"
 #include "mca/ns/ns.h"
+#include "runtime/orte_context_value_tbl.h"
 
 /* For backwards compatibility.  If you only need MPI stuff, please include
    mpiruntime/mpiruntime.h directly */
@@ -76,9 +77,11 @@ extern "C" {
     * instanced in ompi_rte_init.c */
 
     struct orte_universe_t {
+        char *path;
         char *name;
         char *host;
         char *uid;
+        bool bootproxy;
         bool persistence;
         char *scope;
         bool console;
@@ -132,7 +135,7 @@ OMPI_DECLSPEC    int ompi_abort(int status, char *fmt, ...);
      * be called by every application using the RTE interface, including
      * MPI applications and mpirun.
      */
-OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    int orte_init(ompi_cmd_line_t *cmd_line, int argc, char **argv);
 
     /**
      * Re-init the Open run time environment.
@@ -166,17 +169,6 @@ OMPI_DECLSPEC	 int orte_monitor_procs_registered(void);
 OMPI_DECLSPEC    int orte_monitor_procs_unregistered(void);
 
     /**
-     * Setup rte command line options
-     *
-     * Defines the command line options specific to the rte/seed daemon
-     *
-     * @param cmd_line Pointer to an ompi_cmd_line_t object
-     * @retval None
-     */
-OMPI_DECLSPEC    void orte_cmd_line_setup(ompi_cmd_line_t *cmd_line);
-
-
-    /**
      * Parse the rte command line for options
      *
      * Parses the specified command line for rte specific options.
@@ -185,7 +177,9 @@ OMPI_DECLSPEC    void orte_cmd_line_setup(ompi_cmd_line_t *cmd_line);
      * @param cmd_line Command line to be parsed.
      * @retval None
      */
-OMPI_DECLSPEC    int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    int orte_parse_context(orte_context_value_names_t *context_tbl,
+                                        ompi_cmd_line_t *cmd_line,
+                                        int argc, char **argv);
 
     /**
      * Parse the rte command line for daemon-specific options
@@ -196,7 +190,10 @@ OMPI_DECLSPEC    int orte_parse_cmd_line(ompi_cmd_line_t *cmd_line);
      * @param cmd_line Command line to be parsed.
      * @retval None
      */
-OMPI_DECLSPEC    int orte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line);
+OMPI_DECLSPEC    int orte_parse_proc_context(ompi_cmd_line_t *cmd_line,
+                                        int argc, char **argv);
+OMPI_DECLSPEC    int orte_parse_daemon_context(ompi_cmd_line_t *cmd_line,
+                                        int argc, char **argv);
 
     /**
      * Check for universe existence
@@ -219,20 +216,6 @@ OMPI_DECLSPEC    int orte_parse_daemon_cmd_line(ompi_cmd_line_t *cmd_line);
      * universe refused to allow connection.
      */
 OMPI_DECLSPEC    int orte_universe_exists(void);
-
-    /**
-     * Parse the RTE environmental variables
-     *
-     * Checks the environmental variables and passes their info (where
-     * set) into the respective info structures. Sets ALL Open MPI
-     * default values in universe, process, and system structures.
-     *
-     * @param None
-     *
-     * @retval None
-     */
-OMPI_DECLSPEC    int orte_parse_environ(void);
-
 
     /**
      * Startup a job - notify processes that all ready to begin

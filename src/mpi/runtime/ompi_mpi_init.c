@@ -103,7 +103,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     /* Join the run-time environment */
     allow_multi_user_threads = true;
     have_hidden_threads = false;
-    if (OMPI_SUCCESS != (ret = orte_init(NULL))) {
+    if (OMPI_SUCCESS != (ret = orte_init(NULL, argc, argv))) {
 	goto error;
     }
 

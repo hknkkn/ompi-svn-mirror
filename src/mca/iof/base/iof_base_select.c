@@ -28,7 +28,7 @@ orte_iof_base_module_t orte_iof;
  * they want to run.  Select the single component with the highest 
  * priority.
  */
-int orte_iof_base_select(bool *allow_multi_user_threads, bool* have_hidden_threads)
+int orte_iof_base_select(void)
 {
     ompi_list_item_t *item;
     mca_base_component_list_item_t *cli;
@@ -99,8 +99,6 @@ int orte_iof_base_select(bool *allow_multi_user_threads, bool* have_hidden_threa
 
     /* setup reference to selected module */
     if(NULL != selected_module) {
-        *allow_multi_user_threads = selected_allow_user;
-        *have_hidden_threads = selected_have_hidden;
         orte_iof = *selected_module;
     }
     return OMPI_SUCCESS;

@@ -1225,5 +1225,6 @@ AC_CONFIG_FILES([
     test/mca/ns/Makefile
     test/mca/rds/Makefile
     test/plsnds/Makefile
+    test/runtime/Makefile
 ])
 AC_OUTPUT

@@ -151,7 +151,7 @@ main(int argc, char *argv[])
      * Intialize our Open RTE environment
      */
 
-    if (ORTE_SUCCESS != orte_init(cmd_line)) {
+    if (ORTE_SUCCESS != orte_init(cmd_line, argc, argv)) {
         ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
                        "orte_init()", ret);
 	return ret;

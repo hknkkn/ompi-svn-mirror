@@ -59,7 +59,7 @@ typedef struct orte_iof_base_t orte_iof_base_t;
 
 int orte_iof_base_open(void);
 int orte_iof_base_close(void);
-int orte_iof_base_select(bool* allow_multi_user_threads, bool* have_hidden_threads);
+int orte_iof_base_select(void);
 int orte_iof_base_flush(void);
 
 
