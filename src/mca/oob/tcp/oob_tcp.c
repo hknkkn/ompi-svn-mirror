@@ -347,14 +347,14 @@ static void mca_oob_tcp_recv_handler(int sd, short flags, void* user)
         if(rc >= 0) {
             if(mca_oob_tcp_component.tcp_debug > 3) {
                 ompi_output(0, "[%d,%d,%d] mca_oob_tcp_recv_handler: peer closed connection",
-                    ORTE_NAME_ARGS(*orte_process_info.my_name));
+                    ORTE_NAME_ARGS(orte_process_info.my_name));
             }
             close(sd);
             return;
         }
         if(ompi_errno != EINTR) {
             ompi_output(0, "[%d,%d,%d] mca_oob_tcp_recv_handler: recv() failed with ompi_errno=%d\n", 
-                ORTE_NAME_ARGS(*orte_process_info.my_name), ompi_errno);
+                ORTE_NAME_ARGS(orte_process_info.my_name), ompi_errno);
             close(sd);
             return;
         }
@@ -365,12 +365,12 @@ static void mca_oob_tcp_recv_handler(int sd, short flags, void* user)
     /* now set socket up to be non-blocking */
     if((flags = fcntl(sd, F_GETFL, 0)) < 0) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_recv_handler: fcntl(F_GETFL) failed with ompi_errno=%d", 
-                ORTE_NAME_ARGS(*orte_process_info.my_name), ompi_errno);
+                ORTE_NAME_ARGS(orte_process_info.my_name), ompi_errno);
     } else {
         flags |= O_NONBLOCK;
         if(fcntl(sd, F_SETFL, flags) < 0) {
             ompi_output(0, "[%d,%d,%d] mca_oob_tcp_recv_handler: fcntl(F_SETFL) failed with ompi_errno=%d", 
-                ORTE_NAME_ARGS(*orte_process_info.my_name), ompi_errno);
+                ORTE_NAME_ARGS(orte_process_info.my_name), ompi_errno);
         }
     }
 
@@ -394,7 +394,7 @@ static void mca_oob_tcp_recv_handler(int sd, short flags, void* user)
     peer = mca_oob_tcp_peer_lookup(guid);
     if(NULL == peer) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_recv_handler: unable to locate peer",
-                ORTE_NAME_ARGS(*orte_process_info.my_name));
+                ORTE_NAME_ARGS(orte_process_info.my_name));
         close(sd);
         return;
     }
@@ -403,9 +403,9 @@ static void mca_oob_tcp_recv_handler(int sd, short flags, void* user)
         if(mca_oob_tcp_component.tcp_debug > 1) {
             ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_recv_handler: "
                     "rejected connection from [%d,%d,%d] connection state %d",
-                    ORTE_NAME_ARGS(*orte_process_info.my_name),
-                    ORTE_NAME_ARGS(peer->peer_name),
-                    ORTE_NAME_ARGS(guid[0]),
+                    ORTE_NAME_ARGS(orte_process_info.my_name),
+                    ORTE_NAME_ARGS(&(peer->peer_name)),
+                    ORTE_NAME_ARGS(&(guid[0])),
                     peer->peer_state);
         }
         close(sd);
@@ -470,7 +470,7 @@ void mca_oob_tcp_registry_callback(
     int32_t i;
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_registry_callback\n",
-            ORTE_NAME_ARGS(*orte_process_info.my_name));
+            ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     /* process the callback */
@@ -504,14 +504,14 @@ void mca_oob_tcp_registry_callback(
             OBJ_DESTRUCT(&buffer);
             if(NULL == addr) {
                 ompi_output(0, "[%d,%d,%d] mca_oob_tcp_registry_callback: unable to unpack peer address\n",
-                    ORTE_NAME_ARGS(*orte_process_info.my_name));
+                    ORTE_NAME_ARGS(orte_process_info.my_name));
                 continue;
             }
 
             if(mca_oob_tcp_component.tcp_debug > 1) {
                 ompi_output(0, "[%d,%d,%d] mca_oob_tcp_registry_callback: received peer [%d,%d,%d]\n",
-                    ORTE_NAME_ARGS(*orte_process_info.my_name),
-                    ORTE_NAME_ARGS(addr->addr_name));
+                    ORTE_NAME_ARGS(orte_process_info.my_name),
+                    ORTE_NAME_ARGS(&(addr->addr_name)));
             }
 
             /* check for existing cache entry */
@@ -610,7 +610,7 @@ int mca_oob_tcp_resolve(mca_oob_tcp_peer_t* peer)
  */
 int mca_oob_tcp_init(void)
 {
-    char keys[2], *jobid, *segment;
+    char *keys[2], *jobid, *segment;
     orte_buffer_t *buffer;
     orte_process_name_t* peers;
     orte_gpr_value_t *value;
@@ -644,7 +644,7 @@ int mca_oob_tcp_init(void)
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid);
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.subscribe(%s,%d)\n", 
-            ORTE_NAME_ARGS(*orte_process_info.my_name),
+            ORTE_NAME_ARGS(orte_process_info.my_name),
             segment,
             npeers);
     }
@@ -681,7 +681,7 @@ int mca_oob_tcp_init(void)
 
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.put(%s,%s)\n", 
-            ORTE_NAME_ARGS(*orte_process_info.my_name),
+            ORTE_NAME_ARGS(orte_process_info.my_name),
             segment,
             keys[0]);
     }
@@ -735,7 +735,7 @@ int mca_oob_tcp_init(void)
 
     if(rc != OMPI_SUCCESS) {
         ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: registry put failed with error code %d.",
-            ORTE_NAME_ARGS(*orte_process_info.my_name), rc);
+            ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         return rc;
     }
     free(jobid);

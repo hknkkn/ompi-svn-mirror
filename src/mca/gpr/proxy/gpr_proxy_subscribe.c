@@ -108,7 +108,7 @@ orte_gpr_proxy_subscribe(orte_gpr_addr_mode_t mode,
 
     if (orte_gpr_proxy_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr proxy subscribe: subscribing to segment %s local idtag %d",
-				ORTE_NAME_ARGS(*(orte_process_info.my_name)), segment, (int)idtag);
+				ORTE_NAME_ARGS(orte_process_info.my_name), segment, (int)idtag);
     }
 
 

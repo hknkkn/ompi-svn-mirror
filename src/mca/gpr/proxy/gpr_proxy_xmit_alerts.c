@@ -68,7 +68,7 @@ int orte_gpr_proxy_get_startup_msg(orte_jobid_t jobid,
 
 	if (orte_gpr_proxy_globals.debug) {
 		ompi_output(0, "[%d,%d,%d] gpr_proxy: getting startup msg for job %d",
-					ORTE_NAME_ARGS(*(orte_process_info.my_name)), (int)jobid);
+					ORTE_NAME_ARGS(orte_process_info.my_name), (int)jobid);
 	}
 
     if (0 > orte_rml.send_buffer(orte_process_info.gpr_replica, cmd, MCA_OOB_TAG_GPR, 0)) {

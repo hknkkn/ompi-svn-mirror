@@ -38,7 +38,7 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
     
     if (orte_gpr_replica_globals.debug) {
       ompi_output(0, "[%d,%d,%d] entered get_startup_msg",
-            ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+            ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     *cnt = 0;

@@ -143,7 +143,7 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
 
       if (orte_gpr_replica_globals.debug) {
           ompi_output(0, "[%d,%d,%d] subscribe requested for remote sender [%d,%d,%d] on segment %s for idtag %d",
-                       ORTE_NAME_ARGS(*orte_process_info.my_name), ORTE_NAME_ARGS(*sender), segment, idtag);
+                       ORTE_NAME_ARGS(orte_process_info.my_name), ORTE_NAME_ARGS(sender), segment, idtag);
        }
       
         /* enter request on local notify tracking system */

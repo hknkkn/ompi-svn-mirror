@@ -154,7 +154,7 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     		if (NULL == trig->requestor) {
     		    asprintf(&tmp_out, "\tIntended recipient: LOCAL");
         	} else {
-		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(*(trig->requestor)));
+		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(trig->requestor));
 		}
 		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 		tmp_out = strdup("\tActions:");
@@ -210,7 +210,7 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 		if (NULL == trig->requestor) {
 		    asprintf(&tmp_out, "\tIntended recipient: LOCAL");
 		} else {
-		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(*(trig->requestor)));
+		    asprintf(&tmp_out, "\tIntended recipient: [%d,%d,%d]", ORTE_NAME_ARGS(trig->requestor));
 		}
 		orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 		tmp_out = strdup("\tSynchro Mode:");

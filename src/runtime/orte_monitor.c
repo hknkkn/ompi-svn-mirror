@@ -45,7 +45,7 @@ void orte_all_procs_registered(orte_gpr_notify_message_t* match, void* cbdata)
 {
     if (orte_debug_flag) {
 	    ompi_output(0, "[%d,%d,%d] all procs registered",
-		    ORTE_NAME_ARGS(*orte_process_info.my_name));
+		    ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     OMPI_THREAD_LOCK(&ompi_rte_mutex);

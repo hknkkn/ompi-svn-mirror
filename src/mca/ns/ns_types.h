@@ -38,7 +38,10 @@
 #include "include/types.h"
 #include "class/ompi_list.h"
 
-#define ORTE_NAME_ARGS(n)  (n).cellid,(n).jobid,(n).vpid
+#define ORTE_NAME_ARGS(n) \
+    ((NULL == n) ? -1 : (n)->cellid), \
+    ((NULL == n) ? -1 : (n)->jobid), \
+    ((NULL == n) ? -1 : (n)->vpid)
 
 
 /*

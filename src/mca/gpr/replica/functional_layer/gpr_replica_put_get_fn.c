@@ -124,7 +124,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 
     if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr replica: put entered on segment %s",
-		    ORTE_NAME_ARGS(*(orte_process_info.my_name)), seg->name);
+		    ORTE_NAME_ARGS(orte_process_info.my_name), seg->name);
     }
 
     /* initialize action */
@@ -194,7 +194,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     }
 
     if (orte_gpr_replica_globals.debug) {
-	    ompi_output(0, "[%d,%d,%d] gpr replica-put: complete", ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+	    ompi_output(0, "[%d,%d,%d] gpr replica-put: complete", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     return ORTE_SUCCESS;
@@ -226,7 +226,7 @@ int orte_gpr_replica_get_fn(orte_gpr_addr_mode_t addr_mode,
     int rc, i, j, k, num_found;
     
     if (orte_gpr_replica_globals.debug) {
-        	ompi_output(0, "[%d,%d,%d] gpr replica: get entered", ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+        	ompi_output(0, "[%d,%d,%d] gpr replica: get entered", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     /* initialize the list of findings */
@@ -338,7 +338,7 @@ CLEANUP:
     OBJ_RELEASE(get_list);
     
     if (orte_gpr_replica_globals.debug) {
-        	ompi_output(0, "[%d,%d,%d] gpr replica-get: finished search", ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+        	ompi_output(0, "[%d,%d,%d] gpr replica-get: finished search", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     return rc;

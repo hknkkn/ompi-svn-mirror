@@ -70,7 +70,7 @@ int orte_gpr_replica_cleanup_proc_fn(orte_process_name_t *proc)
 
 	if (orte_gpr_replica_globals.debug) {
 		ompi_output(0, "[%d,%d,%d] gpr_replica_cleanup_proc: function entered for process [%d,%d,%d]",
-					ORTE_NAME_ARGS(*(orte_process_info.my_name)), ORTE_NAME_ARGS(*proc));
+					ORTE_NAME_ARGS(orte_process_info.my_name), ORTE_NAME_ARGS(proc));
 	}
 	
     if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&procname, proc))) {

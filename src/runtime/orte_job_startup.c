@@ -47,7 +47,7 @@ int orte_job_startup(orte_jobid_t jobid)
 
     if (orte_debug_flag) {
         	ompi_output(0, "[%d,%d,%d] entered rte_job_startup for job %d",
-        		    ORTE_NAME_ARGS(*orte_process_info.my_name), (int)jobid);
+        		    ORTE_NAME_ARGS(orte_process_info.my_name), (int)jobid);
     }
 
     if (ORTE_SUCCESS != (rc = orte_gpr.get_startup_msg(jobid, &startup_msg, &num_procs, &procs))) {
@@ -63,7 +63,7 @@ int orte_job_startup(orte_jobid_t jobid)
 
     if (orte_debug_flag) {
          ompi_output(0, "[%d,%d,%d] rte_job_startup: completed xcast of startup message",
-                 ORTE_NAME_ARGS(*orte_process_info.my_name));
+                 ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     /* for each recipient, set process status to "running" */

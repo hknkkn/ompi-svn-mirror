@@ -99,7 +99,7 @@ int orte_gpr_replica_exec_compound_cmd(void)
     
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] Executing compound command",
-		    ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+		    ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.wait_for_compound_mutex);

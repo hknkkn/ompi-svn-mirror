@@ -248,7 +248,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
         cb->remote_idtag = ORTE_GPR_NOTIFY_ID_MAX;
         if (orte_gpr_replica_globals.debug) {
            ompi_output(0, "[%d,%d,%d] process_trig: queueing local message\n",
-                        ORTE_NAME_ARGS(*orte_process_info.my_name));
+                        ORTE_NAME_ARGS(orte_process_info.my_name));
         }
   
     } else {  /* remote request - queue remote callback */
@@ -261,7 +261,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
         cb->remote_idtag = trig->remote_idtag;
         if (orte_gpr_replica_globals.debug) {
             ompi_output(0, "[%d,%d,%d] process_trig: queueing message for [%d,%d,%d] with idtag %d using remoteid %d\n",
-                   ORTE_NAME_ARGS(*orte_process_info.my_name), ORTE_NAME_ARGS(*(cb->requestor)),
+                   ORTE_NAME_ARGS(orte_process_info.my_name), ORTE_NAME_ARGS(cb->requestor),
                     (int)cb->remote_idtag, (int)trig->remote_idtag);
         }
   
@@ -270,7 +270,7 @@ int orte_gpr_replica_register_callback(orte_gpr_replica_triggers_t *trig)
 
     if (orte_gpr_replica_globals.debug) {
         ompi_output(0, "[%d,%d,%d] gpr replica-process_trig: complete",
-            ORTE_NAME_ARGS(*orte_process_info.my_name));
+            ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     return ORTE_SUCCESS;
@@ -400,7 +400,7 @@ int orte_gpr_replica_check_synchros(orte_gpr_replica_segment_t *seg)
 
 		if (mca_gpr_replica_debug) {
 			ompi_output(0, "[%d,%d,%d] synchro fired on segment %s trigger level %d",
-						ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name, trig->trigger);
+						ORTE_NAME_ARGS(orte_process_info.my_name), seg->name, trig->trigger);
 		}
 	    notify_msg = mca_gpr_replica_construct_notify_message(seg, trig);
 	    notify_msg->trig_action = OMPI_REGISTRY_NOTIFY_NONE;
@@ -451,7 +451,7 @@ int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_t
 	    ((OMPI_REGISTRY_NOTIFY_ADD_SUBSCRIBER & trig->action) && (MCA_GPR_REPLICA_SUBSCRIBER_ADDED == action_taken))) {
 		if (mca_gpr_replica_debug) {
 			ompi_output(0, "[%d,%d,%d] trigger fired on segment %s",
-						ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
+						ORTE_NAME_ARGS(orte_process_info.my_name), seg->name);
 		}
 	    notify_msg = mca_gpr_replica_construct_notify_message(seg, trig);
 	    notify_msg->trig_action = trig->action;

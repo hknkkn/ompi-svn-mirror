@@ -73,7 +73,7 @@ orte_gpr_proxy_enter_notify_request(orte_gpr_notify_id_t *local_idtag,
     
     if (orte_gpr_proxy_globals.debug) {
         ompi_output(0, "[%d,%d,%d] enter_notify_request: tracker created for segment %s action %X idtag %d",
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), segment, flag->trig_action, idtag);
+                    ORTE_NAME_ARGS(orte_process_info.my_name), segment, flag->trig_action, idtag);
     }
     
     return ORTE_SUCCESS;

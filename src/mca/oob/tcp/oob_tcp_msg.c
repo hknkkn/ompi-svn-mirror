@@ -175,8 +175,8 @@ bool mca_oob_tcp_msg_send_handler(mca_oob_tcp_msg_t* msg, struct mca_oob_tcp_pee
                 return false;
             else {
                 ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_send_handler: writev failed with ompi_errno=%d", 
-                    ORTE_NAME_ARGS(*orte_process_info.my_name), 
-                    ORTE_NAME_ARGS(peer->peer_name), 
+                    ORTE_NAME_ARGS(orte_process_info.my_name), 
+                    ORTE_NAME_ARGS(&(peer->peer_name)), 
                     ompi_errno);
                 mca_oob_tcp_peer_close(peer);
                 return false;
@@ -221,8 +221,8 @@ bool mca_oob_tcp_msg_recv_handler(mca_oob_tcp_msg_t* msg, struct mca_oob_tcp_pee
              msg->msg_rwbuf = malloc(msg->msg_hdr.msg_size);
              if(NULL == msg->msg_rwbuf) {
                  ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_recv_handler: malloc(%d) failed\n", 
-                     ORTE_NAME_ARGS(*orte_process_info.my_name),
-                     ORTE_NAME_ARGS(peer->peer_name),
+                     ORTE_NAME_ARGS(orte_process_info.my_name),
+                     ORTE_NAME_ARGS(&(peer->peer_name)),
                      msg->msg_hdr.msg_size);
                  mca_oob_tcp_peer_close(peer);
                  return false;
@@ -265,8 +265,8 @@ static bool mca_oob_tcp_msg_recv(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* pee
                 return false;
             else {
                 ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_recv: readv failed with ompi_errno=%d", 
-                    ORTE_NAME_ARGS(*orte_process_info.my_name),
-                    ORTE_NAME_ARGS(peer->peer_name),
+                    ORTE_NAME_ARGS(orte_process_info.my_name),
+                    ORTE_NAME_ARGS(&(peer->peer_name)),
                     ompi_errno);
                 mca_oob_tcp_peer_close(peer);
                 return false;
@@ -274,8 +274,8 @@ static bool mca_oob_tcp_msg_recv(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* pee
         } else if (rc == 0)  {
             if(mca_oob_tcp_component.tcp_debug > 3) {
                 ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_msg_recv: peer closed connection", 
-                   ORTE_NAME_ARGS(*orte_process_info.my_name),
-                   ORTE_NAME_ARGS(peer->peer_name),
+                   ORTE_NAME_ARGS(orte_process_info.my_name),
+                   ORTE_NAME_ARGS(&(peer->peer_name)),
                    ompi_errno);
             }
             mca_oob_tcp_peer_close(peer);
@@ -317,7 +317,7 @@ void mca_oob_tcp_msg_recv_complete(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* p
             break;
         default:
             ompi_output(0, "[%d,%d,%d] mca_oob_tcp_msg_recv_complete: invalid message type: %d\n",
-                 ORTE_NAME_ARGS(*orte_process_info.my_name), msg->msg_hdr.msg_type);
+                 ORTE_NAME_ARGS(orte_process_info.my_name), msg->msg_hdr.msg_type);
             MCA_OOB_TCP_MSG_RETURN(msg);
             break;
     }

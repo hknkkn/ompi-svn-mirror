@@ -35,8 +35,8 @@ int mca_oob_tcp_ping(
 
     if(mca_oob_tcp_component.tcp_debug > 1) {
         ompi_output(0, "[%d,%d,%d]-[%d,%d,%d] mca_oob_tcp_ping: timout %d secs %d usecs\n",
-            ORTE_NAME_ARGS(*orte_process_info.my_name),
-            ORTE_NAME_ARGS(peer->peer_name),
+            ORTE_NAME_ARGS(orte_process_info.my_name),
+            ORTE_NAME_ARGS(&(peer->peer_name)),
             timeout->tv_sec, timeout->tv_usec);
     }
     if(NULL == peer)

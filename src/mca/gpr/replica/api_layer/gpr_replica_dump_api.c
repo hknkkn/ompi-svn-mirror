@@ -38,7 +38,7 @@ int orte_gpr_replica_dump(int output_id)
 
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr_replica_dump: entered for output on %d",
-		    ORTE_NAME_ARGS(*(orte_process_info.my_name)), output_id);
+		    ORTE_NAME_ARGS(orte_process_info.my_name), output_id);
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);

@@ -93,7 +93,7 @@ int orte_gpr_proxy_delete_entries(orte_gpr_addr_mode_t mode,
     int rc;
 
     if (orte_gpr_proxy_globals.debug) {
-	    ompi_output(0, "[%d,%d,%d] gpr_proxy_delete_object", ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+	    ompi_output(0, "[%d,%d,%d] gpr_proxy_delete_object", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     /* need to protect against errors */

@@ -43,7 +43,7 @@ int orte_gpr_replica_put(orte_gpr_addr_mode_t mode,
     if (NULL == values) {
         	if (orte_gpr_replica_globals.debug) {
         	    ompi_output(0, "[%d,%d,%d] gpr replica: error in input - put rejected",
-                                ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+                                ORTE_NAME_ARGS(orte_process_info.my_name));
         	}
         	return ORTE_ERROR;
     }

@@ -261,7 +261,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
 
     if (orte_gpr_proxy_globals.debug) {
 	ompi_output(0, "[%d,%d,%d] gpr proxy: received trigger message",
-				ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+				ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     message = OBJ_NEW(orte_gpr_notify_message_t);
@@ -270,7 +270,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+               ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         }
         goto RETURN_ERROR;
     }
@@ -278,7 +278,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
 	if (ORTE_GPR_NOTIFY_CMD != command) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: communication failure",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+               ORTE_NAME_ARGS(orte_process_info.my_name));
         }
 	   goto RETURN_ERROR;
     }
@@ -287,7 +287,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (0 > (rc = orte_dps.unpack(buffer, message->segment, &n, ORTE_STRING))) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+               ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         }
 	    goto RETURN_ERROR;
     }
@@ -296,7 +296,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &id_tag, &n, ORTE_GPR_NOTIFY_ID))) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+               ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         }
 	   goto RETURN_ERROR;
     }
@@ -305,7 +305,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->cnt), &n, ORTE_UINT32))) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+               ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         }
     goto RETURN_ERROR;
     }
@@ -314,7 +314,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (NULL == message->values) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: malloc failure",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+               ORTE_NAME_ARGS(orte_process_info.my_name));
         }
         goto RETURN_ERROR;
     }
@@ -322,7 +322,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, message->values, (size_t*)(&(message->cnt)), ORTE_GPR_VALUE))) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-               ORTE_NAME_ARGS((*orte_process_info.my_name)), rc);
+               ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         }
     goto RETURN_ERROR;
     }
@@ -331,7 +331,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->cmd), &n, ORTE_GPR_PACK_CMD))) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+               ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         }
     goto RETURN_ERROR;
     }
@@ -339,7 +339,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     if (ORTE_SUCCESS != (rc = orte_dps.peek(buffer, &type, &n))) {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+               ORTE_NAME_ARGS(orte_process_info.my_name), rc);
         }
            goto RETURN_ERROR;
     }
@@ -349,7 +349,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
         if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.trig_action), &n, ORTE_NOTIFY_ACTION))) {
             if (orte_gpr_proxy_globals.debug) {
                 ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+                   ORTE_NAME_ARGS(orte_process_info.my_name), rc);
             }
     	        goto RETURN_ERROR;
         }
@@ -357,7 +357,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
         if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.trig_synchro), &n, ORTE_SYNCHRO_MODE))) {
             if (orte_gpr_proxy_globals.debug) {
                 ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+                   ORTE_NAME_ARGS(orte_process_info.my_name), rc);
             }
     	        goto RETURN_ERROR;
         }
@@ -365,7 +365,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
         if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.exit_code), &n, ORTE_EXIT_CODE))) {
             if (orte_gpr_proxy_globals.debug) {
                 ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+                   ORTE_NAME_ARGS(orte_process_info.my_name), rc);
             }
             goto RETURN_ERROR;
         }
@@ -373,14 +373,14 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
         if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &(message->flag.cmd_return), &n, ORTE_INT32))) {
             if (orte_gpr_proxy_globals.debug) {
                 ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: failure %d",
-                   ORTE_NAME_ARGS(*(orte_process_info.my_name)), rc);
+                   ORTE_NAME_ARGS(orte_process_info.my_name), rc);
             }
             goto RETURN_ERROR;
         }
     } else {
         if (orte_gpr_proxy_globals.debug) {
             ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_recv: comm failure",
-               ORTE_NAME_ARGS(*(orte_process_info.my_name)));
+               ORTE_NAME_ARGS(orte_process_info.my_name));
         }
             goto RETURN_ERROR;
     }

@@ -43,7 +43,7 @@ int orte_gpr_proxy_put(orte_gpr_addr_mode_t mode,
 
     if (orte_gpr_proxy_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr_proxy_put: entered with %d values",
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), cnt);
+                    ORTE_NAME_ARGS(orte_process_info.my_name), cnt);
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {

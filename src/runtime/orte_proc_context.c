@@ -28,7 +28,7 @@
 #include "runtime/runtime.h"
 
 orte_context_value_names_t orte_proc_context_tbl[] = {
-    {{"seed", NULL, NULL}, "seed", 0, ORTE_INT, (void*)&(orte_process_info.seed), (void*)1},
+    {{"seed", NULL, NULL}, "seed", 0, ORTE_BOOL, (void*)&(orte_process_info.seed), (void*)true},
     {{"universe", "path", NULL}, "universe", 1, ORTE_STRING, (void*)&(orte_universe_info.path), NULL},
     {{"universe", "name", NULL}, NULL, 0, ORTE_STRING, (void*)&(orte_universe_info.name), "default-universe"},
     {{"universe", "host", NULL}, NULL, 0, ORTE_STRING, (void*)&(orte_universe_info.host), NULL},

@@ -30,6 +30,7 @@
 #include "mca/errmgr/errmgr.h"
 
 #include "util/cmd_line.h"
+#include "util/output.h"
 
 #include "runtime/orte_context_value_tbl.h"
 #include "runtime/runtime.h"
@@ -59,14 +60,14 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
          */
         if (NULL != cmd_line && NULL != context_tbl[i].cmd_line_name &&
             ompi_cmd_line_is_taken(cmd_line, context_tbl[i].cmd_line_name)) {
-
-            if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, 0, 0))) {
-                ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
-                return ORTE_ERR_BAD_PARAM;
-            }
+ompi_output(0, "parse_ctx: cmd line option %s is taken", context_tbl[i].cmd_line_name);
             
             switch (context_tbl[i].type) {
                 case ORTE_STRING:
+                    if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, 0, 0))) {
+                        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                        return ORTE_ERR_BAD_PARAM;
+                    }
                     context_tbl[i].dest = strdup(tmp);
                     if (NULL == context_tbl[i].dest) {
                         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
@@ -75,9 +76,17 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                     break;
                 
                 case ORTE_INT:
+                    if (NULL == (tmp = ompi_cmd_line_get_param(cmd_line, context_tbl[i].cmd_line_name, 0, 0))) {
+                        ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
+                        return ORTE_ERR_BAD_PARAM;
+                    }
                     *((int*)context_tbl[i].dest) = (int)strtoul(tmp, NULL, 0);
                     break;
             
+                case ORTE_BOOL:
+                    *((bool*)context_tbl[i].dest) = (bool)context_tbl[i].def;
+                    break;
+                    
                 default:
                     ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
                     return ORTE_ERR_BAD_PARAM;
@@ -107,6 +116,7 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                     break;
                 
                 case ORTE_INT:
+                case ORTE_BOOL:
                     if (0 > (id = mca_base_param_register_int(context_tbl[i].name.prime,
                                                 context_tbl[i].name.second,
                                                 context_tbl[i].name.third,
@@ -120,7 +130,7 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                         return rc;
                     }
                     break;
-                
+
                 default:
                     ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
                     return ORTE_ERR_BAD_PARAM;

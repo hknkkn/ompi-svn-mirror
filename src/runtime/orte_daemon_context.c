@@ -29,10 +29,10 @@
 
 orte_context_value_names_t orte_daemon_context_tbl[] = {
     {{"universe", "scope", NULL}, "scope", 1, ORTE_STRING, (void*)&(orte_universe_info.scope), "exclusive"},
-    {{"universe", "persistence", NULL}, "persistent", 0, ORTE_INT, (void*)&(orte_universe_info.persistence), (void*)1},
-    {{"universe", "console", NULL}, "console", 0, ORTE_INT, (void*)&(orte_universe_info.console), (void*)1},
+    {{"universe", "persistence", NULL}, "persistent", 0, ORTE_BOOL, (void*)&(orte_universe_info.persistence), (void*)false},
+    {{"universe", "console", NULL}, "console", 0, ORTE_BOOL, (void*)&(orte_universe_info.console), (void*)false},
     {{"universe", "script", NULL}, "script", 1, ORTE_STRING, (void*)&(orte_universe_info.scriptfile), NULL},
-    {{"bootproxy", NULL, NULL}, "bootproxy", 0, ORTE_INT, (void*)&(orte_universe_info.bootproxy), (void*)1},
+    {{"bootproxy", NULL, NULL}, "bootproxy", 0, ORTE_BOOL, (void*)&(orte_universe_info.bootproxy), (void*)false},
     {{NULL, NULL, NULL}, NULL, ORTE_NULL, NULL} /* SIGNIFIES END OF ARRAY */
 };
 

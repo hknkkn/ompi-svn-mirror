@@ -43,7 +43,7 @@ void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
 
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr replica: received message from [%d,%d,%d]",
-			    ORTE_NAME_ARGS(*(orte_process_info.my_name)), ORTE_NAME_ARGS(*sender));
+			    ORTE_NAME_ARGS(orte_process_info.my_name), ORTE_NAME_ARGS(sender));
     }
 
     if (ORTE_SUCCESS == orte_gpr_replica_process_command_buffer(buffer, sender, &answer)) {

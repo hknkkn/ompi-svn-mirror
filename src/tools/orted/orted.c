@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
     }
 
    /* check for debug flag */
-    if (0 > (ret = mca_base_param_register_int("daemon","debug", NULL, NULL, 1))) {
+    if (0 > (ret = mca_base_param_register_int("daemon","debug", NULL, NULL, false))) {
         ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
         return ORTE_ERR_BAD_PARAM;
     }
@@ -117,6 +117,10 @@ int main(int argc, char *argv[])
         ORTE_ERROR_LOG(ret);
         return ret;
     }
+
+    /* set debug flag for now */
+    orted_globals.debug = true;
+fprintf(stderr, "daemon debug %d\n", (int)orted_globals.debug);
     
     /* check to see if I'm a bootproxy */
     if (orte_universe_info.bootproxy) { /* go fork/exec somebody and die */
@@ -146,7 +150,7 @@ int main(int argc, char *argv[])
      
     if (!orte_process_info.seed) { /* if I'm not the seed... */
         /* start recording the compound command that starts us up */
-       orte_gpr.begin_compound_cmd();
+       /* orte_gpr.begin_compound_cmd(); */
     }
 
     /*
@@ -197,16 +201,16 @@ int main(int argc, char *argv[])
 
 	    if (OMPI_SUCCESS != (ret = orte_write_universe_setup_file(contact_file))) {
 	        if (orted_globals.debug) {
-		        ompi_output(0, "[%d,%d,%d] ompid: couldn't write setup file", ORTE_NAME_ARGS(*orte_process_info.my_name));
+		        ompi_output(0, "[%d,%d,%d] ompid: couldn't write setup file", ORTE_NAME_ARGS(orte_process_info.my_name));
 	        }
 	    } else if (orted_globals.debug) {
-	        ompi_output(0, "[%d,%d,%d] ompid: wrote setup file", ORTE_NAME_ARGS(*orte_process_info.my_name));
+	        ompi_output(0, "[%d,%d,%d] ompid: wrote setup file", ORTE_NAME_ARGS(orte_process_info.my_name));
 	    }
     }
 
 
     if (orted_globals.debug) {
-	    ompi_output(0, "[%d,%d,%d] ompid: issuing callback", ORTE_NAME_ARGS(*orte_process_info.my_name));
+	    ompi_output(0, "[%d,%d,%d] ompid: issuing callback", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
      /* register the daemon main callback function */
@@ -221,7 +225,7 @@ int main(int argc, char *argv[])
      */
 
     if (orted_globals.debug) {
-	    ompi_output(0, "[%d,%d,%d] ompid: setting up event monitor", ORTE_NAME_ARGS(*orte_process_info.my_name));
+	    ompi_output(0, "[%d,%d,%d] ompid: setting up event monitor", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
      /* setup and enter the event monitor */
@@ -234,7 +238,7 @@ int main(int argc, char *argv[])
     OMPI_THREAD_UNLOCK(&orted_globals.mutex);
 
     if (orted_globals.debug) {
-	   ompi_output(0, "[%d,%d,%d] ompid: mutex cleared - finalizing", ORTE_NAME_ARGS(*orte_process_info.my_name));
+	   ompi_output(0, "[%d,%d,%d] ompid: mutex cleared - finalizing", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     /* if i'm the seed, remove the universe-setup file */
@@ -247,7 +251,7 @@ int main(int argc, char *argv[])
     orte_finalize();
 
     if (orted_globals.debug) {
-	   ompi_output(0, "[%d,%d,%d] ompid: done - exiting", ORTE_NAME_ARGS(*orte_process_info.my_name));
+	   ompi_output(0, "[%d,%d,%d] ompid: done - exiting", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     exit(0);
@@ -266,7 +270,7 @@ static void orte_daemon_recv(int status, orte_process_name_t* sender,
     OMPI_THREAD_LOCK(&orted_globals.mutex);
 
     if (orted_globals.debug) {
-	   ompi_output(0, "[%d,%d,%d] ompid: received message", ORTE_NAME_ARGS(*orte_process_info.my_name));
+	   ompi_output(0, "[%d,%d,%d] ompid: received message", ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     answer = OBJ_NEW(orte_buffer_t);

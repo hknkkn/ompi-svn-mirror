@@ -42,7 +42,7 @@ int orte_gpr_proxy_notify_off(orte_gpr_notify_id_t sub_number)
     
     if (orte_gpr_proxy_globals.debug) {
 	    ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_off entered for sub_number %X", 
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), sub_number);
+                    ORTE_NAME_ARGS(orte_process_info.my_name), sub_number);
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
@@ -87,7 +87,7 @@ int orte_gpr_proxy_notify_on(orte_gpr_notify_id_t sub_number)
 
     if (orte_gpr_proxy_globals.debug) {
         ompi_output(0, "[%d,%d,%d] gpr_proxy_notify_on entered for sub_number %X", 
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), sub_number);
+                    ORTE_NAME_ARGS(orte_process_info.my_name), sub_number);
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
@@ -132,7 +132,7 @@ int orte_gpr_proxy_triggers_active(orte_jobid_t jobid)
 
     if (orte_gpr_proxy_globals.debug) {
         ompi_output(0, "[%d,%d,%d] gpr_proxy_triggers_active entered for job %d", 
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), jobid);
+                    ORTE_NAME_ARGS(orte_process_info.my_name), jobid);
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {
@@ -176,7 +176,7 @@ int orte_gpr_proxy_triggers_inactive(orte_jobid_t jobid)
 
     if (orte_gpr_proxy_globals.debug) {
         ompi_output(0, "[%d,%d,%d] gpr_proxy_triggers_inactive entered for job %d", 
-                    ORTE_NAME_ARGS(*(orte_process_info.my_name)), jobid);
+                    ORTE_NAME_ARGS(orte_process_info.my_name), jobid);
     }
 
     if (orte_gpr_proxy_globals.compound_cmd_mode) {

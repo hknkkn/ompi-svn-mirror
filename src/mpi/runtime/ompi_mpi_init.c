@@ -299,7 +299,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
 
     if (orte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] process startup message received",
-		    ORTE_NAME_ARGS(*orte_process_info.my_name));
+		    ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     /* add all ompi_proc_t's to PML */
@@ -379,7 +379,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
 
     if (orte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] ompi_mpi_init completed",
-		    ORTE_NAME_ARGS(*orte_process_info.my_name));
+		    ORTE_NAME_ARGS(orte_process_info.my_name));
     }
 
     return MPI_SUCCESS;

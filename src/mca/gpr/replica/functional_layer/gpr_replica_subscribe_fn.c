@@ -40,7 +40,7 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_addr_mode_t addr_mode,
 
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr replica: subscribe entered: segment %s",
-		    ORTE_NAME_ARGS(*orte_process_info.my_name), seg->name);
+		    ORTE_NAME_ARGS(orte_process_info.my_name), seg->name);
     }
 
     trig = (orte_gpr_replica_triggers_t*)((orte_gpr_replica.triggers)->addr[local_idtag]);
@@ -78,7 +78,7 @@ int orte_gpr_replica_unsubscribe_fn(orte_gpr_notify_id_t sub_number)
 
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr replica: unsubscribe entered for sub number %d",
-		    ORTE_NAME_ARGS(*orte_process_info.my_name), sub_number);
+		    ORTE_NAME_ARGS(orte_process_info.my_name), sub_number);
     }
 
     /* release trigger on replica and remove it */
