@@ -34,6 +34,8 @@ libmca_rdas_base_la_SOURCES = \
 	rdas_base_open.c \
 	rdas_base_parse_hostfile.c \
 	rdas_base_parse_hostfile_lex.l \
+	rdas_base_parse_resource_file.c \
+	rdas_base_parse_resource_file_lex.l \
 	rdas_base_select.c
 
 # Conditionally install the header files

@@ -30,6 +30,15 @@
 #include "class/ompi_list.h"
 
 /*
+ * Define mapper algorithm options
+ */
+ typedef uint8_t mca_pls_base_mapper_t;
+ 
+ #define ORTE_PROCESS_MAPPER_ROUND_ROBIN    (mca_pls_base_mapper_t)  1
+ #define ORTE_PROCESS_MAPPER_SINGLE_VALUE   (mca_pls_base_mapper_t)  2
+ 
+ 
+/*
  * MCA component management functions
  */
 

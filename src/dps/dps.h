@@ -22,11 +22,10 @@
  *
  */
 
-#ifndef MCA_DPS_H
-#define MCA_DPS_H
+#ifndef ORTE_DPS_H_
+#define ORTE_DPS_H_
 
 #include "ompi_config.h"
-#include "mca/mca.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -79,106 +78,52 @@ typedef struct orte_buffer_t {
 /* formalise the declaration */
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION (orte_buffer_t);
 
-/*
- * MCA component management functions
- */
-
-/**
- * DPS initialization function
- *
- * Called by the MCA framework to initialize the component.  Will
- * be called exactly once in the lifetime of the process.
- *
- * @param have_threads (IN) Whether the current running process is
- *                       multi-threaded or not.  true means there
- *                       may be concurrent access into the
- *                       underlying components *and* that the
- *                       components may launch new threads.
- * @param priority (OUT) Relative priority or ranking use by MCA to
- *                       select a module.
- *
- */
-typedef struct mca_dps_base_module_1_0_0_t* 
-(*mca_rdas_base_component_init_fn_t)(bool have_threads,
-                                    int *priority);
-
-
-/** 
- * DPS module version and interface functions
- *
- * \note the first two entries have type names that are a bit
- *  misleading.  The plan is to rename the mca_base_module_*
- * types in the future.
- */
-struct mca_dps_base_component_1_0_0_t {
-  /** component version */
-  mca_base_component_t dps_version;
-  /** component data */
-  mca_base_component_data_1_0_0_t dps_data;
-  /** Function called when component is initialized  */
-  mca_dps_base_component_init_fn_t dps_init;
-};
-/** shorten mca_dps_base_component_1_0_0_t declaration */
-typedef struct mca_dps_base_component_1_0_0_t mca_dps_base_component_1_0_0_t;
-/** shorten mca_dps_base_component_t declaration */
-typedef mca_dps_base_component_1_0_0_t mca_dps_base_component_t;
-
 
 /*
  * DPS interface functions
  */
 
-typedef int (*mca_dps_base_pack_value_fn_t)(void *dest, void *src,
+typedef int (*orte_dps_base_pack_value_fn_t)(void *dest, void *src,
                                             orte_pack_type_t type,
                                             int num_values);
 
-typedef int (*mca_dps_base_unpack_value_fn_t)(void *dest, void *src,
+typedef int (*orte_dps_base_unpack_value_fn_t)(void *dest, void *src,
                                               orte_pack_type_t type,
                                               int num_values);
 
-typedef int (*mca_dps_base_pack_object_fn_t)(void *dest, void *src,
+typedef int (*orte_dps_base_pack_object_fn_t)(void *dest, void *src,
                                              orte_pack_type_t *types);
 
-typedef int (*mca_dps_base_unpack_object_fn_t)(void *dest, void *src,
+typedef int (*orte_dps_base_unpack_object_fn_t)(void *dest, void *src,
                                              orte_pack_type_t *types);
 
-typedef int (*mca_dps_base_pack_buffer_fn_t)(orte_buffer_t *buffer, void *src,
+typedef int (*orte_dps_base_pack_buffer_fn_t)(orte_buffer_t *buffer, void *src,
                                              orte_pack_type_t type, int num_values);
 
-typedef int (*mca_dps_base_unpack_buffer_fn_t)(orte_buffer_t *buffer, void *src,
+typedef int (*orte_dps_base_unpack_buffer_fn_t)(orte_buffer_t *buffer, void *src,
                                                orte_pack_type_t, int num_values);
 
-typedef int (*mca_dps_base_init_buffer_fn_t)(orte_buffer_t **buffer, int size);
+typedef int (*orte_dps_base_init_buffer_fn_t)(orte_buffer_t **buffer, int size);
 
 
 /**
- * Base module structure for the DPS
+ * Base structure for the DPS
  *
  * Base module structure for the DPS - presents the required function
  * pointers to the calling interface. 
  */
-struct mca_dps_base_module_1_0_0_t {
-    mca_dps_base_pack_value_fn_t pack_value;
-    mca_dps_base_unpack_value_fn_t unpack_value;
-    mca_dps_base_pack_object_fn_t pack_object;
-    mca_dps_base_unpack_object_fn_t unpack_object;
-    mca_dps_base_pack_buffer_fn_t pack_buffer;
-    mca_dps_base_unpack_buffer_fn_t unpack_buffer;
-    mca_dps_base_init_buffer_fn_t init_buffer;
+struct orte_dps_t {
+    orte_dps_base_pack_value_fn_t pack_value;
+    orte_dps_base_unpack_value_fn_t unpack_value;
+    orte_dps_base_pack_object_fn_t pack_object;
+    orte_dps_base_unpack_object_fn_t unpack_object;
+    orte_dps_base_pack_buffer_fn_t pack_buffer;
+    orte_dps_base_unpack_buffer_fn_t unpack_buffer;
+    orte_dps_base_init_buffer_fn_t init_buffer;
 };
-/** shorten mca_dps_base_module_1_0_0_t declaration */
-typedef struct mca_dps_base_module_1_0_0_t mca_dps_base_module_1_0_0_t;
-/** shorten mca_dps_base_module_t declaration */
-typedef struct mca_dps_base_module_1_0_0_t mca_dps_base_module_t;
+typedef struct orte_dps_t orte_dps_t;
 
+OMPI_DECLSPEC extern int mca_dps_base_output;
+OMPI_DECLSPEC extern orte_dps_t orte_dps;  /* holds dps function pointers */
 
-/**
- * Macro for use in modules that are of type dps v1.0.0
- */
-#define MCA_DPS_BASE_VERSION_1_0_0 \
-  /* dps v1.0 is chained to MCA v1.0 */ \
-  MCA_BASE_VERSION_1_0_0, \
-  /* dps v1.0 */ \
-  "dps", 1, 0, 0
-
-#endif /* MCA_DPS_H */
+#endif /* ORTE_DPS_H */

@@ -22,8 +22,13 @@
  *
  */
 
-#ifndef MCA_RDAS_H
-#define MCA_RDAS_H
+#ifndef MCA_RDAS_H_
+#define MCA_RDAS_H_
+
+/* Define the RDAS segment "headers" for the registry
+ */
+#define ORTE_RESOURCE_SEGMENT   "orte-resources"  /* only one of these */
+#define ORTE_ALLOCATION_SEGMENT "orte-allocated"  /* one for each environment */
 
 #include "ompi_config.h"
 #include "mca/mca.h"
@@ -33,6 +38,66 @@
  * MCA component management functions
  */
 
+/*
+ * Define the RDAS data structures
+ */
+ 
+/* 
+ * Discovered resources - structure for data stored on registry
+ */
+struct orte_rdas_resources_t {
+    ompi_object_t object;
+    mca_ns_base_cellid_t cellid;
+    char *cell_name;
+    int32_t num_node_types;
+    ompi_list_t *node_types;
+};
+typedef struct orte_rdas_resources_t orte_rdas_resources_t;
+OBJ_CLASS_DECLARATION(orte_rdas_resources_t);
+
+struct orte_rdas_node_type_t {
+    ompi_list_item_t item;
+    char *node_type_name;
+    char *arch;
+    int32_t num_nodes;
+    int16_t num_cpus;
+    int32_t mem_size_mbytes;
+    int32_t max_proc_slots;
+    char *os;
+    char *scheduler;
+    char *launcher;
+};
+typedef struct orte_rdas_node_type_t orte_rdas_node_type_t;
+OBJ_CLASS_DECLARATION(orte_rdas_node_type_t);
+
+
+/*
+ * Allocated resources - key-value pairs
+ */
+struct orte_rdas_key_value_t {
+    char *key;
+    char *value;
+};
+typedef struct orte_rdas_key_value_t orte_rdas_key_value_t;
+
+/*
+ * Allocated resources - detailed structure for data stored on registry will
+ * depend upon the specific component that stored it. Each component will provide
+ * several specific pieces of common info, but the rest will be stored as key-value
+ * pairs in a data block. A function is provided below for parsing key-value pairs to
+ * retrieve a value, if present.
+ */
+struct orte_rdas_allocated_resource_t {
+    ompi_list_item_t item;
+    mca_ns_base_jobid_t jobid;      /* jobid for which this allocation was made */
+    mca_ns_base_cellid_t cellid;    /* id of the cell holding these nodes */
+    int32_t num_nodes;              /* #nodes in this allocation */
+    int32_t allocated_proc_slots;   /* #process slots in this allocation */
+    void *data;                     /* storage for key-value pairs */
+};
+typedef struct orte_rdas_allocated_resource_t orte_rdas_allocated_resource;
+OBJ_CLASS_DECLARATION(orte_rdas_allocated_resource_t);
+    
 /**
  * RDAS initialization function
  *
@@ -150,7 +215,7 @@ typedef int
 
 /**
  * Set allocation as specified
- * 
+ * Provide list of orte_rdas_allocated_resource_t that describe the allocation.
  */
 typedef int
 (*mca_rdas_base_set_allocation_fn_t)(mca_ns_base_jobid_t jobid,
@@ -163,11 +228,21 @@ typedef int
  * 
  * @param jobid (IN) The jobid for which the information is requested
  * 
- * @retval node_list (OUT) An ompi_list of node structures that details
+ * @retval alloc_list (OUT) An ompi_list of orte_rdas_allocated_resource_t that details
  * the allocation.
  */
 typedef ompi_list_t*
 (*mca_rdas_base_get_allocation_fn_t)(mca_ns_base_jobid_t jobid);
+
+
+/**
+ * Get information out of an allocator data block.
+ * Since each allocator will want to store its own version of information, we
+ * need to provide a function call that allows another function (e.g., the mapper)
+ * to retrieve the info they require.
+ */
+typedef char*
+(*mca_rdas_base_get_key_value_fn_t)(ompi_registry_value_t *value, char *key);
 
 /**
  * Get allocation specifications from command line and/or environment
@@ -221,6 +296,8 @@ struct mca_rdas_base_module_1_0_0_t {
     mca_rdas_base_get_allocation_fn_t get_resource_allocation;
     /** Function to be called on resource return */ 
     mca_rdas_base_deallocate_resources_fn_t deallocate_resources;
+    /** Function to be called to get key-value from allocated structure */
+    mca_rdas_base_get_key_value_fn_t get_key_value;
     /** Function called when component is finalized */
     mca_rdas_base_finalize_fn_t rdas_finalize;
 };

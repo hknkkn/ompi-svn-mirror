@@ -23,7 +23,6 @@
 #include "include/constants.h"
 #include "class/ompi_pointer_array.h"
 #include "class/ompi_list.h"
-#include "mca/pcm/pcm.h"
 #include "mca/pml/pml.h"
 #include "mca/coll/coll.h"
 #include "mca/coll/base/base.h"
