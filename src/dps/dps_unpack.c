@@ -156,6 +156,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_byte_object_t* dbyteptr;
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
+	orte_app_context_t **app_context;
     uint32_t len;
     char *str, *sstr;
     void *sptr;
@@ -435,54 +436,80 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
             return ORTE_SUCCESS;
             break;
             
-#if 0
         case ORTE_APP_CONTEXT:
             
             /* unpack into array of app_context objects */
-            app_context = (orte_rmgr_app_context_t**) dst;
+            app_context = (orte_app_context_t**) dst;
             for (i=0; i < num_vals; i++) {
+
                 /* create the app_context object */
-                app_context[i] = OBJ_NEW(orte_rmgr_app_context_t);
+                app_context[i] = OBJ_NEW(orte_app_context_t);
                 if (NULL == app_context[i]) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
-                /* get the number of argv strings */
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->argc),
-                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+
+                /* unpack the application name */
+				n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->app),
+                            src, 1, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
+                /* get the number of processes */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_procs),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
+                /* get the number of argv strings */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->argc),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
                 /* allocate the required space for the char * pointers */
                 app_context[i]->argv = (char **)malloc(app_context[i]->argc * sizeof(char*));
                 if (NULL == app_context[i]->argv) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
+
                 /* unpack the argv strings */
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->argv,
-                            src, app_context[i]->argc, ORTE_STRING, mem_left, num_bytes))) {
+                            src, app_context[i]->argc, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
-                /* get the number of enviro strings */
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_enviro),
-                            src, 1, ORTE_INT32, mem_left, num_bytes))) {
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
+                /* get the number of env strings */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_env),
+                            src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
+
                 /* allocate the required space for the char * pointers */
-                app_context[i]->enviro = (char **)malloc(app_context[i]->num_enviro * sizeof(char*));
-                if (NULL == app_context[i]->enviro) {
+                app_context[i]->env = (char **)malloc(app_context[i]->num_env * sizeof(char*));
+                if (NULL == app_context[i]->env) {
                     return ORTE_ERR_OUT_OF_RESOURCE;
                 }
-                /* unpack the enviro strings */
-                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->enviro,
-                            src, app_context[i]->num_enviro, ORTE_STRING, mem_left, num_bytes))) {
+
+                /* unpack the env strings */
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->env,
+                            src, app_context[i]->num_env, ORTE_STRING, mem_left, &n))) {
                     return rc;
                 }
-                src = (void*)((char*)src + *num_bytes);
+                src = (void*)((char*)src + n);
+				*num_bytes+=n;
             }
             break;
-#endif
 
         case ORTE_NULL:
             break;
