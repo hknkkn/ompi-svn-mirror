@@ -17,7 +17,7 @@
 
 #include "mca/ras/base/base.h"
 #include "mca/ras/base/ras_base_node.h"
-#include "ras_proxy.h"
+#include "ras_host.h"
 
 
 
@@ -27,28 +27,44 @@
  *  
  */
 
-static int orte_ras_proxy_allocate(orte_jobid_t jobid)
+static int orte_ras_host_allocate(orte_jobid_t jobid)
+{
+    ompi_list_t nodes;
+    ompi_list_item_t* item;
+    int rc;
+
+    OBJ_CONSTRUCT(&nodes, ompi_list_t);
+    if(ORTE_SUCCESS != (rc = orte_ras_base_node_query(&nodes))) {
+        goto cleanup;
+    }
+    if(ORTE_SUCCESS != (rc = orte_ras_base_allocate_nodes(jobid, &nodes))) {
+        goto cleanup;
+    }
+
+cleanup:
+    while(NULL != (item = ompi_list_remove_first(&nodes))) {
+        OBJ_RELEASE(item);
+    }
+    OBJ_DESTRUCT(&nodes);
+    return rc;
+}
+
+
+static int orte_ras_host_deallocate(orte_jobid_t jobid)
 {
     return ORTE_SUCCESS;
 }
 
 
-
-static int orte_ras_proxy_deallocate(orte_jobid_t jobid)
+static int orte_ras_host_finalize(void)
 {
     return ORTE_SUCCESS;
 }
 
 
-static int orte_ras_proxy_finalize(void)
-{
-    return ORTE_SUCCESS;
-}
-
-
-orte_ras_base_module_t orte_ras_proxy_module = {
-    orte_ras_proxy_allocate,
-    orte_ras_proxy_deallocate,
-    orte_ras_proxy_finalize
+orte_ras_base_module_t orte_ras_host_module = {
+    orte_ras_host_allocate,
+    orte_ras_host_deallocate,
+    orte_ras_host_finalize
 };
 

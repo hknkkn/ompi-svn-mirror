@@ -205,7 +205,7 @@ typedef orte_ras_base_module_1_0_0_t orte_ras_base_module_t;
 /**
  * Component init / selection
  */
-typedef orte_ras_base_module_t* (*orte_ras_base_component_init_fn_t)(void);
+typedef orte_ras_base_module_t* (*orte_ras_base_component_init_fn_t)(int* priority);
 
  
 /**

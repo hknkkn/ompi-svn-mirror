@@ -21,56 +21,77 @@
 
 #include "mca/ras/base/base.h"
 
-/**
- * Struct for tracking selected modules.
- */
 
-OBJ_CLASS_INSTANCE(
-    orte_ras_base_selected_t,
-    ompi_list_item_t,
-    NULL,
-    NULL);
-
-/**
- * Function to select all available components.
+/*
+ * Local functions
  */
-int orte_ras_base_select(void)
+static orte_ras_base_module_t *select_preferred(const char *name);
+static orte_ras_base_module_t *select_any(void);
+
+/*
+ * Function for selecting one component from all those that are
+ * available.
+ */
+orte_ras_base_module_t* orte_ras_base_select(const char *preferred)
+{
+    if (NULL != preferred) {
+        return select_preferred(preferred);
+    } else {
+        return select_any();
+    }
+}
+
+static orte_ras_base_module_t *select_preferred(const char *name)
 {
     ompi_list_item_t *item;
-    mca_base_component_list_item_t *cli;
-    orte_ras_base_component_t *component;
-    orte_ras_base_module_t *module;
+    orte_ras_base_cmp_t *cmp;
 
-    /* Iterate through all the available components */
+    /* Look for a matching selected name */
 
-    for (item = ompi_list_get_first(&orte_ras_base.ras_components);
-         item != ompi_list_get_end(&orte_ras_base.ras_components);
+    ompi_output(orte_ras_base.ras_output,
+                "orte:base:select: looking for component %s", name);
+    for (item = ompi_list_get_first(&orte_ras_base.ras_available);
+         item != ompi_list_get_end(&orte_ras_base.ras_available);
          item = ompi_list_get_next(item)) {
-        cli = (mca_base_component_list_item_t *) item;
-        component = (orte_ras_base_component_t *) cli->cli_component;
+        cmp = (orte_ras_base_cmp_t *) item;
 
-        /* Call the component's init function and see if it wants to
-           be selected */
-
-        module = component->ras_init();
-
-        /* If we got a non-NULL module back, then the component wants
-           to be selected */
-
-        if (NULL != module) {
-            orte_ras_base_selected_t* selected = OBJ_NEW(orte_ras_base_selected_t);
-            selected->module = module;
-            selected->component = component;
-            ompi_list_append(&orte_ras_base.ras_selected, &selected->super);
-        } 
+        if (0 == strcmp(name,
+                        cmp->component->ras_version.mca_component_name)) {
+            ompi_output(orte_ras_base.ras_output,
+                        "orte:base:select: found module for compoent %s", name);
+            return cmp->module;
+        }
     }
 
-    if (ompi_list_is_empty(&orte_ras_base.ras_selected)) {
-        ompi_output(orte_ras_base.ras_output, 
-                    "ras:select: no components available!");
-        return ORTE_ERROR;
+    /* Didn't find a matching name */
+
+    ompi_output(orte_ras_base.ras_output,
+                "orte:base:select: did not find module for compoent %s", name);
+    return NULL;
+}
+
+                                                                                                                             
+static orte_ras_base_module_t *select_any(void)
+{
+    ompi_list_item_t *item;
+    orte_ras_base_cmp_t *cmp;
+
+    /* If the list is empty, return NULL */
+
+    if (ompi_list_is_empty(&orte_ras_base.ras_available)) {
+        ompi_output(orte_ras_base.ras_output,
+                    "orte:base:select: no components available!");
+        return NULL;
     }
 
-    return ORTE_SUCCESS;
+    /* Otherwise, return the first item (it's already sorted in
+       priority order) */
+
+    item = ompi_list_get_first(&orte_ras_base.ras_available);
+    cmp = (orte_ras_base_cmp_t *) item;
+    ompi_output(orte_ras_base.ras_output,
+                "orte:base:select: highest priority component: %s",
+                cmp->component->ras_version.mca_component_name);
+    return cmp->module;
 }
 

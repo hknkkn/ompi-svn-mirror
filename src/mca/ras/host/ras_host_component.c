@@ -18,18 +18,18 @@
 #include "mca/base/mca_base_param.h"
 #include "util/proc_info.h"
 #include "util/output.h"
-#include "ras_proxy.h"
+#include "ras_host.h"
 
 /*
  * Local functions
  */
 
-static int orte_ras_proxy_open(void);
-static int orte_ras_proxy_close(void);
-static orte_ras_base_module_t* orte_ras_proxy_init(void);
+static int orte_ras_host_open(void);
+static int orte_ras_host_close(void);
+static orte_ras_base_module_t* orte_ras_host_init(void);
 
 
-orte_ras_proxy_component_t mca_ras_proxy_component = {
+orte_ras_host_component_t mca_ras_host_component = {
     {
       /* First, the mca_base_component_t struct containing meta
          information about the component itself */
@@ -40,12 +40,12 @@ orte_ras_proxy_component_t mca_ras_proxy_component = {
 
         ORTE_RAS_BASE_VERSION_1_0_0,
 
-        "proxy", /* MCA component name */
+        "host", /* MCA component name */
         1,  /* MCA component major version */
         0,  /* MCA component minor version */
         0,  /* MCA component release version */
-        orte_ras_proxy_open,  /* component open  */
-        orte_ras_proxy_close  /* component close */
+        orte_ras_host_open,  /* component open  */
+        orte_ras_host_close  /* component close */
       },
 
       /* Next the MCA v1.0.0 component meta data */
@@ -54,7 +54,7 @@ orte_ras_proxy_component_t mca_ras_proxy_component = {
         false
       },
 
-      orte_ras_proxy_init
+      orte_ras_host_init
     }
 };
 
@@ -63,23 +63,23 @@ orte_ras_proxy_component_t mca_ras_proxy_component = {
  *  Convenience functions to lookup MCA parameter values.
  */
 
-static int orte_ras_proxy_param_register_int(
+static int orte_ras_host_param_register_int(
     const char* param_name,
     int default_value)
 {
-    int id = mca_base_param_register_int("ras","proxy",param_name,NULL,default_value);
+    int id = mca_base_param_register_int("ras","host",param_name,NULL,default_value);
     int param_value = default_value;
     mca_base_param_lookup_int(id,&param_value);
     return param_value;
 }
 
 
-static char* orte_ras_proxy_param_register_string(
+static char* orte_ras_host_param_register_string(
     const char* param_name,
     const char* default_value)
 {
     char *param_value;
-    int id = mca_base_param_register_string("ras","proxy",param_name,NULL,default_value);
+    int id = mca_base_param_register_string("ras","host",param_name,NULL,default_value);
     mca_base_param_lookup_string(id, &param_value);
     return param_value;
 }
@@ -88,24 +88,24 @@ static char* orte_ras_proxy_param_register_string(
 /**
   * component open/close/init function
   */
-static int orte_ras_proxy_open(void)
+static int orte_ras_host_open(void)
 {
-    mca_ras_proxy_component.debug = orte_ras_proxy_param_register_int("debug",1);
+    mca_ras_host_component.debug = orte_ras_host_param_register_int("debug",1);
     return ORTE_SUCCESS;
 }
 
 
-static orte_ras_base_module_t *orte_ras_proxy_init(void)
+static orte_ras_base_module_t *orte_ras_host_init(void)
 {
     /* we are ALWAYS available */
-    return &orte_ras_proxy_module;
+    return &orte_ras_host_module;
 }
 
 /**
  *  Close all subsystems.
  */
 
-static int orte_ras_proxy_close(void)
+static int orte_ras_host_close(void)
 {
     return ORTE_SUCCESS;
 }

@@ -120,15 +120,15 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
     }
 
     /**
-     * Select RAS components.
+     * Select RAS component
      */
-    if (ORTE_SUCCESS != (rc = orte_ras_base_select())) {
-        ORTE_ERROR_LOG(rc);
+    if (NULL == (mca_rmgr_urm_component.urm_ras = orte_ras_base_select(NULL))) {
+        ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
         return NULL;
     }
 
     /**
-     * Select RMAPS components.
+     * Select RMAPS component
      */
     if (NULL == (mca_rmgr_urm_component.urm_rmaps = orte_rmaps_base_select(NULL))) {
         ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
@@ -136,7 +136,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
     }
 
     /**
-     * Select PLS components.
+     * Select PLS component
      */
     if (NULL == (mca_rmgr_urm_component.urm_pls = orte_pls_base_select(NULL))) {
         ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);

@@ -34,6 +34,12 @@ static int orte_rmgr_urm_create(
     size_t num_context,
     orte_jobid_t* jobid);
 
+static int orte_rmgr_urm_allocate(
+    orte_jobid_t jobid);
+
+static int orte_rmgr_urm_deallocate(
+    orte_jobid_t jobid);
+
 static int orte_rmgr_urm_map(
     orte_jobid_t jobid);
 
@@ -55,8 +61,8 @@ static int orte_rmgr_urm_spawn(
 orte_rmgr_base_module_t orte_rmgr_urm_module = {
     orte_rds_base_query,
     orte_rmgr_urm_create,
-    orte_ras_base_allocate,
-    orte_ras_base_deallocate,
+    orte_rmgr_urm_allocate,
+    orte_rmgr_urm_deallocate,
     orte_rmgr_urm_map,
     orte_rmgr_urm_launch,
     orte_rmgr_urm_terminate_job,
@@ -95,11 +101,20 @@ static int orte_rmgr_urm_create(
 }
 
 
+static int orte_rmgr_urm_allocate(orte_jobid_t jobid)
+{
+    return mca_rmgr_urm_component.urm_ras->allocate(jobid);
+}
+
+static int orte_rmgr_urm_deallocate(orte_jobid_t jobid)
+{
+    return mca_rmgr_urm_component.urm_ras->deallocate(jobid);
+}
+
 static int orte_rmgr_urm_map(orte_jobid_t jobid)
 {
     return mca_rmgr_urm_component.urm_rmaps->map(jobid);
 }
-
 
 static int orte_rmgr_urm_launch(orte_jobid_t jobid)
 {

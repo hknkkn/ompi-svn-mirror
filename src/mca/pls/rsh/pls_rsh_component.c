@@ -120,7 +120,7 @@ int orte_pls_rsh_component_open(void)
 
     /* lookup parameters */
     mca_pls_rsh_component.debug = orte_pls_rsh_param_register_int("debug",1);
-    mca_pls_rsh_component.priority = orte_pls_rsh_param_register_int("priority",1);
+    mca_pls_rsh_component.priority = orte_pls_rsh_param_register_int("priority",10);
     param = orte_pls_rsh_param_register_string("agent","ssh");
     mca_pls_rsh_component.argv = ompi_argv_split(param, ' ');
     mca_pls_rsh_component.argc = ompi_argv_count(mca_pls_rsh_component.argv);

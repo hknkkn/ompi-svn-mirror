@@ -26,7 +26,7 @@
 
 static int orte_ras_bjs_open(void);
 static int orte_ras_bjs_close(void);
-static orte_ras_base_module_t* orte_ras_bjs_init(void);
+static orte_ras_base_module_t* orte_ras_bjs_init(int* priority);
 
 
 orte_ras_bjs_component_t mca_ras_bjs_component = {
@@ -91,6 +91,7 @@ static char* orte_ras_bjs_param_register_string(
 static int orte_ras_bjs_open(void)
 {
     mca_ras_bjs_component.debug = orte_ras_bjs_param_register_int("debug",1);
+    mca_ras_bjs_component.priority = orte_ras_bjs_param_register_int("priority",75);
     return ORTE_SUCCESS;
 }
 
@@ -100,6 +101,7 @@ static orte_ras_base_module_t *orte_ras_bjs_init(void)
     if(getenv("NODES") == NULL) {
         return NULL;
     }
+    *priority = mca_ras_bjs_component.priority;
     return &orte_ras_bjs_module;
 }
 

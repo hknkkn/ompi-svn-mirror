@@ -90,12 +90,14 @@ static  int orte_ras_lsf_bproc_param_register_int(
 static int orte_ras_lsf_bproc_open(void)
 {
     mca_ras_lsf_bproc_component.debug = orte_ras_lsf_bproc_param_register_int("debug",1);
+    mca_ras_lsf_bproc_component.priority = orte_ras_lsf_bproc_param_register_int("priority",100);
     return ORTE_SUCCESS;
 }
 
 
-static orte_ras_base_module_t *orte_ras_lsf_bproc_init(void)
+static orte_ras_base_module_t *orte_ras_lsf_bproc_init(int* priority)
 {
+    *priority = mca_ras_lsf_bproc_component.priority;
     return NULL;
 }
 

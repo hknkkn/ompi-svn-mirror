@@ -24,7 +24,7 @@
 /*
  * Local functions
  */
-static orte_ras_base_module_t *ras_tm_init(void);
+static orte_ras_base_module_t *ras_tm_init(int*);
 
 
 orte_ras_base_component_1_0_0_t mca_ras_tm_component = {
@@ -60,9 +60,11 @@ orte_ras_base_component_1_0_0_t mca_ras_tm_component = {
 };
 
 
-static orte_ras_base_module_t *ras_tm_init(void)
+static orte_ras_base_module_t *ras_tm_init(int* priority)
 {
     /* Are we running under a TM job? */
+    int id = mca_base_param_register_int("ras","tm","priority",NULL,100);
+    mca_base_param_lookup_int(id,priority);
 
     if (NULL != getenv("PBS_ENVIRONMENT") &&
         NULL != getenv("PBS_JOBID")) {
@@ -71,7 +73,6 @@ static orte_ras_base_module_t *ras_tm_init(void)
     }
 
     /* Sadly, no */
-
     ompi_output(orte_ras_base.ras_output, "ras:tm: NOT available for selection");
     return NULL;
 }

@@ -32,6 +32,8 @@ extern "C" {
 struct orte_rmgr_urm_component_t {
     /** Base rmgr component */
     orte_rmgr_base_component_t super;
+    /** Selected ras module */
+    orte_ras_base_module_t *urm_ras;
     /** Selected rmaps module */
     orte_rmaps_base_module_t *urm_rmaps;
     /** Selected pls module */

@@ -24,46 +24,6 @@
 
 
 /**
- * Try to allocate resources for the selected job from 
- * all available components.
- */
-int orte_ras_base_allocate(orte_jobid_t jobid)
-{
-    ompi_list_item_t* item;
-                                                                                                            
-    /* Query all selected modules */
-    for(item =  ompi_list_get_first(&orte_ras_base.ras_selected);
-        item != ompi_list_get_end(&orte_ras_base.ras_selected);
-        item =  ompi_list_get_next(item)) {
-        orte_ras_base_selected_t* selected = (orte_ras_base_selected_t*)item;
-        int rc = selected->module->allocate(jobid);
-        if(rc != ORTE_SUCCESS)
-            return rc;
-    }
-    return ORTE_SUCCESS;
-}
-
-/**
- * Deallocate resources associated with the specified job
- */
-int orte_ras_base_deallocate(orte_jobid_t jobid)
-{
-    ompi_list_item_t* item;
-                                                                                                            
-    /* Query all selected modules */
-    for(item =  ompi_list_get_first(&orte_ras_base.ras_selected);
-        item != ompi_list_get_end(&orte_ras_base.ras_selected);
-        item =  ompi_list_get_next(item)) {
-        orte_ras_base_selected_t* selected = (orte_ras_base_selected_t*)item;
-        int rc = selected->module->deallocate(jobid);
-        if(rc != ORTE_SUCCESS)
-            return rc;
-    }
-    return ORTE_SUCCESS;
-}
-
-
-/**
  * 
  */
 

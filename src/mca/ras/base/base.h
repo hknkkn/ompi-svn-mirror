@@ -37,20 +37,25 @@ extern "C" {
  * Internal definitions
  */
 
-struct orte_ras_base_selected_t {
+struct orte_ras_base_cmp_t {
+    /** Base object */
     ompi_list_item_t super;
+    /** ras component */
     orte_ras_base_component_t *component;
+    /** ras module */
     orte_ras_base_module_t* module;
+    /** This component's priority */
+    int priority;
 };
-typedef struct orte_ras_base_selected_t orte_ras_base_selected_t;
-ORTE_DECLSPEC OBJ_CLASS_DECLARATION(orte_ras_base_selected_t);
+typedef struct orte_ras_base_cmp_t orte_ras_base_cmp_t;
+
 
 /*
  * function definitions
  */
 ORTE_DECLSPEC int orte_ras_base_open(void);
-ORTE_DECLSPEC int orte_ras_base_select(void);
 ORTE_DECLSPEC int orte_ras_base_close(void);
+ORTE_DECLSPEC orte_ras_base_module_t* orte_ras_base_select(const char*);
 ORTE_DECLSPEC int orte_ras_base_allocate(orte_jobid_t job);
 ORTE_DECLSPEC int orte_ras_base_deallocate(orte_jobid_t job);
 ORTE_DECLSPEC int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes);
@@ -62,12 +67,15 @@ ORTE_DECLSPEC int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* 
 
 typedef struct orte_ras_base_t {
     int ras_output;
-    ompi_list_t ras_components;
-    ompi_list_t ras_selected;
+    ompi_list_t ras_opened;
+    ompi_list_t ras_available;
     size_t ras_num_nodes;
 } orte_ras_base_t;
  
 ORTE_DECLSPEC extern orte_ras_base_t orte_ras_base;
+
+/** Class declaration */
+OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_ras_base_cmp_t);
 
 
 /*
