@@ -279,7 +279,7 @@ RETURN_ERROR:
     }
     if (ORTE_SUCCESS != ret) {
         orte_dps.pack(answer, &ret, 1, ORTE_INT);
-        return ret;
+        return rc;
     }
     orte_dps.pack(answer, &rc, 1, ORTE_INT);
     return rc;
