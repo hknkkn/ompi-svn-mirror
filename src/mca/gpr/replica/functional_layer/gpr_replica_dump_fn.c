@@ -252,9 +252,9 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
                 asprintf(&tmp_out, "\t\tNumber of tokens: %d", k);
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
             
-                for (i=0; i < k; i++) {
+                for (j=0; j < k; j++) {
                     if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, data[i]->seg,
-                            ORTE_VALUE_ARRAY_GET_ITEM(&(data[i]->tokentags), orte_gpr_replica_itag_t, i))) {
+                            ORTE_VALUE_ARRAY_GET_ITEM(&(data[i]->tokentags), orte_gpr_replica_itag_t, j))) {
                         asprintf(&tmp_out, "\t\t\tToken: %s", token);
             		       orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                         free(token);
@@ -294,9 +294,9 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
                 asprintf(&tmp_out, "\t\tNumber of keys: %d", k);
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
         
-                for (i=0; i < k; i++) {
+                for (j=0; j < k; j++) {
                     if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, data[i]->seg,
-                            ORTE_VALUE_ARRAY_GET_ITEM(&(data[i]->keytags), orte_gpr_replica_itag_t, i))) {
+                            ORTE_VALUE_ARRAY_GET_ITEM(&(data[i]->keytags), orte_gpr_replica_itag_t, j))) {
                         asprintf(&tmp_out, "\t\t\tKey: %s", token);
                         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                         free(token);
@@ -383,8 +383,24 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
     
     switch(iptr->type) {
 
+        case ORTE_BYTE:
+            asprintf(&tmp, "\t\tData type: ORTE_BYTE");
+            break;
+            
+        case ORTE_BOOL:
+            asprintf(&tmp, "\t\tData type: ORTE_BOOL");
+            break;
+            
         case ORTE_STRING:
             asprintf(&tmp, "\t\tData type: ORTE_STRING\tValue: %s", iptr->value.strptr);
+            break;
+            
+        case ORTE_SIZE:
+            asprintf(&tmp, "\t\tData type: ORTE_SIZE");
+            break;
+            
+        case ORTE_INT:
+            asprintf(&tmp, "\t\tData type: ORTE_INT\tValue: %d", (int)iptr->value.i32);
             break;
             
         case ORTE_UINT8:
@@ -453,6 +469,14 @@ static void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
             
         case ORTE_EXIT_CODE:
             asprintf(&tmp, "\t\tData type: ORTE_EXIT_CODE\tValue: %d", (int)iptr->value.exit_code);
+            break;
+            
+        case ORTE_NULL:
+            asprintf(&tmp, "\t\tData type: ORTE_NULL");
+            break;
+        
+        case ORTE_APP_CONTEXT:
+            asprintf(&tmp, "\t\tData type: ORTE_APP_CONTEXT");
             break;
             
         default:

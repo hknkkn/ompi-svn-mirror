@@ -29,6 +29,7 @@
 
 #include "support.h"
 
+#include "util/cmd_line.h"
 #include "class/orte_pointer_array.h"
 #include "dps/dps.h"
 #include "runtime/runtime.h"
@@ -55,6 +56,7 @@ static void test_cbfunc(orte_gpr_notify_data_t *data, void *user_tag);
 
 int main(int argc, char **argv)
 {
+    ompi_cmd_line_t cmd_line;
     int rc, num_names, num_found, num_counters=6;
     int i, j, cnt, ret;
     orte_gpr_value_t *values, value, trig, *trigs;
@@ -80,68 +82,11 @@ int main(int argc, char **argv)
       exit(1);
     } 
 
-    /* ENSURE THE REPLICA IS ISOLATED */
-    setenv("OMPI_MCA_gpr_replica_isolate", "1", 1);
-    
-    /* Open up the output streams */
-    if (!ompi_output_init()) {
-        return OMPI_ERROR;
-    }
-                                                                                                                   
-    /* 
-     * If threads are supported - assume that we are using threads - and reset otherwise. 
-     */
-    ompi_set_using_threads(OMPI_HAVE_THREADS);
-                                                                                                                   
-    /* For malloc debugging */
-    ompi_malloc_init();
-
-    /* Ensure the system_info structure is instantiated and initialized */
-    if (ORTE_SUCCESS != (ret = orte_sys_info())) {
-        return ret;
-    }
-
-    /* Ensure the process info structure is instantiated and initialized */
-    if (ORTE_SUCCESS != (ret = orte_proc_info())) {
-        return ret;
-    }
-    
-    orte_process_info.seed = true;
-
-    /* startup the MCA */
-    if (OMPI_SUCCESS == mca_base_open()) {
-        fprintf(test_out, "MCA started\n");
+    OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
+    if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
+        fprintf(test_out, "orte_init failed to start started\n");
     } else {
-        fprintf(test_out, "MCA could not start\n");
-        exit (1);
-    }
-
-    if (ORTE_SUCCESS == orte_gpr_base_open()) {
-        fprintf(test_out, "GPR started\n");
-    } else {
-        fprintf(test_out, "GPR could not start\n");
-        exit (1);
-    }
-    
-    if (ORTE_SUCCESS == orte_gpr_base_select()) {
-        fprintf(test_out, "GPR replica selected\n");
-    } else {
-        fprintf(test_out, "GPR replica could not be selected\n");
-        exit (1);
-    }
-                  
-    if (ORTE_SUCCESS == orte_dps_open()) {
-        fprintf(test_out, "DPS started\n");
-    } else {
-        fprintf(test_out, "DPS could not start\n");
-        exit (1);
-    }
-    
-    if (ORTE_SUCCESS == orte_errmgr_base_open()) {
-        fprintf(test_out, "error mgr started\n");
-    } else {
-        fprintf(test_out, "error mgr could not start\n");
-        exit (1);
+        fprintf(test_out, "orte_init_started\n");
     }
     
     subscription = OBJ_NEW(orte_gpr_subscription_t);
@@ -155,7 +100,7 @@ int main(int argc, char **argv)
     subscription->user_tag = NULL;
     
     fprintf(stderr, "register subscription on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_NOTIFY_ADD_ENTRY,
+    if (ORTE_SUCCESS != (rc = orte_gpr.subscribe(ORTE_GPR_NOTIFY_ADD_ENTRY,
                                     1, &subscription,
                                     0, NULL,
                                     &sub))) {
@@ -168,7 +113,7 @@ int main(int argc, char **argv)
         fprintf(test_out, "gpr_test_trigs: subscribe on seg registered\n");
     }
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump(0);
 
     /* setup some test counters */
     OBJ_CONSTRUCT(&value, orte_gpr_value_t);
@@ -197,11 +142,11 @@ int main(int argc, char **argv)
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
         value.keyvals[i]->key = strdup(keys[i]);
-        value.keyvals[i]->type = ORTE_UINT32;
-        value.keyvals[i]->value.ui32 = 0;
+        value.keyvals[i]->type = ORTE_INT32;
+        value.keyvals[i]->value.i32 = 0;
     }
     /* set value in keys[0] to 3 */
-    value.keyvals[0]->value.ui32 = 3;
+    value.keyvals[0]->value.i32 = 3;
     
     values = &value;
     
@@ -214,7 +159,7 @@ int main(int argc, char **argv)
         return rc;
     }
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump(0);
 
     fprintf(test_out, "incrementing all counters\n");
     
@@ -225,7 +170,7 @@ int main(int argc, char **argv)
         return rc;
     }
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump(0);
     
     fprintf(test_out, "decrementing all counters\n");
     
@@ -237,7 +182,7 @@ int main(int argc, char **argv)
     }
     OBJ_DESTRUCT(&value);
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump(0);
 
 
     /* for testing the trigger, we'll just use the prior subscription setup.
@@ -280,7 +225,7 @@ int main(int argc, char **argv)
          return rc;
      }
 
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump(0);
     
     fprintf(test_out, "incrementing until trigger\n");
     
@@ -321,7 +266,7 @@ int main(int argc, char **argv)
         }
     }
 
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump(0);
     
     fclose( test_out );
 /*    result = system( cmd_str );
@@ -343,7 +288,7 @@ void test_cbfunc(orte_gpr_notify_data_t *data, void *tag)
     
 /*    fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", (msg->values[0])->segment, msg->cnt);
 */
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump(0);
     
     OBJ_RELEASE(data);
 }
