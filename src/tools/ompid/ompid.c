@@ -13,7 +13,7 @@
  */
 /** @file **/
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -28,11 +28,12 @@
 #endif
 #include <errno.h>
 
-#include "include/constants.h"
+#include "include/orte_constants.h"
 
 #include "threads/mutex.h"
 #include "threads/condition.h"
 
+#include "dps/dps.h"
 #include "util/output.h"
 #include "util/show_help.h"
 #include "util/sys_info.h"
@@ -58,12 +59,13 @@ static ompi_condition_t ompi_daemon_condition;
 static bool ompi_daemon_exit_condition = false;
 
 static void ompi_daemon_recv(int status, orte_process_name_t* sender,
-			     ompi_buffer_t buffer, int tag,
+			     orte_buffer_t *buffer, int tag,
 			     void* cbdata);
 
 
 int main(int argc, char *argv[])
 {
+#if 0
     int ret = 0;
     ompi_cmd_line_t *cmd_line = NULL;
     bool allow_multi_user_threads   = false;
@@ -311,12 +313,16 @@ int main(int argc, char *argv[])
     }
 
     exit(0);
+
+#endif
+    exit(0);
 }
 
 static void ompi_daemon_recv(int status, orte_process_name_t* sender,
-			     ompi_buffer_t buffer, int tag,
+			     orte_buffer_t *buffer, int tag,
 			     void* cbdata)
 {
+#if 0
     ompi_buffer_t answer;
     ompi_daemon_cmd_flag_t command;
     int ret;
@@ -373,5 +379,6 @@ static void ompi_daemon_recv(int status, orte_process_name_t* sender,
     }
 
     OMPI_THREAD_UNLOCK(&ompi_daemon_mutex);
+#endif
     return;
 }

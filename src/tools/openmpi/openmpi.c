@@ -20,7 +20,7 @@
   --------------------------------------------------------------------------
 
 */
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +41,6 @@
 #include "util/argv.h"
 #include "util/output.h"
 #include "util/os_path.h"
-#include "util/bufpack.h"
 #include "util/sys_info.h"
 #include "util/cmd_line.h"
 #include "util/proc_info.h"
@@ -60,6 +59,7 @@
 
 int main(int argc, char **argv)
 {
+#if 0
     ompi_cmd_line_t *cmd_line = NULL;
     char *universe = NULL;
     pid_t pid;
@@ -207,5 +207,6 @@ int main(int argc, char **argv)
 	fprintf(stderr, "local universe check reports not implemented code\n");
     }
 /*     ompi_rte_init_stage2(&multi_thread, &hidden_thread);  /\* stick this in for now just for static compiles *\/ */
+#endif
     return -1;
 }

@@ -13,16 +13,15 @@
  */
 /** @file **/
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include <stdio.h>
 
-#include "include/constants.h"
+#include "include/orte_constants.h"
 
 #include "util/sys_info.h"
 #include "util/cmd_line.h"
 #include "util/proc_info.h"
-#include "util/bufpack.h"
 #include "util/session_dir.h"
 #include "util/output.h"
 #include "util/os_path.h"
@@ -38,14 +37,16 @@
 
 #define OMPI_CONSOLE_MAX_LINE_LENGTH 1024
 
+#if 0
 static char *ompi_getinputline(void);
 
 static void ompi_console_sendcmd(ompi_daemon_cmd_flag_t usercmd);
-
+#endif
 
 
 int main(int argc, char *argv[])
 {
+#if 0
     ompi_list_t *list;
     ompi_list_item_t *item;
     ompi_registry_value_t *value;
@@ -182,9 +183,11 @@ int main(int argc, char *argv[])
     fprintf(stderr, "finalize ompi\n");
     ompi_finalize();
     exit(0);
+#endif
+    exit(1);
 }
 
-
+#if 0
 static void ompi_console_sendcmd(ompi_daemon_cmd_flag_t usercmd)
 {
     ompi_buffer_t cmd;
@@ -213,4 +216,6 @@ char *ompi_getinputline()
     }
     return NULL;
 }
+
+#endif
 
