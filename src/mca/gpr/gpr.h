@@ -794,7 +794,7 @@ typedef mca_gpr_base_component_1_0_0_t mca_gpr_base_component_t;
     /* gpr v1.0 is chained to MCA v1.0 */	\
     MCA_BASE_VERSION_1_0_0,			\
 	/* gpr v1.0 */				\
-	"gpr", 1, 0, 0
+	"orte_gpr", 1, 0, 0
 
 /*
  * global module that holds function pointers

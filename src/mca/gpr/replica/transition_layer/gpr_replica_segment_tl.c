@@ -22,7 +22,7 @@
  */
 
 #include "orte_config.h"
-
+#include <stdio.h>
 #include "gpr_replica_tl.h"
 
 int orte_gpr_replica_find_seg(orte_gpr_replica_segment_t **seg,
@@ -31,10 +31,14 @@ int orte_gpr_replica_find_seg(orte_gpr_replica_segment_t **seg,
     size_t len;
     int rc, i;
 
+    fprintf(stderr, "entered find seg\n");
+    
     /* initialize to nothing */
     *seg = NULL;
     
     len = strlen(segment);
+    
+    fprintf(stderr, "got segment name length %d\n", len);
     
     /* search the registry segments to find which one is being referenced */
     *seg = (orte_gpr_replica_segment_t*)(orte_gpr_replica.segments->addr);
