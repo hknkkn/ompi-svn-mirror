@@ -21,7 +21,7 @@
  * Supported datatypes for messaging and storage operations.
  * 
  * ANY CHANGES TO THESE DEFINITIONS MUST BE REFLECTED IN THE TEXT ARRAY
- * orte_data_strings DEFINED IN src/runtime/ompi_init.c.
+ * orte_data_strings DEFINED IN src/runtime/orte_init.c.
  *
  */
 
@@ -62,13 +62,13 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_BYTE_OBJECT         (orte_data_type_t)   29 /**< byte object structure */
 #define    ORTE_KEYVAL              (orte_data_type_t)   30 /**< registry key-value pair */
 #define    ORTE_NOTIFY_ACTION       (orte_data_type_t)   31 /**< registry notify action */
-#define    ORTE_SYNCHRO_MODE        (orte_data_type_t)   32 /**< registry synchro mode */
-#define    ORTE_GPR_CMD             (orte_data_type_t)   33 /**< registry command */
-#define    ORTE_GPR_NOTIFY_ID       (orte_data_type_t)   34 /**< registry notify id tag */
-#define    ORTE_GPR_VALUE           (orte_data_type_t)   35 /**< registry return value */
-#define    ORTE_DATA_TYPE           (orte_data_type_t)   36 /**< data type */
-#define    ORTE_APP_CONTEXT         (orte_data_type_t)   37 /**< argv and enviro arrays */
-#define    ORTE_GPR_ADDR_MODE       (orte_data_type_t)   38 /**< Addressing mode for registry cmds */
+#define    ORTE_GPR_CMD             (orte_data_type_t)   32 /**< registry command */
+#define    ORTE_GPR_NOTIFY_ID       (orte_data_type_t)   33 /**< registry notify id tag */
+#define    ORTE_GPR_VALUE           (orte_data_type_t)   34 /**< registry return value */
+#define    ORTE_DATA_TYPE           (orte_data_type_t)   35 /**< data type */
+#define    ORTE_APP_CONTEXT         (orte_data_type_t)   36 /**< argv and enviro arrays */
+#define    ORTE_GPR_ADDR_MODE       (orte_data_type_t)   37 /**< Addressing mode for registry cmds */
+#define    ORTE_GPR_SUBSCRIPTION    (orte_data_type_t)   38 /**< describes data returned by subscription */
 #define    ORTE_NULL                (orte_data_type_t)   39 /**< don't interpret data type */
 
 
