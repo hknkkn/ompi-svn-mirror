@@ -21,40 +21,58 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
 
-int mca_gpr_base_unpack_synchro(ompi_buffer_t buffer, ompi_registry_notify_id_t *remote_idtag)
+int orte_gpr_base_unpack_synchro(orte_buffer_t *buffer, orte_gpr_notify_id_t *remote_idtag)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
+    size_t n;
+    int rc;
 
-    if ((OMPI_SUCCESS != ompi_unpack(buffer, &command, 1, MCA_GPR_OOB_PACK_CMD))
-	|| (MCA_GPR_SYNCHRO_CMD != command)) {
-	return OMPI_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+	if (ORTE_GPR_SYNCHRO_CMD != command) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (OMPI_SUCCESS != ompi_unpack(buffer, remote_idtag, 1, MCA_GPR_OOB_PACK_NOTIFY_ID)) {
-	return OMPI_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, remote_idtag, &n, ORTE_GPR_PACK_NOTIFY_ID))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
 
 
-int mca_gpr_base_unpack_cancel_synchro(ompi_buffer_t buffer)
+int orte_gpr_base_unpack_cancel_synchro(orte_buffer_t *buffer)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
     int32_t response;
+    size_t n;
+    int rc;
 
-    if ((OMPI_SUCCESS != ompi_unpack(buffer, &command, 1, MCA_GPR_OOB_PACK_CMD))
-	|| (MCA_GPR_CANCEL_SYNCHRO_CMD != command)) {
-	return OMPI_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+	if (ORTE_GPR_CANCEL_SYNCHRO_CMD != command) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (OMPI_SUCCESS != ompi_unpack(buffer, &response, 1, OMPI_INT32)) {
-	return OMPI_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &response, &n, ORTE_INT32))) {
+	   return rc;
     }
 
     return (int)response;

@@ -21,25 +21,28 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_pack_test_internals(ompi_buffer_t cmd, int level)
+int orte_gpr_base_pack_test_internals(orte_buffer_t *cmd, int level)
 {
-    mca_gpr_cmd_flag_t command;
-    int32_t test_level;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_TEST_INTERNALS_CMD;
-    test_level = (int32_t)level;
+    command = ORTE_GPR_TEST_INTERNALS_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &test_level, 1, OMPI_INT32)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &level, 1, ORTE_INT))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }

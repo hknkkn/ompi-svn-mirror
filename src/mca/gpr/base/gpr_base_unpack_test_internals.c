@@ -21,40 +21,51 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_unpack_test_internals(ompi_buffer_t buffer, ompi_list_t *test_results)
+int orte_gpr_base_unpack_test_internals(orte_buffer_t *buffer, ompi_list_t *test_results)
 {
-    char **string1=NULL, **string2=NULL;
-    int i;
+    char *strings[2];
+    int rc;
     int32_t num_responses;
-    ompi_registry_internal_test_results_t *newptr=NULL;
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_internal_test_results_t *newptr=NULL;
+    orte_gpr_cmd_flag_t command;
+    size_t n, i;
 
-    if ((OMPI_SUCCESS != ompi_unpack(buffer, &command, 1, MCA_GPR_OOB_PACK_CMD))
-	|| (MCA_GPR_TEST_INTERNALS_CMD != command)) {
-	return OMPI_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+	if (ORTE_GPR_TEST_INTERNALS_CMD != command) {
+	   return ORTE_ERR_COMM_FAILURE;
     }
 
-    if ((OMPI_SUCCESS != ompi_unpack(buffer, &num_responses, 1, OMPI_INT32)) ||
-	(0 >= num_responses)) {
-	return OMPI_ERROR;
+    n = 1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &num_responses, &n, ORTE_INT32))) {
+        return rc;
+    }
+    
+	if (0 >= num_responses) {
+	   return ORTE_ERR_NOT_AVAILABLE;
     }
 
     for (i=0; i<num_responses; i++) {
-	if (0 > ompi_unpack_string(buffer, string1)) {
-	    return OMPI_ERROR;
-	}
-	if (0 > ompi_unpack_string(buffer, string2)) {
-	    return OMPI_ERROR;
-	}
-	newptr = OBJ_NEW(ompi_registry_internal_test_results_t);
-	newptr->test = strdup(*string1);
-	newptr->message = strdup(*string2);
-	ompi_list_append(test_results, &newptr->item);
+        n = 2;
+        if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, strings, &n, ORTE_STRING))) {
+            return rc;
+        }
+	   newptr = OBJ_NEW(orte_gpr_internal_test_results_t);
+	   newptr->test = strdup(strings[0]);
+	   newptr->message = strdup(strings[1]);
+	   ompi_list_append(test_results, &newptr->item);
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }

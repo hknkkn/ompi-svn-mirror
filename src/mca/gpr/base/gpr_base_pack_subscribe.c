@@ -21,86 +21,89 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_pack_subscribe(ompi_buffer_t cmd,
-				ompi_registry_mode_t mode,
-				ompi_registry_notify_action_t action,
-				char *segment, char **tokens)
+int orte_gpr_base_pack_subscribe(orte_buffer_t *cmd,
+				orte_gpr_addr_mode_t mode,
+				orte_gpr_notify_action_t action,
+				char *segment, char **tokens, char **keys)
 {
-    mca_gpr_cmd_flag_t command;
-    char **tokptr;
-    int i;
-    int32_t num_tokens;
+    orte_gpr_cmd_flag_t command;
+    char **ptr;
+    size_t n;
+    int rc;
 
-    command = MCA_GPR_SUBSCRIBE_CMD;
+    command = ORTE_GPR_SUBSCRIBE_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &mode, 1, MCA_GPR_OOB_PACK_MODE)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_PACK_ADDR_MODE))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &action, 1, MCA_GPR_OOB_PACK_ACTION)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &action, 1, ORTE_GPR_PACK_ACTION))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack_string(cmd, segment)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, segment, 1, ORTE_STRING))) {
+	   return rc;
     }
 
-    num_tokens = 0;
+    /* compute number of tokens */
+    n = 0;
     if (NULL != tokens) {
-	/* compute number of tokens */
-	tokptr = tokens;
-	while (NULL != *tokptr) {
-	    num_tokens++;
-	    tokptr++;
-	}
+	   ptr = tokens;
+	   while (NULL != *ptr) {
+	       n++;
+	       ptr++;
+	   }
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &num_tokens, 1, OMPI_INT32)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, tokens, n, ORTE_STRING))) {
+	   return rc;
     }
 
-    if (0 < num_tokens) {
-	tokptr = tokens;
-	for (i=0; i<num_tokens; i++) {  /* pack the tokens */
-	    if (OMPI_SUCCESS != ompi_pack_string(cmd, *tokptr)) {
-		return OMPI_ERROR;
-	    }
-	    tokptr++;
-	}
+    /* compute number of keys */
+    n = 0;
+    if (NULL != keys) {
+       ptr = keys;
+       while (NULL != *ptr) {
+          n++;
+          ptr++;
+       }
     }
 
-    return OMPI_SUCCESS;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keys, n, ORTE_STRING))) {
+      return rc;
+    }
+
+    return ORTE_SUCCESS;
 }
 
 
-int mca_gpr_base_pack_unsubscribe(ompi_buffer_t cmd, bool silent,
-				  ompi_registry_notify_id_t remote_idtag)
+int orte_gpr_base_pack_unsubscribe(orte_buffer_t *cmd,
+				  orte_gpr_notify_id_t remote_idtag)
 {
-    mca_gpr_cmd_flag_t command;
-    int8_t tmp_bool;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_UNSUBSCRIBE_CMD;
+    command = ORTE_GPR_UNSUBSCRIBE_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    tmp_bool = (int8_t)silent;
-    if (OMPI_SUCCESS != ompi_pack(cmd, &tmp_bool, 1, MCA_GPR_OOB_PACK_BOOL)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &remote_idtag, 1, ORTE_GPR_PACK_NOTIFY_ID))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &remote_idtag, 1, MCA_GPR_OOB_PACK_NOTIFY_ID)) {
-	return OMPI_ERROR;
-    }
-
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
