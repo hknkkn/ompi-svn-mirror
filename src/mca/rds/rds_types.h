@@ -32,8 +32,8 @@
 #define ORTE_RDS_CPU_SPEED          "orte-rds-arch-cpu-speed"    /* floating pt number in MHz */
 #define ORTE_RDS_NODE_MEM           "orte-rds-arch-mem-per-node" /* floating pt number in GBytes */
 #define ORTE_RDS_NODE_CACHE         "orte-rds-arch-node-cache"   /* floating pt number in MBytes */
-#define ORTE_RDS_INTERCONNECT       "orte-rds-arch-interconnect-type"
-#define ORTE_RDS_RAILS              "orte-rds-arch-interconnect-num-rails"
+#define ORTE_RDS_INT_TYPE           "orte-rds-arch-interconnect-type"
+#define ORTE_RDS_INT_RAILS          "orte-rds-arch-interconnect-num-rails"
 #define ORTE_RDS_INT_SW             "orte-rds-arch-interconnect-sw"
 #define ORTE_RDS_INT_SW_VERS        "orte-rds-arch-interconnect-sw-version"
 #define ORTE_RDS_MAX_BW             "orte-rds-arch-interconnect-max-bw" /* floating pt number in Mbits/second */
@@ -90,3 +90,5 @@
 #define ORTE_RDSD_NODE_ARCH     "orte-rds-arch*"          /* architecture info */
 #define ORTE_RDS_INTERCONNECT   "orte-rds-arch-interconnect*"
 #define ORTE_RDS_CPU            "orte-rds-arch-cpu*"
+
+#endif

@@ -57,6 +57,10 @@
  * allocation requests from unintentionally overloading the specified resources in cases
  * where the univese is persistent and therefore servicing multiple applications.
  * 
+ * - MCA parameters specifying the name of the application(s) and the number of
+ * each application to be executed. These will usually be taken from the command line
+ * options, but could be provided via environmental parameters.
+ * 
  * - the resources defined in the ORTE_RESOURCE_SEGMENT by the RDS. When an allocation
  * is requested for resources not previously allocated, the RAS will attempt to obtain
  * an allocation that meets the specified requirements. For example, if the user
@@ -65,7 +69,9 @@
  * then the allocator can (if possible) search the ORTE_RESOURCE_SEGMENT for resources
  * meeting those specifications and attempt to obtain an allocation from them.
  * 
- * The RAS outputs its results into the ORTE_NODE_STATUS_SEGMENT of the registry. The
+ * The RAS outputs its results into three registry segments:
+ * 
+ * (a) the ORTE_NODE_STATUS_SEGMENT. The
  * segment consists of a registry container for each node that has been allocated to
  * a job - for proper operation, each container MUST be described by the following
  * set of tokens:
@@ -93,8 +99,23 @@
  * - the status of the node (up, down, rebooting, etc.). This information is provided
  * and updated by the state-of-health (SOH) monitoring subsystem.
  * 
- * In addition to storing info on the ORTE_NODE_STATUS_SEGMENT, the allocator
- * updates info on the ORTE_RESOURCE_SEGMENT to indicate consumption of an available
+ * (b) the ORTE_JOB_SEGMENT. The RAS preallocates this segment, initializing one container
+ * for each process plus one container to store information that spans the job. This
+ * latter container houses information such as the application names, number of
+ * processes per application, process context (including argv and enviro arrays), and
+ * i/o forwarding info. The RAS does NOT establish nor fill any of the individual
+ * process info containers - rather, it preallocates the storage for those containers
+ * and places some of the job-wide information into that container. This info includes:
+ * 
+ * - application names and number of processes per application
+ * 
+ * - process context
+ * 
+ * The remainder of the information in that container will be supplied by other
+ * subsystems.
+ * 
+ * (c) the ORTE_RESOURCE_SEGMENT. The RAS adds information to this segment to
+ * indicate consumption of an available
  * resource. In particular, the RAS updates fields in the respective compute resource
  * to indicate the portion of that resource that has been allocated and therefore can
  * be presumed consumed. This includes info on the number of nodes and cpus allocated
@@ -102,7 +123,8 @@
  * the RAS when resources are deallocated at the completion of a job.
  * 
  * The information provided by the RAS is consumed by the resource mapper 
- * subsystem (RMAPS) that defines which process is executed upon which node/cpu.
+ * subsystem (RMAPS) that defines which process is executed upon which node/cpu,
+ * the process launch subsystem (PLS) that actually launches each process, and others.
  * 
  * Because the RAS operates as a multi-component framework (i.e., multiple components
  * may be simultaneously instantiated), the RAS functions should NOT be called directly.
@@ -137,7 +159,7 @@
  * new_cellid = ompi_name_server.create_cellid()
  * @endcode
  */
-typedef int (*orte_ras_base_module_allocate_fn_t)(orte_jobid_t jobid);
+typedef int (*orte_ras_base_module_allocate_fn_t)(orte_jobid_t *jobid);
 
 /**
  * Deallocate resources from a job

@@ -14,10 +14,26 @@
 /** @file:
  *
  * The Open RTE Resource MAPping Subsystem (RMAPS)
+ * 
+ * The resource mapping subsystem is responsible for mapping processes to specific
+ * nodes/cpus within a given job. In many systems, this functionality will not be
+ * supported - the system will map processes wherever it chooses and does not allow
+ * the user to specify the mapping. RMAPS components, therefore, provide services
+ * for those systems that do permit such mappings.
+ * 
+ * RMAPS checks the MCA parameters to see if a mapping algorithm has been specified.
+ * If the user selected a mapping algorithm, the indicated RMAPS component
+ * will take information from the
+ * registry to determine the number of applications/processes to be run, and the
+ * identified resources that have been allocated to this job. The selected RMAP
+ * component will then assign processes to resources according to its algorithm,
+ * with the results stored on the appropriate job segment - the assigned nodename
+ * for each process is stored in that respective process' container on the segment.
+ * 
  */
 
-#ifndef ORTE_RMAPS_H
-#define ORTE_RMAPS_H
+#ifndef ORTE_MCA_RMAPS_H
+#define ORTE_MCA_RMAPS_H
 
 /*
  * includes
