@@ -66,8 +66,6 @@ int orte_pls_bproc_proxy_component_close(void)
 
 
 orte_pls_base_module_t* orte_pls_bproc_proxy_init(
-    bool* allow_threads,
-    bool* have_threads,
     int *priority)
 {
     if(orte_process_info.seed)

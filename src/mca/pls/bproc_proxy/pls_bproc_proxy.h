@@ -35,10 +35,7 @@ int orte_pls_bproc_proxy_component_close(void);
 /*
  * Startup / Shutdown
  */
-orte_pls_base_module_t* orte_pls_bproc_proxy_init(
-    bool* allow_threads,
-    bool* have_threads,
-    int *priority);
+orte_pls_base_module_t* orte_pls_bproc_proxy_init(int *priority);
 
 int orte_pls_bproc_proxy_finalize(void);
 
