@@ -14,6 +14,7 @@
 
 #include "orte_config.h"
 #include "../src/include/orte_constants.h"
+#include "../src/include/orte_types.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -29,8 +30,10 @@
 #include "support.h"
 #include "../src/mca/base/base.h"
 #include "../src/dps/dps.h"
+#include "../src/mca/ns/ns_types.h"
 
-static void dump_buf (orte_buffer_t *buf);
+#define NUM_ITERS 1024
+#define NUM_ELEMS 128
 
 static bool test1(void);        /* verify different buffer inits */
 static bool test2(void);        /* verify we can pack ok */
@@ -47,11 +50,9 @@ int main (int argc, char* argv[])
 {
 
     test_init("orte_dps");
-//    test_out = fopen("orte_dps_test.txt", "w");
     test_out = stderr;
     
     /* setup the dps */
-    mca_base_open();
     orte_dps_open();
     
     if (test1()) {
@@ -132,17 +133,22 @@ static bool test1(void)        /* verify different buffer inits */
         fprintf(test_out, "OBJ_RELEASE did not NULL the buffer pointer");
         return false;
     }
-
-   return (true);
-
-    
+    return (true);
 }
 
-static bool test2(void)        /* verify we can pack ok */
+/*
+ * OMPI_INT16 pack/unpack
+ */
+static bool test2(void) 
 {
     orte_buffer_t *bufA;
     int rc;
     int32_t i;
+    int16_t src[NUM_ELEMS];
+    int16_t dst[NUM_ELEMS];
+
+    for(i=0; i<NUM_ELEMS; i++)
+        src[i] = i;
 
     bufA = OBJ_NEW(orte_buffer_t);
     if (NULL == bufA) {
@@ -151,15 +157,37 @@ static bool test2(void)        /* verify we can pack ok */
         return false;
     }
     
-    for (i=0;i<100;i++) {
-        rc = orte_dps.pack(bufA, &i, 1, ORTE_INT32);
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_INT16);
         if (ORTE_SUCCESS != rc) {
-            test_comment ("orte_pack_value failed");
+            test_comment ("orte_dps.pack failed");
             fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
             return(false);
         }
     }
     
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
+
+        for(j=0; j<NUM_ELEMS; j++)
+            dst[j] = -1;
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_INT16);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("orte_dps.unpack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+            if(src[j] != dst[j]) {
+                test_comment ("test2: invalid results from unpack");
+                return(false);
+            }
+        }
+    }
+         
     OBJ_RELEASE(bufA);
     if (NULL != bufA) {
         test_comment("OBJ_RELEASE did not NULL the buffer pointer");
@@ -170,13 +198,19 @@ static bool test2(void)        /* verify we can pack ok */
     return (true);
 }
 
-
-static bool test3(void)          /* verify we can pack expanding buf */
+/*
+ * OMPI_INT32 pack/unpack 
+ */
+static bool test3(void)
 {
     orte_buffer_t *bufA;
     int rc;
     int32_t i;
-    char *desc;
+    int32_t src[NUM_ELEMS];
+    int32_t dst[NUM_ELEMS];
+
+    for(i=0; i<NUM_ELEMS; i++)
+        src[i] = i;
 
     bufA = OBJ_NEW(orte_buffer_t);
     if (NULL == bufA) {
@@ -184,16 +218,38 @@ static bool test3(void)          /* verify we can pack expanding buf */
         fprintf(test_out, "OBJ_NEW failed\n");
         return false;
     }
-
-    for (i=0;i<2000;i++) {
-        rc = orte_dps.pack(bufA, &i, 1, ORTE_INT32);
+    
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_INT32);
         if (ORTE_SUCCESS != rc) {
-            test_comment ("orte_pack_value expanding buf failed");
-            fprintf(test_out, "orte_pack_value expanding buf failed with return code %d\n", rc);
+            test_comment ("orte_dps.pack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
             return(false);
         }
     }
+    
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
 
+        for(j=0; j<NUM_ELEMS; j++)
+            dst[j] = -1;
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_INT32);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("orte_dps.unpack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+            if(src[j] != dst[j]) {
+                test_comment ("test2: invalid results from unpack");
+                return(false);
+            }
+        }
+    }
+         
     OBJ_RELEASE(bufA);
     if (NULL != bufA) {
         test_comment("OBJ_RELEASE did not NULL the buffer pointer");
@@ -204,141 +260,267 @@ static bool test3(void)          /* verify we can pack expanding buf */
     return (true);
 }
 
-static bool test4(void)        /* verify pack a byte object */
+/*
+ * OMPI_STRING pack/unpack
+ */
+
+static bool test4(void)
 {
-//    int rc;
-//    orte_byte_object_t obj;
-//
-//    obj.size = 8192;
-//    obj.bytes = (uint8_t*)malloc(8192);
-//    if (NULL == obj.bytes) {
-//        return false;
-//    }
-//    
-//    rc = orte_dps.pack_value(bufA, &obj, NULL, ORTE_BYTE_OBJECT);
-//    if (ORTE_SUCCESS != rc) {
-//        test_comment ("orte_pack_value for byte_object failed");
-//        fprintf(test_out, "orte_pack_value for byte_object failed with return code %d\n", rc);
-//        return(false);
-//    }
-//    
-//    rc = orte_dps.pack_value(bufB, &obj, "byte object", ORTE_BYTE_OBJECT);
-//    if (ORTE_SUCCESS != rc) {
-//        test_comment ("orte_pack_value for byte_object with desc failed");
-//        fprintf(test_out, "orte_pack_value for byte_object with desc failed with return code %d\n", rc);
-//        return(false);
-//    }
-//
-    return (true);
-}
+    orte_buffer_t *bufA;
+    int rc;
+    int32_t i;
+    char* src[NUM_ELEMS];
+    char* dst[NUM_ELEMS];
 
-static bool test5(void)        /* verify unpack INT32 */
-{
-//    int rc;
-//    int i, j;
-//    int *out;
-//    char *desc;
-//    orte_pack_type_t type;
-//
-//    for (i=0;i<2000;i++) {
-//        j = i; /* for bufA */
-//        rc = orte_dps.unpack_value(bufA, out, desc, &type);
-//        if (ORTE_SUCCESS != rc) {
-//            test_comment ("orte_unpack_value failed");
-//            fprintf(test_out, "orte_unpack_value failed with return code %d\n", rc);
-//            return(false);
-//        }
-//
-//        if (ORTE_INT32 != type) {
-//            test_comment ("orte_unpack_value failed - wrong type");
-//            fprintf(test_out, "orte_unpack_value failed with wrong type %d\n", type);
-//            return(false);
-//        }
-//            
-//        if (*out != j) {
-//            test_comment ("orte_unpack_value failed - value mismatch");
-//            fprintf(test_out, "orte_unpack_value failed with value mismatch - got %d instead of %d\n", *out, j);
-//            return(false);
-//        }
-//    }
-//
-//    for (i=0;i<2000;i++) {
-//        j = i; /* for bufA */
-//        rc = orte_dps.unpack_value(bufB, out, desc, &type);
-//        if (ORTE_SUCCESS != rc) {
-//            test_comment ("orte_unpack_value with desc failed");
-//            fprintf(test_out, "orte_unpack_value with desc failed with return code %d\n", rc);
-//            return(false);
-//        }
-//
-//        if (ORTE_INT32 != type) {
-//            test_comment ("orte_unpack_value with desc failed - wrong type");
-//            fprintf(test_out, "orte_unpack_value with desc failed with wrong type %d\n", type);
-//            return(false);
-//        }
-//            
-//        if (*out != j) {
-//            test_comment ("orte_unpack_value failed - value mismatch");
-//            fprintf(test_out, "orte_unpack_value failed with value mismatch - got %d instead of %d\n", *out, j);
-//            fprintf(test_out, "\tdescription: %s\n", desc);
-//            return(false);
-//        }
-//    }
-//
-    return (true);
-}
+    for(i=0; i<NUM_ELEMS; i++) {
+        asprintf(&src[i], "%d", i);
+    }
 
-
-static bool test6(void)        /* verify string pack and unpack */
-{
-//
-//    int rc;
-//    char *str1;
-//    char *str2;
-//
-//
-//    rc = orte_dps.pack(bufA, "HELLO ", 1, ORTE_STRING);
-//    if (OMPI_ERROR==rc) { test_comment ("ompi_pack_string failed"); return(false);}
-
-    return (true);
-}
-
-static bool test7(void)        /* verify preallocated buffer init, pack and unpack */
-{
-
-    return (true);
-}
-
-static bool test8(void)        /* verify free */
-{
-    return (true);
-}
-
-static void dump_buf (orte_buffer_t *buf)
-{
-   int rc, i, out;
-
-    fprintf(test_out, "Buffer Dump\n");
-    fprintf(test_out, "pages: %d\tsize: %d\n", buf->pages, buf->size);
-    fprintf(test_out, "len: %d\tspace: %d\n", buf->len, buf->space);
-    fprintf(test_out, "toend: %d\n", buf->toend);
+    bufA = OBJ_NEW(orte_buffer_t);
+    if (NULL == bufA) {
+        test_comment("orte_buffer failed init in OBJ_NEW");
+        fprintf(test_out, "OBJ_NEW failed\n");
+        return false;
+    }
     
-//    fprintf(test_out, "Packed data\n");
-//    while (ORTE_SUCCESS == orte_dps.peek(buf, &type, &num_values)) {
-//
-//        orte_dps.unpack(buf, dest, &num_values, 
-//   rc = 0;
-//   i = 0;
-//   while (1) {
-//       rc = ompi_unpack (buf, &out, 1, OMPI_INT32);
-//       if (rc==0) printf("%d[%d] ", i, out);
-//       else {
-//           printf("\n");
-//           break;
-//       }
-//       i++;
-//   }
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_STRING);
+        if (ORTE_SUCCESS != rc) {
+            test_comment ("orte_dps.pack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+    }
+    
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
 
-   return;
+        for(j=0; j<NUM_ELEMS; j++)
+            dst[j] = NULL;
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_STRING);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("test4: orte_dps.unpack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+            if(strcmp(src[j],dst[j]) != 0) {
+                test_comment ("test4: invalid results from unpack");
+                return(false);
+            }
+        }
+    }
+         
+    OBJ_RELEASE(bufA);
+    if (NULL != bufA) {
+        test_comment("OBJ_RELEASE did not NULL the buffer pointer");
+        fprintf(test_out, "OBJ_RELEASE did not NULL the buffer pointer");
+        return false;
+    }
+
+    return (true);
 }
+
+
+/**
+ *  OMPI_NAME pack/unpack 
+ */
+
+static bool test5(void)
+{
+    orte_buffer_t *bufA;
+    int rc;
+    int32_t i;
+    orte_process_name_t src[NUM_ELEMS];
+    orte_process_name_t dst[NUM_ELEMS];
+
+    for(i=0; i<NUM_ELEMS; i++) {
+        src[i].cellid = 1000 + i;
+        src[i].jobid = 100 + i;
+        src[i].vpid = i;
+    }
+
+    bufA = OBJ_NEW(orte_buffer_t);
+    if (NULL == bufA) {
+        test_comment("orte_buffer failed init in OBJ_NEW");
+        fprintf(test_out, "OBJ_NEW failed\n");
+        return false;
+    }
+    
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_NAME);
+        if (ORTE_SUCCESS != rc) {
+            test_comment ("orte_dps.pack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+    }
+    
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
+        memset(dst,-1,sizeof(dst));
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_NAME);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("test5: orte_dps.unpack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+            if(memcmp(&src[j],&dst[j],sizeof(orte_process_name_t)) != 0) {
+                test_comment ("test5: invalid results from unpack");
+                return(false);
+            }
+        }
+    }
+         
+    OBJ_RELEASE(bufA);
+    if (NULL != bufA) {
+        test_comment("OBJ_RELEASE did not NULL the buffer pointer");
+        fprintf(test_out, "OBJ_RELEASE did not NULL the buffer pointer");
+        return false;
+    }
+
+    return(true);
+}
+
+/**
+ * OMPI_BOOL pack/unpack
+ */
+
+static bool test6(void)
+{
+    orte_buffer_t *bufA;
+    int rc;
+    int32_t i;
+    bool src[NUM_ELEMS];
+    bool dst[NUM_ELEMS];
+
+    for(i=0; i<NUM_ELEMS; i++)
+        src[i] = ((i % 2) == 0) ? true : false;
+
+    bufA = OBJ_NEW(orte_buffer_t);
+    if (NULL == bufA) {
+        test_comment("orte_buffer failed init in OBJ_NEW");
+        fprintf(test_out, "OBJ_NEW failed\n");
+        return false;
+    }
+    
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_BOOL);
+        if (ORTE_SUCCESS != rc) {
+            test_comment ("orte_dps.pack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+    }
+    
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
+        memset(dst,-1,sizeof(dst));
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_BOOL);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("orte_dps.unpack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+            if(src[j] != dst[j]) {
+                test_comment ("test6: invalid results from unpack");
+                return(false);
+            }
+        }
+    }
+         
+    OBJ_RELEASE(bufA);
+    if (NULL != bufA) {
+        test_comment("OBJ_RELEASE did not NULL the buffer pointer");
+        fprintf(test_out, "OBJ_RELEASE did not NULL the buffer pointer");
+        return false;
+    }
+
+    return (true);
+    return (true);
+}
+
+/**
+ * OMPI_BYTE_OBJECT pack/unpack
+ */
+
+static bool test7(void) 
+{
+
+    orte_buffer_t *bufA;
+    int rc;
+    int32_t i;
+    orte_byte_object_t src[NUM_ELEMS];
+    orte_byte_object_t dst[NUM_ELEMS];
+
+    for(i=0; i<NUM_ELEMS; i++) {
+        asprintf((char**)&src[i].bytes, "%d", i);
+        src[i].size = strlen((char*)src[i].bytes) + 1;
+    }
+
+    bufA = OBJ_NEW(orte_buffer_t);
+    if (NULL == bufA) {
+        test_comment("orte_buffer failed init in OBJ_NEW");
+        fprintf(test_out, "OBJ_NEW failed\n");
+        return false;
+    }
+    
+    for (i=0;i<NUM_ITERS;i++) {
+        rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_BYTE_OBJECT);
+        if (ORTE_SUCCESS != rc) {
+            test_comment ("orte_dps.pack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+    }
+    
+    for (i=0; i<NUM_ITERS; i++) {
+        int j;
+        size_t count = NUM_ELEMS;
+
+        memset(dst,0,sizeof(dst));
+
+        rc = orte_dps.unpack(bufA, dst, &count, ORTE_BYTE_OBJECT);
+        if (ORTE_SUCCESS != rc || count != NUM_ELEMS) {
+            test_comment ("test7: orte_dps.unpack failed");
+            fprintf(test_out, "orte_pack_value failed with return code %d\n", rc);
+            return(false);
+        }
+
+        for(j=0; j<NUM_ELEMS; j++) {
+            if(src[j].size != dst[j].size ||
+               memcmp(src[j].bytes,dst[j].bytes,src[j].size) != 0) {
+                test_comment ("test7: invalid results from unpack");
+                return(false);
+            }
+        }
+    }
+         
+    OBJ_RELEASE(bufA);
+    if (NULL != bufA) {
+        test_comment("OBJ_RELEASE did not NULL the buffer pointer");
+        fprintf(test_out, "OBJ_RELEASE did not NULL the buffer pointer");
+        return false;
+    }
+
+    return (true);
+    return (true);
+}
+
+static bool test8(void)
+{
+    return (true);
+}
+
 
