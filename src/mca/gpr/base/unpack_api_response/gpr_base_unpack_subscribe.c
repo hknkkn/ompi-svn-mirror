@@ -49,15 +49,15 @@ int orte_gpr_base_unpack_subscribe(orte_buffer_t *buffer, int *ret, orte_gpr_not
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, ret, &n, ORTE_INT))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, remote_idtag, &n, ORTE_GPR_NOTIFY_ID))) {
         ORTE_ERROR_LOG(rc);
-        return rc;
+	    return rc;
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, remote_idtag, &n, ORTE_GPR_PACK_NOTIFY_ID))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, ret, &n, ORTE_INT))) {
         ORTE_ERROR_LOG(rc);
-	    return rc;
+        return rc;
     }
 
     return ORTE_SUCCESS;

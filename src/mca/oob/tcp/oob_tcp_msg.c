@@ -232,6 +232,10 @@ bool mca_oob_tcp_msg_recv_handler(mca_oob_tcp_msg_t* msg, struct mca_oob_tcp_pee
              msg->msg_rwiov[1].iov_base = msg->msg_rwbuf;
              msg->msg_rwiov[1].iov_len = msg->msg_hdr.msg_size;
              msg->msg_rwnum = 1;
+        } else {
+             msg->msg_rwiov[1].iov_base = NULL;
+             msg->msg_rwiov[1].iov_len = 0;
+             msg->msg_rwnum = 0;
         }
     }
 
@@ -258,7 +262,7 @@ bool mca_oob_tcp_msg_recv_handler(mca_oob_tcp_msg_t* msg, struct mca_oob_tcp_pee
 static bool mca_oob_tcp_msg_recv(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* peer)
 {
     int rc;
-    while(1) {
+    while(msg->msg_rwnum) {
         rc = readv(peer->peer_sd, msg->msg_rwptr, msg->msg_rwnum);
         if(rc < 0) {
             if(ompi_errno == EINTR)
@@ -299,6 +303,7 @@ static bool mca_oob_tcp_msg_recv(mca_oob_tcp_msg_t* msg, mca_oob_tcp_peer_t* pee
             }
         } while(msg->msg_rwnum);
     }
+    return true;
 }
 
 /**

@@ -21,6 +21,7 @@
 #include "include/orte_constants.h"
 #include "include/orte_types.h"
 
+#include "dps/dps.h"
 #include "mca/gpr/gpr.h"
 #include "mca/errmgr/errmgr.h"
 #include "mca/rml/rml.h"
@@ -281,22 +282,16 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
     orte_gpr_keyval_t **kvals;
     orte_process_name_t *recipients;
     int i, j, n, k, rc;
-    orte_buffer_t msg;
+    orte_buffer_t *msg;
     orte_jobid_t job;
     
-    /* for the purposes of the stage gate manager, we don't actually have
-     * to determine anything from the message. All we have to do is respond
-     * by sending an xcast to all processes
-     */
-    
-    OBJ_CONSTRUCT(&msg, orte_buffer_t);
-    
+
     /* get the jobid from the segment name */
     if (ORTE_SUCCESS != (rc = orte_schema.extract_jobid_from_segment_name(&job, data->segment))) {
         ORTE_ERROR_LOG(rc);
         return;
     }
-    
+
     /* value returned will contain the counter, which contains the number of
      * procs in this job
      */
@@ -334,8 +329,19 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
         recipients[i].vpid = (orte_vpid_t)(k + i);
     }
     
+    /* for the purposes of the stage gate manager, we don't actually have
+     * to determine anything from the message. All we have to do is respond
+     * by sending an xcast to all processes
+     */
+    
+    msg = OBJ_NEW(orte_buffer_t);
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(msg, &job, 1, ORTE_JOBID))) {
+        ORTE_ERROR_LOG(rc);
+        return;
+    }
+    
     if (ORTE_SUCCESS != (rc = orte_rml.xcast(orte_process_info.my_name, recipients,
-                                        n, &msg, NULL))) {
+                                        n, msg, NULL))) {
         ORTE_ERROR_LOG(rc);
         return;
     }

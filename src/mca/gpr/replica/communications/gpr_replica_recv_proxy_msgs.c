@@ -40,6 +40,7 @@ void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
 			  orte_buffer_t *buffer, orte_rml_tag_t tag, void* cbdata)
 {
     orte_buffer_t *answer;
+    int rc;
 
     if (orte_gpr_replica_globals.debug) {
 	   ompi_output(0, "[%d,%d,%d] gpr replica: received message from [%d,%d,%d]",
@@ -56,9 +57,12 @@ void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
 	if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "gpr replica: msg processing complete - processing callbacks");
 	}
-#if 0
-	orte_gpr_replica_process_callbacks();
-#endif
+
+    /* be sure to process callbacks before returning */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_process_callbacks())) {
+        ORTE_ERROR_LOG(rc);
+    }
+
     /* reissue the non-blocking receive */
     orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0, orte_gpr_replica_recv, NULL);
 

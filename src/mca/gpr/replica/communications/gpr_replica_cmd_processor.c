@@ -274,12 +274,6 @@ int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
         n = 1;  /* unpack a single command */
     } /* end while */
 
-    /* be sure to process callbacks before returning */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_process_callbacks())) {
-        ORTE_ERROR_LOG(rc);
-        return rc;
-    }
-    
     return ORTE_SUCCESS;
     
 RETURN_ERROR:
