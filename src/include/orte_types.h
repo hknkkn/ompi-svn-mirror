@@ -11,6 +11,7 @@
  * 
  * $HEADER$
  */
+/** @file */
 
 #ifndef ORTE_TYPES_H
 #define ORTE_TYPES_H
@@ -108,21 +109,25 @@ OBJ_CLASS_DECLARATION(orte_app_context_t);
 typedef int8_t orte_exit_code_t;
 typedef int8_t orte_status_key_t;
 
-/*
- * Node State
+/**
+ * Node State, correspondinding to the ORTE_NODE_STATE_* #defines,
+ * below.  These are #defines instead of an enum because the thought
+ * is that we may have lots and lots of entries of these in the
+ * registry and by making this an int8_t, it's only 1 byte, whereas an
+ * enum defaults to an int (probably 4 bytes).  So it's a bit of a
+ * space savings.
  */
+typedef int8_t orte_node_state_t;
 
-enum orte_node_state_t {
-    ORTE_NODE_STATE_UNKNOWN,
-    ORTE_NODE_STATE_DOWN,
-    ORTE_NODE_STATE_UP,
-    ORTE_NODE_STATE_REBOOT,
-
-    ORTE_NODE_STATE_MAX
-};
-
-typedef enum orte_node_state_t orte_node_state_t;
-
+/** Node is in an unknown state (see orte_node_state_t) */
+#define ORTE_NODE_STATE_UNKNOWN  0x00
+/** Node is down (see orte_node_state_t) */
+#define ORTE_NODE_STATE_DOWN     0x01
+/** Node is up / available for use (see orte_node_state_t) */
+#define ORTE_NODE_STATE_UP       0x02
+/** Node is rebooting (only some systems will support this; see
+    orte_node_state_t) */
+#define ORTE_NODE_STATE_REBOOT   0x03
 
 
 #endif  /* ORTE_TYPES_H */
