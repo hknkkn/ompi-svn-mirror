@@ -178,7 +178,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
         for (j=0; j < (orte_gpr_replica_globals.srch_cptr)->size; j++) {
             if (NULL != cptr[j]) {
                 for (i=0; i < cnt; i++) {
-                    if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, keyvals[i]->key) &&
+                    if (ORTE_SUCCESS == orte_gpr_replica_create_itag(&itag, seg, keyvals[i]->key) &&
                         ORTE_SUCCESS == orte_gpr_replica_search_container(&num_found,
                                                 ORTE_GPR_REPLICA_OR,
                                                 &itag, 1, cptr[j])) {
