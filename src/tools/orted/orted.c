@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     }
 
     /* setup stdin/stdout/stderr */
-    if (orted_globals.debug == false || orted_globals.bootproxy > 0) {
+    if (orted_globals.debug == false) {
         int fd;
         char log_file[PATH_MAX];
 
