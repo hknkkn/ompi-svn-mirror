@@ -158,6 +158,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
 	orte_app_context_t **app_context;
+	orte_app_context_map_t **app_context_map;
     uint32_t len;
     char *str, *sstr;
     void *sptr;
@@ -465,6 +466,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 }
 
                 /* get the app index number */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->idx),
                             src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
@@ -482,6 +484,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 				*num_bytes+=n;
 
                 /* get the number of processes */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_procs),
                             src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
@@ -490,6 +493,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 				*num_bytes+=n;
 
                 /* get the number of argv strings */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->argc),
                             src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
@@ -506,6 +510,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                     app_context[i]->argv[app_context[i]->argc] = NULL;
     
                     /* and unpack them */
+					n = 0;
                     if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->argv,
                                 src, app_context[i]->argc, ORTE_STRING, mem_left, &n))) {
                         return rc;
@@ -515,6 +520,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 }
                 
                 /* get the number of env strings */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_env),
                             src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
@@ -531,6 +537,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                     app_context[i]->env[app_context[i]->num_env] = NULL;
             
                     /* and unpack them */
+					n = 0;
                     if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->env,
                                 src, app_context[i]->num_env, ORTE_STRING, mem_left, &n))) {
                         return rc;
@@ -540,6 +547,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                 }
                 
                 /* unpack the cwd */
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&app_context[i]->cwd,
                             src, 1, ORTE_STRING, mem_left, &n))) {
                     return rc;
@@ -549,6 +557,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
 
                 /* unpack the map data */
 
+				n = 0;
                 if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context[i]->num_map),
                            src, 1, ORTE_INT32, mem_left, &n))) {
                     return rc;
@@ -561,30 +570,53 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                     if (NULL == app_context[i]->map_data) {
                         return ORTE_ERR_OUT_OF_RESOURCE;
                     }
-
-                    for (j = 0; j < (size_t)(app_context[i]->num_map); ++j) {
-                        app_context[i]->map_data[j] = 
-                            OBJ_NEW(orte_app_context_map_t);
-                        if (NULL == app_context[i]->map_data[j]) {
-                            return ORTE_ERR_OUT_OF_RESOURCE;
-                        }
-                        if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&app_context[i]->map_data[j]->map_type,
-                                src, 1, ORTE_UINT8, mem_left, &n))) {
+					n = 0;
+                    if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(app_context[i]->map_data,
+                                src, app_context[i]->num_map, ORTE_APP_CONTEXT_MAP, mem_left, &n))) {
                             return rc;
-                        }
-                        src = (void*)((char*)src + n);
-                        *num_bytes += n;
-
-                        if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&app_context[i]->map_data[j]->map_data,
-                                src, 1, ORTE_STRING, mem_left, &n))) {
-                            return rc;
-                        }
-                        src = (void*)((char*)src + n);
-                        *num_bytes += n;
                     }
+                    src = (void*)((char*)src + n);
+                    *num_bytes += n;
+
                 }
 
             }
+			/* must return here for composite unpacks that change mem_left directly */
+            return ORTE_SUCCESS;
+            break;
+
+        case ORTE_APP_CONTEXT_MAP:
+            
+            /* unpack into array of app_context_map objects */
+            app_context_map = (orte_app_context_map_t**) dst;
+            for (i=0; i < num_vals; i++) {
+
+                /* create the app_context object */
+                app_context_map[i] = OBJ_NEW(orte_app_context_map_t);
+                if (NULL == app_context_map[i]) {
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+
+				/* map type */
+				n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context_map[i]->map_type),
+                           src, 1, ORTE_UINT8, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+
+				/* map data */
+				n = 0;
+                if (ORTE_SUCCESS != (rc = orte_dps_unpack_nobuffer(&(app_context_map[i]->map_data),
+                           src, 1, ORTE_STRING, mem_left, &n))) {
+                    return rc;
+                }
+                src = (void*)((char*)src + n);
+                *num_bytes+=n;
+            }
+			/* must return here for composite unpacks that change mem_left directly */
+            return ORTE_SUCCESS;
             break;
 
         case ORTE_GPR_SUBSCRIPTION:

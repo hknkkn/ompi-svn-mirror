@@ -67,10 +67,11 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_GPR_VALUE           (orte_data_type_t)   34 /**< registry return value */
 #define    ORTE_DATA_TYPE           (orte_data_type_t)   35 /**< data type */
 #define    ORTE_APP_CONTEXT         (orte_data_type_t)   36 /**< argv and enviro arrays */
-#define    ORTE_GPR_ADDR_MODE       (orte_data_type_t)   37 /**< Addressing mode for registry cmds */
-#define    ORTE_GPR_SUBSCRIPTION    (orte_data_type_t)   38 /**< describes data returned by subscription */
-#define    ORTE_GPR_NOTIFY_DATA     (orte_data_type_t)   39 /**< data returned from a subscription */
-#define    ORTE_NULL                (orte_data_type_t)   40 /**< don't interpret data type */
+#define    ORTE_APP_CONTEXT_MAP     (orte_data_type_t)   37 /**< application context mapping array */
+#define    ORTE_GPR_ADDR_MODE       (orte_data_type_t)   38 /**< Addressing mode for registry cmds */
+#define    ORTE_GPR_SUBSCRIPTION    (orte_data_type_t)   39 /**< describes data returned by subscription */
+#define    ORTE_GPR_NOTIFY_DATA     (orte_data_type_t)   40 /**< data returned from a subscription */
+#define    ORTE_NULL                (orte_data_type_t)   41 /**< don't interpret data type */
 
 
 typedef struct {

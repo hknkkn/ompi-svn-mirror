@@ -46,6 +46,7 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
     orte_app_context_t **app_context;
+    orte_app_context_map_t **app_context_map;
     orte_gpr_subscription_t **subs;
     orte_gpr_notify_data_t **data;
 
@@ -156,7 +157,21 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
                                 app_context[i]->num_env, ORTE_STRING); /* length of all envs */
                 mem_req += orte_dps_memory_required(
                                 (void*)(&(app_context[i]->cwd)), 1, ORTE_STRING); /* cwd string */
+				mem_req += sizeof(int32_t); /* number of maps */
+                mem_req += orte_dps_memory_required(
+                                (void*)(app_context[i]->map_data), 
+								app_context[i]->num_map, ORTE_APP_CONTEXT_MAP); /* proc map */
             }
+            return mem_req;
+
+        case ORTE_APP_CONTEXT_MAP:
+            mem_req = 0;
+            app_context_map = (orte_app_context_map_t**) src;
+            for (i=0; i < num_vals; i++) {
+				mem_req += sizeof(uint8_t);	/* map_type */
+				mem_req += orte_dps_memory_required(
+			                    (void*)(&(app_context_map[i]->map_data)), 1, ORTE_STRING); /* map data */
+			}
             return mem_req;
 
         case ORTE_GPR_SUBSCRIPTION:

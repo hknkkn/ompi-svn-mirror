@@ -469,6 +469,7 @@ char *orte_data_strings[] = {
     "ORTE_GPR_VALUE",
     "ORTE_DATA_TYPE",
     "ORTE_APP_CONTEXT",
+    "ORTE_APP_CONTEXT_MAP",
     "ORTE_GPR_ADDR_MODE",
     "ORTE_GPR_SUBSCRIPTION",
     "ORTE_GPR_NOTIFY_DATA",

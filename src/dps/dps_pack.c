@@ -166,7 +166,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
 int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                     orte_data_type_t type, size_t *num_bytes)
 {
-    size_t i, j, len, n;
+    size_t i, len, n;
     uint16_t * d16;
     uint16_t * s16;
     uint32_t * d32;
@@ -181,6 +181,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
     orte_gpr_keyval_t **keyval;
     orte_gpr_value_t **values;
 	orte_app_context_t **app_context;
+	orte_app_context_map_t **app_context_map;
     orte_gpr_subscription_t **subs;
     orte_gpr_notify_data_t **data;
 
@@ -404,6 +405,8 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
             app_context = (orte_app_context_t**) src;
             for (i=0; i < num_vals; i++) {
 
+				n = 0; /* must always start count at zero! */
+
                 /* pack the application index (for multiapp jobs) */
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(app_context[i]->idx)), 1, ORTE_INT32, &n)) {
@@ -422,6 +425,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
 				*num_bytes+=n;
 
                 /* pack the number of processes */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(app_context[i]->num_procs)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
@@ -430,6 +434,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
 				*num_bytes+=n;
 
                 /* pack the number of entries in the argv array */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(app_context[i]->argc)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
@@ -439,6 +444,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
 
                 /* if there are entries, pack the argv entries */
                 if (0 < app_context[i]->argc) {
+					n = 0;
                     if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                     (void*)(app_context[i]->argv), app_context[i]->argc, ORTE_STRING, &n)) {
                         return ORTE_ERROR;
@@ -448,21 +454,23 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 }
                 
                 /* pack the number of entries in the enviro array */
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                 (void*)(&(app_context[i]->num_env)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
                 }
                 dst = (void*)((char*)dst + n);
-			   *num_bytes+=n;
+			    *num_bytes+=n;
 
                 /* if there are entries, pack the enviro entries */
                 if (0 < app_context[i]->num_env) {
+				    n = 0;
                     if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                                     (void*)(app_context[i]->env), app_context[i]->num_env, ORTE_STRING, &n)) {
                         return ORTE_ERROR;
                     }
                     dst = (void*)((char*)dst + n);
-    				   *num_bytes+=n;
+    				*num_bytes+=n;
                 }
                 
                 /* pack the cwd */
@@ -476,7 +484,7 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                                 
                 /* Pack the map data */
 
-		n = 0;
+				n = 0;
                 if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
                         (void*)(&(app_context[i]->num_map)), 1, ORTE_INT32, &n)) {
                     return ORTE_ERROR;
@@ -485,26 +493,37 @@ int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
                 *num_bytes += n;
 
                 if (app_context[i]->num_map > 0) {
-                    for (j = 0; j < (size_t) app_context[i]->num_map; ++j) {
-                        n = 0;
+						n = 0;
                         if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                             (void*)(&(app_context[i]->map_data[j]->map_type)), 1, ORTE_UINT8, &n)) {
+                             (void*)(app_context[i]->map_data), app_context[i]->num_map, ORTE_APP_CONTEXT_MAP, &n)) {
                             return ORTE_ERROR;
                         }
                         dst = (void*)((char*)dst + n);
                         *num_bytes += n;
-
-                        n = 0;
-                        if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
-                             (void*)(&(app_context[i]->map_data[j]->map_data)), 1, ORTE_STRING, &n)) {
-                            return ORTE_ERROR;
-                        }
-                        dst = (void*)((char*)dst + n);
-                        *num_bytes += n;
-                    }
-                }
+               }
             }
             break;
+
+		case ORTE_APP_CONTEXT_MAP:
+            app_context_map = (orte_app_context_map_t**) src;
+            for (i=0; i < num_vals; i++) {
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                        (void*)(&(app_context_map[i]->map_type)), 1, ORTE_UINT8, &n)) {
+                    return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes += n;
+
+                n = 0;
+                if (ORTE_SUCCESS != orte_dps_pack_nobuffer(dst,
+                        (void*)(&(app_context_map[i]->map_data)), 1, ORTE_STRING, &n)) {
+                   return ORTE_ERROR;
+                }
+                dst = (void*)((char*)dst + n);
+                *num_bytes += n;
+            }
+			break;
 
         case ORTE_GPR_SUBSCRIPTION:
             /* array of pointers to subscription objects - need to pack the objects */
