@@ -123,6 +123,13 @@ int orte_pls_rsh_component_open(void)
     /* lookup parameters */
     mca_pls_rsh_component.debug = orte_pls_rsh_param_register_int("debug",0);
     mca_pls_rsh_component.num_concurrent = orte_pls_rsh_param_register_int("num_concurrent",128);
+    if(mca_pls_rsh_component.debug == 0) {
+        int id = mca_base_param_register_int("debug",NULL,NULL,NULL,0);
+        int value;
+        mca_base_param_lookup_int(id,&value);
+        mca_pls_rsh_component.debug = (value > 0) ? 1 : 0;
+    }
+
     mca_pls_rsh_component.orted = orte_pls_rsh_param_register_string("orted","orted");
     mca_pls_rsh_component.priority = orte_pls_rsh_param_register_int("priority",10);
     mca_pls_rsh_component.reap = orte_pls_rsh_param_register_int("reap",1);
