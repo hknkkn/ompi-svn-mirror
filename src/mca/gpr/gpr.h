@@ -682,11 +682,13 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_put_fn_t put;
     orte_gpr_base_module_delete_entries_fn_t delete_entries;
     orte_gpr_base_module_delete_segment_fn_t delete_segment;
+    orte_gpr_base_module_index_fn_t index;
     /* NON-BLOCKING OPERATIONS */
     orte_gpr_base_module_get_nb_fn_t get_nb;
     orte_gpr_base_module_put_nb_fn_t put_nb;
     orte_gpr_base_module_delete_entries_nb_fn_t delete_entries_nb;
     orte_gpr_base_module_delete_segment_nb_fn_t delete_segment_nb;
+    orte_gpr_base_module_index_nb_fn_t index_nb;
     /* SUBSCRIBE OPERATIONS */
     orte_gpr_base_module_subscribe_fn_t subscribe;
     orte_gpr_base_module_unsubscribe_fn_t unsubscribe;
@@ -697,9 +699,8 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_begin_compound_cmd_fn_t begin_compound_cmd;
     orte_gpr_base_module_stop_compound_cmd_fn_t stop_compound_cmd;
     orte_gpr_base_module_exec_compound_cmd_fn_t exec_compound_cmd;
-    /* DUMP/INDEX */
+    /* DUMP */
     orte_gpr_base_module_dump_fn_t dump;
-    orte_gpr_base_module_index_fn_t index;
     /* MODE OPERATIONS */
     orte_gpr_base_module_notify_on_fn_t notify_on;
     orte_gpr_base_module_notify_off_fn_t notify_off;

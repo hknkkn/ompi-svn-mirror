@@ -58,11 +58,14 @@ int orte_gpr_proxy_begin_compound_cmd(void)
 
     orte_gpr_proxy_compound_cmd = OBJ_NEW(orte_buffer_t);
     if (NULL == orte_gpr_proxy_compound_cmd) {
+        orte_gpr_proxy_compound_cmd_mode = false;
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
     if (ORTE_SUCCESS != (rc = orte_dps.pack(orte_gpr_proxy_compound_cmd, &command,
                                             1, ORTE_GPR_CMD))) {
+        orte_gpr_proxy_compound_cmd_mode = false;
+        OBJ_RELEASE(orte_gpr_proxy_compound_cmd);
         return rc;
     }
     
@@ -117,17 +120,29 @@ int orte_gpr_proxy_exec_compound_cmd(void)
     }
     
 	if (0 > orte_rml.recv_buffer(orte_gpr_my_replica, answer, MCA_OOB_TAG_GPR)) {
+        OBJ_RELEASE(answer);
         rc = ORTE_ERR_COMM_FAILURE;
 	    goto CLEANUP;
 	}
 
     n = 1;
     if (ORTE_SUCCESS != (rc = orte_dps.unpack(answer, &command, &n, ORTE_GPR_CMD))) {
+        OBJ_RELEASE(answer);
+        goto CLEANUP;
+    }
+    
+    if (ORTE_GPR_COMPOUND_CMD != command) {
+        OBJ_RELEASE(answer);
+        rc = ORTE_ERR_COMM_FAILURE;
         goto CLEANUP;
     }
     
     n = 1;
     rc = orte_dps.unpack(answer, &response, &n, ORTE_INT32);
+    
+    if (ORTE_SUCCESS == rc) {
+        rc = (int)response;
+    }
     
  CLEANUP:
     orte_gpr_proxy_compound_cmd_mode = false;

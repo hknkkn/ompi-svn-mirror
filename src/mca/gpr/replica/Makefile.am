@@ -16,7 +16,7 @@
 
 include $(top_ompi_srcdir)/config/Makefile.options
 
-SUBDIRS = src
+SUBDIRS = api_layer functional_layer transition_layer
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
