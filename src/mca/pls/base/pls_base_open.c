@@ -14,6 +14,7 @@
 
 
 #include "ompi_config.h"
+#include "include/constants.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/pls/base/base.h"
@@ -33,6 +34,7 @@
 int mca_pls_base_output = 0;
 ompi_list_t mca_pls_base_components_available;
 mca_pls_base_module_t ompi_pls = {
+    NULL
 };  /* holds selected module's function pointers */
 
 /**

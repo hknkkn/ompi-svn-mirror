@@ -35,8 +35,7 @@
  * caller.
  */
 int
-mca_rdas_base_select(mca_llm_base_module_t **selected, 
-                    bool have_threads)
+mca_rdas_base_select(bool have_threads)
 {
   int priority, best_priority;
   mca_base_component_list_item_t *cli;
@@ -95,7 +94,7 @@ mca_rdas_base_select(mca_llm_base_module_t **selected,
   } 
 
   /* Save the winner */
-  *selected = best_module;
+//  *selected = best_module;
 
   ompi_output_verbose(10, mca_rdas_base_output,
                       "rdas: base: select: completed");

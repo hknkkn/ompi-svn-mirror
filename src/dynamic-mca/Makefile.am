@@ -18,7 +18,6 @@ SUBDIRS = \
 	allocator \
         coll \
         common \
-	dps \
         gpr \
         io \
         mpool \

@@ -18,11 +18,17 @@
 
 #ifndef _MCA_OOB_BASE_H_
 #define _MCA_OOB_BASE_H_
+
+#include "orte_config.h"
+
 #include "mca/mca.h"
-#include "mca/ns/ns.h"
+#include "mca/ns/ns_types.h"
+#include "mca/oob/oob_types.h"
+
 #ifdef HAVE_SYS_UIO_H
 	#include <sys/uio.h>
 #endif
+
 #include "util/bufpack.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -33,46 +39,9 @@ extern "C" {
  * Well known address
  */
 
-OMPI_DECLSPEC extern ompi_process_name_t mca_oob_name_any;
-OMPI_DECLSPEC extern ompi_process_name_t mca_oob_name_seed;
-OMPI_DECLSPEC extern ompi_process_name_t mca_oob_name_self;
-
-/**
- * The wildcard for receives from any peer.
- */
-#define MCA_OOB_NAME_ANY  &mca_oob_name_any
-/**
- * Process name of self
- */
-#define MCA_OOB_NAME_SELF &mca_oob_name_self
-/**
- * Process name of seed
- */
-#define MCA_OOB_NAME_SEED &mca_oob_name_seed
-
-
-/*
- * Other constants
- */
-/**
- * Receive from any tag.
- */
-#define MCA_OOB_TAG_ANY 0
-/**
- * Service tags
- */
-#define MCA_OOB_TAG_NS          1
-#define MCA_OOB_TAG_GPR         2
-#define MCA_OOB_TAG_GPR_NOTIFY  3
-#define MCA_OOB_TAG_RTE         4
-#define MCA_OOB_TAG_EXEC        5
-#define MCA_OOB_TAG_DAEMON      6
-#define MCA_OOB_TAG_STDIO       7
-#define MCA_OOB_TAG_SCHED       8
-#define MCA_OOB_TAG_PCM_KILL    9
-#define MCA_OOB_TAG_XCAST       10
-#define MCA_OOB_TAG_PCM_KILL_ACK 11
-#define MCA_OOB_TAG_USER        1000 /* user defined tags should be assigned above this level */
+OMPI_DECLSPEC extern orte_process_name_t mca_oob_name_any;
+OMPI_DECLSPEC extern orte_process_name_t mca_oob_name_seed;
+OMPI_DECLSPEC extern orte_process_name_t mca_oob_name_self;
 
 /*
  * OOB API 
@@ -132,7 +101,7 @@ OMPI_DECLSPEC int mca_oob_set_contact_info(const char*);
  *  an error status is returned.
  */
 
-OMPI_DECLSPEC int mca_oob_ping(ompi_process_name_t* name, struct timeval* tv);
+OMPI_DECLSPEC int mca_oob_ping(orte_process_name_t* name, struct timeval* tv);
 
 /**
  *  A barrier across all processes w/in the same job.
@@ -152,7 +121,7 @@ OMPI_DECLSPEC int mca_oob_barrier(void);
 *  the process name.
 */
 
-OMPI_DECLSPEC int mca_oob_parse_contact_info(const char* uri, ompi_process_name_t* peer, char*** uris);
+OMPI_DECLSPEC int mca_oob_parse_contact_info(const char* uri, orte_process_name_t* peer, char*** uris);
 
 
 /**
@@ -186,7 +155,7 @@ OMPI_DECLSPEC int mca_oob_set_contact_info(const char*);
 */
 
 OMPI_DECLSPEC int mca_oob_send(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec *msg, 
     int count, 
     int tag,
@@ -202,7 +171,7 @@ OMPI_DECLSPEC int mca_oob_send(
 */
 
 OMPI_DECLSPEC int mca_oob_send_packed(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     ompi_buffer_t buffer, 
     int tag, 
     int flags);
@@ -238,7 +207,7 @@ OMPI_DECLSPEC int mca_oob_send_packed(
 */
 
 OMPI_DECLSPEC int mca_oob_recv(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec *msg, 
     int count, 
     int* tag, 
@@ -262,7 +231,7 @@ OMPI_DECLSPEC int mca_oob_recv(
 */
 
 OMPI_DECLSPEC int mca_oob_recv_packed (
-	ompi_process_name_t* peer, 
+	orte_process_name_t* peer, 
 	ompi_buffer_t *buf, 
 	int* tag);
 
@@ -284,7 +253,7 @@ OMPI_DECLSPEC int mca_oob_recv_packed (
 
 typedef void (*mca_oob_callback_fn_t)(
     int status,
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec* msg, 
     int count,
     int tag,
@@ -304,7 +273,7 @@ typedef void (*mca_oob_callback_fn_t)(
 
 typedef void (*mca_oob_callback_packed_fn_t)(
     int status,
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     ompi_buffer_t buffer,
     int tag,
     void* cbdata);
@@ -328,7 +297,7 @@ typedef void (*mca_oob_callback_packed_fn_t)(
 */
 
 OMPI_DECLSPEC int mca_oob_send_nb(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec* msg, 
     int count, 
     int tag,
@@ -354,7 +323,7 @@ OMPI_DECLSPEC int mca_oob_send_nb(
 */
 
 OMPI_DECLSPEC int mca_oob_send_packed_nb(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     ompi_buffer_t buffer,
     int tag,
     int flags, 
@@ -378,7 +347,7 @@ OMPI_DECLSPEC int mca_oob_send_packed_nb(
 */
 
 OMPI_DECLSPEC int mca_oob_recv_nb(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     struct iovec* msg,  
     int count, 
     int tag,
@@ -395,7 +364,7 @@ OMPI_DECLSPEC int mca_oob_recv_nb(
 */
 
 OMPI_DECLSPEC int mca_oob_recv_cancel(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     int tag);
 
 /**
@@ -415,7 +384,7 @@ OMPI_DECLSPEC int mca_oob_recv_cancel(
 */
 
 OMPI_DECLSPEC int mca_oob_recv_packed_nb(
-    ompi_process_name_t* peer, 
+    orte_process_name_t* peer, 
     int tag,
     int flags, 
     mca_oob_callback_packed_fn_t cbfunc,
@@ -434,7 +403,7 @@ OMPI_DECLSPEC int mca_oob_recv_packed_nb(
  */
 
 OMPI_DECLSPEC int mca_oob_xcast(
-    ompi_process_name_t* root, 
+    orte_process_name_t* root, 
     ompi_list_t* peers,
     ompi_buffer_t buffer,
     mca_oob_callback_packed_fn_t cbfunc);

@@ -23,7 +23,10 @@
 
 #include "include/types.h"
 #include "mca/mca.h"
-#include "mca/gpr/base/base.h"
+
+#include "mca/ns/ns_types.h"
+#include "mca/gpr/gpr_types.h"
+
 #include "mca/oob/base/base.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -64,7 +67,7 @@ typedef char* (*mca_oob_base_module_get_addr_fn_t)(void);
 *  @param addr    Address of seed in component specific uri format.
 */
 
-typedef int (*mca_oob_base_module_set_addr_fn_t)(const ompi_process_name_t*, const char* addr);
+typedef int (*mca_oob_base_module_set_addr_fn_t)(const orte_process_name_t*, const char* addr);
 
 
 /**
@@ -75,7 +78,7 @@ typedef int (*mca_oob_base_module_set_addr_fn_t)(const ompi_process_name_t*, con
 *  @return            OMPI error code (<0) or OMPI_SUCCESS
 */
 
-typedef int (*mca_oob_base_module_ping_fn_t)(const ompi_process_name_t*, const struct timeval* tv);
+typedef int (*mca_oob_base_module_ping_fn_t)(const orte_process_name_t*, const struct timeval* tv);
 
 /**
 *  Implementation of mca_oob_send().
@@ -89,7 +92,7 @@ typedef int (*mca_oob_base_module_ping_fn_t)(const ompi_process_name_t*, const s
 */
 
 typedef int (*mca_oob_base_module_send_fn_t)(
-    ompi_process_name_t* peer,
+    orte_process_name_t* peer,
     struct iovec *msg,
     int count,
     int tag,
@@ -109,7 +112,7 @@ typedef int (*mca_oob_base_module_send_fn_t)(
 */
 
 typedef int (*mca_oob_base_module_recv_fn_t)(
-    ompi_process_name_t* peer,
+    orte_process_name_t* peer,
     struct iovec *msg,
     int count,
     int* tag,
@@ -130,7 +133,7 @@ typedef int (*mca_oob_base_module_recv_fn_t)(
 */
 
 typedef int (*mca_oob_base_module_send_nb_fn_t)(
-    ompi_process_name_t* peer,
+    orte_process_name_t* peer,
     struct iovec* msg,
     int count,
     int tag,
@@ -152,7 +155,7 @@ typedef int (*mca_oob_base_module_send_nb_fn_t)(
 */
 
 typedef int (*mca_oob_base_module_recv_nb_fn_t)(
-    ompi_process_name_t* peer,
+    orte_process_name_t* peer,
     struct iovec* msg,
     int count,
     int tag,
@@ -168,7 +171,7 @@ typedef int (*mca_oob_base_module_recv_nb_fn_t)(
 * @return             OMPI error code (<0) on error or number of bytes actually received.
 */
 
-typedef int (*mca_oob_base_module_recv_cancel_fn_t)(ompi_process_name_t* peer, int tag);
+typedef int (*mca_oob_base_module_recv_cancel_fn_t)(orte_process_name_t* peer, int tag);
 
 /**
  * Hook function called by mca_oob_base_register to allow
@@ -201,7 +204,7 @@ typedef void (*mca_oob_update_callback_fn_t)(
     /**
      * xcast function for sending common messages to all processes
      */
-typedef int (*mca_oob_base_module_xcast_fn_t)(ompi_process_name_t* root, 
+typedef int (*mca_oob_base_module_xcast_fn_t)(orte_process_name_t* root, 
     ompi_list_t* peers,
     ompi_buffer_t buffer,
     mca_oob_callback_packed_fn_t cbfunc);

@@ -36,7 +36,7 @@ struct mca_rdas_base_hostfile_node_t {
     ompi_list_item_t super;
     /** hostname for this node.  Can be used as generic description
         field if hostnames aren't used on this platform */
-    char hostname[MAXHOSTNAMELEN];
+    char *hostname;
     /** number of MPI processes Open MPI can start on this host */
     int count;
     /** count argument in the hostfile */
@@ -56,7 +56,7 @@ OBJ_CLASS_DECLARATION(mca_rdas_base_hostfile_node_t);
  */
 struct mca_rdas_base_hostfile_data_t {
     /** make ourselves an instance of the data base class */
-    ompi_rte_node_allocation_data_t super;
+    void *super;
     /** keep a list of the hosts allocated to this description */
     ompi_list_t *hostlist;
 };

@@ -35,14 +35,14 @@ abort_procs(ompi_proc_t **procs, int proc_count,
 {
     int i;
     int ret = OMPI_SUCCESS;
-    int killret;
+    int killret=OMPI_SUCCESS;
     mca_ns_base_jobid_t jobid;
 
     for (i = 0 ; i < proc_count ; ++i) {
         jobid = ompi_name_server.get_jobid(&(procs[i]->proc_name));
         if (jobid == my_jobid) continue;
 
-        killret = ompi_rte_terminate_job(jobid, 0);
+//        killret = ompi_rte_terminate_job(jobid, 0);
         if (OMPI_SUCCESS != killret) ret = killret;
     }
 
@@ -56,7 +56,7 @@ ompi_mpi_abort(struct ompi_communicator_t* comm,
                bool kill_remote_of_intercomm)
 {
     mca_ns_base_jobid_t my_jobid;
-    int ret;
+    int ret=OMPI_SUCCESS;
     
     /* BWB - XXX - Should probably publish the error code somewhere */
 
@@ -78,7 +78,7 @@ ompi_mpi_abort(struct ompi_communicator_t* comm,
                 comm->c_local_group->grp_proc_count,
                 my_jobid);
 
-    ret = ompi_rte_terminate_job(my_jobid, 0);
+//    ret = ompi_rte_terminate_job(my_jobid, 0);
 
     if (OMPI_SUCCESS == ret) {
         while (1) {

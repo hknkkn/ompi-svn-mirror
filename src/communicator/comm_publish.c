@@ -20,7 +20,6 @@
 #include "communicator/communicator.h"
 #include "proc/proc.h"
 #include "include/constants.h"
-#include "mca/pcm/pcm.h"
 #include "mca/pml/pml.h"
 #include "mca/ns/ns.h"
 #include "mca/gpr/base/base.h"

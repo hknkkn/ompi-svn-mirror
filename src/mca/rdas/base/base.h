@@ -34,9 +34,7 @@
 extern "C" {
 #endif
 OMPI_DECLSPEC  int mca_rdas_base_open(void);
-OMPI_DECLSPEC int mca_rdas_base_select(const char *active_pcm,
-                          mca_rdas_base_module_t **selected, 
-                          bool have_threads);
+OMPI_DECLSPEC int mca_rdas_base_select(bool have_threads);
 OMPI_DECLSPEC int mca_rdas_base_close(void);
 
 /*

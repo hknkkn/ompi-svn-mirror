@@ -37,7 +37,6 @@ libruntime_la_SOURCES = \
     ompi_rte_finalize.c \
     ompi_rte_init.c \
     ompi_rte_init_cleanup.c \
-    ompi_rte_llm.c \
     ompi_rte_monitor.c \
     ompi_rte_job_startup.c \
     ompi_rte_job_shutdown.c \
@@ -49,7 +48,6 @@ libruntime_la_SOURCES = \
     ompi_rte_parse_environ.c \
     ompi_rte_parse_cmd_line.c \
     ompi_rte_parse_daemon_cmd_line.c \
-    ompi_rte_pcm.c \
     ompi_rte_wait.c
 
 # Conditionally install the header files

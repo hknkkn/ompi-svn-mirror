@@ -24,8 +24,6 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 #include "threads/mutex.h"
-#include "mca/llm/base/base.h"
-#include "mca/pcm/base/base.h"
 #include "mca/pcmclient/base/base.h"
 #include "mca/oob/oob.h"
 #include "mca/ns/base/base.h"
@@ -45,8 +43,6 @@ int ompi_rte_finalize(void)
   ompi_rte_wait_finalize();
   ompi_rte_internal_fini_spawn();
 
-  mca_pcm_base_close();
-  mca_llm_base_close();
   mca_pcmclient_base_close();
   mca_ns_base_close();
   mca_gpr_base_close();

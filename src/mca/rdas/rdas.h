@@ -34,6 +34,8 @@
 #include "mca/mca.h"
 #include "class/ompi_list.h"
 
+#include "mca/gpr/base/base.h"
+
 /*
  * MCA component management functions
  */

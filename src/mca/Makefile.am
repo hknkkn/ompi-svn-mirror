@@ -19,7 +19,6 @@ SUBDIRS = \
         base \
         coll \
         common \
-	dps \
         gpr \
         io \
         mpool \

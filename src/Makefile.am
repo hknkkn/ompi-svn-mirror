@@ -69,6 +69,7 @@ SUBDIRS = \
         attribute \
         communicator \
         datatype \
+        dps \
         errhandler \
         event \
         file \
@@ -98,6 +99,7 @@ libmpi_la_LIBADD = \
         class/liblfc.la \
         communicator/libcommunicator.la \
         datatype/libdatatype.la \
+        dps/libdps.la \
         errhandler/liberrhandler.la \
         event/libevent.la \
         file/libfile.la \
@@ -109,14 +111,14 @@ libmpi_la_LIBADD = \
         $(MCA_common_STATIC_LTLIBS) \
         mca/gpr/base/libmca_gpr_base.la $(MCA_gpr_STATIC_LTLIBS) \
         mca/io/base/libmca_io_base.la $(MCA_io_STATIC_LTLIBS) \
-        mca/llm/base/libmca_llm_base.la $(MCA_llm_STATIC_LTLIBS) \
         mca/mpool/base/libmca_mpool_base.la $(MCA_mpool_STATIC_LTLIBS) \
         mca/ns/base/libmca_ns_base.la $(MCA_ns_STATIC_LTLIBS) \
         mca/oob/base/libmca_oob_base.la $(MCA_oob_STATIC_LTLIBS) \
-        mca/pcm/base/libmca_pcm_base.la $(MCA_pcm_STATIC_LTLIBS) \
         mca/pcmclient/base/libmca_pcmclient_base.la $(MCA_pcmclient_STATIC_LTLIBS) \
+        mca/pls/base/libmca_pls_base.la $(MCA_pls_STATIC_LTLIBS) \
         mca/pml/base/libmca_pml_base.la $(MCA_pml_STATIC_LTLIBS) \
         mca/ptl/base/libmca_ptl_base.la $(MCA_ptl_STATIC_LTLIBS) \
+        mca/rdas/base/libmca_rdas_base.la $(MCA_rdas_STATIC_LTLIBS) \
         mca/soh/base/libmca_soh_base.la $(MCA_soh_STATIC_LTLIBS) \
         mca/topo/base/libmca_topo_base.la $(MCA_topo_STATIC_LTLIBS) \
         mpi/c/libmpi_c.la $(c_mpi_lib) $(c_pmpi_lib) \

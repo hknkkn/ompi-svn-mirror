@@ -34,17 +34,25 @@
 int mca_rdas_base_output = 0;
 ompi_list_t mca_rdas_base_components_available;
 mca_rdas_base_module_t ompi_rdas = {
-   mca_rdas_base_discover_resources,
-   mca_rdas_base_request_resource_allocation,
-   mca_rdas_base_set_resource_allocation,
-   mca_rdas_base_process_allocation_options,
-   mca_rdas_base_get_resource_allocation,
-   mca_rdas_base_deallocate_resources,
-   mca_rdas_base_pack_resource,
-   mca_rdas_base_unpack_resource,
-   mca_rdas_base_pack_allocated_resource,
-   mca_rdas_base_unpack_allocated_resource,
-   mca_rdas_base_finalize
+   NULL,
+   NULL,
+   NULL,
+   NULL,
+   NULL,
+   NULL,
+   NULL,
+   NULL
+//   mca_rdas_base_discover_resources,
+//   mca_rdas_base_request_resource_allocation,
+//   mca_rdas_base_set_resource_allocation,
+//   mca_rdas_base_process_allocation_options,
+//   mca_rdas_base_get_resource_allocation,
+//   mca_rdas_base_deallocate_resources,
+//   mca_rdas_base_pack_resource,
+//   mca_rdas_base_unpack_resource,
+//   mca_rdas_base_pack_allocated_resource,
+//   mca_rdas_base_unpack_allocated_resource,
+//   mca_rdas_base_finalize
 };  /* holds selected module's function pointers */
 
 
@@ -129,13 +137,13 @@ rdas_base_int_hostfile_node_destruct(ompi_object_t *obj)
 }
 
 
-/** create instance information for \c mca_rdas_base_hostfile_data_t */
-OBJ_CLASS_INSTANCE(mca_rdas_base_hostfile_data_t, 
-                   ompi_rte_node_allocation_data_t,
-                   rdas_base_int_hostfile_data_construct,
-                   rdas_base_int_hostfile_data_destruct);
-/** create instance information for \c mca_rdas_base_hostfile_node_t */
-OBJ_CLASS_INSTANCE(mca_rdas_base_hostfile_node_t,
-                   ompi_list_item_t,
-                   rdas_base_int_hostfile_node_construct,
-                   rdas_base_int_hostfile_node_destruct);
+///** create instance information for \c mca_rdas_base_hostfile_data_t */
+//OBJ_CLASS_INSTANCE(mca_rdas_base_hostfile_data_t, 
+//                   ompi_rte_node_allocation_data_t,
+//                   rdas_base_int_hostfile_data_construct,
+//                   rdas_base_int_hostfile_data_destruct);
+///** create instance information for \c mca_rdas_base_hostfile_node_t */
+//OBJ_CLASS_INSTANCE(mca_rdas_base_hostfile_node_t,
+//                   ompi_list_item_t,
+//                   rdas_base_int_hostfile_node_construct,
+//                   rdas_base_int_hostfile_node_destruct);

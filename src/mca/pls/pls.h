@@ -91,6 +91,11 @@ typedef mca_pls_base_component_1_0_0_t mca_pls_base_component_t;
  * PLS interface functions
  */
 
+/*
+ * dummy function for compiling
+ */
+typedef int (*mca_pls_dummy_fn_t)(void);
+
 /**
  * Base module structure for the PLS
  *
@@ -98,6 +103,7 @@ typedef mca_pls_base_component_1_0_0_t mca_pls_base_component_t;
  * pointers to the calling interface. 
  */
 struct mca_pls_base_module_1_0_0_t {
+   mca_pls_dummy_fn_t dummy;
 };
 /** shorten mca_pls_base_module_1_0_0_t declaration */
 typedef struct mca_pls_base_module_1_0_0_t mca_pls_base_module_1_0_0_t;

@@ -1077,6 +1077,7 @@ AC_CONFIG_FILES([
     src/include/sys/sparc64/Makefile
 
     src/class/Makefile
+    src/dps/Makefile
     src/runtime/Makefile
     src/threads/Makefile
     src/util/Makefile
@@ -1101,8 +1102,6 @@ AC_CONFIG_FILES([
     src/mca/base/Makefile
     src/mca/common/Makefile
 
-    src/mca/dps/Makefile
-    src/mca/dps/base/Makefile
     src/mca/gpr/Makefile
     src/mca/gpr/base/Makefile
     src/mca/ns/Makefile
@@ -1139,7 +1138,6 @@ AC_CONFIG_FILES([
 
     src/dynamic-mca/common/Makefile
 
-    src/dynamic-mca/dps/Makefile
     src/dynamic-mca/gpr/Makefile
     src/dynamic-mca/ns/Makefile
     src/dynamic-mca/oob/Makefile
@@ -1177,5 +1175,11 @@ AC_CONFIG_FILES([
     src/tools/ompid/Makefile
     src/tools/openmpi/Makefile
     src/tools/wrappers/Makefile
+    
+    test/support/Makefile
+    test/util/Makefile
+    test/class/Makefile
+    test/include/Makefile
+    test/rte/Makefile
 ])
 AC_OUTPUT

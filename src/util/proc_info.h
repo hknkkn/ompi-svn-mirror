@@ -19,15 +19,15 @@
  *
  */
 
+#ifndef _OMPI_PROC_INFO_H_
+#define _OMPI_PROC_INFO_H_
+
 #include "ompi_config.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#include "mca/ns/ns.h"
-
-#ifndef _OMPI_PROC_INFO_H_
-#define _OMPI_PROC_INFO_H_
+#include "mca/ns/ns_types.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
@@ -50,8 +50,8 @@ struct ompi_proc_info_t {
     pid_t pid;             /**< Local process ID for this process */
     bool seed;             /**< Indicate whether or not this is seed daemon */
     bool daemon;           /**< Indicate whether or not I am a daemon */
-    ompi_process_name_t *ns_replica;       /**< Name of my name server replica (NULL=>me) */
-    ompi_process_name_t *gpr_replica;      /**< Name of my registry replica (NULL=>me) */
+    orte_process_name_t *ns_replica;       /**< Name of my name server replica (NULL=>me) */
+    orte_process_name_t *gpr_replica;      /**< Name of my registry replica (NULL=>me) */
     char *my_universe;     /**< Name of the universe to which this process belongs */
     char *tmpdir_base;    /**< Base directory of the session dir tree */
     char *top_session_dir;   /**< Top-most directory of the session tree */

@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #endif
 
-#include "mca/gpr/gpr.h"
+#include "mca/gpr/gpr_types.h"
 #include "util/cmd_line.h"
 
 #include "runtime/runtime_types.h"
@@ -117,7 +117,7 @@ OMPI_DECLSPEC extern ompi_universe_t ompi_universe_info;
 
 
     struct ompi_rte_vm_status_t {
-    mca_ns_base_cellid_t cell;  /* cell id for this vm */
+    orte_cellid_t cell;  /* cell id for this vm */
 	char *nodename;             /* name of the node */
     uint32_t node_address;      /* node address */
     uint16_t num_cpus;          /* number of CPU's in this node */
@@ -133,7 +133,7 @@ OMPI_DECLSPEC extern ompi_universe_t ompi_universe_info;
     typedef struct ompi_rte_vm_status_t ompi_rte_vm_status_t;
 
     struct ompi_rte_cell_status_t {
-        mca_ns_base_cellid_t cell;      /* cellid for this cell */
+        orte_cellid_t cell;      /* cellid for this cell */
         char *cell_name;                /* name for this cell */
         char *system_type;              /* cluster, grid, SMP, etc. */
         char *launch_mech;              /* launch mechanism for this cell */
@@ -197,7 +197,7 @@ OMPI_DECLSPEC    int ompi_rte_finalize(void);
      *
      * @return my name
      */
-OMPI_DECLSPEC    ompi_process_name_t* ompi_rte_get_self(void);
+OMPI_DECLSPEC    orte_process_name_t* ompi_rte_get_self(void);
 
 
     /**
@@ -220,19 +220,19 @@ OMPI_DECLSPEC    ompi_process_name_t* ompi_rte_get_self(void);
      *                     not properly loaded.
      *
      */
-OMPI_DECLSPEC    int ompi_rte_get_peers(ompi_process_name_t **peers, size_t *npeers);
+OMPI_DECLSPEC    int ompi_rte_get_peers(orte_process_name_t **peers, size_t *npeers);
 
     /**
      * Get current status of the process
      */
-OMPI_DECLSPEC    ompi_rte_process_status_t *ompi_rte_get_process_status(ompi_process_name_t *proc);
+OMPI_DECLSPEC    ompi_rte_process_status_t *ompi_rte_get_process_status(orte_process_name_t *proc);
 
     /**
      * Set process status
      */
 
 OMPI_DECLSPEC    int ompi_rte_set_process_status(ompi_rte_process_status_t *status,
-				                 ompi_process_name_t *proc);
+				                 orte_process_name_t *proc);
 
     /**
      * Unpack the process status structure stored on the registry
@@ -242,7 +242,7 @@ OMPI_DECLSPEC    ompi_rte_process_status_t *ompi_rte_unpack_process_status(ompi_
     /**
      * Get virtual machine node status
      */
-OMPI_DECLSPEC   ompi_rte_vm_status_t *ompi_rte_get_vm_status(mca_ns_base_cellid_t cellid, char *nodename);
+OMPI_DECLSPEC   ompi_rte_vm_status_t *ompi_rte_get_vm_status(orte_cellid_t cellid, char *nodename);
 
     /**
      * Set virtual machine node status
@@ -349,12 +349,12 @@ OMPI_DECLSPEC    int ompi_rte_vm_register(void);
     /**
      * Startup a job - notify processes that all ready to begin
      */
-OMPI_DECLSPEC   int ompi_rte_job_startup(mca_ns_base_jobid_t jobid);
+OMPI_DECLSPEC   int ompi_rte_job_startup(orte_jobid_t jobid);
 
     /**
      * Shutdown a job - notify processes that all ready to stop
      */
-OMPI_DECLSPEC   int ompi_rte_job_shutdown(mca_ns_base_jobid_t jobid);
+OMPI_DECLSPEC   int ompi_rte_job_shutdown(orte_jobid_t jobid);
 
     /**
      * Complete initialization of the RTE

@@ -24,12 +24,7 @@
 #endif
 
 #include "include/constants.h"
-#include "runtime/runtime.h"
-#include "mca/ns/base/base.h"
-#include "mca/pcm/pcm.h"
 #include "util/proc_info.h"
-#include "util/sys_info.h"
-#include "util/session_dir.h"
 
 ompi_proc_info_t ompi_process_info = {
     /*  .init =                 */   false,

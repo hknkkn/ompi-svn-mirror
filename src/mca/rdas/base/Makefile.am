@@ -25,17 +25,12 @@ LEX_OUTPUT_ROOT = lex.mca_rdas_base_yy
 # Source code files
 
 headers = \
-	base.h \
-	rdas_base_parse_hostfile_lex.h
+	base.h
 
 libmca_rdas_base_la_SOURCES = \
     $(headers) \
 	rdas_base_close.c \
 	rdas_base_open.c \
-	rdas_base_parse_hostfile.c \
-	rdas_base_parse_hostfile_lex.l \
-	rdas_base_parse_resource_file.c \
-	rdas_base_parse_resource_file_lex.l \
 	rdas_base_select.c
 
 # Conditionally install the header files
