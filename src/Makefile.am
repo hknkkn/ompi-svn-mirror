@@ -110,6 +110,7 @@ libmpi_la_LIBADD = \
         mca/allocator/base/libmca_allocator_base.la $(MCA_allocator_STATIC_LTLIBS) \
         mca/coll/base/libmca_coll_base.la $(MCA_coll_STATIC_LTLIBS) \
         $(MCA_common_STATIC_LTLIBS) \
+        mca/errmgr/base/libmca_errmgr_base.la \
         mca/gpr/base/pack_api_cmd/libmca_gpr_base_pack.la \
         mca/gpr/base/unpack_api_response/libmca_gpr_base_unpack.la \
         mca/gpr/base/libmca_gpr_base.la $(MCA_gpr_STATIC_LTLIBS) \
