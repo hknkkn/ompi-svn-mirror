@@ -617,6 +617,10 @@ int mca_oob_tcp_init(void)
     int rc;
     ompi_list_item_t* item;
 
+    /* get my jobid */
+
+    jobid = orte_process_info.my_name->jobid;
+
     /* iterate through the open connections and send an ident message to all peers -
      * note that we initially come up w/out knowing our process name - and are assigned
      * a temporary name by our peer. once we have determined our real name - we send it
