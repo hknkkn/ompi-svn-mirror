@@ -562,7 +562,7 @@ int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_vals,
                         return ORTE_ERR_OUT_OF_RESOURCE;
                     }
 
-                    for (j = 0; j < app_context[i]->num_map; ++j) {
+                    for (j = 0; j < (size_t)(app_context[i]->num_map); ++j) {
                         app_context[i]->map_data[j] = 
                             OBJ_NEW(orte_app_context_map_t);
                         if (NULL == app_context[i]->map_data[j]) {

@@ -27,8 +27,7 @@ libmca_gpr_base_pack_la_SOURCES = \
         gpr_base_pack_dump.c \
         gpr_base_pack_arithmetic_ops.c \
         gpr_base_pack_put_get.c \
-        gpr_base_pack_subscribe.c \
-        gpr_base_pack_test_internals.c
+        gpr_base_pack_subscribe.c
 
 # Conditionally install the header files
 

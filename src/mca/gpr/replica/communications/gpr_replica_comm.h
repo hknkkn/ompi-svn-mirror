@@ -94,7 +94,11 @@ int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
 int orte_gpr_replica_recv_unsubscribe_cmd(orte_buffer_t *input_buffer,
                                           orte_buffer_t *output_buffer);
 
-int orte_gpr_replica_recv_dump_cmd(orte_buffer_t *answer);
+int orte_gpr_replica_recv_dump_all_cmd(orte_buffer_t *answer);
+
+int orte_gpr_replica_recv_dump_segments_cmd(orte_buffer_t *answer);
+
+int orte_gpr_replica_recv_dump_triggers_cmd(orte_buffer_t *answer);
 
 int orte_gpr_replica_recv_get_startup_msg_cmd(orte_buffer_t *input_buffer,
                                               orte_buffer_t *answer);
@@ -110,9 +114,6 @@ int orte_gpr_replica_recv_increment_value_cmd(orte_buffer_t *input_buffer,
 
 int orte_gpr_replica_recv_decrement_value_cmd(orte_buffer_t *input_buffer,
                                               orte_buffer_t *output_buffer);
-
-int orte_gpr_replica_recv_test_internals_cmd(orte_buffer_t *input_buffer,
-                                             orte_buffer_t *answer);
  
 
 #endif

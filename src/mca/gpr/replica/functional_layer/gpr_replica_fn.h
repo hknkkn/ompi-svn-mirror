@@ -116,14 +116,13 @@ int orte_gpr_replica_unsubscribe_fn(orte_gpr_notify_id_t sub_number);
 
 
 /*
- * Dump function
+ * Diagnostic functions
  */
-int orte_gpr_replica_dump_fn(orte_buffer_t *buffer);
+int orte_gpr_replica_dump_all_fn(orte_buffer_t *buffer);
 
-/*
- * Test internals
- */
-int orte_gpr_replica_test_internals_fn(int level, ompi_list_t *results);
+int orte_gpr_replica_dump_segments_fn(orte_buffer_t *buffer);
+
+int orte_gpr_replica_dump_triggers_fn(orte_buffer_t *buffer);
 
 
 /*

@@ -168,7 +168,7 @@ int main(int argc, char **argv)
         fprintf(test_out, "gpr_test_trigs: subscribe on seg registered\n");
     }
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump_all(0);
 
     /* setup some test counters */
     OBJ_CONSTRUCT(&value, orte_gpr_value_t);
@@ -214,7 +214,7 @@ int main(int argc, char **argv)
         return rc;
     }
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump_segments(0);
 
     fprintf(test_out, "incrementing all counters\n");
     
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
         return rc;
     }
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump_segments(0);
     
     fprintf(test_out, "decrementing all counters\n");
     
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
     }
     OBJ_DESTRUCT(&value);
     
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump_segments(0);
 
 
     /* for testing the trigger, we'll just use the prior subscription setup.
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
          return rc;
      }
 
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump_triggers(0);
     
     fprintf(test_out, "incrementing until trigger\n");
     
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
         }
     }
 
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump_all(0);
     
     fclose( test_out );
 /*    result = system( cmd_str );
@@ -343,7 +343,7 @@ void test_cbfunc(orte_gpr_notify_data_t *data, void *tag)
     
 /*    fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", (msg->values[0])->segment, msg->cnt);
 */
-    orte_gpr_replica_dump(0);
+    orte_gpr.dump_notify_data(data, 0);
     
     OBJ_RELEASE(data);
 }

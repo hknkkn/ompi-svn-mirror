@@ -86,13 +86,15 @@ static orte_gpr_base_module_t orte_gpr_replica_module = {
     orte_gpr_replica_begin_compound_cmd,
     orte_gpr_replica_stop_compound_cmd,
     orte_gpr_replica_exec_compound_cmd,
-    /* DUMP */
-    orte_gpr_replica_dump,
+    /* DIAGNOSTIC OPERATIONS */
+    orte_gpr_replica_dump_all,
+    orte_gpr_replica_dump_segments,
+    orte_gpr_replica_dump_triggers,
+    orte_gpr_base_dump_notify_msg,
+    orte_gpr_base_dump_notify_data,
     /* CLEANUP OPERATIONS */
     orte_gpr_replica_cleanup_job,
-    orte_gpr_replica_cleanup_proc,
-    /* TEST INTERFACE */
-    orte_gpr_replica_test_internals
+    orte_gpr_replica_cleanup_proc
 };
 
 /*

@@ -165,15 +165,13 @@ int orte_gpr_proxy_unsubscribe(orte_gpr_notify_id_t sub_number);
 
 
 /*
- * Dump function
+ * Diagnostic functions
  */
-int orte_gpr_proxy_dump(int output_id);
+int orte_gpr_proxy_dump_all(int output_id);
 
+int orte_gpr_proxy_dump_segments(int output_id);
 
-/*
- * Test internals
- */
-int orte_gpr_proxy_test_internals(int level, ompi_list_t **results);
+int orte_gpr_proxy_dump_triggers(int output_id);
 
 
 /*

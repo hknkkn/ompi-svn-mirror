@@ -482,7 +482,15 @@ typedef int (*orte_gpr_base_module_unsubscribe_fn_t)(orte_gpr_notify_id_t sub_nu
  * orte_gpr.dump(output_id);
  * @endcode
  */
-typedef int (*orte_gpr_base_module_dump_fn_t)(int output_id);
+typedef int (*orte_gpr_base_module_dump_all_fn_t)(int output_id);
+
+typedef int (*orte_gpr_base_module_dump_segments_fn_t)(int output_id);
+
+typedef int (*orte_gpr_base_module_dump_triggers_fn_t)(int output_id);
+
+typedef int (*orte_gpr_base_module_dump_notify_msg_fn_t)(orte_gpr_notify_message_t *msg, int output_id);
+
+typedef int (*orte_gpr_base_module_dump_notify_data_fn_t)(orte_gpr_notify_data_t *data, int output_id);
 
 /* Deliver a notify message.
  * The registry generates notify messages whenever a subscription is fired. Normally,
@@ -529,11 +537,6 @@ typedef int (*orte_gpr_base_module_increment_value_fn_t)(orte_gpr_value_t *value
  */
 typedef int (*orte_gpr_base_module_decrement_value_fn_t)(orte_gpr_value_t *value);
 
-/*
- * test interface for internal functions - optional to provide
- */
-typedef int (*orte_gpr_base_module_test_internals_fn_t)(int level, ompi_list_t **results);
-
 
 /*
  * Ver 1.0.0
@@ -566,13 +569,15 @@ struct orte_gpr_base_module_1_0_0_t {
     orte_gpr_base_module_begin_compound_cmd_fn_t begin_compound_cmd;
     orte_gpr_base_module_stop_compound_cmd_fn_t stop_compound_cmd;
     orte_gpr_base_module_exec_compound_cmd_fn_t exec_compound_cmd;
-    /* DUMP */
-    orte_gpr_base_module_dump_fn_t dump;
+    /* DIAGNOSTIC OPERATIONS */
+    orte_gpr_base_module_dump_all_fn_t dump_all;
+    orte_gpr_base_module_dump_segments_fn_t dump_segments;
+    orte_gpr_base_module_dump_triggers_fn_t dump_triggers;
+    orte_gpr_base_module_dump_notify_msg_fn_t dump_notify_msg;
+    orte_gpr_base_module_dump_notify_data_fn_t dump_notify_data;
     /* CLEANUP OPERATIONS */
     orte_gpr_base_module_cleanup_job_fn_t cleanup_job;
     orte_gpr_base_module_cleanup_proc_fn_t cleanup_process;
-    /* TEST INTERFACE */
-    orte_gpr_base_module_test_internals_fn_t test_internals;
 };
 typedef struct orte_gpr_base_module_1_0_0_t orte_gpr_base_module_1_0_0_t;
 typedef orte_gpr_base_module_1_0_0_t orte_gpr_base_module_t;

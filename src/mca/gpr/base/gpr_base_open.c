@@ -128,7 +128,6 @@ static void orte_gpr_notify_data_construct(orte_gpr_notify_data_t* ptr)
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_notify_data_destructor(orte_gpr_notify_data_t* ptr)
 {
-    char **tokens;
     int32_t i;
 
     if (NULL != ptr->segment) free(ptr->segment);

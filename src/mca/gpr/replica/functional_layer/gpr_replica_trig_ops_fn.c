@@ -255,12 +255,12 @@ orte_gpr_replica_trig_op_add_target(orte_gpr_replica_triggers_t *trig,
 {
     orte_gpr_replica_target_t *target, **targets;
     bool found;
-    int i, k;
+    int i;
     
     /* see if this container is already on the list */
     targets = (orte_gpr_replica_target_t**)((data->targets)->addr);
     found = false;
-    for (i=0, k=0; i < (data->targets)->size && !found; i++) {
+    for (i=0; i < (data->targets)->size && !found; i++) {
         if (NULL != targets[i] && cptr == targets[i]->cptr) {
             /* container found - just add this iptr to it's array */
             if (0 > orte_pointer_array_add(targets[i]->ivals, iptr)) {
@@ -372,14 +372,18 @@ int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
         (*msg)->idtag = trig->remote_idtag;
     }
 
-    /* allocate the data objects for the message */
-    (*msg)->data = (orte_gpr_notify_data_t**)malloc(trig->num_subscribed_data *
-                                                    sizeof(orte_gpr_notify_data_t*));
-    if (NULL == (*msg)->data) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        return ORTE_ERR_OUT_OF_RESOURCE;
+    /* if we have data, allocate the data objects for the message */
+    if (0 < trig->num_subscribed_data) {
+        (*msg)->data = (orte_gpr_notify_data_t**)malloc(trig->num_subscribed_data *
+                                                        sizeof(orte_gpr_notify_data_t*));
+        if (NULL == (*msg)->data) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        (*msg)->cnt = trig->num_subscribed_data;
+    } else {
+        return ORTE_SUCCESS;
     }
-    (*msg)->cnt = trig->num_subscribed_data;
     
     data = (*msg)->data;
     sptr = (orte_gpr_replica_subscribed_data_t**)((trig->subscribed_data)->addr);
@@ -402,81 +406,83 @@ int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
             }
             /* allocate the storage for the values being returned */
             data[j]->cnt = sptr[i]->num_targets;
-            data[j]->values = (orte_gpr_value_t**)malloc(data[j]->cnt * sizeof(orte_gpr_value_t*));
-            if (NULL == data[j]->values) {
-                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                return ORTE_ERR_OUT_OF_RESOURCE;
-            }
-            /* cycle through its targets, setting up a new value for each unique
-             * container and copying the respective itagvals into it
-             */
-            targets = (orte_gpr_replica_target_t**)((sptr[i]->targets)->addr);
-            for (m=0, k=0; m < (sptr[i]->targets)->size; m++) {
-                if (NULL != targets[m]) {
-                    data[j]->values[k] = OBJ_NEW(orte_gpr_value_t);
-                    if (NULL == data[j]->values[k]) {
-                        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                        return ORTE_ERR_OUT_OF_RESOURCE;
-                    }
-                    /* record the addressing mode */
-                    (data[j]->values[k])->addr_mode = data[j]->addr_mode;
-                    /* record the segment these values came from */
-                    (data[j]->values[k])->segment = strdup((sptr[i]->seg)->name);
-                    if (NULL == ((data[j]->values[k])->segment)) {
-                        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                        return ORTE_ERR_OUT_OF_RESOURCE;
-                    }
-                    /* record the tokens describing the container */
-                    (data[j]->values[k])->num_tokens = (targets[m]->cptr)->num_itags;
-                    (data[j]->values[k])->tokens = (char **)malloc((targets[m]->cptr)->num_itags * sizeof(char*));
-                    if (NULL == (data[j]->values[k])->tokens) {
-                        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                        return ORTE_ERR_OUT_OF_RESOURCE;
-                    }
-                    for (n=0; n < (targets[m]->cptr)->num_itags; n++) {
-                        if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_reverse_lookup(
-                                                    &((data[j]->values[k])->tokens[n]), sptr[i]->seg,
-                                                    (targets[m]->cptr)->itags[n]))) {
-                            ORTE_ERROR_LOG(rc);
-                            return rc;
-                        }
-                    }
-                    /* record the values to be returned */
-                    (data[j]->values[k])->cnt = targets[m]->num_ivals;
-                    if (0 < (data[j]->values[k])->cnt) {  /* there are values to return */
-                        (data[j]->values[k])->keyvals = (orte_gpr_keyval_t**)malloc((data[j]->values[k])->cnt * sizeof(orte_gpr_keyval_t*));
-                        if (NULL == (data[j]->values[k])->keyvals) {
+            if (0 < data[j]->cnt) {  /* ensure we have some data to return */
+                data[j]->values = (orte_gpr_value_t**)malloc(data[j]->cnt * sizeof(orte_gpr_value_t*));
+                if (NULL == data[j]->values) {
+                    ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                }
+                /* cycle through its targets, setting up a new value for each unique
+                 * container and copying the respective itagvals into it
+                 */
+                targets = (orte_gpr_replica_target_t**)((sptr[i]->targets)->addr);
+                for (m=0, k=0; m < (sptr[i]->targets)->size; m++) {
+                    if (NULL != targets[m]) {
+                        data[j]->values[k] = OBJ_NEW(orte_gpr_value_t);
+                        if (NULL == data[j]->values[k]) {
                             ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
                             return ORTE_ERR_OUT_OF_RESOURCE;
                         }
-                        
-                        kptr = (data[j]->values[k])->keyvals;
-                        iptr = (orte_gpr_replica_itagval_t**)((targets[m]->ivals)->addr);
-                        for (n=0, p=0; n < (targets[m]->ivals)->size; n++) {
-                            if (NULL != iptr[n]) {
-                                kptr[p] = OBJ_NEW(orte_gpr_keyval_t);
-                                if (NULL == kptr[p]) {
-                                    ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                                    return ORTE_ERR_OUT_OF_RESOURCE;
-                                }
-                                if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_reverse_lookup(
-                                                        &(kptr[p]->key), sptr[i]->seg, iptr[n]->itag))) {
-                                    ORTE_ERROR_LOG(rc);
-                                    return rc;
-                                }
-                                kptr[p]->type = iptr[n]->type;
-                                if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(
-                                            &(kptr[p]->value), &(iptr[n]->value), iptr[n]->type))) {
-                                    ORTE_ERROR_LOG(rc);
-                                    return rc;
-                                }
-                                p++;
-                            } /* if iptr not NULL */
-                        }  /* for n */
-                    }  /* if values to return */
-                    k++;
-                }  /* if targets not NULL */
-            }  /* for m */
+                        /* record the addressing mode */
+                        (data[j]->values[k])->addr_mode = data[j]->addr_mode;
+                        /* record the segment these values came from */
+                        (data[j]->values[k])->segment = strdup((sptr[i]->seg)->name);
+                        if (NULL == ((data[j]->values[k])->segment)) {
+                            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                            return ORTE_ERR_OUT_OF_RESOURCE;
+                        }
+                        /* record the tokens describing the container */
+                        (data[j]->values[k])->num_tokens = (targets[m]->cptr)->num_itags;
+                        (data[j]->values[k])->tokens = (char **)malloc((targets[m]->cptr)->num_itags * sizeof(char*));
+                        if (NULL == (data[j]->values[k])->tokens) {
+                            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                            return ORTE_ERR_OUT_OF_RESOURCE;
+                        }
+                        for (n=0; n < (targets[m]->cptr)->num_itags; n++) {
+                            if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_reverse_lookup(
+                                                        &((data[j]->values[k])->tokens[n]), sptr[i]->seg,
+                                                        (targets[m]->cptr)->itags[n]))) {
+                                ORTE_ERROR_LOG(rc);
+                                return rc;
+                            }
+                        }
+                        /* record the values to be returned */
+                        (data[j]->values[k])->cnt = targets[m]->num_ivals;
+                        if (0 < (data[j]->values[k])->cnt) {  /* there are values to return */
+                            (data[j]->values[k])->keyvals = (orte_gpr_keyval_t**)malloc((data[j]->values[k])->cnt * sizeof(orte_gpr_keyval_t*));
+                            if (NULL == (data[j]->values[k])->keyvals) {
+                                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                                return ORTE_ERR_OUT_OF_RESOURCE;
+                            }
+                            
+                            kptr = (data[j]->values[k])->keyvals;
+                            iptr = (orte_gpr_replica_itagval_t**)((targets[m]->ivals)->addr);
+                            for (n=0, p=0; n < (targets[m]->ivals)->size; n++) {
+                                if (NULL != iptr[n]) {
+                                    kptr[p] = OBJ_NEW(orte_gpr_keyval_t);
+                                    if (NULL == kptr[p]) {
+                                        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+                                        return ORTE_ERR_OUT_OF_RESOURCE;
+                                    }
+                                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_reverse_lookup(
+                                                            &(kptr[p]->key), sptr[i]->seg, iptr[n]->itag))) {
+                                        ORTE_ERROR_LOG(rc);
+                                        return rc;
+                                    }
+                                    kptr[p]->type = iptr[n]->type;
+                                    if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(
+                                                &(kptr[p]->value), &(iptr[n]->value), iptr[n]->type))) {
+                                        ORTE_ERROR_LOG(rc);
+                                        return rc;
+                                    }
+                                    p++;
+                                } /* if iptr not NULL */
+                            }  /* for n */
+                        }  /* if values to return */
+                        k++;
+                    }  /* if targets not NULL */
+                }  /* for m */
+            }
             j++;
         }  /* if sptr not NULL */
     }  /* for i */

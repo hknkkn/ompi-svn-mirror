@@ -117,9 +117,13 @@ int orte_gpr_replica_unsubscribe(orte_gpr_notify_id_t sub_number);
 
 
 /*
- * Dump function
+ * Diagnostic functions
  */
-int orte_gpr_replica_dump(int output_id);
+int orte_gpr_replica_dump_all(int output_id);
+
+int orte_gpr_replica_dump_segments(int output_id);
+
+int orte_gpr_replica_dump_triggers(int output_id);
 
 
 /*
@@ -128,11 +132,6 @@ int orte_gpr_replica_dump(int output_id);
 int orte_gpr_replica_preallocate_segment(char *name, int num_slots);
 
 int orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *msg);
-
-/*
- * Test internals
- */
-int orte_gpr_replica_test_internals(int level, ompi_list_t **results);
 
 
 #endif
