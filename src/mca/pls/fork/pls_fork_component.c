@@ -139,6 +139,7 @@ int orte_pls_fork_component_close(void)
             ompi_condition_wait(&mca_pls_fork_component.cond,
                 &mca_pls_fork_component.lock);
         }
+        OMPI_THREAD_UNLOCK(&mca_pls_fork_component.lock);
     }
 
     OBJ_DESTRUCT(&mca_pls_fork_component.lock);
