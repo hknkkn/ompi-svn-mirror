@@ -583,6 +583,7 @@ int mca_oob_tcp_resolve(mca_oob_tcp_peer_t* peer)
      keys[0] = "oob-tcp";
      keys[1] = NULL;
 
+#if 0
      rc = orte_gpr.subscribe(
          ORTE_GPR_OR,
          ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA|
@@ -598,6 +599,9 @@ int mca_oob_tcp_resolve(mca_oob_tcp_peer_t* peer)
      free(segment);
      free(jobid);
      return rc;
+#else 
+     return ORTE_SUCCESS;
+#endif
 }
 
 
@@ -651,6 +655,7 @@ int mca_oob_tcp_init(void)
     ompi_list_append(&mca_oob_tcp_component.tcp_subscriptions, &subscription->item);
     OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
 
+#if 0
     rc = orte_gpr.subscribe(
         ORTE_GPR_OR,
         ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA|
@@ -666,6 +671,7 @@ int mca_oob_tcp_init(void)
         ompi_output(0, "mca_oob_tcp_init: registry subscription failed");
         return OMPI_ERROR;
     }
+#endif
 
     /* put our contact info in registry */
     if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&keys[0], orte_process_info.my_name))) {
