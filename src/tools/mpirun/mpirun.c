@@ -87,6 +87,8 @@ struct {
     bool version;
     int num_procs;
     char *hostfile;
+    char *env;
+    char *wd;
 } mpirun_globals;
 
 /*
@@ -94,11 +96,13 @@ struct {
  */
 orte_context_value_names_t mpirun_context_tbl[] = {
     /* start with usual help and version stuff */
-    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&mpirun_globals.help, (void*)false},
-    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&mpirun_globals.version, (void*)false},
-    {{NULL, NULL, NULL}, "np", 1, ORTE_INT, (void*)&mpirun_globals.num_procs, (void*)0},
-    {{"hostfile", NULL, NULL}, "hostfile", 1, ORTE_STRING, (void*)&(mpirun_globals.hostfile), NULL},
-    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL} /* terminate the table */
+    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&mpirun_globals.help, (void*)false, NULL},
+    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&mpirun_globals.version, (void*)false, NULL},
+    {{NULL, NULL, NULL}, "np", 1, ORTE_INT, (void*)&mpirun_globals.num_procs, (void*)0, NULL},
+    {{"hostfile", NULL, NULL}, "hostfile", 1, ORTE_STRING, (void*)&(mpirun_globals.hostfile), NULL, NULL},
+    {{NULL, NULL, NULL}, "x", 1, ORTE_STRING, (void*)&(mpirun_globals.env), NULL, NULL},
+    {{NULL, NULL, NULL}, "wd", 1, ORTE_STRING, (void*)&(mpirun_globals.wd), NULL, NULL},
+    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL, NULL} /* terminate the table */
 };
 
 int

@@ -81,6 +81,32 @@ signal_callback(int fd, short event, void *arg)
 }
 
 
+/*
+ * setup globals for catching orterun command line options
+ */
+struct {
+    bool help;
+    bool version;
+    int num_procs;
+    char *hostfile;
+    char *env_val;
+    char *wd;
+} orterun_globals;
+
+/*
+ * define the orterun context table for obtaining parameters
+ */
+orte_context_value_names_t orterun_context_tbl[] = {
+    /* start with usual help and version stuff */
+    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&orterun_globals.help, (void*)false, NULL},
+    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&orterun_globals.version, (void*)false, NULL},
+    {{NULL, NULL, NULL}, "np", 1, ORTE_INT, (void*)&orterun_globals.num_procs, (void*)0, NULL},
+    {{"hostfile", NULL, NULL}, "hostfile", 1, ORTE_STRING, (void*)&(orterun_globals.hostfile), NULL, NULL},
+    {{NULL, NULL, NULL}, "x", 1, ORTE_STRING, (void*)&(orterun_globals.env_val), NULL, NULL},
+    {{NULL, NULL, NULL}, "wd", 1, ORTE_STRING, (void*)&(orterun_globals.wd), NULL, NULL},
+    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL, NULL} /* terminate the table */
+};
+
 
 int
 main(int argc, char *argv[], char* env[])
@@ -92,71 +118,40 @@ main(int argc, char *argv[], char* env[])
     int i, rc;
     char *param, *value, *value2;
 
+    /* Parse application command line options. */
+    OBJ_CONSTRUCT(&app, orte_app_context_t);
+    OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
+
+    /* parse my context */
+    if (ORTE_SUCCESS != (rc = orte_parse_context(orterun_context_tbl, &cmd_line, argc, argv))) {
+        return rc;
+    }
+    
+    /* check for help and version requests */
+    if (orterun_globals.help) {
+        char *args = NULL;
+        args = ompi_cmd_line_get_usage_msg(&cmd_line);
+        ompi_show_help("help-orterun.txt", "orterun:usage", false,
+                       argv[0], args);
+        free(args);
+        return 1;
+    }
+
+    if (orterun_globals.version) {
+        /* show version message */
+        printf("...showing off my version!\n");
+        exit(1);
+    }
+
     /* Intialize our Open RTE environment */
 
     if (ORTE_SUCCESS != (rc = orte_init(&cmd_line, argc, argv))) {
         ompi_show_help("help-orterun.txt", "orterun:init-failure", true,
                        "orte_init()", rc);
-	return rc;
+        return rc;
     }
 
-    /* Parse application command line options. */
-
-    OBJ_CONSTRUCT(&app, orte_app_context_t);
-    OBJ_CONSTRUCT(&cmd_line, ompi_cmd_line_t);
-
-    ompi_cmd_line_make_opt(&cmd_line, 'v', "version", 0,
-			   "Show version of Open MPI and this program");
-    ompi_cmd_line_make_opt(&cmd_line, 'h', "help", 0,
-			   "Show help for this function");
-    ompi_cmd_line_make_opt3(&cmd_line, 'n', "np", "np", 1,
-                            "Number of processes to start");
-    ompi_cmd_line_make_opt3(&cmd_line, 'x', NULL, NULL, 1,
-                            "Environment variable to export");
-    ompi_cmd_line_make_opt3(&cmd_line, '\0', "wd", "wd", 1,
-                            "Working directory of process");
-    ompi_cmd_line_make_opt3(&cmd_line, '\0', "hostfile", "hostfile", 1,
-			    "Host description file");
-
-    if (ORTE_SUCCESS != ompi_cmd_line_parse(&cmd_line, true, argc, argv)) {
-        char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(&cmd_line);
-        ompi_show_help("help-orterun.txt", "orterun:usage", false,
-                       argv[0], args);
-        free(args);
-        return 1;
-    }
-
-    if (ompi_cmd_line_is_taken(&cmd_line, "help") || 
-        ompi_cmd_line_is_taken(&cmd_line, "h")) {
-        char *args = NULL;
-        args = ompi_cmd_line_get_usage_msg(&cmd_line);
-        ompi_show_help("help-orterun.txt", "orterun:usage", false,
-                       argv[0], args);
-        free(args);
-        return 1;
-    }
-
-    if (ompi_cmd_line_is_taken(&cmd_line, "version") ||
-	ompi_cmd_line_is_taken(&cmd_line, "v")) {
-	printf("...showing off my version!\n");
-	return 1;
-    }
-
-    /* get our numprocs */
-    if (ompi_cmd_line_is_taken(&cmd_line, "np")) {
-        app.num_procs = atoi(ompi_cmd_line_get_param(&cmd_line, "np", 0, 0));
-    } else {
-        app.num_procs = 1;
-    }
-
-    /* get our hostfile, if we have one */
-    if (ompi_cmd_line_is_taken(&cmd_line, "hostfile")) {
-         int id = mca_base_param_find("rds","hostfile","path");
-         mca_base_param_set_string(id, ompi_cmd_line_get_param(&cmd_line, "hostfile", 0, 0));
-    }
-
-    /* Prep to start the application */
+     /* Prep to start the application */
 
     ompi_event_set(&term_handler, SIGTERM, OMPI_EV_SIGNAL,
                    signal_callback, NULL);
@@ -204,8 +199,8 @@ main(int argc, char *argv[], char* env[])
 
     /* What cwd do we want? */
 
-    if (ompi_cmd_line_is_taken(&cmd_line, "wd")) {
-        app.cwd = ompi_cmd_line_get_param(&cmd_line, "wd", 0, 0);
+    if (NULL != orterun_globals.wd) {
+        app.cwd = strdup(orterun_globals.wd);
     } else {
         getcwd(cwd, sizeof(cwd));
         app.cwd = strdup(cwd);

@@ -143,6 +143,7 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 {
     char *tmp_out, *token;
     int i, k;
+    orte_gpr_replica_target_t target**;
     
     if (ORTE_GPR_SUBSCRIBE_CMD == trig->cmd) {  /* subscription */
 		asprintf(&tmp_out, "Data for trigger %d on segment %s\tType: SUBSCRIPTION",
@@ -256,18 +257,23 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     k = (int)orte_value_array_get_size(&(trig->tokentags));
     
     k = (int)orte_value_array_get_size(&(trig->tokentags));
-    asprintf(&tmp_out, "\tNumber of tokens: %d", k);
-    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-
-    for (i=0; i < k; i++) {
-        if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
-                ORTE_VALUE_ARRAY_GET_ITEM(&(trig->tokentags), orte_gpr_replica_itag_t, i))) {
-            asprintf(&tmp_out, "\t\tToken: %s", token);
-		    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-            free(token);
-        }
-	}
-
+    if (0 == k) {
+        asprintf(&tmp_out, "\tNULL token");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    } else {
+        asprintf(&tmp_out, "\tNumber of tokens: %d", k);
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    
+        for (i=0; i < k; i++) {
+            if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
+                    ORTE_VALUE_ARRAY_GET_ITEM(&(trig->tokentags), orte_gpr_replica_itag_t, i))) {
+                asprintf(&tmp_out, "\t\tToken: %s", token);
+    		    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+                free(token);
+            }
+    	   }
+    }
+    
     asprintf(&tmp_out, "\tToken addressing mode:\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
@@ -293,18 +299,23 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     }
     
     k = (int)orte_value_array_get_size(&(trig->keytags));
-    asprintf(&tmp_out, "\tNumber of keys: %d", k);
-    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    if (0 == k) {
+        asprintf(&tmp_out, "\tNULL key");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    } else {
+        asprintf(&tmp_out, "\tNumber of keys: %d", k);
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
-    for (i=0; i < k; i++) {
-        if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
-                ORTE_VALUE_ARRAY_GET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t, i))) {
-            asprintf(&tmp_out, "\t\tKey: %s", token);
-            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
-            free(token);
+        for (i=0; i < k; i++) {
+            if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
+                    ORTE_VALUE_ARRAY_GET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t, i))) {
+                asprintf(&tmp_out, "\t\tKey: %s", token);
+                orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+                free(token);
+            }
         }
     }
-
+    
     asprintf(&tmp_out, "\tKey addressing mode:\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
@@ -329,6 +340,30 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     
+    asprintf(&tmp_out, "\tIdentified targets:");
+    orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+
+    k = (trig->targets)->size;
+    target = (orte_gpr_replica_target_t**)((trig->targets)->addr);
+    if (0 == k) {
+        asprintf(&tmp_out, "\tNone");
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+    } else {
+        for (i=0; i < k; i++) {
+            if (NULL == target[i]->cptr) {
+                asprintf(&tmp_out, "\tContainer: NULL");
+            } else {
+                asprintf(&tmp_out, "\tContainer: %d", (target[i]->cptr)->index);
+            }
+            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+            if (NULL == target[i]->iptr) {
+                asprintf(&tmp_out, "\tKeyval: NULL");
+            } else {
+                asprintf(&tmp_out, "\Keyval: %d", (target[i]->iptr)->index);
+            }
+            orte_gpr_replica_dump_load_string(buffer, &tmp_out);
+        }
+    }
 	tmp_out = strdup("\n\n");
     orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 

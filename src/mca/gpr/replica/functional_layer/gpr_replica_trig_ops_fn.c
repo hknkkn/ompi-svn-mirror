@@ -140,8 +140,8 @@ int orte_gpr_replica_init_targets(orte_gpr_replica_segment_t *seg,
     num_keys = orte_value_array_get_size(&(trig->keytags));
 
     /* if no tokens were provided, then it automatically applies to all
-     * containers - if no keys were provided as well, then add appropriate
-     * target to trig list
+     * containers - if no keys were provided as well, then add all containers
+     * and all keyvals to the list via wildcard
      */
     if (0 == num_tokens && 0 == num_keys) {
         if (ORTE_SUCCESS != (rc = orte_gpr_replica_trig_op_add_target(trig, NULL, NULL))) {

@@ -26,6 +26,8 @@
 
 #include "include/orte_types.h"
 
+typedef void (*orte_context_cb_fn_t)(void);
+
 typedef struct {
     struct {
         char *prime;
@@ -37,6 +39,7 @@ typedef struct {
     orte_data_type_t type;
     void *dest;
     void *def;  /* default value */
+    orte_context_cb_fn_t cbfunc;
 } orte_context_value_names_t;
 
 #endif

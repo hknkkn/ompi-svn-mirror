@@ -92,6 +92,11 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                     break;
             }
 
+            /* if specified, execute the requested callback function */
+            if (NULL != context_tbl[i].cbfunc) {
+               context_tbl[i].cbfunc();
+            }
+
         } else if (NULL != context_tbl[i].name.prime) { /* otherwise get MCA parameter, if present */
     
             switch (context_tbl[i].type) {
@@ -135,6 +140,11 @@ int orte_parse_context(orte_context_value_names_t *context_tbl, ompi_cmd_line_t 
                     return ORTE_ERR_BAD_PARAM;
                     break;
             }
+            /* if specified, execute the requested callback function */
+            if (NULL != context_tbl[i].cbfunc) {
+               context_tbl[i].cbfunc();
+            }
+
         }
     }
     

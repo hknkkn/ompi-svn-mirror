@@ -67,10 +67,10 @@ static void orte_daemon_recv(int status, orte_process_name_t* sender,
  */
 orte_context_value_names_t orted_context_tbl[] = {
     /* start with usual help and version stuff */
-    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&(orted_globals.help), (void*)false},
-    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&(orted_globals.version), (void*)false},
-    {{"daemon", "debug", NULL}, "debug", 0, ORTE_BOOL, (void*)&(orted_globals.debug), (void*)false},
-    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL} /* terminate the table */
+    {{NULL, NULL, NULL}, "help", 0, ORTE_BOOL, (void*)&(orted_globals.help), (void*)false, NULL},
+    {{NULL, NULL, NULL}, "version", 0, ORTE_BOOL, (void*)&(orted_globals.version), (void*)false, NULL},
+    {{"daemon", "debug", NULL}, "debug", 0, ORTE_BOOL, (void*)&(orted_globals.debug), (void*)false, NULL},
+    {{NULL, NULL, NULL}, NULL, 0, ORTE_NULL, NULL, NULL, NULL} /* terminate the table */
 };
 
 
