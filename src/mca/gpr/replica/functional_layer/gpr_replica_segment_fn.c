@@ -50,7 +50,6 @@ int orte_gpr_replica_create_container(orte_gpr_replica_container_t **cptr,
     (*cptr)->num_itags = num_itags;
     
     if (0 > ((*cptr)->index = orte_pointer_array_add(seg->containers, (void*)(*cptr)))) {
-ompi_output(0, "array_add failed for container - returned %d", (*cptr)->index);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
