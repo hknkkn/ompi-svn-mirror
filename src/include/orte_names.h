@@ -46,23 +46,27 @@ extern char *orte_error_strings[];
  * These defines establish those names so everyone can access them, and so they
  * can be easily changed if required.
  */
-#define ORTE_JOB_SEGMENT              "orte-job"
-#define ORTE_NODE_STATUS_SEGMENT      "orte-node-status"
-#define ORTE_RESOURCE_SEGMENT         "orte-resources"
+#define ORTE_JOB_SEGMENT        "orte-job"
+#define ORTE_NODE_SEGMENT       "orte-node"
+#define ORTE_RESOURCE_SEGMENT   "orte-resources"
 
 /*
  * ORTE-wide key names for storing/retrieving data from the registry.
  * Subsystem-specific keys will be defined in each=/ subsystem's xxx_types.h file.
  */
-#define ORTE_NODENAME_KEY       "orte-nodename"
-#define ORTE_JOBID_KEY          "orte-jobid"
-#define ORTE_CELLID_KEY         "orte-cellid"
-#define ORTE_NODE_STATUS_KEY    "orte-node-status"
-#define ORTE_IOF_INFO           "orte-iof-info"
-#define ORTE_APP_CONTEXT_KEY    "orte-app-context"
-#define ORTE_PROC_RANK_KEY      "orte-proc-rank"
-#define ORTE_PID_KEY            "orte-proc-pid"
-#define ORTE_PROC_STATUS_KEY    "orte-proc-status"
-#define ORTE_EXIT_CODE_KEY      "orte-exit-code"
+#define ORTE_NODE_NAME_KEY        "orte-node-name"
+#define ORTE_NODE_STATE_KEY       "orte-node-state"
+#define ORTE_NODE_SLOTS_KEY       "orte-node-slots"
+#define ORTE_NODE_SLOTS_ALLOC_KEY "orte-node-slots-alloc"
+#define ORTE_NODE_SLOTS_MAX_KEY   "orte-node-slots-max"
+#define ORTE_NODE_ALLOC_KEY       "orte-node-alloc"
+#define ORTE_JOBID_KEY            "orte-jobid"
+#define ORTE_CELLID_KEY           "orte-cellid"
+#define ORTE_IOF_INFO             "orte-iof-info"
+#define ORTE_APP_CONTEXT_KEY      "orte-app-context"
+#define ORTE_PROC_RANK_KEY        "orte-proc-rank"
+#define ORTE_PROC_PID_KEY         "orte-proc-pid"
+#define ORTE_PROC_STATUS_KEY      "orte-proc-status"
+#define ORTE_PROC_EXIT_CODE_KEY   "orte-proc-exit-code"
 
 #endif

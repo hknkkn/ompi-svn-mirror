@@ -87,11 +87,23 @@ typedef struct {
     char   *cwd;
 } orte_app_context_t;
                                                                                                 
+
 OBJ_CLASS_DECLARATION(orte_app_context_t);
 
 
 typedef int8_t orte_exit_code_t;
 typedef int8_t orte_status_key_t;
+
+/*
+ * Node State
+ */
+
 typedef int8_t orte_node_state_t;
 
+#define ORTE_NODE_STATE_UNKNOWN  0x00
+#define ORTE_NODE_STATE_DOWN     0x01
+#define ORTE_NODE_STATE_UP       0x02
+
+
 #endif  /* ORTE_TYPES_H */
+

@@ -33,9 +33,9 @@ struct orte_ras_base_node_t {
     char *node_name;
     orte_cellid_t node_cellid;
     orte_node_state_t node_state;
-    size_t node_slots_inuse;        /* number of slots already assigned to existing jobs */
     size_t node_slots;              /* number of process slots */
-    size_t node_slots_allocated;    /* number of slots that are being allocated to a new job */
+    size_t node_slots_inuse;        /* number of slots already assigned to existing jobs */
+    size_t node_slots_alloc;        /* number of slots that are being allocated to a new job */
     size_t node_slots_max;          /* maximum number of slots that can be allocated on this node */
 };
 typedef struct orte_ras_base_node_t orte_ras_base_node_t;

@@ -69,7 +69,7 @@ int ompi_attr_create_predefined(void)
      ret = orte_gpr.subscribe(
          ORTE_GPR_OR,
 	     ORTE_GPR_NOTIFY_ON_STARTUP|ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA,
-         ORTE_NODE_STATUS_SEGMENT,
+         ORTE_NODE_SEGMENT,
          NULL,
          NULL,
          &rc,

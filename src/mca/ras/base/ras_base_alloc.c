@@ -130,7 +130,7 @@ int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes)
             } else {
                 num_allocated += num_per_node;
                 node->node_slots_inuse += num_per_node;
-                node->node_slots_allocated += num_per_node;
+                node->node_slots_alloc += num_per_node;
             }
             ompi_list_remove_item(nodes, item);
             ompi_list_append(&allocated, item);
@@ -159,7 +159,7 @@ int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes)
             /* otherwise only take one slot on this node */
             num_allocated++;
             node->node_slots_inuse++;  /* running total */
-            node->node_slots_allocated++; /* this job */
+            node->node_slots_alloc++; /* this job */
         }
 
         /* take all available slots on this node */
@@ -167,7 +167,7 @@ int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes)
             size_t num_avail = node->node_slots - node->node_slots_inuse;
             num_allocated += num_avail;
             node->node_slots_inuse += num_avail;
-            node->node_slots_allocated += num_avail;
+            node->node_slots_alloc += num_avail;
         }
 
         ompi_list_remove_item(nodes, item);
@@ -207,7 +207,7 @@ validate:
             }
             num_allocated += num_per_node;
             node->node_slots_inuse += num_per_node; /* running total */
-            node->node_slots_allocated += num_per_node; /* this job */
+            node->node_slots_alloc += num_per_node; /* this job */
         }
     }
 
