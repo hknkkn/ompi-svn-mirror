@@ -109,9 +109,6 @@ static int orte_rmgr_urm_open(void)
 static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
 {
     int rc;
-    orte_rmaps_base_module_t *rmaps;
-    orte_pls_base_module_t *pls;
-
     *priority = 1;
 
     /**
@@ -133,7 +130,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
     /**
      * Select RMAPS components.
      */
-    if (NULL == (rmaps = orte_rmaps_base_select(NULL))) {
+    if (NULL == (mca_rmgr_urm_component.urm_rmaps = orte_rmaps_base_select(NULL))) {
         ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
         return NULL;
     }
@@ -141,7 +138,7 @@ static orte_rmgr_base_module_t *orte_rmgr_urm_init(int* priority)
     /**
      * Select PLS components.
      */
-    if (NULL == (pls = orte_pls_base_select(NULL))) {
+    if (NULL == (mca_rmgr_urm_component.urm_pls = orte_pls_base_select(NULL))) {
         ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
         return NULL;
     }

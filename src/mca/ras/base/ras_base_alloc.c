@@ -90,7 +90,7 @@ int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes)
     int rc;
 
     /* query for the number of process slots required */
-    if(ORTE_SUCCESS != (rc = orte_rmgr_base_get_proc_slots(jobid, &num_requested))) {
+    if(ORTE_SUCCESS != (rc = orte_rmgr_base_get_job_slots(jobid, &num_requested))) {
         return rc;
     }
     /* sort the node list by proc slots inuse - lowest to highest */
@@ -142,7 +142,9 @@ int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes)
     /* the number of nodes was not specified - so try to allocate the
      * most available nodes to the request before oversubscribing
     */
-    while(item != ompi_list_get_last(nodes) && num_allocated < num_requested) {
+    for(item = ompi_list_get_first(nodes);
+        item != ompi_list_get_end(nodes) && num_allocated < num_requested;
+        ) {
         orte_ras_base_node_t* node = (orte_ras_base_node_t*)item;
         ompi_list_item_t* next = ompi_list_get_next(item);
 
@@ -162,12 +164,14 @@ int orte_ras_base_allocate_nodes(orte_jobid_t jobid, ompi_list_t* nodes)
             node->node_slots_alloc++; /* this job */
         }
 
-        /* take all available slots on this node */
+        /* take available slots on this node */
         else {
-            size_t num_avail = node->node_slots - node->node_slots_inuse;
-            num_allocated += num_avail;
-            node->node_slots_inuse += num_avail;
-            node->node_slots_alloc += num_avail;
+            size_t num_to_alloc = node->node_slots - node->node_slots_inuse;
+            if(num_to_alloc + num_allocated > num_requested)
+                 num_to_alloc = num_requested - num_allocated;
+            num_allocated += num_to_alloc;
+            node->node_slots_inuse += num_to_alloc;
+            node->node_slots_alloc += num_to_alloc;
         }
 
         ompi_list_remove_item(nodes, item);
@@ -213,7 +217,9 @@ validate:
 
     rc = orte_ras_base_node_assign(&allocated, jobid);
 cleanup:
-    ompi_list_join(nodes, ompi_list_get_first(&allocated), &allocated);
+
+    while(NULL != (item = ompi_list_remove_first(&allocated))) 
+        ompi_list_append(nodes, item);
     OBJ_DESTRUCT(&allocated);
     return rc;
 }

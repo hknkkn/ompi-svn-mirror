@@ -183,7 +183,8 @@ static int orte_ras_bjs_discover(ompi_list_t* nodelist)
     rc = orte_ras_base_node_insert(&new_nodes);
 
     /* append them to the nodelist */
-    ompi_list_join(nodelist, ompi_list_get_first(&new_nodes), &new_nodes);
+    while(NULL != (item = ompi_list_remove_first(&new_nodes)))
+        ompi_list_append(nodelist, item);
 
 cleanup:
     OBJ_DESTRUCT(&new_nodes);

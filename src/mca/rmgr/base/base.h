@@ -57,9 +57,13 @@ OMPI_DECLSPEC int orte_rmgr_base_put_app_context(
     orte_app_context_t** app_context,
     size_t num_context);
 
-OMPI_DECLSPEC int orte_rmgr_base_get_proc_slots(
+OMPI_DECLSPEC int orte_rmgr_base_get_job_slots(
     orte_jobid_t jobid, 
     size_t* num_slots);
+
+OMPI_DECLSPEC int orte_rmgr_base_set_job_slots(
+    orte_jobid_t jobid, 
+    size_t num_slots);
 
 /*
  * Base functions that are common to all implementations - can be overridden

@@ -36,15 +36,20 @@ static int orte_rmaps_rr_set_vpid_range(orte_jobid_t jobid, orte_vpid_t start, o
 {
     orte_gpr_value_t value;
     orte_gpr_value_t* values;
-    orte_gpr_keyval_t vpid_start = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_START, ORTE_VPID };
-    orte_gpr_keyval_t vpid_range = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_RANGE, ORTE_VPID };
+    orte_gpr_keyval_t vpid_start = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_START_KEY, ORTE_VPID };
+    orte_gpr_keyval_t vpid_range = { {OBJ_CLASS(ompi_object_t),0}, ORTE_JOB_VPID_RANGE_KEY, ORTE_VPID };
     orte_gpr_keyval_t* keyvals[2];
+    char* tokens[2] = { ORTE_JOB_GLOBALS, NULL };
     int rc;
 
     keyvals[0] = &vpid_start;
     keyvals[1] = &vpid_range;
+    value.tokens = tokens;
+    value.num_tokens = 1;
     value.keyvals = keyvals;
+    value.cnt = 2;
     values = &value;
+
     if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&value.segment, jobid)))
         return rc;
 
@@ -102,10 +107,11 @@ static int orte_rmaps_rr_map_app(
                 OBJ_RELEASE(proc);
                 return rc;
             }
+            proc->proc_node = rmaps_node;
             proc->proc_name = *proc_name;
-            orte_ns.free_name(&proc_name);
             proc->proc_rank = rank;
             rank++;
+            orte_ns.free_name(&proc_name);
             ompi_list_append(&rmaps_node->node_procs, &proc->super);
             map->procs[proc_index++] = proc;
         }
@@ -119,7 +125,8 @@ static int orte_rmaps_rr_map_app(
         if(num_alloc == (size_t)app->num_procs)
             break;
         item = next;
-    }
+    } 
+    map->num_procs = num_alloc;
     return ORTE_SUCCESS;
 }
    
@@ -174,6 +181,7 @@ static int orte_rmaps_rr_map(orte_jobid_t jobid)
         }
         ompi_list_append(&mapping, &map->super);
 
+        map->app = app;
         map->procs = malloc(sizeof(orte_rmaps_base_proc_t*)*app->num_procs);
         if(NULL == map->procs) {
             rc = ORTE_ERR_OUT_OF_RESOURCE;
@@ -194,11 +202,11 @@ static int orte_rmaps_rr_map(orte_jobid_t jobid)
     rc = orte_rmaps_rr_set_vpid_range(jobid,vpid_start,num_procs);
 
 cleanup:
-    while(NULL != (item = ompi_list_get_first(&nodes))) {
+    while(NULL != (item = ompi_list_remove_first(&nodes))) {
         OBJ_RELEASE(item);
     }
     OBJ_DESTRUCT(&nodes);
-    while(NULL != (item = ompi_list_get_first(&mapping))) {
+    while(NULL != (item = ompi_list_remove_first(&mapping))) {
         OBJ_RELEASE(item);
     }
     OBJ_DESTRUCT(&mapping);

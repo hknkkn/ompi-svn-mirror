@@ -55,7 +55,8 @@ int orte_schema_get_proc_tokens(char ***proc_tokens, int32_t* num_tokens, orte_p
 {
     int rc;
     char** tokens;
-    
+    char* vpid_string;
+
     tokens = (char**)malloc(3 * sizeof(char*));
     if (NULL == tokens) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
@@ -65,10 +66,13 @@ int orte_schema_get_proc_tokens(char ***proc_tokens, int32_t* num_tokens, orte_p
         ORTE_ERROR_LOG(rc);
         goto CLEANUP;
     }
-    if (ORTE_SUCCESS != (rc = orte_ns.get_vpid_string(&tokens[1], proc))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_vpid_string(&vpid_string, proc))) {
         ORTE_ERROR_LOG(rc);
         goto CLEANUP;
     }
+
+    asprintf(&tokens[1], "%s-%s", ORTE_VPID_KEY, vpid_string);
+    free(vpid_string);
     tokens[2] = NULL;
     *proc_tokens = tokens;
     if(num_tokens != NULL)
@@ -86,9 +90,39 @@ CLEANUP:
     return rc;
 }
 
-int orte_schema_get_node_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid, char *nodename)
+int orte_schema_get_node_tokens(char ***node_tokens, int32_t* num_tokens, orte_cellid_t cellid, char *nodename)
 {
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    int rc;
+    char** tokens;
+    char* cellid_string;
+    tokens = (char**)malloc(3 * sizeof(char*));
+    if (NULL == tokens) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    if (ORTE_SUCCESS != (rc = orte_ns.convert_cellid_to_string(&cellid_string, cellid))) {
+        ORTE_ERROR_LOG(rc);
+        goto CLEANUP;
+    }
+
+    asprintf(&tokens[0], "%s-%s", ORTE_CELLID_KEY, cellid_string);
+    free(cellid_string);
+    tokens[1] = strdup(nodename);
+    tokens[2] = NULL;
+    *node_tokens = tokens;
+    if(num_tokens != NULL)
+        *num_tokens = 2;
+    return ORTE_SUCCESS;
+    
+CLEANUP:
+    if (NULL != tokens) {
+        if (NULL != tokens[0])
+            free(tokens[0]);
+        if (NULL != tokens[1])
+            free(tokens[1]);
+        free(tokens);
+    }
+    return rc;
 }
 
 int orte_schema_get_cell_tokens(char ***tokens, int32_t* num_tokens, orte_cellid_t cellid)

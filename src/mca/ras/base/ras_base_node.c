@@ -49,7 +49,8 @@ OBJ_CLASS_INSTANCE(
 /*
  * Query the registry for all available nodes 
  */
-static int orte_ras_base_node_query_internal(ompi_list_t* nodes, char** keys)
+
+int orte_ras_base_node_query(ompi_list_t* nodes)
 {
     int i, cnt;
     orte_gpr_value_t** values;
@@ -104,34 +105,83 @@ static int orte_ras_base_node_query_internal(ompi_list_t* nodes, char** keys)
     return ORTE_SUCCESS;
 }
 
-
-/*
- * Query the registry for all available nodes 
- */
-
-int orte_ras_base_node_query(ompi_list_t* nodes)
-{
-    return orte_ras_base_node_query_internal(nodes, NULL);
-}
-
 /*
  * Query the registry for all nodes allocated to a specified job
  */
 int orte_ras_base_node_query_alloc(ompi_list_t* nodes, orte_jobid_t jobid)
 {
-    char* keys[2];
+    char* keys[] = { 
+        ORTE_NODE_NAME_KEY, 
+        ORTE_NODE_STATE_KEY,
+        ORTE_NODE_SLOTS_KEY,
+        ORTE_NODE_SLOTS_ALLOC_KEY,
+        ORTE_NODE_SLOTS_MAX_KEY,
+        ORTE_CELLID_KEY,
+        NULL
+    };
+    int i, cnt;
+    orte_gpr_value_t** values;
     char* jobid_str;
     int rc;
 
     if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_str, jobid)))
         return rc;
-    asprintf(&keys[0], "%s-%s", ORTE_NODE_SLOTS_ALLOC_KEY, jobid_str);
+    asprintf(&keys[3], "%s-%s", ORTE_NODE_SLOTS_ALLOC_KEY, jobid_str);
     free(jobid_str);
-    keys[1] = NULL;
-        
-    rc = orte_ras_base_node_query_internal(nodes,keys);
-    free(keys[0]);
-    return rc;
+
+    /* query selected node entries */
+    rc = orte_gpr.get(
+        ORTE_GPR_OR,
+        ORTE_NODE_SEGMENT,
+        NULL,
+        keys,
+        &cnt,
+        &values);
+    if(ORTE_SUCCESS != rc)
+        return rc;
+
+    /* parse the response */
+    for(i=0; i<cnt; i++) {
+        orte_gpr_value_t* value = values[i];
+        orte_ras_base_node_t* node = OBJ_NEW(orte_ras_base_node_t);
+        int k;
+
+        for(k=0; k<value->cnt; k++) {
+            orte_gpr_keyval_t* keyval = value->keyvals[k];
+            if(strcmp(keyval->key, ORTE_NODE_NAME_KEY) == 0) {
+                node->node_name = strdup(keyval->value.strptr);
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_NODE_STATE_KEY) == 0) {
+                node->node_state = keyval->value.node_state;
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_NODE_SLOTS_KEY) == 0) {
+                node->node_slots = keyval->value.ui32;
+                continue;
+            }
+            if(strncmp(keyval->key, ORTE_NODE_SLOTS_ALLOC_KEY, strlen(ORTE_NODE_SLOTS_ALLOC_KEY)) == 0) {
+                node->node_slots_inuse += keyval->value.ui32;
+                node->node_slots_alloc += keyval->value.ui32;
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_NODE_SLOTS_MAX_KEY) == 0) {
+                node->node_slots_max = keyval->value.ui32;
+                continue;
+            }
+            if(strcmp(keyval->key, ORTE_CELLID_KEY) == 0) {
+                node->node_cellid = keyval->value.cellid;
+                continue;
+            }
+        }
+        /* in case we get back more than we asked for */
+        if(node->node_slots_inuse == 0) {
+            OBJ_RELEASE(node);
+            continue;
+        }
+        ompi_list_append(nodes, &node->super);
+    }
+    return ORTE_SUCCESS;
 }
 
 /*
@@ -140,10 +190,9 @@ int orte_ras_base_node_query_alloc(ompi_list_t* nodes, orte_jobid_t jobid)
 int orte_ras_base_node_insert(ompi_list_t* nodes)
 {
     ompi_list_item_t* item;
-    orte_gpr_value_t **values, *val;
+    orte_gpr_value_t **values;
     int rc, num_values, i, j;
     orte_ras_base_node_t* node;
-    char* cellid;
     
     num_values = ompi_list_get_size(nodes);
     if (0 >= num_values) {
@@ -157,8 +206,8 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
     }
     
     for (i=0; i < num_values; i++) {
-        values[i] = OBJ_NEW(orte_gpr_value_t);
-        if (NULL == values[i]) {
+        orte_gpr_value_t* value = values[i] = OBJ_NEW(orte_gpr_value_t);
+        if (NULL == value) {
             for (j=0; j < i; j++) {
                 OBJ_RELEASE(values[j]);
             }
@@ -167,11 +216,10 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
         
-        values[i]->segment = strdup(ORTE_NODE_SEGMENT);
-        
-        values[i]->cnt = 5;
-        values[i]->keyvals = (orte_gpr_keyval_t**)malloc(5*sizeof(orte_gpr_keyval_t*));
-        if (NULL == values[i]->keyvals) {
+        value->segment = strdup(ORTE_NODE_SEGMENT);
+        value->cnt = 5;
+        value->keyvals = (orte_gpr_keyval_t**)malloc(5*sizeof(orte_gpr_keyval_t*));
+        if (NULL == value->keyvals) {
             for (j=0; j < i; j++) {
                 OBJ_RELEASE(values[j]);
             }
@@ -181,69 +229,53 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
         }
         
         for (j=0; j < 5; j++) {
-            val->keyvals[j] = OBJ_NEW(orte_gpr_keyval_t);
-            if (NULL == val->keyvals[j]) {
+            value->keyvals[j] = OBJ_NEW(orte_gpr_keyval_t);
+            if (NULL == value->keyvals[j]) {
                 for (j=0; j <= i; j++) {
-                OBJ_RELEASE(values[j]);
+                    OBJ_RELEASE(values[j]);
                 }
                 free(values);
                 ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
                 return ORTE_ERR_OUT_OF_RESOURCE;
             }
         }
-        
-        values[i]->num_tokens = 2;
-        values[i]->tokens = (char**)malloc(2*sizeof(char*));
-        if (NULL == values[i]->tokens) {
-           for (j=0; j < i; j++) {
-                OBJ_RELEASE(values[j]);
-            }
-            free(values);
-            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-            return ORTE_ERR_OUT_OF_RESOURCE;
-        }
     }
     
     for(i=0, item =  ompi_list_get_first(nodes);
         i < num_values && item != ompi_list_get_end(nodes);
-        i++, item =  ompi_list_get_next(nodes)) {
-
+        i++, item =  ompi_list_get_next(item)) {
+        orte_gpr_value_t* value = values[i];
         node = (orte_ras_base_node_t*)item;
 
-        val = values[i];
+        (value->keyvals[0])->key = strdup(ORTE_NODE_NAME_KEY);
+        (value->keyvals[0])->type = ORTE_STRING;
+        (value->keyvals[0])->value.strptr = strdup(node->node_name);
         
-        (val->keyvals[0])->key = strdup(ORTE_NODE_NAME_KEY);
-        (val->keyvals[0])->type = ORTE_STRING;
-        (val->keyvals[0])->value.strptr = strdup(node->node_name);
+        (value->keyvals[1])->key = strdup(ORTE_NODE_STATE_KEY);
+        (value->keyvals[1])->type = ORTE_NODE_STATE;
+        (value->keyvals[1])->value.node_state = node->node_state;
         
-        (val->keyvals[1])->key = strdup(ORTE_NODE_STATE_KEY);
-        (val->keyvals[1])->type = ORTE_NODE_STATE;
-        (val->keyvals[1])->value.node_state = node->node_state;
+        (value->keyvals[2])->key = strdup(ORTE_CELLID_KEY);
+        (value->keyvals[2])->type = ORTE_CELLID;
+        (value->keyvals[2])->value.cellid = node->node_cellid;
         
-        (val->keyvals[2])->key = strdup(ORTE_CELLID_KEY);
-        (val->keyvals[2])->type = ORTE_CELLID;
-        (val->keyvals[2])->value.cellid = node->node_cellid;
+        (value->keyvals[3])->key = strdup(ORTE_NODE_SLOTS_KEY);
+        (value->keyvals[3])->type = ORTE_UINT32;
+        (value->keyvals[3])->value.ui32 = node->node_slots;
         
-        (val->keyvals[3])->key = strdup(ORTE_NODE_SLOTS_KEY);
-        (val->keyvals[3])->type = ORTE_UINT32;
-        (val->keyvals[3])->value.ui32 = node->node_slots;
-        
-        (val->keyvals[4])->key = strdup(ORTE_NODE_SLOTS_MAX_KEY);
-        (val->keyvals[4])->type = ORTE_UINT32;
-        (val->keyvals[4])->value.ui32 = node->node_slots_max;
+        (value->keyvals[4])->key = strdup(ORTE_NODE_SLOTS_MAX_KEY);
+        (value->keyvals[4])->type = ORTE_UINT32;
+        (value->keyvals[4])->value.ui32 = node->node_slots_max;
 
         /* setup index/keys for this node */
-        val->tokens[0] = strdup(node->node_name);
-        if (ORTE_SUCCESS != (rc = orte_ns.convert_cellid_to_string(&(val->tokens[1]),
-                                        node->node_cellid))) {
+        rc = orte_schema.get_node_tokens(&value->tokens, &value->num_tokens, node->node_cellid, node->node_name);
+        if (ORTE_SUCCESS != rc) {
             for (j=0; j <= i; j++) {
                 OBJ_RELEASE(values[j]);
             }
             free(values);
             return rc;
         }
-
-        val->tokens[1] = cellid;
     }
     
     /* try the insert */
@@ -256,11 +288,7 @@ int orte_ras_base_node_insert(ompi_list_t* nodes)
           OBJ_RELEASE(values[j]);
     }
     free(values);
-    
-    if(ORTE_SUCCESS != rc)
-        return rc;
-
-    return ORTE_SUCCESS;
+    return rc;
 }
 
 /*
@@ -332,7 +360,6 @@ int orte_ras_base_node_assign(ompi_list_t* nodes, orte_jobid_t jobid)
         }
         
         values[i]->segment = strdup(ORTE_NODE_SEGMENT);
-        
         values[i]->cnt = 1;
         values[i]->keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
         if (NULL == values[i]->keyvals) {
@@ -353,23 +380,12 @@ int orte_ras_base_node_assign(ompi_list_t* nodes, orte_jobid_t jobid)
             ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
-        
-        values[i]->num_tokens = 2;
-        values[i]->tokens = (char**)malloc(2*sizeof(char*));
-        if (NULL == values[i]->tokens) {
-           for (j=0; j < i; j++) {
-                OBJ_RELEASE(values[j]);
-            }
-            free(values);
-            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-            return ORTE_ERR_OUT_OF_RESOURCE;
-        }
     }
     
     for(i=0, item =  ompi_list_get_first(nodes);
         i < num_values && item != ompi_list_get_end(nodes);
         i++, item =  ompi_list_get_next(nodes)) {
-          
+        int rc;
         node = (orte_ras_base_node_t*)item;
 
         if(node->node_slots_alloc == 0)
@@ -378,9 +394,8 @@ int orte_ras_base_node_assign(ompi_list_t* nodes, orte_jobid_t jobid)
             return rc;
 
         /* setup index/keys for this node */
-        values[i]->tokens[0] = strdup(node->node_name);
-        if (ORTE_SUCCESS != (rc = orte_ns.convert_cellid_to_string(
-                                    &(values[i]->tokens[1]), node->node_cellid))) {
+        rc = orte_schema.get_node_tokens(&values[i]->tokens, &values[i]->num_tokens, node->node_cellid, node->node_name);
+        if (ORTE_SUCCESS != rc) {
            for (j=0; j < num_values; j++) {
                 OBJ_RELEASE(values[j]);
             }

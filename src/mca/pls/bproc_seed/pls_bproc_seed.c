@@ -18,7 +18,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/errno.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 #include "util/output.h"
 #include "util/proc_info.h"
@@ -273,6 +275,15 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
         size_t num_procs;
         orte_process_name_t* daemon_name;
 
+        /* connect stdout/stderr to a file */
+        int fd = open("/tmp/orte.log", O_CREAT|O_RDWR|O_TRUNC, 0666);
+        if(fd > 0) {
+            dup2(fd,1);
+            dup2(fd,2);
+        } else {
+            exit(-1);
+        }
+
         /* find this node */
         index = 0;
         for(item =  ompi_list_get_first(&map->nodes);
@@ -283,18 +294,23 @@ static int orte_pls_bproc_launch_app(orte_jobid_t jobid, orte_rmaps_base_map_t* 
                 break;
             }
         }
+        ompi_output(0, "orte_pls_bproc: node=%s\n", node ? node->node_name : NULL);
         if(NULL == node) {
-            rc = ORTE_ERROR;
-            goto cleanup;
+            ompi_output(0, "orte_pls_bproc: unable to locate node for index %d\n", rc);
+            exit(1);
         }
 
         /* restart the daemon w/ the new process name */
+        ompi_output(0, "orte_pls_bproc: node name=%d.%d.%d\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
+
         rc = orte_ns.create_process_name(
             &daemon_name, orte_process_info.my_name->cellid, 0, daemon_vpid_start + rc);
         if(ORTE_SUCCESS != rc) {
             exit(1);
         }
+        ompi_output(0, "orte_pls_bproc: calling orte_restart\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
         orte_restart(daemon_name);
+        ompi_output(0, "orte_pls_bproc: return from orte_restart\n", orte_process_info.my_name->cellid, 0, daemon_vpid_start+rc);
 
         /* connect the daemons stdout/stderr to IOF framework */
 

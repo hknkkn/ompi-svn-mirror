@@ -36,10 +36,15 @@ int orte_rmgr_base_put_app_context(
     orte_app_context_t** app_context,
     size_t num_context)
 {
-    char *jobid_string;
     orte_gpr_value_t* value;
     size_t i;
+    size_t job_slots;
     int rc;
+
+    rc = orte_rmgr_base_get_job_slots(jobid, &job_slots);
+    if(ORTE_SUCCESS != rc) {
+        return rc;
+    }
 
     value = OBJ_NEW(orte_gpr_value_t);
     if (NULL == value) {
@@ -47,13 +52,11 @@ int orte_rmgr_base_put_app_context(
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
     
-    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_string, jobid))) {
+    /* put context info on the job segment of the registry */
+    if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&(value->segment), jobid))) {
         OBJ_RELEASE(value);
         return rc;
     }
-
-    /* put context info on the job segment of the registry */
-    asprintf(&(value->segment), "%s-%s", ORTE_JOB_SEGMENT, jobid_string);
     
     value->num_tokens = 1;
     if(NULL == (value->tokens = (char**)malloc(sizeof(char*)*2))) {
@@ -73,25 +76,30 @@ int orte_rmgr_base_put_app_context(
     memset(value->keyvals, 0, num_context * sizeof(orte_gpr_keyval_t*));
 
     for(i=0; i<num_context; i++) {
+        orte_app_context_t* app = app_context[i];
         value->keyvals[i] = OBJ_NEW(orte_gpr_keyval_t);
         if (NULL == value->keyvals[i]) {
             rc = ORTE_ERR_OUT_OF_RESOURCE;
             goto cleanup;
         }
-        (value->keyvals[i])->key = strdup(ORTE_APP_CONTEXT_KEY);
+        (value->keyvals[i])->key = strdup(ORTE_JOB_APP_CONTEXT_KEY);
         (value->keyvals[i])->type = ORTE_APP_CONTEXT;
-        (value->keyvals[i])->value.app_context = app_context[i];
-        app_context[i]->idx = i;
+        (value->keyvals[i])->value.app_context = app;
+        app->idx = i;
+        job_slots += app->num_procs;
     }
             
     rc = orte_gpr.put(
         ORTE_GPR_OVERWRITE,
         1,
         &value);
- 
+    if(ORTE_SUCCESS != rc) {
+        goto cleanup;
+    }
+    rc = orte_rmgr_base_set_job_slots(jobid, job_slots);
+
 cleanup:
     OBJ_RELEASE(value);
-    free(jobid_string);
     return rc;
 }
 
@@ -121,7 +129,6 @@ int orte_rmgr_base_get_app_context(
     orte_app_context_t*** app_context,
     size_t* num_context)
 {
-    char *jobid_string;
     char *segment;
     char *tokens[2];
     char *keys[2];
@@ -129,15 +136,14 @@ int orte_rmgr_base_get_app_context(
     int i, num_values = 0, index = 0;
     int rc;
 
-    if(ORTE_SUCCESS != (rc = orte_ns.convert_jobid_to_string(&jobid_string, jobid)))
+    /* create the job segment on the registry */
+    if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&segment, jobid)))
         return rc;
 
-    /* create the job segment on the registry */
-    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid_string);
-    tokens[0] = strdup(ORTE_JOB_GLOBALS);
+    tokens[0] = ORTE_JOB_GLOBALS;
     tokens[1] = NULL;
 
-    keys[0] = ORTE_APP_CONTEXT_KEY;
+    keys[0] = ORTE_JOB_APP_CONTEXT_KEY;
     keys[1] = NULL;
 
     rc = orte_gpr.get(
@@ -177,13 +183,99 @@ cleanup:
     if(NULL != values) 
         free(values);
     free(segment);
-    free(jobid_string);
     return rc;
 }
 
 
-int orte_rmgr_base_get_proc_slots(orte_jobid_t jobid, size_t* proc_slots)
+/*
+ * Query for the total number of process slots requested for the job.
+ */
+
+int orte_rmgr_base_get_job_slots(orte_jobid_t jobid, size_t* proc_slots)
 {
-    return ORTE_ERROR;
+    char *segment;
+    char *tokens[2];
+    char *keys[2];
+    orte_gpr_value_t** values = NULL;
+    int i, num_values = 0;
+    int rc;
+
+    /* query the job segment on the registry */
+    if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&segment, jobid)))
+        return rc;
+
+    tokens[0] = ORTE_JOB_GLOBALS;
+    tokens[1] = NULL;
+
+    keys[0] = ORTE_JOB_SLOTS_KEY;
+    keys[1] = NULL;
+
+    rc = orte_gpr.get(
+        ORTE_GPR_OR,
+        segment,
+        tokens,
+        keys,
+        &num_values,
+        &values
+        );
+    if(rc != ORTE_SUCCESS) {
+        free(segment);
+        return rc;
+    }
+
+    if(0 == num_values) {
+        *proc_slots = 0;
+        return ORTE_SUCCESS;
+    }
+    if(1 != num_values || values[0]->cnt != 1) {
+        return ORTE_ERR_NOT_FOUND;
+    }
+    *proc_slots = values[0]->keyvals[0]->value.ui32;
+
+    for(i=0; i<num_values; i++)
+        OBJ_RELEASE(values[i]);
+    free(segment);
+    free(values);
+    return ORTE_SUCCESS;
 }
+
+
+/*
+ * Set the total number of process slots requested for the job.
+ */
+
+int orte_rmgr_base_set_job_slots(orte_jobid_t jobid, size_t proc_slots)
+{
+    char *segment;
+    char *tokens[2];
+    orte_gpr_value_t* values[1];
+    orte_gpr_value_t value;
+    orte_gpr_keyval_t keyval;
+    orte_gpr_keyval_t* keyvals[1];
+    int rc;
+
+    /* query the job segment on the registry */
+    if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&segment, jobid)))
+        return rc;
+
+    tokens[0] = ORTE_JOB_GLOBALS;
+    tokens[1] = NULL;
+
+    keyval.type = ORTE_UINT32;
+    keyval.key = ORTE_JOB_SLOTS_KEY;
+    keyval.value.ui32 = proc_slots;
+    keyvals[0] = &keyval;
+
+    value.segment = segment;
+    value.keyvals = keyvals;
+    value.cnt = 1;
+    value.tokens = tokens;
+    value.num_tokens = 1;
+    values[0] = &value;
+
+    rc = orte_gpr.put(ORTE_GPR_OVERWRITE|ORTE_GPR_AND, 1, values);
+    free(segment);
+    return rc;
+}
+
 

@@ -75,15 +75,11 @@ static void orte_app_context_construct(orte_app_context_t* app_context)
 /* destructor - used to free any resources held by instance */
 static void orte_app_context_destructor(orte_app_context_t* app_context)
 {
-    int32_t i;
+    if (NULL != app_context->app) {
+        free (app_context->app);
+    }
 
-
-	if (NULL != app_context->app) {
-		free (app_context->app);
-	}
-
-	/* argv and env lists created by util/argv copy functions */
-
+    /* argv and env lists created by util/argv copy functions */
     if (NULL != app_context->argv) {
        ompi_argv_free(app_context->argv);
     }
@@ -92,9 +88,9 @@ static void orte_app_context_destructor(orte_app_context_t* app_context)
        ompi_argv_free(app_context->env);
     }
 
-	if (NULL != app_context->cwd) {
-		free (app_context->cwd);
-	}
+    if (NULL != app_context->cwd) {
+        free (app_context->cwd);
+    }
 }
 
 /* define instance of ompi_class_t */
