@@ -386,7 +386,7 @@ typedef struct orte_rml_component_1_0_0_t orte_rml_component_t;
   /* rml v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* rml v1.0 */ \
-  "orte_rml", 1, 0, 0
+  "rml", 1, 0, 0
 
 
 /*

@@ -133,7 +133,7 @@ typedef orte_rmgr_base_component_1_0_0_t orte_rmgr_base_component_t;
   /* rmgr v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* rmgr v1.0 */ \
-  "orte_rmgr", 1, 0, 0
+  "rmgr", 1, 0, 0
 
 /* Global structure for accessing RAS functions
  */

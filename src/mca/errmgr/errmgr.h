@@ -83,11 +83,11 @@ typedef mca_errmgr_base_component_1_0_0_t mca_errmgr_base_component_t;
 /*
  * Macro for use in components that are of type errmgr v1.0.0
  */
-#define ORTE_MCA_ERRMGR_BASE_VERSION_1_0_0 \
+#define ORTE_ERRMGR_BASE_VERSION_1_0_0 \
   /* ns v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* errmgr v1.0 */ \
-  "orte_errmgr", 1, 0, 0
+  "errmgr", 1, 0, 0
 
 /* Global structure for accessing error manager functions
  */

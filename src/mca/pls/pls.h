@@ -99,7 +99,7 @@ typedef orte_pls_base_component_1_0_0_t orte_pls_base_component_t;
 /**
  * Macro for use in modules that are of type pml v1.0.0
  */
-#define MCA_PLS_BASE_VERSION_1_0_0 \
+#define ORTE_PLS_BASE_VERSION_1_0_0 \
   /* pls v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* pls v1.0 */ \

@@ -91,7 +91,7 @@ typedef orte_rds_base_component_1_0_0_t orte_rds_base_component_t;
   /* ras v1.0 is chained to MCA v1.0 */ \
   MCA_BASE_VERSION_1_0_0, \
   /* ras v1.0 */ \
-  "orte_rds", 1, 0, 0
+  "rds", 1, 0, 0
 
 #endif
 
