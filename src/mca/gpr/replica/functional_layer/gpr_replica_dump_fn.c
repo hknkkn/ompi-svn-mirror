@@ -143,7 +143,7 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 {
     char *tmp_out, *token;
     int i, k;
-    orte_gpr_replica_target_t target**;
+    orte_gpr_replica_target_t **target;
     
     if (ORTE_GPR_SUBSCRIBE_CMD == trig->cmd) {  /* subscription */
 		asprintf(&tmp_out, "Data for trigger %d on segment %s\tType: SUBSCRIPTION",
@@ -359,7 +359,7 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
             if (NULL == target[i]->iptr) {
                 asprintf(&tmp_out, "\tKeyval: NULL");
             } else {
-                asprintf(&tmp_out, "\Keyval: %d", (target[i]->iptr)->index);
+                asprintf(&tmp_out, "\tKeyval: %d", (target[i]->iptr)->index);
             }
             orte_gpr_replica_dump_load_string(buffer, &tmp_out);
         }
