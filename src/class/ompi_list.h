@@ -587,7 +587,7 @@ static inline void ompi_list_insert_pos(ompi_list_t *list, ompi_list_item_t *pos
      */
 
     typedef int (*ompi_list_item_compare_fn_t)(ompi_list_item_t*, ompi_list_item_t*);
-    void ompi_list_sort(ompi_list_t* list, ompi_list_item_compare_fn_t compare);
+    int ompi_list_sort(ompi_list_t* list, ompi_list_item_compare_fn_t compare);
 
 
 #if defined(c_plusplus) || defined(__cplusplus)

@@ -42,7 +42,8 @@ liblfc_la_SOURCES = \
 	ompi_bitmap.c \
 	ompi_value_array.c \
 	ompi_rb_tree.c \
-	orte_pointer_array.c
+	orte_pointer_array.c \
+    orte_value_array.c 
 
 # Conditionally install the header files
 
