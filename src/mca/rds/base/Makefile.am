@@ -31,8 +31,7 @@ libmca_rds_base_la_SOURCES = \
         $(headers) \
         rds_base_close.c \
         rds_base_select.c \
-        rds_base_open.c \
-        rds_base_local_fns.c
+        rds_base_open.c 
 
 
 # Conditionally install the header files

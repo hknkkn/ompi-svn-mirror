@@ -40,20 +40,19 @@
  */
 int ompi_rte_finalize(void)
 {
-  ompi_rte_wait_finalize();
+    ompi_rte_wait_finalize();
 
-  mca_pcmclient_base_close();
-  orte_ns_base_close();
-  mca_gpr_base_close();
-  mca_oob_base_close();
+    mca_pcmclient_base_close();
+    orte_ns_base_close();
+    orte_gpr_base_close();
+    mca_oob_base_close();
 
-  ompi_event_fini();
+    ompi_event_fini();
 
 #ifndef WIN32
-    ompi_session_dir_finalize();
+    orte_session_dir_finalize();
 #endif
 
-  /* All done */
-
-  return OMPI_SUCCESS;
+    return OMPI_SUCCESS;
 }
+

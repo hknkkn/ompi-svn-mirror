@@ -62,22 +62,26 @@ int ompi_mpi_finalize(void)
 #endif
 
     /* begin recording compound command */
-    ompi_registry.begin_compound_cmd();
+    if (OMPI_SUCCESS != (ret = orte_gpr.begin_compound_cmd())) {
+        return ret;
+    }
 
     /* Set process status to "terminating"*/
  	my_rank = ompi_comm_rank(&ompi_mpi_comm_world);
     my_status.rank = (int32_t)my_rank;
-    my_status.local_pid = (int32_t)ompi_process_info.pid;
-    my_status.nodename = strdup(ompi_system_info.nodename);
+    my_status.local_pid = (int32_t)orte_process_info.pid;
+    my_status.nodename = strdup(orte_system_info.nodename);
     my_status.status_key = OMPI_PROC_TERMINATING;
     my_status.exit_code = 0;
-    if (OMPI_SUCCESS != (ret = ompi_rte_set_process_status(&my_status, ompi_rte_get_self()))) {
-	return ret;
+    if (OMPI_SUCCESS != (ret = ompi_rte_set_process_status(&my_status, orte_process_info.my_name))) {
+	    return ret;
     }
 
     /* execute the compound command - no return data requested
      */
-    ompi_registry.exec_compound_cmd(OMPI_REGISTRY_NO_RETURN_REQUESTED);
+    if (OMPI_SUCCESS != (ret = orte_gpr.exec_compound_cmd())) {
+        return ret;
+    }
 
     /* wait for all processes to reach same state */
 	mca_oob_barrier();
@@ -88,10 +92,10 @@ int ompi_mpi_finalize(void)
  	 * rank 0 process do it.
  	 */
  	 if (0 == my_rank) {
-         if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid(&my_jobid, ompi_rte_get_self()))) {
+         if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&my_jobid, orte_process_info.my_name))) {
             return ret;
          }
- 	 	ompi_rte_job_shutdown(my_jobid);
+ 	 	 ompi_rte_job_shutdown(my_jobid);
  	 }
  	 
     /* Shut down any bindings-specific issues: C++, F77, F90 (may or

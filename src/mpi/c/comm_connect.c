@@ -87,7 +87,7 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root,
      */ 
     if ( rank == root ) { 
 	tmp_port = ompi_parse_port (port_name, &tag);
-    if (ORTE_SUCCESS != (rc = orte_name_services.convert_string_to_process_name(port_proc_name, tmp_port))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.convert_string_to_process_name(port_proc_name, tmp_port))) {
         return rc;
     }
 	if ( NULL == port_proc_name ) {

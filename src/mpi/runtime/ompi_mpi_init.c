@@ -81,7 +81,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     ompi_rte_process_status_t my_status;
     size_t nprocs;
     char *error = NULL;
-    char *segment, *jobid_string;
+    char *jobid_string;
     orte_jobid_t jobid;
 
     /* Become an OMPI process */
@@ -107,7 +107,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     }
 
     /* start recording the compound command that starts us up */
-    ompi_registry.begin_compound_cmd();
+    orte_gpr.begin_compound_cmd();
 
     /* Finish setting up the RTE - contains commands
      * that need to be inside the compound command
@@ -263,31 +263,23 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
      *
      *  Ensure we own the job status and the oob segments first
      */
-    if (ORTE_SUCCESS != orte_name_services.get_jobid(&jobid, ompi_rte_get_self())) {
-        error = "orte_name_services - failed to get jobid";
+    if (ORTE_SUCCESS != orte_ns.get_jobid(&jobid, orte_process_info.my_name)) {
+        error = "orte_ns - failed to get jobid";
         goto error;
     }
-    if (ORTE_SUCCESS != orte_name_services.get_jobid_string(jobid_string, ompi_rte_get_self())) {
-        error = "orte_name_services - failed to get jobid string";
+    if (ORTE_SUCCESS != orte_ns.get_jobid_string(&jobid_string, orte_process_info.my_name)) {
+        error = "orte_ns - failed to get jobid string";
         goto error;
     }
-    asprintf(&segment, "%s-%s", OMPI_RTE_JOB_STATUS_SEGMENT, jobid_string);
-    ompi_registry.assign_ownership(segment, jobid);
-    free(segment);
-
-    asprintf(&segment, "%s-%s", OMPI_RTE_OOB_SEGMENT, jobid_string);
-    ompi_registry.assign_ownership(segment, jobid);
-    free(segment);
-
-    if (ORTE_SUCCESS != orte_name_services.get_vpid((orte_vpid_t*)(&my_status.rank), ompi_rte_get_self())) {
-        error = "orte_name_services - failed to get vpid";
+    if (ORTE_SUCCESS != orte_ns.get_vpid((orte_vpid_t*)(&my_status.rank), orte_process_info.my_name)) {
+        error = "orte_ns - failed to get vpid";
         goto error;
     }
-    my_status.local_pid = (int32_t)ompi_process_info.pid;
-    my_status.nodename = strdup(ompi_system_info.nodename);
+    my_status.local_pid = (int32_t)orte_process_info.pid;
+    my_status.nodename = strdup(orte_system_info.nodename);
     my_status.status_key = OMPI_PROC_STARTING;
     my_status.exit_code = 0;
-    if (OMPI_SUCCESS != (ret = ompi_rte_set_process_status(&my_status, ompi_rte_get_self()))) {
+    if (OMPI_SUCCESS != (ret = ompi_rte_set_process_status(&my_status, orte_process_info.my_name))) {
         error = "ompi_mpi_init: failed in ompi_rte_set_process_status()\n";
         goto error;
     } 
@@ -300,17 +292,21 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
     /* execute the compound command - no return data requested
     *  we'll get it all from the startup message
     */
-    ompi_registry.exec_compound_cmd(OMPI_REGISTRY_NO_RETURN_REQUESTED);
+    if (OMPI_SUCCESS != (ret = orte_gpr.exec_compound_cmd())) {
+	    error = "ompi_rte_init: orte_gpr.exec_compound_cmd failed";
+	    goto error;
+    }
+    
 
     /* wait to receive startup message and info distributed */
     if (OMPI_SUCCESS != (ret = ompi_rte_wait_startup_msg())) {
-	error = "ompi_rte_init: failed to see all procs register\n";
-	goto error;
+	    error = "ompi_rte_init: failed to see all procs register\n";
+	    goto error;
     }
 
     if (ompi_rte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] process startup message received",
-		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
+		    ORTE_NAME_ARGS(*orte_process_info.my_name));
     }
 
     /* add all ompi_proc_t's to PML */
@@ -390,7 +386,7 @@ int ompi_mpi_init(int argc, char **argv, int requested, int *provided)
 
     if (ompi_rte_debug_flag) {
 	ompi_output(0, "[%d,%d,%d] ompi_mpi_init completed",
-		    ORTE_NAME_ARGS(*ompi_rte_get_self()));
+		    ORTE_NAME_ARGS(*orte_process_info.my_name));
     }
 
     return MPI_SUCCESS;

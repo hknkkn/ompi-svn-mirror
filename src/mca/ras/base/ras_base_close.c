@@ -40,6 +40,8 @@ int orte_ras_base_close(void)
 
     mca_base_components_close(orte_ras_base.ras_output, 
                               &orte_ras_base.ras_components, NULL);
+  
+    OBJ_DESTRUCT(&orte_ras_base.ras_selected);
     return ORTE_SUCCESS;
 }
 

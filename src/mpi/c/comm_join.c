@@ -71,7 +71,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
        Need to determine somehow how to avoid a potential deadlock
        here. */
     myproc = ompi_proc_self (&size);
-    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string (name, &(myproc[0]->proc_name)))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string (&name, &(myproc[0]->proc_name)))) {
         return rc;
     }
     llen   = strlen(name)+1;
@@ -93,7 +93,7 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     ompi_socket_send (fd, name, llen);
     ompi_socket_recv (fd, rname, lrlen);
     
-    if (ORTE_SUCCESS != (rc = orte_name_services.convert_string_to_process_name(port_proc_name, rname))) {
+    if (ORTE_SUCCESS != (rc = orte_ns.convert_string_to_process_name(port_proc_name, rname))) {
         return rc;
     }
     rc = ompi_comm_connect_accept (MPI_COMM_SELF, 0, port_proc_name,

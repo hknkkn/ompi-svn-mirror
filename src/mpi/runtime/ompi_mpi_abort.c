@@ -39,12 +39,14 @@ abort_procs(ompi_proc_t **procs, int proc_count,
     orte_jobid_t jobid;
 
     for (i = 0 ; i < proc_count ; ++i) {
-        if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid(&jobid, &(procs[i]->proc_name)))) {
+        if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&jobid, &(procs[i]->proc_name)))) {
             return ret;
         }
         if (jobid == my_jobid) continue;
 
-//        killret = ompi_rte_terminate_job(jobid, 0);
+#if 0
+        killret = ompi_rte_terminate_job(jobid, 0);
+#endif
         if (OMPI_SUCCESS != killret) ret = killret;
     }
 
@@ -66,7 +68,7 @@ ompi_mpi_abort(struct ompi_communicator_t* comm,
        actually loop over ompi_rte_kill_proc() to only kill the procs
        in comm, and additionally to somehow use errorcode. */
 
-    if (ORTE_SUCCESS != (ret = orte_name_services.get_jobid(&my_jobid, ompi_rte_get_self()))) {
+    if (ORTE_SUCCESS != (ret = orte_ns.get_jobid(&my_jobid, orte_process_info.my_name))) {
         return ret;
     }
 
@@ -82,7 +84,9 @@ ompi_mpi_abort(struct ompi_communicator_t* comm,
                 comm->c_local_group->grp_proc_count,
                 my_jobid);
 
-//    ret = ompi_rte_terminate_job(my_jobid, 0);
+#if 0
+    ret = ompi_rte_terminate_job(my_jobid, 0);
+#endif
 
     if (OMPI_SUCCESS == ret) {
         while (1) {

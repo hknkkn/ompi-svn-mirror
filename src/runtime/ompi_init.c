@@ -70,7 +70,7 @@ int ompi_init(int argc, char *argv[])
   /* Get the local system information and populate the
      ompi_system_info structure */
 
-  ompi_sys_info();
+  orte_sys_info();
 
   /* All done */
 
