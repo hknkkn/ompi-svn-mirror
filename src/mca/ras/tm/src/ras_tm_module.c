@@ -183,16 +183,20 @@ static int discover(ompi_list_t* nodelist)
         }
     }
 
-    /* Add these nodes to the registry */
+    /* Add these nodes to the registry, and return all the values */
 
     ret = orte_ras_base_node_insert(&new_nodes);
+    if (ORTE_SUCCESS == ret) {
+        ompi_list_join(nodelist, ompi_list_get_first(&new_nodes), &new_nodes);
+    } else {
+        for (item = ompi_list_remove_first(&new_nodes);
+             NULL != item; item = ompi_list_remove_first(&new_nodes)) {
+            OBJ_RELEASE(item);
+        }
+    }
 
     /* All done */
 
-    for (item = ompi_list_remove_first(&new_nodes);
-         NULL != item; item = ompi_list_remove_first(&new_nodes)) {
-        OBJ_RELEASE(item);
-    }
     OBJ_DESTRUCT(&new_nodes);
     return ret;
 }
