@@ -20,4 +20,13 @@ libmca_gpr_replica_comm_la_SOURCES = \
 	gpr_replica_recv_proxy_msgs.c \
     gpr_replica_local_msg.c \
     gpr_replica_remote_msg.c \
-	gpr_replica_cmd_processor.c
+	gpr_replica_cmd_processor.c \
+    gpr_replica_cleanup_cm.c \
+    gpr_replica_del_index_cm.c \
+    gpr_replica_dump_cm.c \
+    gpr_replica_messaging_cm.c \
+    gpr_replica_mode_ops_cm.c \
+    gpr_replica_put_get_cm.c \
+    gpr_replica_subscribe_cm.c \
+    gpr_replica_synchro_cm.c \
+    gpr_replica_test_internals_cm.c

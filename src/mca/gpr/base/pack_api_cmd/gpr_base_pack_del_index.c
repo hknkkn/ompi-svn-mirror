@@ -20,6 +20,7 @@
 #include "include/orte_constants.h"
 
 #include "dps/dps.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "mca/gpr/base/base.h"
 
@@ -34,7 +35,7 @@ int orte_gpr_base_pack_delete_segment(orte_buffer_t *cmd, char *segment)
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, segment, 1, ORTE_STRING))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &segment, 1, ORTE_STRING))) {
 	   return rc;
     }
 
@@ -53,15 +54,15 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
 
     command = ORTE_GPR_DELETE_ENTRIES_CMD;
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_CMD))) {
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_PACK_ADDR_MODE))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_ADDR_MODE))) {
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, segment, 1, ORTE_STRING))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &segment, 1, ORTE_STRING))) {
 	   return rc;
     }
 
@@ -76,10 +77,17 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
         }
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, tokens, n, ORTE_STRING))) {
+    /* pack number of tokens */
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, (int*)&n, 1, ORTE_INT))) {
         return rc;
     }
 
+    /* pack tokens ONLY if n > 0 */
+    if (0 < n) {
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, tokens, n, ORTE_STRING))) {
+            return rc;
+        }
+    }
     /* compute number of keys */
     if (NULL == keys) {
         n = 0;
@@ -91,10 +99,17 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
         }
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keys, n, ORTE_STRING))) {
+    /* pack number of keys */
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, (int*)&n, 1, ORTE_INT))) {
         return rc;
     }
 
+    /* pack keys ONLY if n > 0 */
+    if (0 < n) {
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, keys, n, ORTE_STRING))) {
+            return rc;
+        }
+    }
     return ORTE_SUCCESS;
 }
 
@@ -102,22 +117,21 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
 int orte_gpr_base_pack_index(orte_buffer_t *cmd, char *segment)
 {
     orte_gpr_cmd_flag_t command;
-    size_t n;
     int rc;
 
     command = ORTE_GPR_INDEX_CMD;
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
-	   return rc;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_CMD))) {
+        ORTE_ERROR_LOG(rc);
+	    return rc;
     }
 
     if (NULL == segment) {  /* no segment specified - want universe dict */
-	    n = 0;
-    } else {
-        	n = 1;
+	    return ORTE_SUCCESS;
     }
     
-    	if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, segment, n, ORTE_STRING))) {
+    	if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &segment, 1, ORTE_STRING))) {
+        ORTE_ERROR_LOG(rc);
     	    return rc;
     	}
 

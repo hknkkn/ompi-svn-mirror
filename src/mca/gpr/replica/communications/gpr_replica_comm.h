@@ -61,7 +61,7 @@ void orte_gpr_replica_recv(int status, orte_process_name_t* sender,
  */
 int orte_gpr_replica_process_command_buffer(orte_buffer_t *input_buffer,
                             orte_process_name_t *sender,
-                            orte_buffer_t *output_buffer);
+                            orte_buffer_t **output_buffer);
 
 /*
  * Messaging functions
@@ -71,5 +71,63 @@ int orte_gpr_replica_deliver_notify_msg(orte_gpr_notify_message_t *message);
 int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
                  orte_gpr_notify_message_t *message);
 
+/*
+ * define the local functions for processing commands
+ */
+int orte_gpr_replica_recv_delete_segment_cmd(orte_buffer_t *input_buffer,
+                                             orte_buffer_t *output_buffer);
+                                             
+int orte_gpr_replica_recv_put_cmd(orte_buffer_t *input_buffer,
+                                  orte_buffer_t *output_buffer);
+                                  
+int orte_gpr_replica_recv_get_cmd(orte_buffer_t *input_buffer,
+                                  orte_buffer_t *answer);
+                                  
+int orte_gpr_replica_recv_delete_entries_cmd(orte_buffer_t *input_buffer,
+                                             orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_index_cmd(orte_buffer_t *input_buffer,
+                                    orte_buffer_t *answer);
+
+int orte_gpr_replica_recv_subscribe_cmd(orte_process_name_t* sender,
+                                        orte_buffer_t *input_buffer,
+                                        orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_unsubscribe_cmd(orte_buffer_t *input_buffer,
+                                          orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_synchro_cmd(orte_process_name_t* sender,
+                                      orte_buffer_t *input_buffer,
+                                      orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_cancel_synchro_cmd(orte_buffer_t *input_buffer,
+                                             orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_dump_cmd(orte_buffer_t *answer);
+
+int orte_gpr_replica_recv_get_startup_msg_cmd(orte_buffer_t *input_buffer,
+                                              orte_buffer_t *answer);
+
+int orte_gpr_replica_recv_triggers_active_cmd(orte_buffer_t *input_buffer,
+                                          orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_triggers_inactive_cmd(orte_buffer_t *input_buffer,
+                                          orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_cleanup_job_cmd(orte_buffer_t *input_buffer,
+                                          orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_cleanup_proc_cmd(orte_buffer_t *input_buffer,
+                                           orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_notify_on_cmd(orte_buffer_t *input_buffer,
+                                        orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_notify_off_cmd(orte_buffer_t *input_buffer,
+                                         orte_buffer_t *output_buffer);
+
+int orte_gpr_replica_recv_test_internals_cmd(orte_buffer_t *input_buffer,
+                                             orte_buffer_t *answer);
+ 
 
 #endif

@@ -70,9 +70,7 @@ int orte_gpr_replica_process_callbacks(void)
 
 int
 orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
-                                    orte_buffer_t **msg,
-                                    size_t *cnt,
-                                    orte_process_name_t **procs)
+                                    orte_buffer_t *msg)
 {
 #if 0
     orte_gpr_replica_segment_t *seg=NULL, *proc_stat_seg;
@@ -97,11 +95,11 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
 		    ORTE_NAME_ARGS(*(orte_process_info.my_name)), (int)jobid);
     }
 
-    msg = OBJ_NEW(orte_gpr_notify_message_t);
-    if (NULL == msg) {
-	   return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-
+    /* for each subscription, find all relevant containers and
+     * add their info to a value_t. let the job_startup function
+     * get the list of recipients at the time of sending
+     */
+     
     /* setup tokens and segments for this job */
     if (ORTE_SUCCESS != orte_name_services.convert_jobid_to_string(jobidstring, jobid)) {
         return NULL;

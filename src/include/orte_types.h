@@ -67,7 +67,8 @@ typedef uint8_t orte_data_type_t ;
 #define    ORTE_GPR_VALUE           (orte_data_type_t)   35 /**< registry return value */
 #define    ORTE_DATA_TYPE           (orte_data_type_t)   36 /**< data type */
 #define    ORTE_APP_CONTEXT         (orte_data_type_t)   37 /**< argv and enviro arrays */
-#define    ORTE_NULL                (orte_data_type_t)   38 /**< don't interpret data type */
+#define    ORTE_GPR_ADDR_MODE       (orte_data_type_t)   38 /**< Addressing mode for registry cmds */
+#define    ORTE_NULL                (orte_data_type_t)   39 /**< don't interpret data type */
 
 
 typedef struct {

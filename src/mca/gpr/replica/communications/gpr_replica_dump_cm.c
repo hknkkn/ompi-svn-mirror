@@ -1,4 +1,5 @@
-/*
+/* -*- C -*-
+ *
  * Copyright (c) 2004-2005 The Trustees of Indiana University.
  *                         All rights reserved.
  * Copyright (c) 2004-2005 The Trustees of the University of Tennessee.
@@ -13,54 +14,37 @@
  */
 /** @file:
  *
- * The Open MPI general purpose registry - implementation.
+ * The Open MPI General Purpose Registry - Replica component
  *
  */
 
 /*
  * includes
  */
-
 #include "orte_config.h"
 
-#include "mca/ns/ns.h"
+#include "dps/dps.h"
 #include "mca/errmgr/errmgr.h"
 
-#include "gpr_replica_api.h"
-#include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
+#include "gpr_replica_comm.h"
 
 
-int orte_gpr_replica_cleanup_job(orte_jobid_t jobid)
+int orte_gpr_replica_recv_dump_cmd(orte_buffer_t *answer)
 {
+    orte_gpr_cmd_flag_t command=ORTE_GPR_DUMP_CMD;
     int rc;
     
-    OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    
-    rc = orte_gpr_replica_cleanup_job_fn(jobid);
-    
-    OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
-    
-    if (ORTE_SUCCESS != rc) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, &command, 1, ORTE_GPR_CMD))) {
         ORTE_ERROR_LOG(rc);
         return rc;
     }
     
-    return orte_gpr_replica_process_callbacks();
-}
-
-
-int orte_gpr_replica_cleanup_proc(orte_process_name_t *proc)
-{
-    int rc;
-    
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    rc = orte_gpr_replica_cleanup_proc_fn(proc);
+    rc = orte_gpr_replica_dump_fn(answer);
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     if (ORTE_SUCCESS != rc) {
         ORTE_ERROR_LOG(rc);
-        return rc;
     }
-    
-    return orte_gpr_replica_process_callbacks();
+    return rc;
 }

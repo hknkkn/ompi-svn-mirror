@@ -55,8 +55,10 @@ int orte_gpr_replica_get_startup_msg(orte_jobid_t jobid,
     
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
 
-    rc = orte_gpr_replica_get_startup_msg_fn(jobid, msg, cnt, procs);
+    rc = orte_gpr_replica_get_startup_msg_fn(jobid, msg);
 
+    /* need to parse the buffer to obtain the message */
+    
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     return rc;

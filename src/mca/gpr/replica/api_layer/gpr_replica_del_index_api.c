@@ -27,6 +27,7 @@
 
 #include "util/output.h"
 #include "util/proc_info.h"
+#include "mca/errmgr/errmgr.h"
 
 #include "gpr_replica_api.h"
 
@@ -81,8 +82,11 @@ int orte_gpr_replica_delete_entries(orte_gpr_addr_mode_t addr_mode,
     }
 
     if (orte_gpr_replica_globals.compound_cmd_mode) {
-	   return orte_gpr_base_pack_delete_entries(orte_gpr_replica_globals.compound_cmd,
+    	    rc = orte_gpr_base_pack_delete_entries(orte_gpr_replica_globals.compound_cmd,
 					       addr_mode, segment, tokens, keys);
+        if (ORTE_SUCCESS != rc)
+            ORTE_ERROR_LOG(rc);
+        return rc;
     }
 
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);

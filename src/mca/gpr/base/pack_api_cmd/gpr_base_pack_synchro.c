@@ -50,11 +50,11 @@ int orte_gpr_base_pack_synchro(orte_buffer_t *cmd,
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &synchro_mode, 1, ORTE_GPR_PACK_SYNCHRO_MODE))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &synchro_mode, 1, ORTE_SYNCHRO_MODE))) {
 	   return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_PACK_ADDR_MODE))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &mode, 1, ORTE_GPR_ADDR_MODE))) {
 	   return rc;
     }
 

@@ -137,9 +137,7 @@ int orte_gpr_replica_test_internals_fn(int level, ompi_list_t *results);
  * Startup functions
  */
 int orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
-                                    orte_buffer_t **msg,
-                                    size_t *cnt,
-                                    orte_process_name_t **procs);
+                                    orte_buffer_t *msg);
 
 
 /*
