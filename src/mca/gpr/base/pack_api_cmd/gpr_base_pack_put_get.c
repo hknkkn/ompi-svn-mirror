@@ -66,7 +66,7 @@ int orte_gpr_base_pack_get(orte_buffer_t *cmd,
        return rc;
     }
 
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, segment, 1, ORTE_STRING))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &segment, 1, ORTE_STRING))) {
     return rc;
     }
 
