@@ -71,7 +71,7 @@ int orte_iof_svc_publish(
     if(mode == ORTE_IOF_SINK) {
         rc = orte_iof_svc_publish_create(
             name,
-            &mca_oob_name_self,
+            ORTE_RML_NAME_SELF,
             ORTE_NS_CMP_ALL,
             tag);
     }
