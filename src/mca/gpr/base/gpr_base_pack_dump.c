@@ -21,19 +21,18 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_pack_dump(ompi_buffer_t cmd)
+int orte_gpr_base_pack_dump(orte_buffer_t *cmd)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
 
-    command = MCA_GPR_DUMP_CMD;
+    command = ORTE_GPR_DUMP_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
-    }
-
-    return OMPI_SUCCESS;
+    return orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD);
 }

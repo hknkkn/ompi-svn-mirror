@@ -328,14 +328,14 @@ typedef int (*orte_gpr_base_module_delete_segment_nb_fn_t)(char *segment,
  * @endcode
  */
 typedef int (*orte_gpr_base_module_put_fn_t)(orte_gpr_addr_mode_t addr_mode, char *segment,
-					    char **tokens, uint32_t cnt, orte_gpr_keyval_t *keyvals);
+					    char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals);
 
 /*
  * Put data on the registry (NON-BLOCKING)
  * A non-blocking version of put.
  */
 typedef int (*orte_gpr_base_module_put_nb_fn_t)(orte_gpr_addr_mode_t addr_mode, char *segment,
-                      char **tokens, uint32_t cnt, orte_gpr_keyval_t *keyvals,
+                      char **tokens, size_t cnt, orte_gpr_keyval_t **keyvals,
                       orte_gpr_notify_cb_fn_t cbfunc, void *user_tag);
 
 
@@ -378,8 +378,8 @@ typedef int (*orte_gpr_base_module_put_nb_fn_t)(orte_gpr_addr_mode_t addr_mode, 
  */
 typedef int (*orte_gpr_base_module_get_fn_t)(orte_gpr_addr_mode_t addr_mode,
                                 char *segment, char **tokens, char **keys,
-                                uint32_t *cnt,
-                                orte_gpr_keyval_t *keyvals);
+                                size_t *cnt,
+                                orte_gpr_keyval_t **keyvals);
 
 /*
  * Get data from the registry (NON-BLOCKING)
@@ -454,7 +454,7 @@ typedef int (*orte_gpr_base_module_delete_entries_nb_fn_t)(
  * status_code = orte_gpr.index(segment, &cnt, &index);
  * @endcode
  */
-typedef int (*orte_gpr_base_module_index_fn_t)(char *segment, uint32_t *cnt, char **index);
+typedef int (*orte_gpr_base_module_index_fn_t)(char *segment, size_t *cnt, char **index);
 
 /*
  * Obtain an index of a specified dictionary (NON-BLOCKING)
@@ -594,7 +594,7 @@ typedef int (*orte_gpr_base_module_unsubscribe_fn_t)(orte_gpr_notify_id_t sub_nu
  */
 typedef int (*orte_gpr_base_module_synchro_fn_t)(orte_gpr_addr_mode_t addr_mode,
                             orte_gpr_synchro_mode_t synchro_mode,
-                            char *segment, char **tokens, int trigger,
+                            char *segment, char **tokens, char **keys, int trigger,
                             orte_gpr_notify_id_t *synch_number,
                             orte_gpr_notify_cb_fn_t cb_func, void *user_tag);
 

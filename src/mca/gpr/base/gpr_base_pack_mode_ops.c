@@ -21,117 +21,98 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_pack_triggers_active_cmd(ompi_buffer_t cmd,
+int orte_gpr_base_pack_triggers_active_cmd(orte_buffer_t *cmd,
 				          orte_jobid_t jobid)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_TRIGGERS_ACTIVE_CMD;
+    command = ORTE_GPR_TRIGGERS_ACTIVE_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &jobid, 1, MCA_GPR_OOB_PACK_JOBID)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &jobid, 1, ORTE_JOBID))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }
 
-int mca_gpr_base_pack_triggers_inactive_cmd(ompi_buffer_t cmd,
+int orte_gpr_base_pack_triggers_inactive_cmd(orte_buffer_t *cmd,
 					    orte_jobid_t jobid)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_TRIGGERS_INACTIVE_CMD;
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    command = ORTE_GPR_TRIGGERS_INACTIVE_CMD;
+    
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &jobid, 1, MCA_GPR_OOB_PACK_JOBID)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &jobid, 1, ORTE_JOBID))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 
 }
 
-int mca_gpr_base_pack_notify_on(ompi_buffer_t cmd,
+int orte_gpr_base_pack_notify_on(orte_buffer_t *cmd,
 				orte_process_name_t *proc,
-				ompi_registry_notify_id_t sub_number)
+				orte_gpr_notify_id_t sub_number)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_NOTIFY_ON_CMD;
+    command = ORTE_GPR_NOTIFY_ON_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, proc, 1, MCA_GPR_OOB_PACK_NAME)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, proc, 1, ORTE_NAME))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &sub_number, 1, MCA_GPR_OOB_PACK_NOTIFY_ID)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &sub_number, 1, ORTE_GPR_PACK_NOTIFY_ID))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 
 }
 
-int mca_gpr_base_pack_notify_off(ompi_buffer_t cmd,
+int orte_gpr_base_pack_notify_off(orte_buffer_t *cmd,
 				 orte_process_name_t *proc,
-				 ompi_registry_notify_id_t sub_number)
+				 orte_gpr_notify_id_t sub_number)
 {
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
+    int rc;
 
-    command = MCA_GPR_NOTIFY_OFF_CMD;
+    command = ORTE_GPR_NOTIFY_OFF_CMD;
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &command, 1, ORTE_GPR_PACK_CMD))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, proc, 1, MCA_GPR_OOB_PACK_NAME)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, proc, 1, ORTE_NAME))) {
+	   return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(cmd, &sub_number, 1, MCA_GPR_OOB_PACK_NOTIFY_ID)) {
-	return OMPI_ERROR;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(cmd, &sub_number, 1, ORTE_GPR_PACK_NOTIFY_ID))) {
+	   return rc;
     }
 
-    return OMPI_SUCCESS;
-}
-
-int mca_gpr_base_pack_assign_ownership(ompi_buffer_t cmd, bool silent,
-				       orte_jobid_t jobid, char *segment)
-{
-    mca_gpr_cmd_flag_t command;
-    int8_t tmp_bool;
-
-    command = MCA_GPR_ASSIGN_OWNERSHIP_CMD;
-
-    if (OMPI_SUCCESS != ompi_pack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-	return OMPI_ERROR;
-    }
-
-    tmp_bool = (int8_t)silent;
-    if (OMPI_SUCCESS != ompi_pack(cmd, &tmp_bool, 1, MCA_GPR_OOB_PACK_BOOL)) {
-	return OMPI_ERROR;
-    }
-
-    if (OMPI_SUCCESS != ompi_pack(cmd, &jobid, 1, MCA_GPR_OOB_PACK_JOBID)) {
-	return OMPI_ERROR;
-    }
-
-    if (OMPI_SUCCESS != ompi_pack_string(cmd, segment)) {
-	return OMPI_ERROR;
-    }
-
-    return OMPI_SUCCESS;
+    return ORTE_SUCCESS;
 }

@@ -21,44 +21,107 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_unpack_triggers_active_cmd(ompi_buffer_t cmd)
+int orte_gpr_base_unpack_triggers_active_cmd(orte_buffer_t *cmd)
 {
-    return OMPI_SUCCESS;
-}
-
-int mca_gpr_base_unpack_triggers_inactive_cmd(ompi_buffer_t cmd)
-{
-    return OMPI_SUCCESS;
-
-}
-
-int mca_gpr_base_unpack_notify_on(ompi_buffer_t cmd)
-{
-    return OMPI_SUCCESS;
-
-}
-
-int mca_gpr_base_unpack_notify_off(ompi_buffer_t cmd)
-{
-    return OMPI_SUCCESS;
-}
-
-int mca_gpr_base_unpack_assign_ownership(ompi_buffer_t cmd)
-{
-    mca_gpr_cmd_flag_t command;
+    orte_gpr_cmd_flag_t command;
     int32_t response;
-
-    if ((OMPI_SUCCESS != ompi_unpack(cmd, &command, 1, MCA_GPR_OOB_PACK_CMD)) ||
-	(MCA_GPR_ASSIGN_OWNERSHIP_CMD != command)) {
-	return OMPI_ERROR;
+    int rc;
+    size_t n;
+    
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+    if (ORTE_GPR_TRIGGERS_ACTIVE_CMD != command) {
+        return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (OMPI_SUCCESS != ompi_unpack(cmd, &response, 1, OMPI_INT32)) {
-	return OMPI_ERROR;
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &response, &n, ORTE_INT32))) {
+        return rc;
+    }
+
+    return (int)response;
+}
+
+int orte_gpr_base_unpack_triggers_inactive_cmd(orte_buffer_t *cmd)
+{
+    orte_gpr_cmd_flag_t command;
+    int32_t response;
+    int rc;
+    size_t n;
+    
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+    if (ORTE_GPR_TRIGGERS_INACTIVE_CMD != command) {
+        return ORTE_ERR_COMM_FAILURE;
+    }
+
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &response, &n, ORTE_INT32))) {
+        return rc;
+    }
+
+    return (int)response;
+
+}
+
+int orte_gpr_base_unpack_notify_on(orte_buffer_t *cmd)
+{
+    orte_gpr_cmd_flag_t command;
+    int32_t response;
+    int rc;
+    size_t n;
+    
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+    if (ORTE_GPR_NOTIFY_ON_CMD != command) {
+        return ORTE_ERR_COMM_FAILURE;
+    }
+
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &response, &n, ORTE_INT32))) {
+        return rc;
+    }
+
+    return (int)response;
+
+}
+
+int orte_gpr_base_unpack_notify_off(orte_buffer_t *cmd)
+{
+    orte_gpr_cmd_flag_t command;
+    int32_t response;
+    int rc;
+    size_t n;
+
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+    if (ORTE_GPR_NOTIFY_OFF_CMD != command) {
+        return ORTE_ERR_COMM_FAILURE;
+    }
+
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(cmd, &response, &n, ORTE_INT32))) {
+        return rc;
     }
 
     return (int)response;

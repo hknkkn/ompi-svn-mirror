@@ -21,16 +21,24 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
+#include "util/output.h"
 
 #include "mca/gpr/base/base.h"
 
-void mca_gpr_base_print_dump(ompi_buffer_t buffer, int output_id)
+void orte_gpr_base_print_dump(orte_buffer_t *buffer, int output_id)
 {
     char *line;
+    size_t n;
 
-    while (0 < ompi_unpack_string(buffer, &line)) {
-	ompi_output(output_id, "%s", line);
-	free(line);
+    n = 1;
+    while (ORTE_SUCCESS == orte_dps.unpack(buffer, &line, &n, ORTE_STRING)) {
+	   ompi_output(output_id, "%s", line);
+	   free(line);
+       n=1;
     }
 }

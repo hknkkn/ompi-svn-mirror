@@ -48,7 +48,7 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
 {
     orte_gpr_cmd_flag_t command;
     char **ptr;
-    uint32_t n;
+    size_t n;
     int rc;
 
     command = ORTE_GPR_DELETE_ENTRIES_CMD;
@@ -104,7 +104,7 @@ int orte_gpr_base_pack_delete_entries(orte_buffer_t *cmd,
 int orte_gpr_base_pack_index(orte_buffer_t *cmd, char *segment)
 {
     orte_gpr_cmd_flag_t command;
-    uint32_t n;
+    size_t n;
     int rc;
 
     command = ORTE_GPR_INDEX_CMD;
