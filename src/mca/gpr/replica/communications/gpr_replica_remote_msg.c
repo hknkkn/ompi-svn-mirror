@@ -61,16 +61,16 @@ int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, orte_gpr_noti
         return rc;
     }
 
-    for (i=0; i < message->cnt; i++) {
-        if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, message->data, 1, ORTE_GPR_NOTIFY_DATA))) {
+    if(message->cnt > 0) {
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, message->data, message->cnt, ORTE_GPR_NOTIFY_DATA))) {
             ORTE_ERROR_LOG(rc);
             return rc;
         }
-    }
 
-    if (0 > orte_rml.send_buffer(recipient, &msg, ORTE_RML_TAG_GPR, 0)) {
-        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
-        return ORTE_ERR_COMM_FAILURE;
+        if (0 > orte_rml.send_buffer(recipient, &msg, ORTE_RML_TAG_GPR_NOTIFY, 0)) {
+            ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
+            return ORTE_ERR_COMM_FAILURE;
+        }
     }
 
     OBJ_DESTRUCT(&msg);
