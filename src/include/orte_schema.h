@@ -55,6 +55,11 @@ extern char *orte_error_strings[];
 #define ORTE_RESOURCE_SEGMENT   "orte-resources"
 
 /*
+ * ORTE pre-defined tokens for special containers
+ */
+#define ORTE_JOB_GLOBALS        "orte-job-globals"
+
+/*
  * ORTE-wide key names for storing/retrieving data from the registry.
  * Subsystem-specific keys will be defined in each=/ subsystem's xxx_types.h file.
  */

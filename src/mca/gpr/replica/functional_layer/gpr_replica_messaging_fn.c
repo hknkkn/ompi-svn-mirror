@@ -175,6 +175,10 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
         goto CLEANUP;
     }
     
+    /* and release them */
+    free(procs);
+    procs = NULL;
+    
     /* check list of subscriptions to find those on this segment */
     trig = (orte_gpr_replica_triggers_t**)(orte_gpr_replica.triggers)->addr;
     if (NULL == trig) {
@@ -185,8 +189,9 @@ orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
     for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
          if (NULL != trig[i] && seg == trig[i]->seg &&
              ORTE_GPR_SUBSCRIBE_CMD == trig[i]->cmd &&
-             ((ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA & ) ||
+             ((ORTE_GPR_NOTIFY_INCLUDE_STARTUP_DATA & ) ||/* see if they want data */
                 (ORTE_GPR_NOTIFY_INCLUDE_SHUTDOWN_DATA || ))) {
+             /* ok, trigger is on specified segment and wants startup data */
              
 	    include_data = false;
 
