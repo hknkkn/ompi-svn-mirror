@@ -49,7 +49,7 @@ orte_universe_t orte_universe_info = {
 
 int orte_univ_info(void)
 {
-    int id;
+    int id, tmp;
     
     id = mca_base_param_register_string("universe", "path", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &(orte_universe_info.path));
@@ -63,13 +63,23 @@ int orte_univ_info(void)
     /* uid is not set via parameter, but is determined elsewhere */
     
     id = mca_base_param_register_int("universe", "persistence", NULL, NULL, (int)false);
-    mca_base_param_lookup_int(id, &(orte_universe_info.persistence));
+    mca_base_param_lookup_int(id, &tmp);
+    if (tmp) {
+        orte_universe_info.persistence = true;
+    } else {
+        orte_universe_info.persistence = false;
+    }
 
     id = mca_base_param_register_string("universe", "scope", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &(orte_universe_info.scope));
 
     id = mca_base_param_register_int("universe", "console", NULL, NULL, (int)false);
-    mca_base_param_lookup_int(id, &(orte_universe_info.console));
+    mca_base_param_lookup_int(id, &tmp);
+    if (tmp) {
+        orte_universe_info.console = true;
+    } else {
+        orte_universe_info.console = false;
+    }
 
     id = mca_base_param_register_string("universe", "uri", NULL, NULL, NULL);
     mca_base_param_lookup_string(id, &(orte_universe_info.seed_uri));

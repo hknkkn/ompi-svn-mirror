@@ -288,7 +288,7 @@ void orte_gpr_proxy_notify_recv(int status, orte_process_name_t* sender,
     }
 
     n = 1;
-    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_CMD))) {
         ORTE_ERROR_LOG(rc);
         goto RETURN_ERROR;
     }

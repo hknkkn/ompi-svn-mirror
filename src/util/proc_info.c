@@ -54,12 +54,17 @@ orte_proc_info_t orte_process_info = {
 int orte_proc_info(void)
 {
 
-    int id;
+    int id, tmp;
     
     /* all other params are set elsewhere */
     
     id = mca_base_param_register_int("seed", NULL, NULL, NULL, (int)false);
-    mca_base_param_lookup_int(id, &(orte_process_info.seed));
+    mca_base_param_lookup_int(id, &tmp);
+    if (tmp) {
+        orte_process_info.seed = true;
+    } else {
+        orte_process_info.seed = false;
+    }
 
     if (NULL == orte_process_info.gpr_replica_uri) {
         id = mca_base_param_register_string("gpr", "replica", "uri", NULL, NULL);

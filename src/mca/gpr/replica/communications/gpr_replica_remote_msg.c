@@ -23,90 +23,58 @@
  */
 #include "orte_config.h"
 
+#include "include/orte_types.h"
+
+#include "dps/dps.h"
+#include "mca/errmgr/errmgr.h"
+#include "mca/rml/rml.h"
+
 #include "gpr_replica_comm.h"
 
-int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, int recipient_tag,
+int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, orte_gpr_notify_id_t remote_idtag,
                  orte_gpr_notify_message_t *message)
 {
-#if 0
-    ompi_buffer_t msg;
-    mca_gpr_cmd_flag_t command;
-    int32_t num_items;
-    uint i;
-    ompi_registry_value_t *regval;
-    char **tokptr;
-    int recv_tag;
+    orte_buffer_t msg;
+    orte_gpr_cmd_flag_t command;
+    int i, rc;
 
-    if (mca_gpr_replica_debug) {
-  ompi_output(0, "sending trigger message");
+    if (orte_gpr_replica_globals.debug) {
+        ompi_output(0, "sending trigger message");
     }
 
-    command = MCA_GPR_NOTIFY_CMD;
-    recv_tag = MCA_OOB_TAG_GPR_NOTIFY;
+    command = ORTE_GPR_NOTIFY_CMD;
 
-    if (OMPI_SUCCESS != ompi_buffer_init(&msg, 0)) {
-   return;
+    OBJ_CONSTRUCT(&msg, orte_buffer_t);
+
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, &command, 1, ORTE_GPR_CMD))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
     }
 
-    if (OMPI_SUCCESS != ompi_pack(msg, &command, 1, MCA_GPR_OOB_PACK_CMD)) {
-    return;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, &remote_idtag, 1, ORTE_GPR_NOTIFY_ID))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
     }
 
-    if (0 > ompi_pack_string(msg, message->segment)) {
-  return;
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, &message->cnt, 1, ORTE_INT32))) {
+        ORTE_ERROR_LOG(rc);
+        return rc;
     }
 
-    i = (int32_t)message->owning_job;
-    if (OMPI_SUCCESS != ompi_pack(msg, &i, 1, OMPI_INT32)) {
-  return;
-    }
-
-    i = (int32_t)recipient_tag;
-    if (OMPI_SUCCESS != ompi_pack(msg, &i, 1, OMPI_INT32)) {
-    return;
-    }
-
-    if (OMPI_SUCCESS != ompi_pack(msg, &message->trig_action, 1, MCA_GPR_OOB_PACK_ACTION)) {
-    return;
-    }
-
-    if (OMPI_SUCCESS != ompi_pack(msg, &message->trig_synchro, 1, MCA_GPR_OOB_PACK_SYNCHRO_MODE)) {
- return;
-    }
-
-    
-    num_items = (int32_t)ompi_list_get_size(&message->data);
-    if (OMPI_SUCCESS != ompi_pack(msg, &num_items, 1, OMPI_INT32)) {
-  return;
-    }
-
-    if (0 < num_items) { /* don't send anything else back if the list is empty */
-   while (NULL != (regval = (ompi_registry_value_t*)ompi_list_remove_first(&message->data))) {
-        if (OMPI_SUCCESS != ompi_pack(msg, &regval->object_size, 1, MCA_GPR_OOB_PACK_OBJECT_SIZE)) {
-       return;
+    for (i=0; i < message->cnt; i++) {
+        if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, &message->data, 1, ORTE_GPR_NOTIFY_DATA))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
         }
-      if (OMPI_SUCCESS != ompi_pack(msg, regval->object, regval->object_size, OMPI_BYTE)) {
-      return;
-        }
-      OBJ_RELEASE(regval);
-   }
-    }
-    if (OMPI_SUCCESS != ompi_pack(msg, &message->num_tokens, 1, OMPI_INT32)) {
- return;
     }
 
-    for (i=0, tokptr=message->tokens; i < (uint)message->num_tokens; i++, tokptr++) {
-   if (OMPI_SUCCESS != ompi_pack_string(msg, *tokptr)) {
-      return;
-    }
-    }
-
-    if (0 > mca_oob_send_packed(recipient, msg, recv_tag, 0)) {
-   return;
+    if (0 > orte_rml.send_buffer(recipient, &msg, ORTE_RML_TAG_GPR, 0)) {
+        ORTE_ERROR_LOG(ORTE_ERR_COMM_FAILURE);
+        return ORTE_ERR_COMM_FAILURE;
     }
 
-    ompi_buffer_free(msg);
+    OBJ_DESTRUCT(&msg);
 
     OBJ_RELEASE(message);
-#endif
+    return ORTE_SUCCESS;
 }
