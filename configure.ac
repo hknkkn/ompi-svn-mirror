@@ -1209,17 +1209,5 @@ AC_CONFIG_FILES([
     src/tools/orterun/Makefile
     src/tools/openmpi/Makefile
     src/tools/wrappers/Makefile
-
-    test/Makefile
-    test/support/Makefile
-    test/util/Makefile
-    test/class/Makefile
-    test/rte/Makefile
-    test/dps/Makefile
-    test/mca/Makefile
-    test/mca/gpr/Makefile
-    test/mca/ns/Makefile
-    test/mca/rds/Makefile
-    test/runtime/Makefile
 ])
 AC_OUTPUT
