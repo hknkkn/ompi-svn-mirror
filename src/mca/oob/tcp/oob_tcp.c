@@ -642,12 +642,6 @@ int mca_oob_tcp_init(void)
        return rc;
     }
     asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobid);
-    if(mca_oob_tcp_component.tcp_debug > 1) {
-        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.subscribe(%s,%d)\n", 
-            ORTE_NAME_ARGS(orte_process_info.my_name),
-            segment,
-            npeers);
-    }
 
     /* register subscribe callback to receive notification when all processes have registered */
     subscription = OBJ_NEW(mca_oob_tcp_subscription_t);
@@ -656,6 +650,13 @@ int mca_oob_tcp_init(void)
     OMPI_THREAD_UNLOCK(&mca_oob_tcp_component.tcp_lock);
 
 #if 0
+    if(mca_oob_tcp_component.tcp_debug > 1) {
+        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.subscribe(%s,%d)\n", 
+            ORTE_NAME_ARGS(orte_process_info.my_name),
+            segment,
+            npeers);
+    }
+
     /* put our contact info in registry */
     if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&keys[0], orte_process_info.my_name))) {
         return rc;
@@ -677,14 +678,8 @@ int mca_oob_tcp_init(void)
         ompi_output(0, "mca_oob_tcp_init: registry subscription failed");
         return OMPI_ERROR;
     }
+    free(keys[0]);
 #endif
-
-    if(mca_oob_tcp_component.tcp_debug > 1) {
-        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.put(%s,%s)\n", 
-            ORTE_NAME_ARGS(orte_process_info.my_name),
-            segment,
-            keys[0]);
-    }
 
     buffer = OBJ_NEW(orte_buffer_t);
     if(buffer == NULL) {
@@ -714,7 +709,7 @@ int mca_oob_tcp_init(void)
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    (value->keyvals[0])->type = ORTE_BYTE;
+    (value->keyvals[0])->type = ORTE_BYTE_OBJECT;
     (value->keyvals[0])->key = "oob-tcp";
     orte_schema.get_proc_tokens(&value->tokens,NULL,orte_process_info.my_name);
 
@@ -723,6 +718,12 @@ int mca_oob_tcp_init(void)
     if(rc != OMPI_SUCCESS) {
         OBJ_RELEASE(buffer);
         return rc;
+    }
+
+    if(mca_oob_tcp_component.tcp_debug > 1) {
+        ompi_output(0, "[%d,%d,%d] mca_oob_tcp_init: calling orte_gpr.put(%s,%s)\n", 
+            ORTE_NAME_ARGS(orte_process_info.my_name),
+            segment);
     }
 
     rc = orte_gpr.put(ORTE_GPR_OVERWRITE, 1, &value);
@@ -739,7 +740,6 @@ int mca_oob_tcp_init(void)
         return rc;
     }
     free(jobid);
-    free(keys[0]);
     return OMPI_SUCCESS;
 }
 
