@@ -118,6 +118,8 @@ int ompi_attr_create_predefined(void)
     }
     trig.tokens[0] = strdup(ORTE_JOB_GLOBALS);
     trig.num_tokens = 1;
+
+    trig.cnt = 2;
     trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
     if (NULL == trig.keyvals) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);

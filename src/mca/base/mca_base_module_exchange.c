@@ -212,9 +212,6 @@ static void mca_base_modex_registry_callback(
     bool isnew = false;
     int rc;
 
-ompi_output(0, "mca_base_modex: [%d,%d,%d]\n", ORTE_NAME_ARGS(orte_process_info.my_name));
-orte_gpr.dump_notify_data(data,0);
-
     /* process the callback */
     value = data->values;
     for (i=0; i < data->cnt; i++) {
@@ -443,6 +440,8 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     }
     trig.tokens[0] = strdup(ORTE_JOB_GLOBALS);
     trig.num_tokens = 1;
+
+    trig.cnt = 2;
     trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
     if (NULL == trig.keyvals) {
         ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
@@ -474,7 +473,8 @@ static int mca_base_modex_subscribe(orte_process_name_t* name)
     subs = &sub;
     trigs = &trig;
     rc = orte_gpr.subscribe(
-        	ORTE_GPR_NOTIFY_ALL | ORTE_GPR_TRIG_ALL_CMP,
+        	ORTE_GPR_NOTIFY_ADD_ENTRY | ORTE_GPR_NOTIFY_VALUE_CHG |
+            ORTE_GPR_TRIG_CMP_LEVELS | ORTE_GPR_TRIG_ONE_SHOT,
         	1, &subs,
          1, &trigs,
          &rctag);

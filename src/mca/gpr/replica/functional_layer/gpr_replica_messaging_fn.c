@@ -286,14 +286,15 @@ int orte_gpr_replica_add_values(orte_gpr_notify_data_t **data,
              */
             for (k=0; k < (*data)->cnt; k++) {
                 matches = 0;
-                if (((*data)->values[k])->num_tokens == values[i]->num_tokens) { /* must have same number or can't match */
-                    for (j=0; j < ((*data)->values[k])->num_tokens; j++) {
-                        for (m=0; m < values[i]->num_tokens; m++) {
+                num_tokens = (*data)->values[k]->num_tokens;
+                if (num_tokens == values[i]->num_tokens) { /* must have same number or can't match */
+                    for (j=0; j < num_tokens; j++) {
+                        for (m=0; m < num_tokens; m++) {
                             if (0 == strcmp(((*data)->values[k])->tokens[j], values[i]->tokens[m])) {
-                                matches++;
+                            matches++;
                             }
                         }
-                        if (((*data)->values[k])->num_tokens == matches) { /* from same container - just add keyvals to it */
+                        if (num_tokens == matches) { /* from same container - just add keyvals to it */
                             data_values = &((*data)->values[k]);
                             goto MOVEON;
                         }

@@ -536,7 +536,6 @@ int orte_rmaps_base_set_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
              free(values);
              return ORTE_ERR_OUT_OF_RESOURCE;
          }
-         values[i]->addr_mode = ORTE_GPR_TOKENS_AND;
     }
 
 
@@ -592,6 +591,7 @@ int orte_rmaps_base_set_map(orte_jobid_t jobid, ompi_list_t* mapping_list)
             keyvals[4]->value.proc_state = ORTE_PROC_STATE_INIT;
 
             value->cnt = 5;
+            value->addr_mode = ORTE_GPR_OVERWRITE|ORTE_GPR_TOKENS_AND;
             value->keyvals = keyvals;
             if(ORTE_SUCCESS != (rc = orte_schema.get_job_segment_name(&value->segment,jobid))) {
                 goto cleanup;

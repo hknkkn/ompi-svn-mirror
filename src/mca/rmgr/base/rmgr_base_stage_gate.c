@@ -346,7 +346,6 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
         return;
     }
     OBJ_DESTRUCT(&msg);
-    OBJ_RELEASE(data);
     free(recipients);
 }
 
