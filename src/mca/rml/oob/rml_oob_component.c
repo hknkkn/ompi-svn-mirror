@@ -13,6 +13,7 @@
  */
 
 #include "ompi_config.h"
+#include "include/constants.h"
 #include "util/output.h"
 #include "mca/base/base.h"
 #include "mca/base/mca_base_param.h"

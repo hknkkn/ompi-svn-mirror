@@ -287,11 +287,9 @@ bool mca_ptl_tcp_peer_accept(mca_ptl_base_peer_t* ptl_peer, struct sockaddr_in* 
     if((ptl_addr = ptl_peer->peer_addr) != NULL  &&
         ptl_addr->addr_inet.s_addr == addr->sin_addr.s_addr) {
         mca_ptl_tcp_proc_t *peer_proc = ptl_peer->peer_proc;
-        if (ORTE_SUCCESS != orte_name_services.compare(&cmpval, mask,
-                                     &peer_proc->proc_ompi->proc_name,
-                                     &this_proc->proc_ompi->proc_name)) {
-            return false;
-        }
+        cmpval = orte_ns.compare(mask, 
+                                 &peer_proc->proc_ompi->proc_name,
+                                 &this_proc->proc_ompi->proc_name);
         if((ptl_peer->peer_sd < 0) ||
            (ptl_peer->peer_state != MCA_PTL_TCP_CONNECTED &&
             cmpval < 0)) {
