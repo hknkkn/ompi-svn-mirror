@@ -14,19 +14,19 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = base $(MCA_rds_STATIC_SUBDIRS)
-DIST_SUBDIRS = base $(MCA_rds_ALL_SUBDIRS)
+SUBDIRS = base $(MCA_orte_rds_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_orte_rds_ALL_SUBDIRS)
 
 # Source code files
 
 headers = \
-	rds_types.h \
-	rds.h
+	orte_rds_types.h \
+	orte_rds.h
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca/rds
+ompidir = $(includedir)/openmpi/mca/orte_rds
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)

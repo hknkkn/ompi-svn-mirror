@@ -14,19 +14,19 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = base $(MCA_rmaps_STATIC_SUBDIRS)
-DIST_SUBDIRS = base $(MCA_rmaps_ALL_SUBDIRS)
+SUBDIRS = base $(MCA_orte_rmaps_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_orte_rmaps_ALL_SUBDIRS)
 
 # Source code files
 
 headers = \
-	rmaps_types.h \
-	rmaps.h
+	orte_rmaps_types.h \
+	orte_rmaps.h
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca/rmaps
+ompidir = $(includedir)/openmpi/mca/orte_rmaps
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)

@@ -19,8 +19,6 @@
 
 #include "include/orte_constants.h"
 
-#include "mca/mca.h"
-
 #include "mca/orte_ras/base/base.h"
 
 

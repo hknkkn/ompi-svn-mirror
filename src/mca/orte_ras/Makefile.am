@@ -14,19 +14,19 @@
 
 include $(top_srcdir)/config/Makefile.options
 
-SUBDIRS = base $(MCA_ras_STATIC_SUBDIRS)
-DIST_SUBDIRS = base $(MCA_ras_ALL_SUBDIRS)
+SUBDIRS = base $(MCA_orte_ras_STATIC_SUBDIRS)
+DIST_SUBDIRS = base $(MCA_orte_ras_ALL_SUBDIRS)
 
 # Source code files
 
 headers = \
-	ras_types.h \
-	ras.h
+	orte_ras_types.h \
+	orte_ras.h
 
 # Conditionally install the header files
 
 if WANT_INSTALL_HEADERS
-ompidir = $(includedir)/openmpi/mca/ras
+ompidir = $(includedir)/openmpi/mca/orte_ras
 ompi_HEADERS = $(headers)
 else
 ompidir = $(includedir)

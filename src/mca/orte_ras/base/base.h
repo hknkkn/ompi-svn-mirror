@@ -24,7 +24,6 @@
 #include "include/orte_constants.h"
 
 #include "class/ompi_list.h"
-#include "mca/mca.h"
 
 #include "mca/orte_ras/orte_ras.h"
 
