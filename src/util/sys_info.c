@@ -47,7 +47,6 @@ orte_sys_info_t orte_system_info = {
 int orte_sys_info(void)
 {
     struct utsname sys_info;
-    char *path_name;
 
 #ifndef WIN32
 	struct passwd *pwdent;
