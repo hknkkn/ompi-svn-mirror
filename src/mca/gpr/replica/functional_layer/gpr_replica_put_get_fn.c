@@ -26,6 +26,8 @@
 #include "util/output.h"
 #include "util/proc_info.h"
 
+#include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
+
 #include "gpr_replica_fn.h"
 
 
@@ -38,6 +40,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
 {
     orte_gpr_replica_itagval_t *iptr;
     orte_gpr_replica_container_t *cptr;
+    orte_gpr_replica_itag_t itag;
     orte_gpr_keyval_t *kptr;
     bool overwrite;
     int rc, i;
@@ -74,15 +77,11 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     }
     
     if (!found) {  /* existing container not found - create one */
-        cptr = OBJ_NEW(orte_gpr_replica_container_t);
-        if (NULL == cptr) {
-            return ORTE_ERR_OUT_OF_RESOURCE;
-        }
-        if (ORTE_SUCCESS !=
-                (rc = orte_gpr_replica_copy_itag_list(&(cptr->itags),
-                                                      token_itags, num_tokens))) {
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_container(&cptr, seg,
+                                            num_tokens, token_itags))) {
             return rc;
         }
+ 
         if (0 < (cptr->index = orte_pointer_array_add(seg->containers, (void*)cptr))) {
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
@@ -98,7 +97,8 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     } else {  /* otherwise, see if entry already exists in container */
         kptr = keyvals;
         for (i=0; i < cnt; i++) {
-            if (orte_gpr_replica_search_container(&iptr, seg, cptr, kptr)) {
+            if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, kptr->key) &&
+                orte_gpr_replica_search_container(&iptr, itag, cptr)) {
                 /* this key already exists - overwrite, if permission given
                  * else error
                  */

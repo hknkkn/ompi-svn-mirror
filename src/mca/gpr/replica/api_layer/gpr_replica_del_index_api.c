@@ -52,7 +52,7 @@ int orte_gpr_replica_delete_segment(char *segment)
 	    return rc;
     }
 
-    rc = orte_gpr_replica_release_segment(seg);
+    rc = orte_gpr_replica_release_segment(&seg);
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
     return rc;

@@ -28,6 +28,29 @@
 #include "gpr_replica_fn.h"
 
 
+int orte_gpr_replica_create_container(orte_gpr_replica_container_t **cptr,
+                                      orte_gpr_replica_segment_t *seg,
+                                      int num_itags,
+                                      orte_gpr_replica_itag_t *itags)
+{
+    int rc;
+    
+    *cptr = OBJ_NEW(orte_gpr_replica_container_t);
+    if (NULL == *cptr) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    if (ORTE_SUCCESS !=
+          (rc = orte_gpr_replica_copy_itag_list(&((*cptr)->itags), itags, num_itags))) {
+        OBJ_RELEASE(*cptr);
+        return rc;
+    }
+    
+    (*cptr)->num_itags = num_itags;
+    
+    return ORTE_SUCCESS;
+}
+
+
 int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
                                 orte_gpr_replica_container_t *cptr,
                                 orte_gpr_keyval_t **kptr)
@@ -165,20 +188,11 @@ int orte_gpr_replica_xfer_payload(orte_gpr_value_union_t *dest,
 
 
 bool orte_gpr_replica_search_container(orte_gpr_replica_itagval_t **iptr,
-                                       orte_gpr_replica_segment_t *seg,
-                                       orte_gpr_replica_container_t *cptr,
-                                       orte_gpr_keyval_t *kptr)
+                                       orte_gpr_replica_itag_t itag,
+                                       orte_gpr_replica_container_t *cptr)
 {
     orte_gpr_replica_itagval_t **ptr;
-    orte_gpr_replica_itag_t itag;
     int i;
-    
-    if (ORTE_SUCCESS != orte_gpr_replica_dict_lookup(&itag, seg, kptr->key)) {
-        /* if the key isn't in the dictionary, then the keyval can't
-         * possibly be in the container
-         */
-        return false;
-    }
     
     ptr = (orte_gpr_replica_itagval_t**)((cptr->itagvals)->addr);
     for (i=0; i < (cptr->itagvals)->size; i++) {
@@ -193,14 +207,14 @@ bool orte_gpr_replica_search_container(orte_gpr_replica_itagval_t **iptr,
 }
 
 
-int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg)
+int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t **seg)
 {
     int rc;
     
-    if (0 > (rc = orte_pointer_array_set_item(orte_gpr_replica.segments, seg->itag, NULL))) {
+    if (0 > (rc = orte_pointer_array_set_item(orte_gpr_replica.segments, (*seg)->itag, NULL))) {
         return rc;
     }
-    OBJ_RELEASE(seg);
+    OBJ_RELEASE(*seg);
     
     return ORTE_SUCCESS;
 }

@@ -49,12 +49,12 @@ static void test_cbfunc(orte_gpr_notify_message_t *notify_msg, void *user_tag);
 
 int main(int argc, char **argv)
 {
-    int rc, i;
+    int rc, i, num_names;
     bool allow_multi_user_threads = false;
     bool have_hidden_threads = false;
-    char *tmp=NULL, *tmp2=NULL;
+    char *tmp=NULL, *tmp2=NULL, *names[15];
     orte_gpr_replica_segment_t *seg=NULL;
-    orte_gpr_replica_itag_t itag[10], itag2;
+    orte_gpr_replica_itag_t itag[10], itag2, *itaglist;
     orte_gpr_replica_container_t *cptr=NULL;
     orte_gpr_keyval_t *kptr=NULL;
     orte_gpr_replica_itagval_t **ivals=NULL, *ivaltst=NULL;
@@ -166,8 +166,42 @@ int main(int argc, char **argv)
         free(tmp);
     }
     
+    fprintf(stderr, "get itag list\n");
+    for (i=0; i < 14; i++) {
+        asprintf(&names[i], "dummy%d", i);
+    }
+    names[14] = NULL;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&itaglist, seg,
+                                                names, &num_names))) {
+        fprintf(test_out, "gpr_test: get itag list failed with error code %d\n", rc);
+        test_failure("gpr_test: get itag list failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: get itag list passed\n");
+    }
+    
+    fprintf(test_out, "number of names found %d\n", num_names);
+    for (i=0; i < num_names; i++) {
+        fprintf(test_out, "\tname %s itag %d\n", names[i], itaglist[i]);
+    }
+    
+    
     fprintf(stderr, "creating container\n");
-    cptr = OBJ_NEW(orte_gpr_replica_container_t);
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_container(&cptr, seg,
+                                3, itaglist))) {
+        fprintf(test_out, "gpr_test: create_container failed with error code %d\n", rc);
+        test_failure("gpr_test: create_container failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: create_container passed\n");
+    }
+    
+    fprintf(test_out, "itags for container\n");
+    for (i=0; i < cptr->num_itags; i++) {
+        fprintf(test_out, "\tindex %d itag %d\n", i, cptr->itags[i]);
+    }
 
     fprintf(stderr, "add keyval\n");
     kptr = OBJ_NEW(orte_gpr_keyval_t);
@@ -190,6 +224,7 @@ int main(int argc, char **argv)
                     ivals[0]->type, ivals[0]->value.i16);
     }
     
+    fprintf(stderr, "update keyval\n");
     kptr = OBJ_NEW(orte_gpr_keyval_t);
     kptr->key = strdup("second-value");
     kptr->type = ORTE_STRING;
@@ -213,7 +248,7 @@ int main(int argc, char **argv)
     free(kptr->key);
     kptr->key = strdup("second-value");
     orte_gpr_replica_create_itag(&itag2, seg, kptr->key);
-    if (!orte_gpr_replica_search_container(&ivaltst, seg, cptr, kptr)) {
+    if (!orte_gpr_replica_search_container(&ivaltst, itag2, cptr)) {
         fprintf(test_out, "gpr_test: search container failed\n");
         test_failure("gpr_test: search container failed");
         test_finalize();
@@ -231,7 +266,8 @@ int main(int argc, char **argv)
     
 
     fprintf(stderr, "releasing segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(seg))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(&seg)) ||
+        NULL != seg) {
         fprintf(test_out, "gpr_test: release segment failed with error code %d\n", rc);
         test_failure("gpr_test: release segment failed");
         test_finalize();
@@ -239,7 +275,6 @@ int main(int argc, char **argv)
     } else {
         fprintf(test_out, "gpr_test: release segment passed\n");
     }
-    
     
     fclose( test_out );
 /*    result = system( cmd_str );

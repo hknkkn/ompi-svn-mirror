@@ -54,7 +54,7 @@ int orte_gpr_replica_cleanup_job_fn(orte_jobid_t jobid)
     }
     
     /* delete the associated job segment */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(seg))) {
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(&seg))) {
         return rc;
     }
     

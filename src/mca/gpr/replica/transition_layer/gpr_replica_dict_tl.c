@@ -36,6 +36,7 @@ orte_gpr_replica_create_itag(orte_gpr_replica_itag_t *itag,
 {
     orte_gpr_replica_dict_t **ptr, *new;
     int i;
+    size_t len, len2;
 
     /* default to illegal value */
     *itag = ORTE_GPR_REPLICA_ITAG_MAX;
@@ -45,11 +46,15 @@ orte_gpr_replica_create_itag(orte_gpr_replica_itag_t *itag,
         return ORTE_ERR_BAD_PARAM;
     }
 
+    len = strlen(name);
+    
     /* check seg's dictionary to ensure uniqueness */
     ptr = (orte_gpr_replica_dict_t**)(seg->dict)->addr;
     for (i=0; i < (seg->dict)->size; i++) {
         if (NULL != ptr[i]) {
-            if (0 == strncmp(ptr[i]->entry, name, strlen(ptr[i]->entry))) { /* already present */
+            len2 = strlen(ptr[i]->entry);
+            if ((len == len2 && 0 == strncmp(ptr[i]->entry, name, len))) {
+                /* already present */
                 *itag = ptr[i]->itag;
                 return ORTE_SUCCESS;
             }

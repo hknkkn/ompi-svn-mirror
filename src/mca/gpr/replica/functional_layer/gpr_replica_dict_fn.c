@@ -114,7 +114,7 @@ int orte_gpr_replica_copy_itag_list(orte_gpr_replica_itag_t **dest,
     if (NULL == *dest) {
         return ORTE_ERR_OUT_OF_RESOURCE;
     }
-    memcpy(*dest, src, num_itags);
+    memcpy(*dest, src, num_itags*sizeof(orte_gpr_replica_itag_t));
     return ORTE_SUCCESS;
 }
 

@@ -148,9 +148,14 @@ int orte_gpr_replica_get_startup_msg_fn(orte_jobid_t jobid,
  * *********    INTERNAL UTILITY FUNCTIONS     **********
  */
 
-/** Empty the specified segment and remove it from the registry
+/** SEGMENT OPERATIONS
  */
-int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t *seg);
+int orte_gpr_replica_release_segment(orte_gpr_replica_segment_t **seg);
+
+int orte_gpr_replica_create_container(orte_gpr_replica_container_t **cptr,
+                                      orte_gpr_replica_segment_t *seg,
+                                      int num_itags,
+                                      orte_gpr_replica_itag_t *itags);
 
 int orte_gpr_replica_add_keyval(orte_gpr_replica_segment_t *seg,
                                 orte_gpr_replica_container_t *cptr,
@@ -168,9 +173,8 @@ int orte_gpr_replica_purge_itag(orte_gpr_replica_segment_t *seg,
                                 orte_gpr_replica_itag_t itag);
 
 bool orte_gpr_replica_search_container(orte_gpr_replica_itagval_t **iptr,
-                                       orte_gpr_replica_segment_t *seg,
-                                       orte_gpr_replica_container_t *cptr,
-                                       orte_gpr_keyval_t *kptr);
+                                       orte_gpr_replica_itag_t itag,
+                                       orte_gpr_replica_container_t *cptr);
 
 /*
  * DICTIONARY OPERATIONS
