@@ -1,3 +1,4 @@
+# -*- shell-script -*-
 #
 # Copyright (c) 2004-2005 The Trustees of Indiana University.
 #                         All rights reserved.
@@ -12,12 +13,8 @@
 # $HEADER$
 #
 
-include $(top_ompi_srcdir)/config/Makefile.options
+# Specific to this module
 
-AM_CPPFLAGS = -I$(top_ompi_builddir)/src/include
-
-noinst_LTLIBRARIES = libmca_svc_bproc.la
-libmca_svc_bproc_la_SOURCES = \
-	svc_bproc.h \
-	svc_bproc.c \
-	svc_bproc_component.c 
+PARAM_INIT_FILE=svc_bproc.c
+PARAM_CONFIG_HEADER_FILE="bproc_config.h"
+PARAM_CONFIG_FILES="Makefile"

@@ -19,15 +19,19 @@
 
 #include "include/orte_constants.h"
 #include "include/types.h"
+#include "util/proc_info.h"
+#include "util/output.h"
 #include "class/ompi_list.h"
 #include "mca/mca.h"
 #include "mca/base/mca_base_param.h"
+#include "mca/rml/rml.h"
+#include "mca/svc/svc.h"
 #include "svc_bproc.h"
 
 /*
  * Struct of function pointers and all that to let us be initialized
  */
-orte_svc_bproc_base_component_1_0_0_t orte_svc_bproc_component = {
+orte_svc_bproc_component_t orte_svc_bproc_component = {
     {
         {
         ORTE_SVC_BASE_VERSION_1_0_0,
@@ -88,31 +92,43 @@ int orte_svc_bproc_component_close(void)
 }
 
 
-orte_svc_bproc_base_module_t*
+orte_svc_base_module_t*
 orte_svc_bproc_component_init(
 		   bool* allow_threads,
 		   bool* have_thread)
 {
     struct bproc_version_t vers;
+    int rc;
 
     /* check to see if I'm in a daemon - if not, then we can't use this launcher */
-    if (!ompi_process_info.daemon) {
+    if (!orte_process_info.daemon) {
         return NULL;
     }
     
     /* okay, we are in a daemon - now check to see if BProc is running here */
-    ret = bproc_version(&vers);
-    if (ret != 0) {
-      ompi_output_verbose(5, mca_pcm_base_output, 
-           "bproc: bproc_version() failed");
-      return NULL;
+    rc = bproc_version(&vers);
+    if (rc != 0) {
+        ompi_output(0, "bproc: bproc_version() failed with status %d", rc);
+        return NULL;
     }
     
     /* only launch from the master node */
     if (bproc_currnode() != BPROC_NODE_MASTER) {
-      ompi_output_verbose(5, mca_pcm_base_output, 
-            "bproc: not on BPROC_NODE_MASTER");
-      return NULL;
+        if(orte_svc_bproc_component.debug)
+            ompi_output(0, "bproc: not on BPROC_NODE_MASTER");
+        return NULL;
+    }
+    
+    /* initialize the module */
+    rc = orte_rml.recv_buffer_nb(
+        ORTE_RML_NAME_ANY,
+        ORTE_RML_TAG_BPROC_SVC,
+        0,
+        orte_svc_bproc_module_recv,
+        NULL);
+    if(rc != ORTE_SUCCESS) {
+        ompi_output(0, "orte_svc_bproc_component_init: orte_rml.rml_receive_buffer_nb failed: %d\n", rc);
+        return NULL;
     }
     return &orte_svc_bproc_module;
 }
