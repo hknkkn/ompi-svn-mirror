@@ -40,7 +40,6 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action,
     orte_gpr_replica_triggers_t *trig=NULL;
     orte_gpr_replica_container_t **cptr=NULL, *cptr2=NULL;
     orte_gpr_replica_itag_t itag, *tokentags=NULL;
-    orte_gpr_keyval_t *kptr=NULL;
     orte_gpr_replica_itagval_t *iptr=NULL;
     orte_gpr_replica_addr_mode_t tok_mode, key_mode;
     int i, j, rc, num_tokens, num_found;
@@ -90,34 +89,18 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action,
     }
     
     if (NULL != value->keyvals && 0 < value->cnt) {
-        trig->num_keys = value->cnt;
+        if (ORTE_SUCCESS != (rc = orte_value_array_set_size(&(trig->keytags), (size_t)(value->cnt)))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
         for (i=0; i < value->cnt; i++) {
-            kptr = value->keyvals[i];
-            iptr = OBJ_NEW(orte_gpr_replica_itagval_t);
-            if (NULL == iptr) {
-                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                rc = ORTE_ERR_OUT_OF_RESOURCE;
-                goto CLEANUP;
-            }
-            
-            if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&(iptr->itag),
-                                                    seg, kptr->key))) {
+            if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&itag,
+                                                    seg, (value->keyvals[i])->key))) {
                 ORTE_ERROR_LOG(rc);
                 goto CLEANUP;
             }
-            
-            iptr->type = kptr->type;
-            if (ORTE_SUCCESS != (rc = orte_gpr_replica_xfer_payload(&(iptr->value),
-                                                       &(kptr->value), kptr->type))) {
-                ORTE_ERROR_LOG(rc);
-                goto CLEANUP;
-            }
-            
-            if (0 > (iptr->index = orte_pointer_array_add(trig->itagvals, (void*)iptr))) {
-                ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-                rc = ORTE_ERR_OUT_OF_RESOURCE;
-                goto CLEANUP;
-            }
+            ORTE_VALUE_ARRAY_SET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t,
+                                            i, itag);
         }
     }
     
@@ -188,6 +171,7 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action,
                             /* this key already exists - make sure it's unique
                              */
                             if (1 < num_found || found) { /* not unique - error out */
+                                ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
                                 rc = ORTE_ERR_BAD_PARAM;
                                 goto CLEANUP;
                             }
@@ -199,10 +183,12 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action,
                                 rc = ORTE_ERR_OUT_OF_RESOURCE;
                                 goto CLEANUP;
                             }
+                            (trig->num_counters)++;
                         }  /* end if found */
                     }  /* end if cptr NULL */
                 }  /* end for j */
                 if (!found) {  /* specified counter never found - error */
+                    ORTE_ERROR_LOG(ORTE_ERR_BAD_PARAM);
                     rc = ORTE_ERR_BAD_PARAM;
                     goto CLEANUP;
                 } /* end if found */

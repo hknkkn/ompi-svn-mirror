@@ -194,8 +194,7 @@ struct orte_gpr_replica_triggers_t {
     orte_gpr_replica_addr_mode_t token_addr_mode;   /**< Tokens addressing mode */
     orte_gpr_replica_addr_mode_t key_addr_mode;     /**< Keys addressing mode */
     orte_value_array_t tokentags;                   /**< Array of tokens defining which containers are affected */
-    int num_keys;                                   /**< Number of key/values being tracked */
-    orte_pointer_array_t *itagvals;                 /**< Keys/values defining which key-value pairs are affected */
+    orte_value_array_t keytags;                     /**< Array of keys defining which key-value pairs are affected */
     /* store a pointer to each container/itagval that meets this criteria so we
      * can quickly detect whether or not this subscription should fire whenever
      * the container/value is affected

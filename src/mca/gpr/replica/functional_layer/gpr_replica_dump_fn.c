@@ -209,8 +209,6 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 	orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
     k = (int)orte_value_array_get_size(&(trig->tokentags));
-    
-    k = (int)orte_value_array_get_size(&(trig->tokentags));
     if (0 == k) {
         asprintf(&tmp_out, "\t\tNULL token (wildcard)");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
@@ -252,22 +250,20 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     }
     
-    if (0 == trig->num_keys) {
+    k = (int)orte_value_array_get_size(&(trig->tokentags));
+    if (0 == k) {
         asprintf(&tmp_out, "\t\tNULL key (wildcard)");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     } else {
-        asprintf(&tmp_out, "\t\tNumber of keys: %d", trig->num_keys);
+        asprintf(&tmp_out, "\t\tNumber of keys: %d", k);
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
 
-        ival = (orte_gpr_replica_itagval_t**)((trig->itagvals)->addr);
-        for (i=0; i < (trig->itagvals)->size; i++) {
-            if (NULL != ival[i] &&
-                ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
-                                                ival[i]->itag)) {
+        for (i=0; i < k; i++) {
+            if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token, trig->seg,
+                    ORTE_VALUE_ARRAY_GET_ITEM(&(trig->keytags), orte_gpr_replica_itag_t, i))) {
                 asprintf(&tmp_out, "\t\t\tKey: %s", token);
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 free(token);
-                orte_gpr_replica_dump_itagval_value(buffer, ival[i]);
             }
         }
     }
@@ -301,21 +297,25 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
 
     target = (orte_gpr_replica_target_t**)((trig->targets)->addr);
     if (0 == trig->num_targets) {
-        asprintf(&tmp_out, "\tNone");
+        asprintf(&tmp_out, "\t\tNone");
         orte_gpr_replica_dump_load_string(buffer, &tmp_out);
     } else {
         for (i=0; i < (trig->targets)->size; i++) {
             if (NULL != target[i]) {
                 if (NULL == target[i]->cptr) {
-                    asprintf(&tmp_out, "\tContainer: NULL");
+                    asprintf(&tmp_out, "\t\tContainer: NULL");
                 } else {
-                    asprintf(&tmp_out, "\tContainer: %d", (target[i]->cptr)->index);
+                    asprintf(&tmp_out, "\t\tContainer: %d", (target[i]->cptr)->index);
                 }
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
                 if (NULL == target[i]->iptr) {
-                    asprintf(&tmp_out, "\tKeyval: NULL");
+                    asprintf(&tmp_out, "\t\tKeyval: NULL");
                 } else {
-                    asprintf(&tmp_out, "\tKeyval: %d", (target[i]->iptr)->index);
+                    if (ORTE_SUCCESS == orte_gpr_replica_dict_reverse_lookup(&token,
+                                            trig->seg, (target[i]->iptr)->itag)) {
+                        asprintf(&tmp_out, "\t\tKeyval: %s", token);
+                        free(token);
+                    }
                 }
                 orte_gpr_replica_dump_load_string(buffer, &tmp_out);
             }
@@ -323,6 +323,8 @@ static void orte_gpr_replica_dump_trigger(orte_buffer_t *buffer, int cnt,
     }
     
     if (0 < trig->num_counters) {
+        asprintf(&tmp_out, "\tTrigger monitoring %d counters", trig->num_counters);
+        orte_gpr_replica_dump_load_string(buffer, &tmp_out);
         ival = (orte_gpr_replica_itagval_t**)((trig->counters)->addr);
         for (i=0; i < trig->num_counters; i++) {
             if (NULL != ival[i] &&

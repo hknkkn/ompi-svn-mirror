@@ -203,6 +203,9 @@ int main(int argc, char **argv)
         value.keyvals[i]->type = ORTE_INT32;
         value.keyvals[i]->value.i32 = 0;
     }
+    /* set value in keys[0] to 3 */
+    value.keyvals[0]->value.i32 = 3;
+    
     values = &value;
     
     fprintf(test_out, "putting counters on registry\n");
@@ -236,6 +239,89 @@ int main(int argc, char **argv)
         return rc;
     }
     
+    orte_gpr_replica_dump(0);
+
+
+    /* for testing the trigger, we want the counter values returned to us
+     * setup value so it can be used for that purpose.
+     */
+    for (i=0; i < num_counters; i++) {
+        OBJ_RELEASE(value.keyvals[i]);
+    }
+    free(value.keyvals);
+    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+    if (NULL == value.keyvals) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    if (NULL == value.keyvals[0]) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    value.cnt = 1;
+    value.keyvals[0]->key = strdup(keys[0]);
+    value.keyvals[0]->type = ORTE_NULL;
+    
+    /* setup the trigger information - initialize the common elements */
+    OBJ_CONSTRUCT(&trig, orte_gpr_value_t);
+    trig.addr_mode = ORTE_GPR_TOKENS_XAND;
+    trig.segment = strdup("test-segment");
+    trig.tokens = (char**)malloc(sizeof(char*));
+    if (NULL == trig.tokens) {
+        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+        OBJ_DESTRUCT(&value);
+        OBJ_DESTRUCT(&trig);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    trig.tokens[0] = strdup(ORTE_JOB_GLOBALS);
+    trig.num_tokens = 1;
+    trig.cnt = 2;
+    trig.keyvals = (orte_gpr_keyval_t**)malloc(2*sizeof(orte_gpr_keyval_t*));
+    trig.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+    trig.keyvals[0]->key = strdup(keys[0]);
+    trig.keyvals[0]->type = ORTE_NULL;
+
+    trig.keyvals[1] = OBJ_NEW(orte_gpr_keyval_t);
+    trig.keyvals[1]->key = strdup(keys[1]);
+    trig.keyvals[1]->type = ORTE_NULL;
+    
+   fprintf(test_out, "setting trigger\n");
+   
+   rc = orte_gpr.subscribe(
+         ORTE_GPR_TRIG_ALL_CMP,
+         &value,
+         &trig,
+         &rc,
+         test_cbfunc,
+         NULL);
+
+     if(ORTE_SUCCESS != rc) {
+         ORTE_ERROR_LOG(rc);
+         OBJ_DESTRUCT(&value);
+         OBJ_DESTRUCT(&trig);
+         return rc;
+     }
+
+    orte_gpr_replica_dump(0);
+    
+    fprintf(test_out, "incrementing until trigger\n");
+    
+    /* increment the value in keys[1] until the trig fires */
+    free(value.keyvals[0]->key);
+    value.keyvals[0]->key = strdup(keys[1]);
+    
+    for (i=0; i < 10; i++) {
+        fprintf(test_out, "\tincrement %s\n", keys[1]);
+        if (ORTE_SUCCESS != (rc = orte_gpr.increment_value(&value))) {
+            ORTE_ERROR_LOG(rc);
+            OBJ_DESTRUCT(&value);
+            return rc;
+        }
+    }
+
     orte_gpr_replica_dump(0);
     
 #if 0
@@ -324,6 +410,8 @@ void test_cbfunc(orte_gpr_notify_message_t *msg, void *tag)
     fprintf(test_out, "TRIGGER FIRED AND RECEIVED\n");
     
     fprintf(test_out, "\tSegment: %s\tNumber of values: %d\n", (msg->values[0])->segment, msg->cnt);
+    
+    orte_gpr_replica_dump(0);
     
     OBJ_RELEASE(msg);
 }
