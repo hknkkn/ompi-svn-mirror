@@ -154,8 +154,8 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_keyval_t);
 
 /** Return value structure for registry requests.
  * A request for information stored within the registry returns an array of values that
- * correspond to the provided tokens.
- * Each element in the array contains an array of keyval objects - note that the array
+ * correspond to the provided tokens. Each object in the array contains an array of
+ * keyvals from a specific container. Note that the array
  * contains \em copies of the data in the registry. This prevents inadvertent
  * modification of the registry, but requires the recipient to release the data's
  * memory when done.
@@ -166,8 +166,8 @@ typedef struct {
     int32_t cnt;                            /**< Number of keyval objects returned */
     orte_gpr_keyval_t **keyvals;            /**< Contiguous array of keyval object pointers */
     char *segment;                          /**< Name of the segment this came from */
-    int32_t num_tokens;                     /**< Number of tokens used to recover data */
-    char **tokens;                          /**< List of tokens that described this data */
+    int32_t num_tokens;                     /**< Number of tokens from the container that held these keyvals */
+    char **tokens;                          /**< List of tokens that described the container */
 } orte_gpr_value_t;
 
 OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_value_t);
@@ -190,6 +190,29 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_notify_message_t);
  * user_tag = whatever tag data the user provided when filing the subscription
  */
 typedef void (*orte_gpr_notify_cb_fn_t)(orte_gpr_notify_message_t *notify_msg, void *user_tag);
+
+/** Structure for registering subscriptions
+ * A request to be notified when certain events occur, or when counters reach specified
+ * values, is registered on the registry via a subscription request. This structure
+ * is provided to concisely provide the required information. The information in this
+ * structure describes the data that is to be sent when the subscription "fires". It includes
+ * the segment upon which the data resides, the tokens that describe the containers, and
+ * the keys that describe the keyvals to be returned. These are combined via the
+ * addr_mode to locate and return the data.
+ */
+typedef struct {
+    ompi_object_t super;                    /**< Makes this an object */
+    orte_gpr_addr_mode_t addr_mode;         /**< Address mode for combining keys/tokens */
+    char *segment;                          /**< Name of the segment where the data is located */
+    int32_t num_tokens;                     /**< Number of tokens used to describe data */
+    char **tokens;                          /**< List of tokens that describe the data */
+    int32_t num_keys;                       /**< Number of keys describing data */
+    char **keys;                            /**< Contiguous array of keys */
+    orte_gpr_notify_cb_fn_t cbfunc;         /**< Function to be called with this data */
+    void *user_tag;                         /**< User-provided tag to be used in cbfunc */
+} orte_gpr_subscription_t;
+
+OBJ_CLASS_DECLARATION(orte_gpr_subscription_t);
 
 /** Return value for test results on internal test
  */
