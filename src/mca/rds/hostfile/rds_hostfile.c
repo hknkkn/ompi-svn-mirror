@@ -21,6 +21,7 @@
 #include "include/orte_constants.h"
 #include "class/ompi_list.h"
 #include "util/output.h"
+#include "util/sys_info.h"
 #include "mca/mca.h"
 #include "mca/base/base.h"
 #include "mca/ras/base/ras_base_node.h"
@@ -69,9 +70,16 @@ static int orte_rds_hostfile_parse_line(int token, ompi_list_t* existing, ompi_l
     int update = 0;
 
     if (ORTE_RDS_HOSTFILE_STRING == token) {
-        if(NULL == (node = orte_rds_hostfile_lookup(existing, orte_rds_hostfile_value.sval))) {
+        char* node_name = orte_rds_hostfile_value.sval;
+
+        /* convert this into something globally unique */
+        if(strcmp(node_name, "localhost") == 0) {
+            node_name = orte_system_info.nodename;
+        }
+
+        if(NULL == (node = orte_rds_hostfile_lookup(existing, node_name))) {
             node = OBJ_NEW(orte_ras_base_node_t);
-            node->node_name = strdup(orte_rds_hostfile_value.sval);
+            node->node_name = strdup(node_name);
             node->node_slots = 1;
             update++;
         }
