@@ -212,6 +212,11 @@ static void mca_base_modex_registry_callback(
     bool isnew = false;
     int rc;
 
+#if 0
+ompi_output(0, "mca_base_modex: [%d,%d,%d]\n", ORTE_NAME_ARGS(orte_process_info.my_name));
+orte_gpr.dump_notify_data(data,0);
+#endif
+
     /* process the callback */
     value = data->values;
     for (i=0; i < data->cnt; i++) {
@@ -272,6 +277,9 @@ static void mca_base_modex_registry_callback(
                     void* bytes = NULL;
                     size_t cnt;
                     size_t num_bytes;
+                    if(strcmp(keyval[j]->key,"modex") != 0)
+                        continue;
+
                     OBJ_CONSTRUCT(&buffer, orte_buffer_t);
                     if (ORTE_SUCCESS != (rc = orte_dps.load(&buffer, 
                         keyval[j]->value.byteobject.bytes, 
