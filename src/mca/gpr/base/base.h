@@ -109,7 +109,7 @@ extern "C" {
     OMPI_DECLSPEC int mca_gpr_base_pack_index(ompi_buffer_t cmd, char *segment);
     OMPI_DECLSPEC int mca_gpr_base_unpack_index(ompi_buffer_t cmd, ompi_list_t *return_list);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup(ompi_buffer_t cmd, mca_ns_base_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup(ompi_buffer_t cmd, orte_jobid_t jobid);
 
     OMPI_DECLSPEC int mca_gpr_base_pack_synchro(ompi_buffer_t cmd,
 				  ompi_registry_synchro_mode_t synchro_mode,
@@ -148,33 +148,33 @@ extern "C" {
     OMPI_DECLSPEC int mca_gpr_base_pack_dump(ompi_buffer_t cmd);
     OMPI_DECLSPEC void mca_gpr_base_print_dump(ompi_buffer_t buffer, int output_id);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_job(ompi_buffer_t buffer, mca_ns_base_jobid_t jobid);
-    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_proc(ompi_buffer_t buffer, bool purge, ompi_process_name_t *proc);
+    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_job(ompi_buffer_t buffer, orte_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_pack_cleanup_proc(ompi_buffer_t buffer, bool purge, orte_process_name_t *proc);
 
     OMPI_DECLSPEC int mca_gpr_base_pack_test_internals(ompi_buffer_t cmd, int level);
     OMPI_DECLSPEC int mca_gpr_base_unpack_test_internals(ompi_buffer_t buffer, ompi_list_t *return_list);
 
     OMPI_DECLSPEC int mca_gpr_base_pack_notify_off(ompi_buffer_t cmd,
-       			             ompi_process_name_t *proc,
+       			             orte_process_name_t *proc,
 				     ompi_registry_notify_id_t sub_number);
     OMPI_DECLSPEC int mca_gpr_base_unpack_notify_off(ompi_buffer_t buffer);
 
     OMPI_DECLSPEC int mca_gpr_base_pack_notify_on(ompi_buffer_t cmd,
-				    ompi_process_name_t *proc,
+				    orte_process_name_t *proc,
 				    ompi_registry_notify_id_t sub_number);
     OMPI_DECLSPEC int mca_gpr_base_unpack_notify_on(ompi_buffer_t buffer);
 
     OMPI_DECLSPEC int mca_gpr_base_pack_assign_ownership(ompi_buffer_t cmd, bool silent,
-					   mca_ns_base_jobid_t jobid, char *segment);
+					   orte_jobid_t jobid, char *segment);
     OMPI_DECLSPEC int mca_gpr_base_unpack_assign_ownership(ompi_buffer_t buffer);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_get_startup_msg(ompi_buffer_t cmd, mca_ns_base_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_pack_get_startup_msg(ompi_buffer_t cmd, orte_jobid_t jobid);
     OMPI_DECLSPEC ompi_buffer_t mca_gpr_base_unpack_get_startup_msg(ompi_buffer_t buffer, ompi_list_t *recipients);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_active_cmd(ompi_buffer_t cmd, mca_ns_base_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_active_cmd(ompi_buffer_t cmd, orte_jobid_t jobid);
     OMPI_DECLSPEC int mca_gpr_base_unpack_triggers_active_cmd(ompi_buffer_t cmd);
 
-    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_inactive_cmd(ompi_buffer_t cmd, mca_ns_base_jobid_t jobid);
+    OMPI_DECLSPEC int mca_gpr_base_pack_triggers_inactive_cmd(ompi_buffer_t cmd, orte_jobid_t jobid);
     OMPI_DECLSPEC int mca_gpr_base_unpack_triggers_inactive_cmd(ompi_buffer_t cmd);
 
 
@@ -183,10 +183,9 @@ extern "C" {
 #endif
 
 /*
- * globals that might be needed
+ * globals that might be needed inside the gpr
  */
 extern int mca_gpr_base_output;
-extern mca_gpr_base_module_t ompi_registry; /* holds selected module's function pointers */
 extern bool mca_gpr_base_selected;
 extern ompi_list_t mca_gpr_base_components_available;
 extern mca_gpr_base_component_t mca_gpr_base_selected_component;

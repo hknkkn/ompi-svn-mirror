@@ -31,9 +31,9 @@ int mca_gpr_base_pack_put(ompi_buffer_t cmd, bool silent,
 			  ompi_registry_object_size_t size)
 {
     mca_gpr_cmd_flag_t command;
-    mca_ns_base_jobid_t jobid;
+    orte_jobid_t jobid;
     char **tokptr;
-    int i;
+    int i, rc;
     int32_t num_tokens, object_size;
     int8_t tmp_bool;
 
@@ -57,7 +57,9 @@ int mca_gpr_base_pack_put(ompi_buffer_t cmd, bool silent,
 	return OMPI_ERROR;
     }
 
-    jobid = ompi_name_server.get_jobid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid(&jobid, ompi_rte_get_self()))) {
+        return rc;
+    }
     if (OMPI_SUCCESS != ompi_pack(cmd, &jobid, 1, MCA_GPR_OOB_PACK_JOBID)) {
 	return OMPI_ERROR;
     }

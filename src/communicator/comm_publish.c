@@ -22,11 +22,11 @@
 #include "include/constants.h"
 #include "mca/pml/pml.h"
 #include "mca/ns/ns.h"
-#include "mca/gpr/base/base.h"
 #include "mca/gpr/gpr.h"
+#include "mca/oob/oob_types.h"
 
 static ompi_mutex_t ompi_port_lock;
-static int port_id=MCA_OOB_TAG_USER;
+static int port_id=ORTE_OOB_TAG_START_LIST;
 
 int ompi_open_port(char *port_name)
 {
@@ -34,7 +34,8 @@ int ompi_open_port(char *port_name)
     char *name=NULL;
     size_t size=0;
     int lport_id=-1;
-
+    int rc;
+    
     /*
      * The port_name is equal to the OOB-contact information
      * and an integer. The reason for adding the integer is
@@ -42,7 +43,9 @@ int ompi_open_port(char *port_name)
      */
   
     myproc = ompi_proc_self (&size);
-    name = ompi_name_server.get_proc_name_string (&(myproc[0]->proc_name));
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string (name, &(myproc[0]->proc_name)))) {
+        return rc;
+    }
 
     OMPI_THREAD_LOCK(&ompi_port_lock);
     lport_id = port_id++;

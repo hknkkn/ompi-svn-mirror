@@ -21,9 +21,7 @@
 #include "errhandler/errclass.h"
 #include "communicator/communicator.h"
 #include "mca/ns/ns.h"
-#include "mca/ns/base/base.h"
 #include "mca/gpr/gpr.h"
-#include "mca/gpr/base/base.h"
 #include "runtime/runtime.h"
 
 /*
@@ -88,11 +86,16 @@ void ompi_attr_create_predefined_callback(
     ompi_list_item_t *item;
     ompi_registry_value_t *reg_value;
     ompi_rte_vm_status_t *vm_stat;
+    orte_jobid_t job;
 
     /* Set some default values */
 
-    attr_appnum = (int) ompi_name_server.get_jobid(ompi_rte_get_self());
+    if (ORTE_SUCCESS != orte_name_services.get_jobid(&job, ompi_rte_get_self())) {
+        return;
+    }
 
+    attr_appnum = (int)job;
+    
     /* Query the registry to find out how many CPUs there will be.
        This will only return a non-empty list in a persistent
        universe.  If we don't have a persistent universe, then just

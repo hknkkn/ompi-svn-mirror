@@ -26,7 +26,7 @@
 #include "mca/gpr/base/base.h"
 
 int mca_gpr_base_pack_get_startup_msg(ompi_buffer_t cmd,
-				      mca_ns_base_jobid_t jobid)
+				      orte_jobid_t jobid)
 {
     mca_gpr_cmd_flag_t command;
 

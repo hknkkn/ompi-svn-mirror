@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include "mpi.h"
 
+#include "mca/ns/ns_types.h"
+
 #include "communicator/communicator.h"
 #include "op/op.h"
 #include "proc/proc.h"
@@ -605,10 +607,10 @@ static int ompi_comm_allreduce_intra_oob (int *inbuf, int *outbuf,
     int i;
     int rc;
     int local_leader, local_rank;
-    ompi_process_name_t *remote_leader=NULL;
+    orte_process_name_t *remote_leader=NULL;
     
     local_leader  = (*((int*)lleader));
-    remote_leader = (ompi_process_name_t*)rleader;
+    remote_leader = (orte_process_name_t*)rleader;
 
     if ( &ompi_mpi_op_sum != op && &ompi_mpi_op_prod != op &&
          &ompi_mpi_op_max != op && &ompi_mpi_op_min  != op ) {

@@ -25,7 +25,7 @@
 
 #include "mca/gpr/base/base.h"
 
-int mca_gpr_base_pack_cleanup_job(ompi_buffer_t buffer, mca_ns_base_jobid_t jobid)
+int mca_gpr_base_pack_cleanup_job(ompi_buffer_t buffer, orte_jobid_t jobid)
 {
     mca_gpr_cmd_flag_t command;
 
@@ -43,7 +43,7 @@ int mca_gpr_base_pack_cleanup_job(ompi_buffer_t buffer, mca_ns_base_jobid_t jobi
 }
 
 
-int mca_gpr_base_pack_cleanup_proc(ompi_buffer_t buffer, bool purge, ompi_process_name_t *proc)
+int mca_gpr_base_pack_cleanup_proc(ompi_buffer_t buffer, bool purge, orte_process_name_t *proc)
 {
     mca_gpr_cmd_flag_t command;
 

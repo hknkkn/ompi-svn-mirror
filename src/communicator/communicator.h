@@ -19,13 +19,13 @@
 #include "class/ompi_hash_table.h"
 #include "errhandler/errhandler.h"
 #include "threads/mutex.h"
-#include "threads/mutex.h"
+
 #include "util/output.h"
 #include "mpi.h"
 #include "group/group.h"
 #include "mca/coll/coll.h"
 #include "mca/topo/topo.h"
-#include "mca/gpr/base/base.h"
+#include "mca/gpr/gpr_types.h"
 #include "request/request.h"
 
 #if defined(c_plusplus) || defined(__cplusplus)
@@ -389,7 +389,7 @@ struct ompi_communicator_t {
        sets the connection up between two independent applications.
     */
     int ompi_comm_connect_accept ( ompi_communicator_t *comm, int root,
-                                   ompi_process_name_t *port, int send_first,
+                                   orte_process_name_t *port, int send_first,
                                    ompi_communicator_t **newcomm, int tag);
 
     /* A helper routine for ompi_comm_connect_accept.
@@ -402,7 +402,7 @@ struct ompi_communicator_t {
      * Therefore, the two root processes exchange this information at this point.
      *
      */
-    ompi_process_name_t *ompi_comm_get_rport (ompi_process_name_t *port,
+    orte_process_name_t *ompi_comm_get_rport (orte_process_name_t *port,
                                               int send_first, ompi_proc_t *proc,
 					      int tag);
     

@@ -26,7 +26,7 @@
 #include "mca/gpr/base/base.h"
 
 int mca_gpr_base_pack_triggers_active_cmd(ompi_buffer_t cmd,
-				          mca_ns_base_jobid_t jobid)
+				          orte_jobid_t jobid)
 {
     mca_gpr_cmd_flag_t command;
 
@@ -44,7 +44,7 @@ int mca_gpr_base_pack_triggers_active_cmd(ompi_buffer_t cmd,
 }
 
 int mca_gpr_base_pack_triggers_inactive_cmd(ompi_buffer_t cmd,
-					    mca_ns_base_jobid_t jobid)
+					    orte_jobid_t jobid)
 {
     mca_gpr_cmd_flag_t command;
 
@@ -62,7 +62,7 @@ int mca_gpr_base_pack_triggers_inactive_cmd(ompi_buffer_t cmd,
 }
 
 int mca_gpr_base_pack_notify_on(ompi_buffer_t cmd,
-				ompi_process_name_t *proc,
+				orte_process_name_t *proc,
 				ompi_registry_notify_id_t sub_number)
 {
     mca_gpr_cmd_flag_t command;
@@ -86,7 +86,7 @@ int mca_gpr_base_pack_notify_on(ompi_buffer_t cmd,
 }
 
 int mca_gpr_base_pack_notify_off(ompi_buffer_t cmd,
-				 ompi_process_name_t *proc,
+				 orte_process_name_t *proc,
 				 ompi_registry_notify_id_t sub_number)
 {
     mca_gpr_cmd_flag_t command;
@@ -109,7 +109,7 @@ int mca_gpr_base_pack_notify_off(ompi_buffer_t cmd,
 }
 
 int mca_gpr_base_pack_assign_ownership(ompi_buffer_t cmd, bool silent,
-				       mca_ns_base_jobid_t jobid, char *segment)
+				       orte_jobid_t jobid, char *segment)
 {
     mca_gpr_cmd_flag_t command;
     int8_t tmp_bool;

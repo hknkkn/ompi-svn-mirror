@@ -29,7 +29,7 @@
 #include "class/ompi_object.h"
 #include "class/ompi_bitmap.h"
 #include "class/ompi_hash_table.h"
-#include "mca/gpr/base/base.h"
+#include "mca/gpr/gpr_types.h"
 
 #define ATTR_HASH_SIZE 10
 

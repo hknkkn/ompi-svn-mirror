@@ -29,13 +29,13 @@
  * includes
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include <sys/types.h>
 #include <limits.h>
 
-#include "include/types.h"
-#include "include/constants.h"
+#include "include/orte_types.h"
+#include "include/orte_constants.h"
 #include "class/ompi_list.h"
 #include "util/bufpack.h"
 #include "runtime/runtime_types.h"
@@ -737,5 +737,10 @@ typedef mca_gpr_base_component_1_0_0_t mca_gpr_base_component_t;
     MCA_BASE_VERSION_1_0_0,			\
 	/* gpr v1.0 */				\
 	"gpr", 1, 0, 0
+
+/*
+ * global module that holds function pointers
+ */
+extern mca_gpr_base_module_t ompi_registry; /* holds selected module's function pointers */
 
 #endif

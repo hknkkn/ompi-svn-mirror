@@ -32,8 +32,8 @@
 #include "util/argv.h"
 #include "include/constants.h"
 #include "mca/pml/pml.h"
-#include "mca/ns/base/base.h"
-#include "mca/gpr/base/base.h"
+#include "mca/ns/ns.h"
+#include "mca/gpr/gpr.h"
 
 #include "mca/pml/pml.h"
 #include "mca/oob/base/base.h"
@@ -43,7 +43,7 @@
 extern char **environ;
 
 int ompi_comm_connect_accept ( ompi_communicator_t *comm, int root,
-                               ompi_process_name_t *port, int send_first,
+                               orte_process_name_t *port, int send_first,
                                ompi_communicator_t **newcomm, int tag )
 {
     int size, rsize, rank, rc;
@@ -55,7 +55,7 @@ int ompi_comm_connect_accept ( ompi_communicator_t *comm, int root,
     ompi_communicator_t *newcomp=MPI_COMM_NULL;
     ompi_proc_t **rprocs=NULL;
     ompi_group_t *group=comm->c_local_group;
-    ompi_process_name_t *rport=NULL;
+    orte_process_name_t *rport=NULL;
     ompi_buffer_t nbuf, nrbuf;
 
     size = ompi_comm_size ( comm );
@@ -76,7 +76,7 @@ int ompi_comm_connect_accept ( ompi_communicator_t *comm, int root,
 	    
 
         /* Exchange number of processes and msg length on both sides */
-	ompi_buffer_init (&nbuf, size*sizeof(ompi_process_name_t));
+	ompi_buffer_init (&nbuf, size*sizeof(orte_process_name_t));
         ompi_proc_get_namebuf (group->grp_proc_pointers, size, nbuf);
 	ompi_buffer_get(nbuf, &namebuf, &namebuflen);
 
@@ -231,11 +231,11 @@ int ompi_comm_connect_accept ( ompi_communicator_t *comm, int root,
  * Therefore, the two root processes exchange this information at this point.
  *
  */
-ompi_process_name_t *ompi_comm_get_rport (ompi_process_name_t *port, int send_first, 
+orte_process_name_t *ompi_comm_get_rport (orte_process_name_t *port, int send_first, 
                                           ompi_proc_t *proc, int tag)
 {
     int rc;
-    ompi_process_name_t *rport, tbuf;
+    orte_process_name_t *rport, tbuf;
     ompi_proc_t *rproc=NULL;
     bool isnew = false;
 
@@ -243,7 +243,7 @@ ompi_process_name_t *ompi_comm_get_rport (ompi_process_name_t *port, int send_fi
         ompi_buffer_t sbuf;
 
         rproc = ompi_proc_find_and_add(port, &isnew);
-        ompi_buffer_init(&sbuf, sizeof(ompi_process_name_t));
+        ompi_buffer_init(&sbuf, sizeof(orte_process_name_t));
         ompi_pack(sbuf, &(proc->proc_name), 1, OMPI_NAME);
         rc = mca_oob_send_packed(port, sbuf, tag, 0);
         ompi_buffer_free(sbuf);
@@ -278,7 +278,8 @@ ompi_comm_start_processes(int count, char **array_of_commands,
                           MPI_Info *array_of_info, 
                           char *port_name)
 {
-    mca_ns_base_jobid_t new_jobid;
+    orte_jobid_t new_jobid;
+    int rc;
 //    ompi_rte_node_schedule_t *sched;
 //    ompi_rte_spawn_handle_t *spawn_handle;
 //    ompi_list_t **nodelists = NULL;
@@ -301,7 +302,9 @@ ompi_comm_start_processes(int count, char **array_of_commands,
     */
 
     /* get the jobid for the new processes */
-    new_jobid = ompi_name_server.create_jobid();
+    if (ORTE_SUCCESS != (rc = orte_name_services.create_jobid(&new_jobid))) {
+        return rc;
+    }
 
     /* get the spawn handle to start spawning stuff */
 //    requires = OMPI_RTE_SPAWN_FROM_MPI | OMPI_RTE_SPAWN_HIGH_QOS;
@@ -456,12 +459,12 @@ ompi_comm_start_processes(int count, char **array_of_commands,
 /**********************************************************************/
 int ompi_comm_dyn_init (void)
 {
-    uint32_t jobid;
+    orte_jobid_t jobid;
     char *envvarname=NULL, *port_name=NULL;
     char *oob_port=NULL;
-    int tag, root=0, send_first=1;
+    int tag, root=0, send_first=1, rc;
     ompi_communicator_t *newcomm=NULL;
-    ompi_process_name_t *port_proc_name=NULL;
+    orte_process_name_t *port_proc_name=NULL;
     ompi_group_t *group = NULL;
     ompi_errhandler_t *errhandler = NULL;
 
@@ -471,7 +474,9 @@ int ompi_comm_dyn_init (void)
        have to OBJ_RELEASE it as well.  The global
        ompi_proc_local_proc seemed to have been created for exactly
        this kind of purpose, so I took the liberty of using it. */
-    jobid = ompi_name_server.get_jobid(&(ompi_proc_local_proc->proc_name));
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid(&jobid, &(ompi_proc_local_proc->proc_name)))) {
+        return rc;
+    }
 
 
     /* check for appropriate env variable */
@@ -485,7 +490,9 @@ int ompi_comm_dyn_init (void)
 
 	/* we have been spawned */
 	oob_port = ompi_parse_port (port_name, &tag);
-	port_proc_name = ompi_name_server.convert_string_to_process_name(oob_port);
+	if (ORTE_SUCCESS != (rc = orte_name_services.convert_string_to_process_name(port_proc_name, oob_port))) {
+        return rc;
+    }
 	ompi_comm_connect_accept (MPI_COMM_WORLD, root, port_proc_name,  
 				  send_first, &newcomm, tag );
 	/* Set the parent communicator */
@@ -692,7 +699,9 @@ void ompi_comm_mark_dyncomm (ompi_communicator_t *comm)
        of different jobids.  */
     grp = comm->c_local_group;
     for (i=0; i< size; i++) {
-	thisjobid = ompi_name_server.get_jobid(&(grp->grp_proc_pointers[i]->proc_name));
+	if (ORTE_SUCCESS != orte_name_services.get_jobid(&thisjobid, &(grp->grp_proc_pointers[i]->proc_name))) {
+        return;
+    }
 	found = 0;
 	for ( j=0; j<numjobids; j++) {
 	    if ( thisjobid == jobids[j]) {
@@ -709,7 +718,9 @@ void ompi_comm_mark_dyncomm (ompi_communicator_t *comm)
        and count number of different jobids */
     grp = comm->c_remote_group;
     for (i=0; i< rsize; i++) {
-	thisjobid = ompi_name_server.get_jobid(&(grp->grp_proc_pointers[i]->proc_name));
+    if (ORTE_SUCCESS != orte_name_services.get_jobid(&thisjobid, &(grp->grp_proc_pointers[i]->proc_name))) {
+        return;
+    }
 	found = 0;
 	for ( j=0; j<numjobids; j++) {
 	    if ( thisjobid == jobids[j]) {

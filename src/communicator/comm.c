@@ -23,7 +23,7 @@
 #include "util/bit_ops.h"
 #include "mca/topo/topo.h"
 #include "mca/topo/base/base.h"
-#include "mca/ns/base/base.h"
+#include "mca/ns/ns.h"
 
 #include "attribute/attribute.h"
 #include "communicator/communicator.h"
@@ -760,7 +760,7 @@ ompi_proc_t **ompi_comm_get_rprocs ( ompi_communicator_t *local_comm,
     local_size = ompi_comm_size (local_comm);    
 
     if (local_rank == local_leader) {
-	ompi_buffer_init(&sbuf, local_size*sizeof(ompi_process_name_t));
+	ompi_buffer_init(&sbuf, local_size*sizeof(orte_process_name_t));
 
         rc = ompi_proc_get_namebuf (local_comm->c_local_group->grp_proc_pointers, 
 				    local_size, sbuf);
@@ -860,7 +860,7 @@ int ompi_comm_determine_first ( ompi_communicator_t *intercomm, int high )
     int scount=0;
     int rc;
     ompi_proc_t *ourproc, *theirproc;
-    ompi_ns_cmp_bitmask_t mask;
+    orte_ns_cmp_bitmask_t mask;
 
     rank = ompi_comm_rank        (intercomm);
     rsize= ompi_comm_remote_size (intercomm);
@@ -901,9 +901,11 @@ int ompi_comm_determine_first ( ompi_communicator_t *intercomm, int high )
         ourproc   = intercomm->c_local_group->grp_proc_pointers[0];
         theirproc = intercomm->c_remote_group->grp_proc_pointers[0];
 
-        mask = OMPI_NS_CMP_CELLID | OMPI_NS_CMP_JOBID | OMPI_NS_CMP_VPID;
-        rc = ompi_name_server.compare (mask, &(ourproc->proc_name), 
-                                       &(theirproc->proc_name));
+        mask = ORTE_NS_CMP_CELLID | ORTE_NS_CMP_JOBID | ORTE_NS_CMP_VPID;
+        if (ORTE_SUCCESS != orte_name_services.compare (&rc, mask, &(ourproc->proc_name), 
+                                                        &(theirproc->proc_name))) {
+            return false;
+        }
         if ( 0 > rc ) {
             flag = true;
         }

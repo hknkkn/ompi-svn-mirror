@@ -31,7 +31,7 @@ mca_gpr_base_unpack_get_startup_msg(ompi_buffer_t buffer,
 {
     mca_gpr_cmd_flag_t command;
     int32_t num_objects, num_recipients, i;
-    ompi_process_name_t proc;
+    orte_process_name_t proc;
     ompi_name_server_namelist_t *peer;
     ompi_buffer_t msg;
     char *segment=NULL;

@@ -25,6 +25,9 @@
 #ifndef MCA_GPR_TYPES_H_
 #define MCA_GPR_TYPES_H_
 
+#include "orte_config.h"
+#include "mca/ns/ns_types.h"
+
 /** Define the notification actions for the subscription system
  */
 #define OMPI_REGISTRY_NOTIFY_NONE                   (uint16_t)0x0000   /**< Null case */

@@ -23,9 +23,7 @@
 #include "mca/base/base.h"
 #include "mca/oob/oob.h"
 #include "mca/gpr/gpr.h"
-#include "mca/gpr/base/base.h"
 #include "mca/ns/ns.h"
-#include "mca/ns/base/base.h"
 #include "mca/pml/pml.h"
 #include "mca/base/mca_base_module_exchange.h"
 #include "runtime/runtime.h"
@@ -108,7 +106,7 @@ OBJ_CLASS_INSTANCE(
 
 struct mca_base_modex_subscription_t {
     ompi_list_item_t item;
-    mca_ns_base_jobid_t jobid;
+    orte_jobid_t jobid;
 };
 typedef struct mca_base_modex_subscription_t mca_base_modex_subscription_t;
 
@@ -212,7 +210,7 @@ static void mca_base_modex_registry_callback(
         ompi_buffer_t buffer;
         ompi_proc_t* proc;
         char* component_name_version;
-        ompi_process_name_t proc_name;
+        orte_process_name_t proc_name;
         mca_base_modex_t* modex;
         mca_base_modex_module_t* modex_module;
         mca_base_component_t component;
@@ -316,12 +314,13 @@ static void mca_base_modex_registry_callback(
  * Make sure we have subscribed to this segment.
  */
 
-static int mca_base_modex_subscribe(ompi_process_name_t* name)
+static int mca_base_modex_subscribe(orte_process_name_t* name)
 {
     ompi_registry_notify_id_t rctag;
-    char *segment;
+    char *segment, *jobidstring;
     ompi_list_item_t* item;
     mca_base_modex_subscription_t* subscription;
+    int rc;
 
     /* check for an existing subscription */
     OMPI_LOCK(&mca_base_modex_lock);
@@ -337,7 +336,10 @@ static int mca_base_modex_subscribe(ompi_process_name_t* name)
     OMPI_UNLOCK(&mca_base_modex_lock);
 
     /* otherwise - subscribe */
-    asprintf(&segment, "%s-%s", OMPI_RTE_MODEX_SEGMENT, mca_ns_base_get_jobid_string(name));
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, name))) {
+        return rc;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_MODEX_SEGMENT, jobidstring);
     rctag = ompi_registry.subscribe(
         	OMPI_REGISTRY_OR,
         	OMPI_REGISTRY_NOTIFY_ADD_ENTRY|OMPI_REGISTRY_NOTIFY_DELETE_ENTRY|
@@ -380,7 +382,7 @@ int mca_base_modex_send(
 {
     char *segment;
     char *component_name_version;
-    char *keys[3];
+    char *keys[3], *jobidstring;
     ompi_buffer_t buffer;
     void* bptr;
     int bsize;
@@ -392,7 +394,9 @@ int mca_base_modex_send(
         source_component->mca_component_major_version,
         source_component->mca_component_minor_version);
 
-    keys[0] = ompi_name_server.get_proc_name_string(ompi_rte_get_self());
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_proc_name_string(keys[0], ompi_rte_get_self()))) {
+        return rc;
+    }
     keys[1] = component_name_version;
     keys[2] = NULL;
 
@@ -403,7 +407,10 @@ int mca_base_modex_send(
     ompi_pack(buffer, (void*)data, size, OMPI_BYTE);
     ompi_buffer_get(buffer, &bptr, &bsize);
 
-    asprintf(&segment, "%s-%s", OMPI_RTE_MODEX_SEGMENT, mca_ns_base_get_jobid_string(&mca_oob_name_self));
+    if (ORTE_SUCCESS != (rc = orte_name_services.get_jobid_string(jobidstring, &mca_oob_name_self))) {
+        return rc;
+    }
+    asprintf(&segment, "%s-%s", OMPI_RTE_MODEX_SEGMENT, jobidstring);
     rc = ompi_registry.put(
         OMPI_REGISTRY_OVERWRITE, 
         segment,
