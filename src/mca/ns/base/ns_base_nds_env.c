@@ -57,7 +57,7 @@ int orte_ns_nds_env_get(void)
       
         id = mca_base_param_register_string("ns", "nds", "cellid", NULL, NULL);
         mca_base_param_lookup_string(id, &cellid_string);
-        if (cellid < 0) {
+        if (NULL == cellid_string) {
             ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
             return ORTE_ERR_NOT_FOUND;
         }
@@ -68,7 +68,7 @@ int orte_ns_nds_env_get(void)
             
         id = mca_base_param_register_string("ns", "nds", "jobid", NULL, NULL);
         mca_base_param_lookup_string(id, &jobid_string);
-        if (jobid < 0) {
+        if (NULL == jobid_string) {
             ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
             return ORTE_ERR_NOT_FOUND;
         }
@@ -79,7 +79,7 @@ int orte_ns_nds_env_get(void)
 
         id = mca_base_param_register_string("ns", "nds", "vpid", NULL, NULL);
         mca_base_param_lookup_string(id, &vpid_string);
-        if (vpid < 0) {
+        if (NULL == vpid_string) {
             ORTE_ERROR_LOG(ORTE_ERR_NOT_FOUND);
             return ORTE_ERR_NOT_FOUND;
         }
