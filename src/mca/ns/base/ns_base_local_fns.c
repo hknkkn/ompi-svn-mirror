@@ -90,7 +90,7 @@ int orte_ns_base_create_process_name(orte_process_name_t **name,
                                   orte_jobid_t job,
                                   orte_vpid_t vpid)
 {
-    name = NULL;
+    *name = NULL;
     
     if (ORTE_CELLID_MAX < cell ||
         ORTE_JOBID_MAX < job ||
@@ -99,7 +99,7 @@ int orte_ns_base_create_process_name(orte_process_name_t **name,
     }
 
     *name = (orte_process_name_t*)malloc(sizeof(orte_process_name_t));
-    if (NULL == name) { /* got an error */
+    if (NULL == *name) { /* got an error */
 	   return ORTE_ERR_OUT_OF_RESOURCE;
     }
 
@@ -124,7 +124,7 @@ int orte_ns_base_copy_process_name(orte_process_name_t **dest,
     orte_jobid_t job;
     orte_vpid_t vpid;
     
-    dest = NULL;
+    *dest = NULL;
     
     if (NULL == src) {
 	   return ORTE_ERR_BAD_PARAM;
@@ -484,7 +484,7 @@ int orte_ns_base_free_name(orte_process_name_t **name)
 	   free(*name);
     }
 
-    name = NULL;
+    *name = NULL;
     
     return ORTE_SUCCESS;
 }

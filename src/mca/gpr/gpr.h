@@ -218,9 +218,9 @@ typedef int (*orte_gpr_base_module_triggers_inactive_fn_t)(orte_jobid_t jobid);
  *
  */
 typedef int (*orte_gpr_base_module_get_startup_msg_fn_t)(orte_jobid_t jobid,
-                                    orte_buffer_t *msg,
-                                    int32_t *cnt,
-								  orte_process_name_t *procs);
+                                    orte_buffer_t **msg,
+                                    size_t *cnt,
+								  orte_process_name_t **procs);
 
 /* Cleanup a job from the registry
  * Remove all references to a given job from the registry. This includes removing

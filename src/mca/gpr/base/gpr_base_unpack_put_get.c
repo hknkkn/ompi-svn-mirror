@@ -29,7 +29,7 @@
 
 #include "mca/gpr/base/base.h"
 
-int orte_gpr_base_unpack_put(ompi_buffer_t buffer)
+int orte_gpr_base_unpack_put(orte_buffer_t *buffer)
 {
     orte_gpr_cmd_flag_t command;
     int32_t response;
@@ -55,38 +55,41 @@ int orte_gpr_base_unpack_put(ompi_buffer_t buffer)
 }
 
 
-int orte_gpr_base_unpack_get(ompi_buffer_t buffer, ompi_list_t *returned_list)
+int orte_gpr_base_unpack_get(orte_buffer_t *buffer, size_t *cnt, orte_gpr_keyval_t **keyvals)
 {
     orte_gpr_cmd_flag_t command;
-    int32_t object_size, num_responses;
-    ompi_registry_value_t *newptr;
-    ompi_registry_object_t *object;
-    int i;
+    int rc;
+    orte_data_type_t type;
+    size_t n;
 
-    if ((ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, 1, ORTE_GPR_PACK_CMD))
-	|| (MCA_GPR_GET_CMD != command)) {
-	return ORTE_ERROR;
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
+    }
+    
+    if (ORTE_GPR_GET_CMD != command) {
+    return ORTE_ERR_COMM_FAILURE;
     }
 
-    if ((ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &num_responses, 1, ORTE_INT32)) ||
-	(0 >= num_responses)) {
-	return ORTE_ERROR;
+    /* find out how many values came back */
+    if (ORTE_SUCCESS != (rc = orte_dps.peek(buffer, &type, &n))) {
+        return rc;
     }
-
-    for (i=0; i<num_responses; i++) {
-	if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &object_size, 1, ORTE_GPR_PACK_OBJECT_SIZE)) {
-	    return ORTE_ERROR;
-	}
-	object = (ompi_registry_object_t)malloc(object_size);
-	if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, object, object_size, ORTE_BYTE)) {
-	    free(object);
-	    return ORTE_ERROR;
-	}
-	newptr = OBJ_NEW(ompi_registry_value_t);
-	newptr->object_size = object_size;
-	newptr->object = object;
-	ompi_list_append(returned_list, &newptr->item);
+    
+    if (ORTE_KEYVAL != type) {
+        return ORTE_ERR_COMM_FAILURE;
     }
+    
+    *keyvals = (orte_gpr_keyval_t*)malloc(n*sizeof(orte_gpr_keyval_t*));
+    if (NULL == keyvals) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, keyvals, &n, ORTE_KEYVAL))) {
+        return rc;
+    }
+    
+    *cnt = n;
 
     return ORTE_SUCCESS;
 }

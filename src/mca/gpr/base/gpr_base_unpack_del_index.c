@@ -105,8 +105,8 @@ int orte_gpr_base_unpack_index(orte_buffer_t *buffer, size_t *cnt, char **index)
     }
     
     if (0 < n) {
-        index = (char **)malloc(n*sizeof(char*));
-        if (NULL == index) {
+        *index = (char *)malloc(n*sizeof(char*));
+        if (NULL == *index) {
             return ORTE_ERR_OUT_OF_RESOURCE;
         }
     }

@@ -165,7 +165,9 @@ extern "C" {
     OMPI_DECLSPEC int orte_gpr_base_unpack_notify_on(orte_buffer_t *buffer);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_get_startup_msg(orte_buffer_t *cmd, orte_jobid_t jobid);
-    OMPI_DECLSPEC orte_buffer_t *orte_gpr_base_unpack_get_startup_msg(orte_buffer_t *buffer, ompi_list_t *recipients);
+    OMPI_DECLSPEC int orte_gpr_base_unpack_get_startup_msg(orte_buffer_t *buffer,
+                                 orte_buffer_t **msg, size_t *cnt,
+                                 orte_process_name_t **recipients);
 
     OMPI_DECLSPEC int orte_gpr_base_pack_triggers_active_cmd(orte_buffer_t *cmd, orte_jobid_t jobid);
     OMPI_DECLSPEC int orte_gpr_base_unpack_triggers_active_cmd(orte_buffer_t *cmd);

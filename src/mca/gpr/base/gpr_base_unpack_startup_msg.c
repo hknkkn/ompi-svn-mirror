@@ -21,74 +21,72 @@
 /*
  * includes
  */
-#include "ompi_config.h"
+#include "orte_config.h"
+
+#include "include/orte_constants.h"
+#include "include/orte_types.h"
+#include "dps/dps.h"
 
 #include "mca/gpr/base/base.h"
 
-ompi_buffer_t
-mca_gpr_base_unpack_get_startup_msg(ompi_buffer_t buffer,
-				    ompi_list_t *recipients)
+int
+orte_gpr_base_unpack_get_startup_msg(orte_buffer_t *buffer,
+				    orte_buffer_t **msg, size_t *cnt,
+                     orte_process_name_t **recipients)
 {
-    mca_gpr_cmd_flag_t command;
-    int32_t num_objects, num_recipients, i;
-    orte_process_name_t proc;
-    orte_name_services_namelist_t *peer;
-    ompi_buffer_t msg;
-    char *segment=NULL;
-    ompi_registry_object_t *data_object;
-    ompi_registry_object_size_t data_obj_size;
-
-    if ((OMPI_SUCCESS != ompi_unpack(buffer, &command, 1, MCA_GPR_OOB_PACK_CMD))
-	|| (MCA_GPR_GET_STARTUP_MSG_CMD != command)) {
-        ompi_output(0, "unpacking startup msg: got bad command %d", (int)command);
-        	return NULL;
-    }
-
-    if (OMPI_SUCCESS != ompi_unpack(buffer, &num_recipients, 1, OMPI_INT32)) {
-        ompi_output(0, "unpacking startup msg: got bad num recipients");
-	return NULL;
-    }
-
-    ompi_output(0, "unpacking startup msg: %d recipients", num_recipients);
+    orte_gpr_cmd_flag_t command;
+    orte_data_type_t type;
+    size_t n;
+    int rc;
+    uint8_t *bytes;
     
-    for (i=0; i<num_recipients; i++) {
-	if (OMPI_SUCCESS != ompi_unpack(buffer, &proc, 1, OMPI_NAME)) {
-	    return NULL;
-	}
-	peer = OBJ_NEW(orte_name_services_namelist_t);
-    if (NULL == peer) {
-        return NULL;
+    n=1;
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, &command, &n, ORTE_GPR_PACK_CMD))) {
+        return rc;
     }
-	if (ORTE_SUCCESS != orte_name_services.copy_process_name(peer->name, &proc)) {
-        return NULL;
-    }
-    ompi_output(0, "\tproc [%d,%d,%d] added to list as [%d,%d,%d]",
-            ORTE_NAME_ARGS(proc), ORTE_NAME_ARGS(*(peer->name)));
-	ompi_list_append(recipients, &peer->item);
+    
+    if (ORTE_GPR_GET_STARTUP_MSG_CMD != command) {
+        	return ORTE_ERR_COMM_FAILURE;
     }
 
-    if (OMPI_SUCCESS != ompi_buffer_init(&msg, 0)) {
-	return NULL;
+    if (ORTE_SUCCESS != (rc = orte_dps.peek(buffer, &type, &n))) {
+        return rc;
     }
-
-    while (0 < ompi_unpack_string(buffer, &segment)) {
-        ompi_output(0, "\transferring data for segment %s", segment);
-        ompi_pack_string(msg, segment);
-        ompi_unpack(buffer, &num_objects, 1, OMPI_INT32);  /* unpack #data objects */
-        ompi_pack(msg, &num_objects, 1, OMPI_INT32);
-
-        if (0 < num_objects) {
-            for (i=0; i < num_objects; i++) {
-                ompi_unpack(buffer, &data_obj_size, 1, MCA_GPR_OOB_PACK_OBJECT_SIZE);
-                data_object = (ompi_registry_object_t)malloc(data_obj_size);
-                ompi_unpack(buffer, data_object, data_obj_size, OMPI_BYTE);
-                ompi_pack(msg, &data_obj_size, 1, MCA_GPR_OOB_PACK_OBJECT_SIZE);
-                ompi_pack(msg, data_object, data_obj_size, OMPI_BYTE);
-                free(data_object);
-            }
-        }
-        free(segment);
+    
+    if (ORTE_NAME != type) {
+        return ORTE_ERR_COMM_FAILURE;
     }
-
-    return msg;
+    
+    *recipients = (orte_process_name_t*)malloc(n*sizeof(orte_process_name_t*));
+    if (NULL == *recipients) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, recipients, &n, ORTE_NAME))) {
+	   return rc;
+    }
+    *cnt = n;
+    
+    if (ORTE_SUCCESS != (rc = orte_dps.peek(buffer, &type, &n))) {
+        return rc;
+    }
+    
+    if (ORTE_BYTE != type) {
+        return ORTE_ERR_COMM_FAILURE;
+    }
+    
+    bytes = (uint8_t*)malloc(n);
+    if (NULL == bytes) {
+        return ORTE_ERR_OUT_OF_RESOURCE;
+    }
+    
+    if (ORTE_SUCCESS != (rc = orte_dps.unpack(buffer, bytes, &n, ORTE_BYTE))) {
+        return rc;
+    }
+    
+    *msg = OBJ_NEW(orte_buffer_t);
+    if (ORTE_SUCCESS != (rc = orte_dps.load(*msg, bytes, n))) {
+        return rc;
+    }
+    
 }
