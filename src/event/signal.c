@@ -93,7 +93,6 @@ ompi_evsignal_add(sigset_t *evsigmask, struct ompi_event *ev)
 	int evsignal;
 
 	if (!initialized) {
-            int i;
 	    /* Must delay the event add until after init() because
 	       it may trigger poll events that are not yet setup
 	       to be triggered. */
@@ -115,7 +114,7 @@ ompi_evsignal_add(sigset_t *evsigmask, struct ompi_event *ev)
 	return (0);
 }
 
-int 
+static int 
 ompi_evsignal_restart(void)
 {
     if(initialized) {
@@ -154,8 +153,9 @@ ompi_evsignal_del(sigset_t *evsigmask, struct ompi_event *ev)
 void
 ompi_evsignal_handler(int sig)
 {
-	const char errmsg[] = "ompi_evsignal_handler: error in write\n";
+#if 0
         unsigned char byte = 0;
+#endif
 
 	ompi_evsigcaught[sig]++;
 	ompi_evsignal_caught = 1;
