@@ -282,7 +282,7 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
     orte_gpr_keyval_t **kvals;
     orte_process_name_t *recipients;
     int i, j, n, k, rc;
-    orte_buffer_t *msg;
+    orte_buffer_t msg;
     orte_jobid_t job;
     
 
@@ -335,14 +335,14 @@ void orte_rmgr_base_proc_stage_gate_mgr(orte_gpr_notify_data_t *data,
      */
     
     OBJ_CONSTRUCT(&msg, orte_buffer_t);
-    if (ORTE_SUCCESS != (rc = orte_dps.pack(msg, &job, 1, ORTE_JOBID))) {
+    if (ORTE_SUCCESS != (rc = orte_dps.pack(&msg, &job, 1, ORTE_JOBID))) {
         ORTE_ERROR_LOG(rc);
         OBJ_DESTRUCT(&msg);
         return;
     }
     
     if (ORTE_SUCCESS != (rc = orte_rml.xcast(orte_process_info.my_name, recipients,
-                                        n, msg, NULL))) {
+                                        n, &msg, NULL))) {
         ORTE_ERROR_LOG(rc);
         OBJ_DESTRUCT(&msg);
         return;
