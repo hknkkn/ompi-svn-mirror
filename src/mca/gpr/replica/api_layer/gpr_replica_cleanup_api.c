@@ -45,7 +45,9 @@ int orte_gpr_replica_cleanup_job(orte_jobid_t jobid)
         return rc;
     }
     
-    return orte_gpr_replica_process_callbacks();
+    orte_gpr_replica_process_callbacks();
+    
+    return rc;
 }
 
 
@@ -62,5 +64,6 @@ int orte_gpr_replica_cleanup_proc(orte_process_name_t *proc)
         return rc;
     }
     
-    return orte_gpr_replica_process_callbacks();
+    orte_gpr_replica_process_callbacks();
+    return rc;
 }

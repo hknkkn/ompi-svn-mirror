@@ -57,6 +57,7 @@ typedef uint8_t orte_gpr_replica_addr_mode_t;
 
 /* define a few action flags for trigger evaluation
  */
+#define ORTE_GPR_REPLICA_NO_ACTION         (int8_t) 0
 #define ORTE_GPR_REPLICA_ENTRY_ADDED       (int8_t) 1
 #define ORTE_GPR_REPLICA_ENTRY_DELETED     (int8_t) 2
 #define ORTE_GPR_REPLICA_ENTRY_CHANGED     (int8_t) 3
@@ -183,15 +184,6 @@ OMPI_DECLSPEC OBJ_CLASS_DECLARATION(orte_gpr_replica_itagval_t);
 
 typedef struct {
     ompi_object_t super;
-    orte_gpr_replica_container_t *cptr;
-    int num_ivals;
-    orte_pointer_array_t *ivals;
-} orte_gpr_replica_target_t;
-
-OBJ_CLASS_DECLARATION(orte_gpr_replica_target_t);
-
-typedef struct {
-    ompi_object_t super;
     orte_gpr_replica_segment_t *seg;
     orte_gpr_replica_container_t *cptr;
     orte_gpr_replica_itagval_t *iptr;
@@ -209,16 +201,9 @@ typedef struct {
      * for triggers that are counting themselves (i.e., not monitoring a separate
      * counter), this also describes the data to be included in the count
      */
-    orte_gpr_replica_addr_mode_t token_addr_mode;   /**< Tokens addressing mode */
-    orte_gpr_replica_addr_mode_t key_addr_mode;     /**< Keys addressing mode */
+    orte_gpr_addr_mode_t addr_mode;                 /**< Tokens/keys addressing mode */
     orte_value_array_t tokentags;                   /**< Array of tokens defining which containers are affected */
     orte_value_array_t keytags;                     /**< Array of keys defining which key-value pairs are affected */
-    /* store a pointer to each container/itagval that meets this criteria so we
-     * can quickly detect whether or not this subscription should fire whenever
-     * the container/value is affected
-     */
-    int num_targets;
-    orte_pointer_array_t *targets;
     /* where this block of data goes */
     orte_gpr_notify_cb_fn_t callback;               /**< Function to be called for notification */
     void *user_tag;                                 /**< User-provided tag for callback function */

@@ -230,31 +230,6 @@ OBJ_CLASS_INSTANCE(
          orte_gpr_replica_itagval_destructor); /* destructor */
 
 
-/* TARGETS */
-/* constructor - used to initialize state of target instance */
-static void orte_gpr_replica_target_construct(orte_gpr_replica_target_t* targ)
-{
-    targ->cptr = NULL;
-    targ->num_ivals = 0;
-    orte_pointer_array_init(&(targ->ivals), 10, orte_gpr_replica_globals.max_size, 10);
-}
-
-/* destructor - used to free any resources held by instance */
-static void orte_gpr_replica_target_destructor(orte_gpr_replica_target_t* targ)
-{
-    if (NULL != targ->ivals) {
-       OBJ_RELEASE(targ->ivals);
-    }
-}
-
-/* define instance of ompi_class_t */
-OBJ_CLASS_INSTANCE(
-         orte_gpr_replica_target_t,           /* type name */
-         ompi_object_t,                 /* parent "class" name */
-         orte_gpr_replica_target_construct,   /* constructor */
-         orte_gpr_replica_target_destructor); /* destructor */
-
-
 /* COUNTERS */
 /* constructor - used to initialize state of counter instance */
 static void orte_gpr_replica_counter_construct(orte_gpr_replica_counter_t* cntr)
@@ -283,19 +258,13 @@ OBJ_CLASS_INSTANCE(
 static void orte_gpr_replica_subscribed_data_construct(orte_gpr_replica_subscribed_data_t* data)
 {
     data->seg = NULL;
-    data->token_addr_mode = 0;
-    data->key_addr_mode = 0;
+    data->addr_mode = 0;
     
     OBJ_CONSTRUCT(&(data->tokentags), orte_value_array_t);
     orte_value_array_init(&(data->tokentags), sizeof(orte_gpr_replica_itag_t));
 
     OBJ_CONSTRUCT(&(data->keytags), orte_value_array_t);
     orte_value_array_init(&(data->keytags), sizeof(orte_gpr_replica_itag_t));
-
-    data->num_targets = 0;
-    orte_pointer_array_init(&(data->targets), orte_gpr_replica_globals.block_size,
-                            orte_gpr_replica_globals.max_size,
-                            orte_gpr_replica_globals.block_size);
 
     data->callback = NULL;
     data->user_tag = NULL;
@@ -304,20 +273,10 @@ static void orte_gpr_replica_subscribed_data_construct(orte_gpr_replica_subscrib
 /* destructor - used to free any resources held by instance */
 static void orte_gpr_replica_subscribed_data_destructor(orte_gpr_replica_subscribed_data_t* data)
 {
-    orte_gpr_replica_target_t **targets;
-    int i;
 
     OBJ_DESTRUCT(&(data->tokentags));
     
     OBJ_DESTRUCT(&(data->keytags));
-
-    if (NULL != data->targets) {
-       targets = (orte_gpr_replica_target_t**)((data->targets)->addr);
-       for (i=0; i < (data->targets)->size; i++) {
-            if (NULL != targets[i]) free(targets[i]);
-       }
-       OBJ_RELEASE(data->targets);
-    }
 
 }
 

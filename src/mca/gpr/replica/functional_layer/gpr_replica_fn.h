@@ -167,6 +167,10 @@ int orte_gpr_replica_search_container(int *cnt, orte_gpr_replica_addr_mode_t add
 
 int orte_gpr_replica_get_value(void *value, orte_gpr_replica_itagval_t *ival);
 
+int orte_gpr_replica_delete_itagval(orte_gpr_replica_segment_t *seg,
+                                   orte_gpr_replica_container_t *cptr,
+                                   orte_gpr_replica_itagval_t *iptr);
+
 /*
  * DICTIONARY OPERATIONS
  */
@@ -186,20 +190,11 @@ void orte_gpr_replica_dump_itagval_value(orte_buffer_t *buffer,
 /*
  * Trigger Operations
  */
-int orte_gpr_replica_init_trigger(orte_gpr_replica_triggers_t *trig);
-
-int orte_gpr_replica_init_targets(orte_gpr_replica_triggers_t *trig);
-
-int orte_gpr_replica_update_triggers(orte_gpr_replica_segment_t *seg,
-                                     orte_gpr_replica_container_t *cptr,
-                                     int num_iptrs,
-                                     orte_gpr_replica_itagval_t **iptr,
-                                     orte_gpr_replica_itagval_t *rep_iptr,
-                                     orte_gpr_replica_action_t action);
-                    
 int orte_gpr_replica_check_subscriptions(orte_gpr_replica_segment_t *seg, int8_t action_taken);
 
 int orte_gpr_replica_check_trig(orte_gpr_replica_triggers_t *trig);
+
+int orte_gpr_replica_update_storage_locations(orte_gpr_replica_itagval_t *new_iptr);
 
 int orte_gpr_replica_construct_notify_message(orte_gpr_notify_message_t **msg,
                                               orte_gpr_replica_triggers_t *trig);

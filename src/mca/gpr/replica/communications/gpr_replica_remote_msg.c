@@ -36,7 +36,7 @@ int orte_gpr_replica_remote_notify(orte_process_name_t *recipient, orte_gpr_noti
 {
     orte_buffer_t msg;
     orte_gpr_cmd_flag_t command;
-    int i, rc;
+    int rc;
 
     if (orte_gpr_replica_globals.debug) {
         ompi_output(0, "sending trigger message");

@@ -106,9 +106,7 @@ orte_gpr_replica_subscribe(orte_gpr_notify_action_t action,
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_process_callbacks())) {
-        ORTE_ERROR_LOG(rc);
-    }
+    orte_gpr_replica_process_callbacks();
     
     return rc;
 }

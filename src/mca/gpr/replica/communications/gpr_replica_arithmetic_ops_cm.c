@@ -79,6 +79,14 @@ int orte_gpr_replica_recv_increment_value_cmd(orte_buffer_t *cmd, orte_buffer_t 
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
+    if (ORTE_SUCCESS == ret) {
+        if (ORTE_SUCCESS != 
+            (rc = orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_VALUE_INCREMENTED))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+    }
+
  RETURN_ERROR:
     if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, &ret, 1, ORTE_INT))) {
         ORTE_ERROR_LOG(rc);
@@ -139,6 +147,14 @@ int orte_gpr_replica_recv_decrement_value_cmd(orte_buffer_t *cmd, orte_buffer_t 
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
+    if (ORTE_SUCCESS == ret) {
+        if (ORTE_SUCCESS != 
+            (rc = orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_VALUE_DECREMENTED))) {
+            ORTE_ERROR_LOG(rc);
+            return rc;
+        }
+    }
+    
  RETURN_ERROR:
     if (ORTE_SUCCESS != (rc = orte_dps.pack(answer, &ret, 1, ORTE_INT))) {
         ORTE_ERROR_LOG(rc);

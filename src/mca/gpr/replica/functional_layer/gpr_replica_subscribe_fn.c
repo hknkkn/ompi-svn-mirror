@@ -83,15 +83,16 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action, int num_subs,
             ORTE_ERROR_LOG(rc);
             return rc;
         }
-        data->token_addr_mode = 0x004f & subscriptions[i]->addr_mode;
-        if (0x00 == data->token_addr_mode) {  /* default token address mode to AND */
-            data->token_addr_mode = ORTE_GPR_REPLICA_AND;
+        tok_mode = 0x004f & subscriptions[i]->addr_mode;
+        if (0x00 == tok_mode) {  /* default token address mode to AND */
+            tok_mode = ORTE_GPR_REPLICA_AND;
         }
-        data->key_addr_mode = ((0x4f00 & subscriptions[i]->addr_mode) >> 8) & 0x004f;
-        if (0x00 == data->key_addr_mode) {  /* default key address mode to OR */
-            data->key_addr_mode = ORTE_GPR_REPLICA_OR;
+        key_mode = ((0x4f00 & subscriptions[i]->addr_mode) >> 8) & 0x004f;
+        if (0x00 == key_mode) {  /* default key address mode to OR */
+            key_mode = ORTE_GPR_REPLICA_OR;
         }
-
+        data->addr_mode = ((orte_gpr_addr_mode_t)(key_mode) << 8) | (orte_gpr_addr_mode_t)tok_mode;
+        
         if (NULL != subscriptions[i]->tokens && 0 < subscriptions[i]->num_tokens) {
             num_tokens = subscriptions[i]->num_tokens; /* indicates non-NULL terminated list */
             if (ORTE_SUCCESS != (rc = orte_gpr_replica_get_itag_list(&tokentags, data->seg,
@@ -257,14 +258,16 @@ int orte_gpr_replica_subscribe_fn(orte_gpr_notify_action_t action, int num_subs,
                     } /* end if found */
                 }  /* end for i */
             }  /* end if/else container found */
+            
+            /* check the triggers on this segment before leaving to see if they are already fired */
+            if (ORTE_SUCCESS != 
+                (rc = orte_gpr_replica_check_subscriptions(seg, ORTE_GPR_REPLICA_NO_ACTION))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+            }
         }  /* end for j */
     }  /* end if trigger */
     
-    /* need to check the existing data to flag those that fit the new subscription */
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_init_trigger(trig))) {
-        ORTE_ERROR_LOG(rc);
-    }
-
 CLEANUP:
     if (NULL != tokentags) {
         free(tokentags);

@@ -155,7 +155,8 @@ int main(int argc, char **argv)
     subscription->user_tag = NULL;
     
     fprintf(stderr, "register subscription on segment\n");
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(ORTE_GPR_NOTIFY_ADD_ENTRY,
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_subscribe(
+                                    ORTE_GPR_NOTIFY_ADD_ENTRY,
                                     1, &subscription,
                                     0, NULL,
                                     &sub))) {
@@ -268,7 +269,7 @@ int main(int argc, char **argv)
    
    trigs = &trig;
    rc = orte_gpr.subscribe(
-         ORTE_GPR_TRIG_ALL_CMP,
+         ORTE_GPR_TRIG_CMP_LEVELS | ORTE_GPR_TRIG_MONITOR_ONLY,
          1, &subscription,
          1, &trigs,
          &sub);
@@ -282,46 +283,57 @@ int main(int argc, char **argv)
 
     orte_gpr.dump_triggers(0);
     
-    fprintf(test_out, "incrementing until trigger\n");
-    
-    /* increment the value in keys[1] until the trig fires */
-    OBJ_CONSTRUCT(&value, orte_gpr_value_t);
-    value.addr_mode = ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
-    value.segment = strdup("test-segment");
-    value.tokens = (char**)malloc(sizeof(char*));
-    if (NULL == value.tokens) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    value.tokens[0] = strdup(ORTE_JOB_GLOBALS); /* put counters in the segment's globals container */
-    value.num_tokens = 1;
-    value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
-    if (NULL == value.keyvals) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    value.cnt = 1;
-    value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
-    if (NULL == value.keyvals[0]) {
-        ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
-        OBJ_DESTRUCT(&value);
-        return ORTE_ERR_OUT_OF_RESOURCE;
-    }
-    value.keyvals[0]->key = strdup(keys[1]);
-    value.keyvals[0]->type = ORTE_NULL;
-    
-    for (i=0; i < 10; i++) {
-        fprintf(test_out, "\tincrement %s\n", keys[1]);
-        if (ORTE_SUCCESS != (rc = orte_gpr.increment_value(&value))) {
-            ORTE_ERROR_LOG(rc);
+    for (j=0; j < 2; j++) {
+        fprintf(test_out, "incrementing until trigger\n");
+        /* increment the value in keys[1] until the trig fires */
+        OBJ_CONSTRUCT(&value, orte_gpr_value_t);
+        value.addr_mode = ORTE_GPR_TOKENS_XAND | ORTE_GPR_KEYS_OR;
+        value.segment = strdup("test-segment");
+        value.tokens = (char**)malloc(sizeof(char*));
+        if (NULL == value.tokens) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
             OBJ_DESTRUCT(&value);
-            return rc;
+            return ORTE_ERR_OUT_OF_RESOURCE;
         }
+        value.tokens[0] = strdup(ORTE_JOB_GLOBALS); /* put counters in the segment's globals container */
+        value.num_tokens = 1;
+        value.keyvals = (orte_gpr_keyval_t**)malloc(sizeof(orte_gpr_keyval_t*));
+        if (NULL == value.keyvals) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            OBJ_DESTRUCT(&value);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        value.cnt = 1;
+        value.keyvals[0] = OBJ_NEW(orte_gpr_keyval_t);
+        if (NULL == value.keyvals[0]) {
+            ORTE_ERROR_LOG(ORTE_ERR_OUT_OF_RESOURCE);
+            OBJ_DESTRUCT(&value);
+            return ORTE_ERR_OUT_OF_RESOURCE;
+        }
+        value.keyvals[0]->key = strdup(keys[1]);
+        value.keyvals[0]->type = ORTE_NULL;
+        
+        for (i=0; i < 10; i++) {
+            fprintf(test_out, "\tincrement %s\n", keys[1]);
+            if (ORTE_SUCCESS != (rc = orte_gpr.increment_value(&value))) {
+                ORTE_ERROR_LOG(rc);
+                OBJ_DESTRUCT(&value);
+                return rc;
+            }
+        }
+    
+        orte_gpr.dump_all(0);
+        
+        fprintf(test_out, "updating value in keys[1] to test update_storage_locations\n");
+        /* now update the value in keys[1] and do it again */
+        value.addr_mode = value.addr_mode | ORTE_GPR_OVERWRITE;
+        value.keyvals[0]->type = ORTE_UINT32;
+        value.keyvals[0]->value.ui32 = 0;
+        values = &value;
+        orte_gpr.put(1, &values);
+        
+        OBJ_DESTRUCT(&value);
     }
-
-    orte_gpr.dump_all(0);
     
     fclose( test_out );
 /*    result = system( cmd_str );

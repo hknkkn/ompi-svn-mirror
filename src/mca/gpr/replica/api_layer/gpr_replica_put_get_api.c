@@ -82,19 +82,14 @@ int orte_gpr_replica_put(int cnt, orte_gpr_value_t **values)
             goto CLEANUP;
         }
     
+        if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_subscriptions(seg, action_taken))) {
+            ORTE_ERROR_LOG(rc);
+            goto CLEANUP;
+        }
+
         free(itags);
         itags = NULL;
     }
-
-#if 0    
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_subscriptions(seg, action_taken))) {
-        goto CLEANUP;
-    }
-
-    if (ORTE_SUCCESS != (rc = orte_gpr_replica_check_synchros(seg))) {
-        goto CLEANUP;
-    }
-#endif
 
 CLEANUP:
     /* release list of itags */
@@ -104,11 +99,11 @@ CLEANUP:
 
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
-#if 0    
+  
     if (ORTE_SUCCESS == rc) {
         return orte_gpr_replica_process_callbacks();
     }
-#endif
+
 
     return rc;
 

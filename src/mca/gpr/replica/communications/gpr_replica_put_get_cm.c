@@ -98,6 +98,14 @@ int orte_gpr_replica_recv_put_cmd(orte_buffer_t *buffer, orte_buffer_t *answer)
             goto RETURN_ERROR;
         }
     
+        if (ORTE_SUCCESS == ret) {
+            if (ORTE_SUCCESS != 
+                (rc = orte_gpr_replica_check_subscriptions(seg, action_taken))) {
+                ORTE_ERROR_LOG(rc);
+                return rc;
+            }
+        }
+
         free(itags);
         itags = NULL;
     }
