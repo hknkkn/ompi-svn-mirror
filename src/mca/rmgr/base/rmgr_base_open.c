@@ -22,6 +22,9 @@
 #include "util/output.h"
 #include "mca/rmgr/base/base.h"
 
+#include "util/argv.h"
+
+
 
 /*
  * The following file was created by configure.  It contains extern
@@ -72,25 +75,19 @@ static void orte_app_context_destructor(orte_app_context_t* app_context)
 {
     int32_t i;
 
-	/* I have assumed that we allocated memory for copies of this data and it does not belong to the OS... GEF */
-
 
 	if (NULL != app_context->app) {
 		free (app_context->app);
 	}
 
-    if (0 < app_context->argc && NULL != app_context->argv) {
-        for (i=0; i < app_context->argc; i++) {
-            free(app_context->argv[i]);
-        }
-       free(app_context->argv);
+	/* argv and env lists created by util/argv copy functions */
+
+    if (NULL != app_context->argv) {
+       ompi_argv_free(app_context->argv);
     }
 
-    if (0 < app_context->num_env && NULL != app_context->env) {
-        for (i=0; i < app_context->num_env; i++) {
-            free(app_context->env[i]);
-        }
-       free(app_context->env);
+    if (NULL != app_context->env) {
+       ompi_argv_free(app_context->env);
     }
 
 	if (NULL != app_context->cwd) {
