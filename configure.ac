@@ -1129,6 +1129,8 @@ AC_CONFIG_FILES([
 
     src/mca/errmgr/Makefile
     src/mca/errmgr/base/Makefile
+    src/mca/iof/Makefile
+    src/mca/iof/base/Makefile
     src/mca/gpr/Makefile
     src/mca/gpr/base/Makefile
     src/mca/gpr/base/pack_api_cmd/Makefile
@@ -1156,8 +1158,6 @@ AC_CONFIG_FILES([
     src/mca/coll/base/Makefile
     src/mca/io/Makefile
     src/mca/io/base/Makefile
-    src/mca/iof/Makefile
-    src/mca/iof/base/Makefile
     src/mca/mpool/Makefile
     src/mca/mpool/base/Makefile
     src/mca/pml/Makefile
@@ -1172,6 +1172,7 @@ AC_CONFIG_FILES([
     src/dynamic-mca/common/Makefile
 
     src/dynamic-mca/errmgr/Makefile
+    src/dynamic-mca/iof/Makefile
     src/dynamic-mca/gpr/Makefile
     src/dynamic-mca/ns/Makefile
     src/dynamic-mca/oob/Makefile

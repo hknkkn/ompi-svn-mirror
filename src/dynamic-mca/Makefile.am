@@ -21,6 +21,7 @@ SUBDIRS = \
         errmgr \
         gpr \
         io \
+        iof \
         mpool \
         ns \
         oob \
