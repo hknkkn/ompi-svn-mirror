@@ -24,7 +24,6 @@
 
 #include "mca/ns/ns_types.h"
 
-#include "mca/gpr/base/base.h"
 #include "mca/gpr/replica/gpr_replica.h"
 
 /*
@@ -67,7 +66,7 @@ int orte_gpr_replica_index_nb_fn(orte_gpr_replica_segment_t *seg,
  */
 int orte_gpr_replica_cleanup_job_fn(orte_jobid_t jobid);
 
-int orte_gpr_replica_cleanup_proc_fn(bool purge, orte_process_name_t *proc);
+int orte_gpr_replica_cleanup_proc_fn(orte_process_name_t *proc);
 
 
 /*

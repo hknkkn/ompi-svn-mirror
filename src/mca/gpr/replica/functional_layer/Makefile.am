@@ -17,11 +17,11 @@ include $(top_ompi_srcdir)/config/Makefile.options
 noinst_LTLIBRARIES = libmca_gpr_replica.la
 libmca_gpr_replica_la_SOURCES = \
 	gpr_replica_fn.h \
-	gpr_replica_alerts_fn.c \
 	gpr_replica_cleanup_fn.c \
 	gpr_replica_del_index_fn.c \
 	gpr_replica_dict_fn.c \
 	gpr_replica_dump_fn.c \
+	gpr_replica_messaging_fn.c \
 	gpr_replica_segment_fn.c \
 	gpr_replica_subscribe_fn.c \
 	gpr_replica_synchro_fn.c \

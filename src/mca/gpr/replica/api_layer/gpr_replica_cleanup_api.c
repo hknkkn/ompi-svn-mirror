@@ -23,7 +23,7 @@
 
 #include "orte_config.h"
 
-#include "mca/ns/ns_types.h"
+#include "mca/ns/ns.h"
 
 #include "gpr_replica_api.h"
 #include "mca/gpr/replica/functional_layer/gpr_replica_fn.h"
@@ -34,7 +34,9 @@ int orte_gpr_replica_cleanup_job(orte_jobid_t jobid)
     int rc;
     
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    rc = orte_gpr_replica_cleanup_job_fn(jobid);
+    
+    rc = orte_gpr_replica_cleanup_job_fn(seg, jobid);
+    
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
     
     if (ORTE_SUCCESS != rc) {
@@ -45,12 +47,12 @@ int orte_gpr_replica_cleanup_job(orte_jobid_t jobid)
 }
 
 
-int orte_gpr_replica_cleanup_proc(bool purge, orte_process_name_t *proc)
+int orte_gpr_replica_cleanup_proc(orte_process_name_t *proc)
 {
     int rc;
     
     OMPI_THREAD_LOCK(&orte_gpr_replica_globals.mutex);
-    rc = orte_gpr_replica_cleanup_proc_fn(purge, proc);
+    rc = orte_gpr_replica_cleanup_proc_fn(proc);
     OMPI_THREAD_UNLOCK(&orte_gpr_replica_globals.mutex);
 
     if (ORTE_SUCCESS != rc) {

@@ -254,7 +254,7 @@ typedef int (*orte_gpr_base_module_cleanup_job_fn_t)(orte_jobid_t jobid);
 /* Cleanup a process from the registry
  * Remove all references to a given process from the registry. This includes removing
  * the process name from all dictionaries in the registry, all subscriptions, etc.
- * It also includes reducing any syncrhos on segments owned by the associated job.
+ * It also includes reducing any synchros on the job segment.
  *
  * @param proc A pointer to the process name to be cleaned up.
  *
@@ -266,7 +266,7 @@ typedef int (*orte_gpr_base_module_cleanup_job_fn_t)(orte_jobid_t jobid);
  * @endcode
  *
  */
-typedef int (*orte_gpr_base_module_cleanup_proc_fn_t)(bool purge, orte_process_name_t *proc);
+typedef int (*orte_gpr_base_module_cleanup_proc_fn_t)(orte_process_name_t *proc);
 
 /*
  * Define and initialize a job segment

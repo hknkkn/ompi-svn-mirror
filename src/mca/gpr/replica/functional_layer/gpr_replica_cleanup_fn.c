@@ -23,103 +23,116 @@
 
 #include "orte_config.h"
 
-#include "mca/ns/ns_types.h"
+#include "class/orte_pointer_array.h"
+#include "util/output.h"
+#include "util/proc_info.h"
+
+#include "mca/ns/ns.h"
+
+#include "mca/gpr/replica/transition_layer/gpr_replica_tl.h"
 
 #include "gpr_replica_fn.h"
 
 
-int mca_gpr_replica_cleanup_job_fn(orte_jobid_t jobid)
+int orte_gpr_replica_cleanup_job_fn(orte_jobid_t jobid)
 {
-    mca_gpr_replica_segment_t *seg, *next_seg;
-    mca_gpr_replica_trigger_list_t *trig, *next_trig;
-
-    /* traverse the registry */
-    for (seg = (mca_gpr_replica_segment_t*)ompi_list_get_first(&mca_gpr_replica_head.registry);
-	 seg != (mca_gpr_replica_segment_t*)ompi_list_get_end(&mca_gpr_replica_head.registry);) {
-
-	next_seg = (mca_gpr_replica_segment_t*)ompi_list_get_next(seg);
-
-	if (jobid == seg->owning_job) {  /* this is a segment associated with this jobid - remove it */
-
-	    mca_gpr_replica_delete_segment_nl(seg);
-
-	} else {  /* check this seg subscriptions/synchros with recipients from this jobid */
-	    for (trig = (mca_gpr_replica_trigger_list_t*)ompi_list_get_first(&seg->triggers);
-		 trig != (mca_gpr_replica_trigger_list_t*)ompi_list_get_end(&seg->triggers);) {
-
-		next_trig = (mca_gpr_replica_trigger_list_t*)ompi_list_get_next(trig);
-
-		if (trig->owning_job == jobid) {
-		    mca_gpr_replica_remove_trigger(trig->local_idtag);
-		}
-		trig = next_trig;
-	    }
-	}
-	seg = next_seg;
+    int rc;
+    char *jobidstring, *segment;
+    orte_gpr_replica_segment_t *seg;
+    orte_jobid_t jobid2;
+    orte_gpr_replica_notify_tracker_t *trig;
+    int i;
+    
+    if (ORTE_SUCCESS != orte_ns.convert_jobid_to_string(&jobidstring, jobid)) {
+        return ORTE_ERR_BAD_PARAM;
     }
+    
+    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
+    
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
+        return rc;
+    }
+    
+    /* delete the associated job segment */
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(seg))) {
+        return rc;
+    }
+    
+    /* traverse the registry's triggers and remove all with recipients from this jobid */
+    trig = (orte_gpr_replica_notify_tracker_t*)((orte_gpr_replica.triggers)->addr);
+    for (i=0; i < (orte_gpr_replica.triggers)->size; i++) {
+        if ((NULL != trig) &&
+            (ORTE_SUCCESS == (rc = orte_ns.get_jobid(&jobid2, trig->requestor))) &&
+            (jobid == jobid2)) {
+                if (ORTE_SUCCESS != (rc = orte_pointer_array_set_item(
+                              orte_gpr_replica.triggers, trig->local_idtag, NULL))) {
+                    return rc;
+                }
+        }
+        trig++;
+    }
+    return rc;
 }
 
 
-int mca_gpr_replica_cleanup_proc_fn(bool purge, orte_process_name_t *proc)
+int orte_gpr_replica_cleanup_proc_fn(orte_process_name_t *proc)
 {
-    mca_gpr_replica_segment_t *seg;
-    mca_gpr_replica_trigger_list_t *trig;
-    char *procname;
+    orte_gpr_replica_segment_t *seg;
+    orte_gpr_replica_itag_t itag;
+    orte_gpr_notify_id_t *trigid;
+    orte_gpr_replica_notify_tracker_t **tracks;
+    char *procname, *segment, *jobidstring;
     orte_jobid_t jobid;
+    int rc, i;
 
-	if (mca_gpr_replica_debug) {
+	if (orte_gpr_replica_globals.debug) {
 		ompi_output(0, "[%d,%d,%d] gpr_replica_cleanup_proc: function entered for process [%d,%d,%d]",
-					ORTE_NAME_ARGS(*ompi_rte_get_self()), ORTE_NAME_ARGS(*proc));
+					ORTE_NAME_ARGS(*(orte_process_info.my_name)), ORTE_NAME_ARGS(*proc));
 	}
 	
-    if (ORTE_SUCCESS != orte_name_services.get_proc_name_string(procname, proc)) {
-        return;
-    }
-    if (ORTE_SUCCESS != orte_name_services.get_jobid(&jobid, proc)) {
-        return;
+    if (ORTE_SUCCESS != (rc = orte_ns.get_proc_name_string(&procname, proc))) {
+        return rc;
     }
 
     /* search all segments for this process name - remove all references
      */
-    for (seg = (mca_gpr_replica_segment_t*)ompi_list_get_first(&mca_gpr_replica_head.registry);
-	 seg != (mca_gpr_replica_segment_t*)ompi_list_get_end(&mca_gpr_replica_head.registry);
-	 seg = (mca_gpr_replica_segment_t*)ompi_list_get_next(seg)) {
-
-        	if (jobid == seg->owning_job) {
-        	    /* adjust any startup synchro synchros owned
-        	     * by the associated jobid by one.
-        	     */
-        		if (mca_gpr_replica_debug) {
-        			ompi_output(0, "[%d,%d,%d] gpr_replica_cleanup_proc: adjusting synchros for segment %s",
-        						ORTE_NAME_ARGS(*ompi_rte_get_self()), seg->name);
-        		}
-        		
-        	    for (trig = (mca_gpr_replica_trigger_list_t*)ompi_list_get_first(&seg->triggers);
-        		 	trig != (mca_gpr_replica_trigger_list_t*)ompi_list_get_end(&seg->triggers);
-        		 	trig = (mca_gpr_replica_trigger_list_t*)ompi_list_get_next(trig)) {
-        			if (OMPI_REGISTRY_SYNCHRO_MODE_STARTUP & trig->synch_mode) {
-        				if (mca_gpr_replica_debug) {
-        					ompi_output(0, "\tadjusting startup synchro");
-        				}
-        		    		trig->count--;
-        			}
-                 if (mca_gpr_replica_debug) {
-                    ompi_output(0, "\ttrigger level %d current count %d", trig->trigger, trig->count);
-                 }
-        	    }
-        	    mca_gpr_replica_check_synchros(seg);
-        	}
-
-        	if (purge) {
-        	    /* remove name from the dictionary and set all associated object keys to invalid */
-        	    mca_gpr_replica_delete_key(seg, procname);
-        	}
+    seg = (orte_gpr_replica_segment_t*)((orte_gpr_replica.segments)->addr);
+    for (i=0; i < (orte_gpr_replica.segments)->size; i++) {
+        if (NULL != seg) {
+            if (ORTE_SUCCESS == orte_gpr_replica_dict_lookup(&itag, seg, procname)) {
+                if (ORTE_SUCCESS != (rc = orte_pointer_array_set_item(seg->dict, itag, NULL))) {
+                    return rc;
+                }
+            }
+        }
+        seg++;
     }
-
-    if (purge) {
-	/* purge all subscriptions with this process as recipient */
-	mca_gpr_replica_purge_subscriptions(proc);
+    
+    /* adjust synchros on the job segment */
+    if (ORTE_SUCCESS != orte_ns.get_jobid(&jobid, proc)) {
+        return ORTE_ERR_BAD_PARAM;
     }
+    
+    if (ORTE_SUCCESS != orte_ns.convert_jobid_to_string(&jobidstring, jobid)) {
+        return ORTE_ERR_BAD_PARAM;
+    }
+    
+    asprintf(&segment, "%s-%s", ORTE_JOB_SEGMENT, jobidstring);
+    
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, false, segment))) {
+        return rc;
+    }
+    
+    trigid = (orte_gpr_notify_id_t*)seg->triggers;
+    tracks = (orte_gpr_replica_notify_tracker_t**)((orte_gpr_replica.triggers)->addr);
+    for (i=0; i < seg->num_trigs; i++) {
+        if (NULL != tracks[*trigid] &&
+            ORTE_GPR_SYNCHRO_CMD == (tracks[*trigid])->cmd) {
+                (tracks[*trigid])->trigger--;
+        }
+        trigid++;
+    }
+    
+    return orte_gpr_replica_check_synchros(seg);
 
-    return;
 }
