@@ -93,6 +93,8 @@ ompi_evsignal_add(sigset_t *evsigmask, struct ompi_event *ev)
 	int evsignal;
 
 	if (!initialized) {
+            ompi_event_signal_count = 0;
+#if 0
 	    /* Must delay the event add until after init() because
 	       it may trigger poll events that are not yet setup
 	       to be triggered. */
@@ -103,7 +105,7 @@ ompi_evsignal_add(sigset_t *evsigmask, struct ompi_event *ev)
 	                   ompi_event_signal_pipe_handler,
 	                   0);
 	    ompi_event_add_i(&ompi_event_signal_pipe_event, 0);
-            ompi_event_signal_count = 0;
+#endif
 	    initialized = true;
 	}
 	
@@ -118,6 +120,8 @@ int
 ompi_evsignal_restart(void)
 {
     if(initialized) {
+        ompi_event_signal_count = 0;
+#if 0
         int rc;
         ompi_event_del_i(&ompi_event_signal_pipe_event);
         if ((rc = pipe(ompi_event_signal_pipe)) != 0) {
@@ -128,8 +132,8 @@ ompi_evsignal_restart(void)
 	                OMPI_EV_READ|OMPI_EV_PERSIST,
 	                ompi_event_signal_pipe_handler,
 	                0);
-        ompi_event_signal_count = 0;
 	ompi_event_add_i(&ompi_event_signal_pipe_event, 0);
+#endif
     }
     return (0);
 }
