@@ -20,9 +20,38 @@
 #include "ras_bjs.h"
 
 
-static int orte_ras_bjs_allocate(orte_jobid_t *jobid)
+static int orte_ras_bjs_allocate(orte_jobid_t jobid)
 {
-    return ORTE_SUCCESS;
+    orte_app_context_t** app_context;
+    size_t i, num_context;
+    int rc = ORTE_SUCCESS;
+    size_t num_procs = 0;
+    char* nodes;
+
+    /* query for node list in the environment */
+    if(NULL == (nodes = getenv("NODELIST")))
+        return ORTE_NOT_FOUND;
+
+    /* get the application context for this job */
+    if(ORTE_SUCCESS != (rc = orte_rmgr_get_app_context(jobid,&app_context,&num_context)))
+        return rc;
+
+    /* determine total number of procs */
+    for(i=0; i<num_context; i++) {
+        num_procs += app_context[i]->num_procs;
+    }
+
+    /* parse the node list */
+    
+
+
+    /* release application context */
+cleanup:
+    for(i=0; i<num_context; i++)
+        OBJ_RELEASE(app_context[i]);
+    if(NULL != app_context)
+        free(app_context);
+    return rc;
 }
 
 static int orte_ras_bjs_deallocate(orte_jobid_t jobid)

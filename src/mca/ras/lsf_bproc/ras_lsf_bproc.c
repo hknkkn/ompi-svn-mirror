@@ -22,7 +22,6 @@
 
 static int orte_ras_lsf_bproc_allocate(orte_jobid_t *jobid)
 {
-    /* lookup the job record to determine the requirements */
     return ORTE_SUCCESS;
 }
 
