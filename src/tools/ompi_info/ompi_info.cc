@@ -208,6 +208,5 @@ int main(int argc, char *argv[])
 
   ompi_info::close_components();
   OBJ_RELEASE(cmd_line);
-  orte_finalize();
   return 0;
 }
