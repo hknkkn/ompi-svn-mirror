@@ -29,9 +29,12 @@ int orte_dps_page_size;
 orte_dps_t orte_dps = {
     orte_dps_pack,
     orte_dps_unpack,
+    orte_dps_pack_nobuffer,
+    orte_dps_unpack_nobuffer,
     orte_dps_peek,
     orte_dps_unload,
-    orte_dps_load
+    orte_dps_load,
+    orte_dps_dump_buffer
 };
 
 /**

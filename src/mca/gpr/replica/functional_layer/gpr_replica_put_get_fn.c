@@ -55,7 +55,7 @@ int orte_gpr_replica_put_fn(orte_gpr_addr_mode_t addr_mode,
     /* initialize action */
     *action_taken = 0;
     
-    /* ignore addressing mode - all tokens are used
+    /* all tokens are used
      * only overwrite permission mode flag has any affect
      */
     overwrite = false;

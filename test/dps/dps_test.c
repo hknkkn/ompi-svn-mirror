@@ -26,14 +26,16 @@
 #include <netinet/in.h>
 #endif
 
+#include "include/constants.h"
 
 #include "support.h"
+#include "../src/runtime/runtime.h"
 #include "../src/mca/base/base.h"
 #include "../src/dps/dps.h"
 #include "../src/mca/ns/ns_types.h"
 
-#define NUM_ITERS 1024
-#define NUM_ELEMS 128
+#define NUM_ITERS 1
+#define NUM_ELEMS 1
 
 static bool test1(void);        /* verify different buffer inits */
 static bool test2(void);        /* verify we can pack ok */
@@ -51,6 +53,15 @@ int main (int argc, char* argv[])
 
     test_init("orte_dps");
     test_out = stderr;
+    
+    /* open up the mca so we can get parameters */
+    ompi_init(argc, argv);
+
+    /* startup the MCA */
+    if (OMPI_SUCCESS != mca_base_open()) {
+        fprintf(stderr, "can't open mca\n");
+        exit (1);
+    }
     
     /* setup the dps */
     orte_dps_open();
@@ -127,6 +138,8 @@ static bool test1(void)        /* verify different buffer inits */
         return false;
     }
     
+    orte_dps.dump(bufA, 0);
+    
     OBJ_RELEASE(bufA);
     if (NULL != bufA) {
         test_comment("OBJ_RELEASE did not NULL the buffer pointer");
@@ -157,6 +170,8 @@ static bool test2(void)
         return false;
     }
     
+    orte_dps.dump(bufA, 0);
+    
     for (i=0;i<NUM_ITERS;i++) {
         rc = orte_dps.pack(bufA, src, NUM_ELEMS, ORTE_INT16);
         if (ORTE_SUCCESS != rc) {
@@ -165,6 +180,8 @@ static bool test2(void)
             return(false);
         }
     }
+    
+    orte_dps.dump(bufA, 0);
     
     for (i=0; i<NUM_ITERS; i++) {
         int j;

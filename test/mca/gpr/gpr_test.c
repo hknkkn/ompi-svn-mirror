@@ -30,6 +30,7 @@
 #include "support.h"
 
 #include "class/orte_pointer_array.h"
+#include "dps/dps.h"
 #include "runtime/runtime.h"
 #include "util/proc_info.h"
 
@@ -58,6 +59,7 @@ int main(int argc, char **argv)
     orte_gpr_replica_container_t *cptr=NULL;
     orte_gpr_keyval_t *kptr=NULL;
     orte_gpr_replica_itagval_t **ivals=NULL, *ivaltst=NULL;
+    int8_t action;
     
     test_init("test_gpr_replica");
 
@@ -69,6 +71,9 @@ int main(int argc, char **argv)
       exit(1);
     } 
 
+    /* ENSURE THE REPLICA IS ISOLATED */
+    setenv("OMPI_MCA_gpr_replica_isolate", "1", 1);
+    
     ompi_init(argc, argv);
 
     orte_process_info.seed = true;
@@ -95,7 +100,14 @@ int main(int argc, char **argv)
         fprintf(test_out, "GPR replica could not be selected\n");
         exit (1);
     }
-                       
+                  
+    if (ORTE_SUCCESS == orte_dps_open()) {
+        fprintf(test_out, "DPS started\n");
+    } else {
+        fprintf(test_out, "DPS could not start\n");
+        exit (1);
+    }
+    
     fprintf(stderr, "going to find seg\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, "test-segment"))) {
         fprintf(test_out, "gpr_test: find_seg failed with error code %d\n", rc);
@@ -264,6 +276,68 @@ int main(int argc, char **argv)
         fprintf(stderr, "ivaltst was NULL\n");
     }
     
+    fprintf(stderr, "check itag list\n");
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_XAND, 0, NULL, 15, itaglist)) {
+        fprintf(test_out, "check_itag_list: trivial NULL case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: trivial NULL case failed\n");
+    }
+    if (!orte_gpr_replica_check_itag_list(ORTE_GPR_XAND, 5, itaglist, 15, itaglist)) {
+        fprintf(test_out, "check_itag_list: trivial mismatched xand case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: trivial mismatched xand case failed\n");
+    }
+    if (!orte_gpr_replica_check_itag_list(ORTE_GPR_AND, 15, itaglist, 5, itaglist)) {
+        fprintf(test_out, "check_itag_list: trivial mismatched and case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: trivial mismatched and case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_XAND, 10, itaglist, 10, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial xand case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial xand case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_AND, 5, itaglist, 10, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial and case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial and case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_OR, 5, itaglist, 10, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial or case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial or case failed\n");
+    }
+    if (orte_gpr_replica_check_itag_list(ORTE_GPR_XOR, 10, itaglist, 5, itaglist)) {
+        fprintf(test_out, "check_itag_list: non-trivial or case passed\n");
+    } else {
+        fprintf(test_out, "check_itag_list: non-trivial or case failed\n");
+    }
+
+
+    fprintf(stderr, "putfn\n");
+    kptr = OBJ_NEW(orte_gpr_keyval_t);
+    kptr->key = strdup("stupid-value-next-one");
+    kptr->type = ORTE_INT32;
+    kptr->value.i32 = 654321;
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_put_fn(ORTE_GPR_XAND, seg,
+                                itaglist, 4, 1, kptr, &action))) {
+        fprintf(test_out, "gpr_test: putfn of 1 keyval failed with error code %d\n", rc);
+        test_failure("gpr_test: putfn of 1 keyval failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: putfn of 1 keyval passed\n");
+    }
+
+    fprintf(stderr, "dump\n");
+    if (ORTE_SUCCESS != (rc = orte_gpr_replica_dump(0))) {
+        fprintf(test_out, "gpr_test: dump failed with error code %d\n", rc);
+        test_failure("gpr_test: dump failed");
+        test_finalize();
+        return rc;
+    } else {
+        fprintf(test_out, "gpr_test: dump passed\n");
+    }
 
     fprintf(stderr, "releasing segment\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_release_segment(&seg)) ||

@@ -48,6 +48,13 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dest,
                   size_t *max_num_vals,
                   orte_data_type_t type);
                   
+int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
+                    orte_data_type_t type, size_t *num_bytes);
+
+int orte_dps_unpack_nobuffer(void *dst, void *src, size_t num_values,
+                             orte_data_type_t type,
+                             size_t *mem_left, size_t *num_bytes);
+
 int orte_dps_peek(orte_buffer_t *buffer,
                   orte_data_type_t *type,
                   size_t *number);
@@ -59,6 +66,8 @@ int orte_dps_unload(orte_buffer_t *buffer,
 int orte_dps_load(orte_buffer_t *buffer,
                   void *payload,
                   size_t size);
+
+int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid);
 
 /*
  * Totally internal functions

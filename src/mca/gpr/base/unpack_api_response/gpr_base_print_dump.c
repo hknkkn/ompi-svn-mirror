@@ -34,11 +34,17 @@ int orte_gpr_base_print_dump(orte_buffer_t *buffer, int output_id)
 {
     char *line;
     size_t n;
+    orte_data_type_t type;
 
+    orte_dps.peek(buffer, &type, &n);
+    ompi_output(0, "print_dump: type %d num %d", type, (int)n);
+    
     n = 1;
     while (ORTE_SUCCESS == orte_dps.unpack(buffer, &line, &n, ORTE_STRING)) {
 	   ompi_output(output_id, "%s", line);
 	   free(line);
+       orte_dps.peek(buffer, &type, &n);
+       ompi_output(0, "print_dump: next type %d num %d", type, (int)n);
        n=1;
     }
     OBJ_RELEASE(buffer);

@@ -180,6 +180,62 @@ typedef int (*orte_dps_unpack_fn_t)(orte_buffer_t *buffer, void *dest,
                                     orte_data_type_t type);
 
 /*
+ * Pack a value into a non-buffer destination
+ * This function will translate host-ordered values into their network byte-ordered
+ * equivalents. The results are placed in the dest location and NOT into a buffer.
+ * The function is intended for use in areas where a buffer is not required, but data
+ * storage must still be prepared for heterogeneous operations (i.e., it may be sent
+ * at some later time). Primary use is in the packing of data placed on the registry.
+ * 
+ * @param *dest (IN) A pointer to the destination. Must have memory backing it. Strings
+ * are handled by passing a char** pointer - the pack function will allocate memory
+ * in this case for each string. However, there must be adequate storage for the number
+ * of string pointers that will be required.
+ * @param *src (IN) A pointer to the src
+ * @param num_values (IN) The number of values to be packed - must be contiguous
+ * beginning at src. For strings, src is assumed to point to an array of character
+ * pointers (char**) - this number, therefore, would be the number of null-terminated
+ * strings (and not the total number of characters).
+ * @param type (IN) The data type to be converted
+ * @param *num_bytes (OUT) A pointer to a variable where the function can return
+ * the number of bytes moved from src to dest. Used by some functions to update
+ * the dest location.
+ * 
+ * @retval ORTE_SUCCESS The value was successfully packed
+ * @retval ORTE_ERROR(s) An appropriate error code.
+ */
+typedef int (*orte_dps_pack_nobuffer_fn_t)(void *dest, void *src, size_t num_values,
+                                           orte_data_type_t type, size_t *num_bytes);
+
+
+/*
+ * Unpack a value from a non-buffer location
+ * Converts a network byte-ordered value into its host-ordered equivalent.
+ * 
+ * @param *dest (IN) A pointer to the destination. Must have memory backing it. Strings
+ * are handled by passing a char** pointer - the unpack function will allocate memory
+ * in this case.
+ * @param *src (IN) A pointer to the src
+ * @param num_values (IN) The number of values to be unpacked - must be contiguous
+ * beginning at src. For strings, src is assumed to point to an array of character
+ * pointers (char**) - this number, therefore, would be the number of null-terminated
+ * strings (and not the total number of characters).
+ * @param type (IN) The data type to be converted
+ * @param *max_bytes (IN/OUT) The max number of bytes in the src - will be returned
+ * as an updated value that reflects the number of bytes actually removed.
+ * @param *num_bytes (OUT) A pointer to a variable where the function can return
+ * the number of bytes moved from src to dest. Used by some functions to update
+ * the dest location. 
+ * 
+ * @retval ORTE_SUCCESS The value was successfully packed
+ * @retval ORTE_ERROR(s) An appropriate error code.
+ */
+typedef int (*orte_dps_unpack_nobuffer_fn_t)(void *dest, void *src, size_t num_values,
+                                             orte_data_type_t type,
+                                             size_t *max_bytes, size_t *num_bytes);
+
+
+/*
  * Get the type and number of values of the next item in the buffer
  * The peek function looks at the next item in the buffer and returns both its
  * type and the number of values in the item. This is a non-destructive function
@@ -271,6 +327,21 @@ typedef int (*orte_dps_load_fn_t)(orte_buffer_t *buffer,
                                   size_t size);
 
 
+/*
+ * Output the buffer's internals to the screen
+ * For debugging purposes, it can be useful to see the types of items
+ * stored in the buffer. This function outputs the type and number of
+ * elements in each item to the specified output id.
+ * 
+ * @param *buffer A pointer to the buffer
+ * @param id The output id to use
+ * 
+ * @retval ORTE_SUCCESS Operation successfully completed
+ * @retval ORTE_ERROR(s) Error code indicating problem with buffer
+ */
+ typedef int (*orte_dps_dump_fn_t)(orte_buffer_t *buffer, int outid);
+ 
+ 
 /**
  * Base structure for the DPS
  *
@@ -280,9 +351,12 @@ typedef int (*orte_dps_load_fn_t)(orte_buffer_t *buffer,
 struct orte_dps_t {
     orte_dps_pack_fn_t pack;
     orte_dps_unpack_fn_t unpack;
+    orte_dps_pack_nobuffer_fn_t pack_nobuffer;
+    orte_dps_unpack_nobuffer_fn_t unpack_nobuffer;
     orte_dps_peek_next_item_fn_t peek;
     orte_dps_unload_fn_t unload;
     orte_dps_load_fn_t load;
+    orte_dps_dump_fn_t dump;
 };
 typedef struct orte_dps_t orte_dps_t;
 

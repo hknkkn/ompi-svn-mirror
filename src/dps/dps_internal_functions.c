@@ -16,9 +16,12 @@
  */
 #include "ompi_config.h"
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <math.h>
 #include <unistd.h>
+
+#include "util/output.h"
 
 #include "mca/ns/ns_types.h"
 
@@ -65,8 +68,9 @@ size_t orte_dps_memory_required(void *src, size_t num_vals, orte_data_type_t typ
 
             strptr = (char *) src;
             for (i=0; i<num_vals; i++) { 
-                mem_req += sizeof(uint32_t); /* length */
-                mem_req += strlen(strptr);   /* string */
+                /* need to reserve sizeof(uint32_t) for length */
+                mem_req += sizeof(uint32_t);
+                mem_req += strlen(strptr);   /* string - null-terminator */
                 strptr++;
             }
             return mem_req;
@@ -137,4 +141,150 @@ int orte_dps_buffer_extend(orte_buffer_t *bptr, size_t mem_req)
     bptr->pages = pages;
     
     return (ORTE_SUCCESS);
+}
+
+int orte_dps_dump_buffer(orte_buffer_t *buffer, int outid)
+{
+    void *src;
+    uint32_t *s32, *d32;
+    char *sstr;
+    uint8_t *sptr;
+    size_t num, nbytes, mem_left, i, len;
+    orte_data_type_t type;
+    
+    src = buffer->from_ptr;
+    mem_left = buffer->toend;
+    
+    /* output buffer's vitals */
+    ompi_output(outid, "Buffer vitals:\n\tbase_ptr: %p\tdata_ptr %p\tfrom_ptr %p\n",
+                        buffer->base_ptr, buffer->data_ptr, buffer->from_ptr);
+    ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
+                        buffer->pages, buffer->size, buffer->len,
+                        buffer->space, buffer->toend);
+
+    while (0 < mem_left) {
+        /* got enough for type? */
+        if (sizeof(uint32_t) > mem_left) {
+            ompi_output(outid, "Not enough memory for type");
+            return ORTE_ERR_UNPACK_FAILURE;
+        }
+        
+        s32 = (uint32_t *) src;
+        type = (orte_data_type_t)ntohl(*s32);
+        s32++;
+        src = (void *)s32;
+        mem_left -= sizeof(uint32_t);
+        
+        /* got enough left for num_vals? */
+        if (sizeof(uint32_t) > mem_left) { /* not enough memory  */
+            ompi_output(outid, "Not enough memory for number of values");
+            return ORTE_ERR_UNPACK_FAILURE;
+        }
+    
+        /* unpack the number of values */
+        s32 = (uint32_t *) src;
+        num = (size_t)ntohl(*s32);
+        s32++;
+        src = (void *)s32;
+        mem_left -= sizeof(uint32_t);
+
+        ompi_output(outid, "Item: type %d number %d", (int)type, (int)num);
+
+        switch(type) {
+           
+            case ORTE_BYTE:
+            case ORTE_INT8:
+            case ORTE_UINT8:
+                mem_left -= num*sizeof(uint8_t);
+                break;
+                
+            case ORTE_INT16:
+            case ORTE_UINT16:
+                mem_left -= num * sizeof(uint16_t);
+                break;
+                
+            case ORTE_INT32:
+            case ORTE_UINT32:
+                mem_left -= num * sizeof(uint32_t);
+                break;
+            
+            case ORTE_INT64:
+            case ORTE_UINT64:
+            case ORTE_FLOAT:
+            case ORTE_FLOAT4:
+            case ORTE_FLOAT8:
+            case ORTE_FLOAT12:
+            case ORTE_FLOAT16:
+            case ORTE_DOUBLE:
+            case ORTE_LONG_DOUBLE:
+                ompi_output(outid, "Attempt to unpack unimplemented type");
+                return ORTE_ERR_PACK_FAILURE;
+                break;
+    
+            case ORTE_BOOL:
+                mem_left -= num * sizeof(uint8_t);
+                break;
+    
+            case ORTE_NAME:
+                mem_left -= num * sizeof(orte_process_name_t);
+                break;
+
+        case ORTE_STRING:
+            sstr = (char *) src;
+            for(i=0; i<num; i++) {
+                if(mem_left < sizeof(uint32_t)) {
+                    ompi_output(outid, "Attempt to read past end of buffer");
+                    return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
+                }
+                d32 = (uint32_t*)sstr;
+                len = ntohl(*d32);
+                d32++;
+                sstr= (char*)d32;
+                mem_left -= sizeof(uint32_t);
+                if(mem_left < len) {
+                    ompi_output(outid, "Attempt to read past end of buffer");
+                    return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
+                }
+                sstr = (char*)(sstr + len);
+                mem_left -= len;
+            }
+            break;
+
+        case ORTE_BYTE_OBJECT:
+ 
+            for(i=0; i<num; i++) {
+                if(mem_left < sizeof(uint32_t)) {
+                    ompi_output(outid, "Attempt to read past end of buffer");
+                    return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
+                }
+                d32 = (uint32_t*)src;
+                nbytes = (size_t)ntohl(*d32);
+                d32++;
+                sptr = (void*)d32;
+                mem_left -= sizeof(uint32_t);
+                if(mem_left < nbytes) {
+                    ompi_output(outid, "Attempt to read past end of buffer");
+                    return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
+                }
+                sptr = (void*)((uint8_t*)sptr + nbytes);
+                mem_left -= nbytes;
+            }
+            break;
+
+        case ORTE_NULL:
+            break;
+
+        default:
+            ompi_output(outid, "Attempt to unpack unknown type");
+            return ORTE_ERROR;
+        }
+        
+        /* output buffer's vitals */
+        ompi_output(outid, "Buffer vitals:\n\tbase_ptr: %p\tdata_ptr %p\tfrom_ptr %p\n",
+                            buffer->base_ptr, buffer->data_ptr, buffer->from_ptr);
+        ompi_output(outid, "\tpages %d\tsize %d\tlen %d\tspace %d\ttoend %d\n\n",
+                            buffer->pages, buffer->size, buffer->len,
+                            buffer->space, buffer->toend);
+    }
+    return ORTE_SUCCESS;
 }

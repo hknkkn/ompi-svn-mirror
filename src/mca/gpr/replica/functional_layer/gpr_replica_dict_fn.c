@@ -34,7 +34,6 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
                     orte_gpr_replica_itag_t num_itags_entry,
                     orte_gpr_replica_itag_t *entry_itags)
 {
-    orte_gpr_replica_itag_t *itag1, *itag2;
     int num_found;
     bool exclusive, no_match;
     int i, j;
@@ -58,10 +57,10 @@ bool orte_gpr_replica_check_itag_list(orte_gpr_addr_mode_t addr_mode,
     /* okay, have to search for remaining possibilities */
     num_found = 0;
     exclusive = true;
-    for (i=0, itag1=entry_itags; i < num_itags_entry; i++, itag1++) {
+    for (i=0; i < num_itags_entry; i++) {
         	no_match = true;
-        	for (j=0, itag2=itags; j < num_itags_search; j++, itag2++) {
-        	    if (*itag1 == *itag2) { /* found a match */
+        	for (j=0; j < num_itags_search; j++) {
+        	    if (entry_itags[i] == itags[j]) { /* found a match */
             		num_found++;
             		no_match = false;
             		if (ORTE_GPR_OR & addr_mode) { /* only need one match */

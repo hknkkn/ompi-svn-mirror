@@ -41,17 +41,8 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     int rc;
     void *dst;
     int32_t op_size=0;
-    size_t i;
-    uint16_t * d16;
-    uint16_t * s16;
+    size_t num_bytes;
     uint32_t * d32;
-    uint32_t * s32;
-    bool *bool_src;
-    uint8_t *bool_dst;
-    char ** str;
-    char * dstr;
-    orte_process_name_t *dn, *sn;
-    orte_byte_object_t *sbyteptr;
     
     /* check for error */
     if (!buffer || !src || 0 >= num_vals) { return (ORTE_ERROR); }
@@ -114,13 +105,48 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     dst = (void *)d32;
 
     /* pack the data */
+    if (ORTE_SUCCESS != (rc = orte_dps_pack_nobuffer(dst, src, num_vals,
+                                        type, &num_bytes))) {
+        return rc;
+    }
+    
+    /* ok, we managed to pack some more stuff, so update all ptrs/cnts */
+    buffer->data_ptr = (void*)((char*)dst + num_bytes);
+    buffer->len += op_size;
+    buffer->toend += op_size;
+    buffer->space -= op_size;
+
+    return ORTE_SUCCESS;
+}
+
+
+int orte_dps_pack_nobuffer(void *dst, void *src, size_t num_vals,
+                    orte_data_type_t type, size_t *num_bytes)
+{
+    size_t i, len;
+    uint16_t * d16;
+    uint16_t * s16;
+    uint32_t * d32;
+    uint32_t * s32;
+    bool *bool_src;
+    uint8_t *bool_dst;
+    uint8_t *dbyte;
+    char ** str;
+    char * dstr;
+    orte_process_name_t *dn, *sn;
+    orte_byte_object_t *sbyteptr;
+
+    /* initialize the number of bytes */
+    *num_bytes = 0;
+    
+    /* pack the data */
     switch(type) {
         case ORTE_BYTE:
         case ORTE_INT8:
         case ORTE_UINT8:
             
             memcpy(dst, src, num_vals);
-            dst = (void *)((uint8_t*)dst + num_vals);
+            *num_bytes = num_vals;
             break;
         
         case ORTE_INT16:
@@ -132,7 +158,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
                 *d16 = htons(*s16);
                 d16++; s16++;
             }
-            dst = (void *)d16;
+            *num_bytes = num_vals * sizeof(uint16_t);
             break;
             
         case ORTE_INT32:
@@ -144,7 +170,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
                 *d32 = htonl(*s32);
                 d32++; s32++;
             }
-            dst = (void *)d32;
+            *num_bytes = num_vals * sizeof(uint32_t);
             break;
 
         case ORTE_INT64:
@@ -167,24 +193,23 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
             bool_dst = (uint8_t *) dst;
             for (i=0; i<num_vals; i++) {
                 /* pack native bool as uint8_t */
-                *bool_dst = *bool_src ? true : false;
+                *bool_dst = *bool_src ? (uint8_t)true : (uint8_t)false;
                 bool_dst++; bool_src++;
             }
-            dst = (void *)bool_dst;
+            *num_bytes = num_vals * sizeof(uint8_t);
             break;
 
         case ORTE_STRING:
             str = (char **) src;
+            d32 = (uint32_t *) dst;
             for (i=0; i<num_vals; i++) {
-                uint32_t len = strlen(str[i]);
-                /* store string length as uint32_t */
-                d32 = (uint32_t *) dst;
+                len = strlen(str[i]);  /* exclude the null terminator */
                 *d32 = htonl(len);
                 d32++;
-                /* move the char's over */
-                dstr = (char *)d32;
-                memcpy(dstr, str[i], len);
-                dst = (void *)(dstr+len);
+                dstr = (char *) d32;
+                memcpy(dstr, str, len);
+                d32 = (uint32_t *)(dstr + len);
+                *num_bytes += len + sizeof(uint32_t);
             }
             break;
             
@@ -197,20 +222,21 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
                 dn->vpid = htonl(sn->vpid);
                 dn++; sn++;
             }
-            dst = (void *)dn;
+            *num_bytes = num_vals * sizeof(orte_process_name_t);
             break;
             
         case ORTE_BYTE_OBJECT:
             sbyteptr = (orte_byte_object_t *) src;
+            dbyte = (uint8_t *) dst;
             for (i=0; i<num_vals; i++) {
                 /* pack number of bytes */
-                d32 = (uint32_t*)dst;
+                d32 = (uint32_t*)dbyte;
                 *d32 = htonl(sbyteptr->size);
                 d32++;
-                dst = (void*)d32;
+                dbyte = (void*)d32;
                 /* pack actual bytes */
-                memcpy(dst, sbyteptr->bytes, sbyteptr->size);
-                dst = (void *)((uint8_t*)dst + sbyteptr->size);
+                memcpy(dbyte, sbyteptr->bytes, sbyteptr->size);
+                dbyte = (uint8_t*)(dbyte + sbyteptr->size);
                 sbyteptr++;
             }
             break;
@@ -221,12 +247,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
         default:
             return ORTE_ERR_BAD_PARAM;
     }
-    
-    /* ok, we managed to pack some more stuff, so update all ptrs/cnts */
-    buffer->data_ptr = dst;
-    buffer->len += op_size;
-    buffer->toend += op_size;
-    buffer->space -= op_size;
 
     return ORTE_SUCCESS;
 }
+
