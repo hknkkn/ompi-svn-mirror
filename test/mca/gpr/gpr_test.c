@@ -49,10 +49,12 @@ static void test_cbfunc(orte_gpr_notify_message_t *notify_msg, void *user_tag);
 
 int main(int argc, char **argv)
 {
-    int rc;
+    int rc, i;
     bool allow_multi_user_threads = false;
     bool have_hidden_threads = false;
+    char *tmp, *tmp2;
     orte_gpr_replica_segment_t *seg;
+    orte_gpr_replica_itag_t itag[10], itag2;
     
     test_init("test_gpr_replica");
 
@@ -76,7 +78,6 @@ int main(int argc, char **argv)
         exit (1);
     }
 
-    fprintf(stderr, "open registry\n");
     if (ORTE_SUCCESS == orte_gpr_base_open()) {
         fprintf(test_out, "GPR started\n");
     } else {
@@ -84,7 +85,6 @@ int main(int argc, char **argv)
         exit (1);
     }
     
-    fprintf(stderr, "select registry replica\n");
     if (ORTE_SUCCESS == orte_gpr_base_select(&allow_multi_user_threads, 
                        &have_hidden_threads)) {
         fprintf(test_out, "GPR replica selected\n");
@@ -96,11 +96,74 @@ int main(int argc, char **argv)
     fprintf(stderr, "going to find seg\n");
     if (ORTE_SUCCESS != (rc = orte_gpr_replica_find_seg(&seg, true, "test-segment"))) {
         fprintf(test_out, "gpr_test: find_seg failed with error code %d\n", rc);
-        test_failure("gpr_test: find_seg_failed");
+        test_failure("gpr_test: find_seg failed");
         test_finalize();
         return rc;
+    } else {
+        fprintf(test_out, "gpr_test: find_seg passed\n");
     }
     
+    fprintf(stderr, "creating tags\n");
+    for (i=0; i<10; i++) {
+        asprintf(&tmp, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_create_itag(&itag[i], seg, tmp))) {
+            fprintf(test_out, "gpr_test: create_itag failed with error code %d\n", rc);
+            test_failure("gpr_test: create_itag failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: create_itag passed\n");
+        }
+        free(tmp);
+    }
+    
+    fprintf(stderr, "lookup tags\n");
+    for (i=0; i<10; i++) {
+         asprintf(&tmp, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_lookup(&itag2, seg, tmp)) ||
+             itag2 != itag[i]) {
+            fprintf(test_out, "gpr_test: lookup failed with error code %d\n", rc);
+            test_failure("gpr_test: lookup failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: lookup passed\n");
+        }
+        free(tmp);
+    }
+    
+    
+    fprintf(stderr, "reverse lookup tags\n");
+    for (i=0; i<10; i++) {
+         asprintf(&tmp2, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_dict_reverse_lookup(&tmp, seg, itag[i])) ||
+             0 != strcmp(tmp2, tmp)) {
+            fprintf(test_out, "gpr_test: reverse lookup failed with error code %d\n", rc);
+            test_failure("gpr_test: reverse lookup failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: reverse lookup passed\n");
+        }
+        free(tmp);
+    }
+    
+    
+    fprintf(stderr, "delete tags\n");
+    for (i=0; i<10; i++) {
+         asprintf(&tmp, "test-tag-%d", i);
+         if (ORTE_SUCCESS != (rc = orte_gpr_replica_delete_itag(seg, tmp))) {
+            fprintf(test_out, "gpr_test: delete tag failed with error code %d\n", rc);
+            test_failure("gpr_test: delete tag failed");
+            test_finalize();
+            return rc;
+        } else {
+            fprintf(test_out, "gpr_test: delete tag passed\n");
+        }
+        free(tmp);
+    }
+    
+
     fclose( test_out );
 /*    result = system( cmd_str );
     if( result == 0 ) {

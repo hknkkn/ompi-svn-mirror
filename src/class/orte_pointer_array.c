@@ -64,6 +64,8 @@ int orte_pointer_array_init(orte_pointer_array_t **array,
                             int initial_allocation,
                             int max_size, int block_size)
 {
+    size_t num_bytes;
+    
     /* check for errors */
     if (NULL == array || max_size < block_size) {
        return ORTE_ERR_BAD_PARAM;
@@ -78,22 +80,23 @@ int orte_pointer_array_init(orte_pointer_array_t **array,
    (*array)->block_size = block_size;
    
    if (0 < initial_allocation) {
-       (*array)->addr = (void *)malloc(initial_allocation * sizeof(void*));
-       if (NULL == (*array)->addr) { /* out of memory */
-            OBJ_RELEASE(*array);
-            return ORTE_ERR_OUT_OF_RESOURCE;
-       }
+       num_bytes = initial_allocation * sizeof(void*);
        (*array)->number_free = initial_allocation;
        (*array)->size = initial_allocation;
    } else {
-        (*array)->addr = (void *)malloc(block_size * sizeof(void*));
-        if (NULL == (*array)->addr) { /* out of memory */
-            OBJ_RELEASE(*array);
-            return ORTE_ERR_OUT_OF_RESOURCE;
-        }
+        num_bytes = block_size * sizeof(void*);
         (*array)->number_free = block_size;
         (*array)->size = block_size;
    }
+   
+   (*array)->addr = (void *)malloc(num_bytes);
+   if (NULL == (*array)->addr) { /* out of memory */
+        OBJ_RELEASE(*array);
+        return ORTE_ERR_OUT_OF_RESOURCE;
+   }
+
+   /* init the array elements to NULL */
+   memset((*array)->addr, 0, num_bytes);
    
    return ORTE_SUCCESS;
 }

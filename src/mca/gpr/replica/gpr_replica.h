@@ -45,6 +45,7 @@ typedef int32_t orte_gpr_replica_itag_t;
 
 typedef struct {
     int debug;
+    int isolate;
     int32_t block_size;
     int32_t max_size;
     ompi_mutex_t mutex;

@@ -386,6 +386,9 @@ int orte_gpr_replica_open(void)
                                      ORTE_GPR_REPLICA_BLOCK_SIZE);
     mca_base_param_lookup_int(id, &orte_gpr_replica_globals.block_size);
 
+    id = mca_base_param_register_int("gpr", "replica", "isolate", NULL, 0);
+    mca_base_param_lookup_int(id, &orte_gpr_replica_globals.isolate);
+
     return ORTE_SUCCESS;
 }
 
@@ -458,11 +461,13 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
 	OBJ_CONSTRUCT(&orte_gpr_replica.notify_offs, ompi_list_t);
 
  	/* issue the non-blocking receive */ 
-	rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
+    if (!orte_gpr_replica_globals.isolate) {
+	   rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
                                  orte_gpr_replica_recv, NULL);
-	if(rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) { 
+	   if(rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) { 
 	    return NULL;
-	}
+	   }
+    }
 
 	if (orte_gpr_replica_globals.debug) {
 	    ompi_output(0, "nb receive setup");
@@ -525,7 +530,10 @@ int orte_gpr_replica_finalize(void)
     }
     
     /* All done */
-
+    if (orte_gpr_replica_globals.isolate) {
+        return ORTE_SUCCESS;
+    }
+    
 	orte_rml.recv_cancel(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR);
     return ORTE_SUCCESS;
 }

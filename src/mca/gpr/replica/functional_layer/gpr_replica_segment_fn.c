@@ -187,5 +187,5 @@ int orte_gpr_replica_purge_itag(orte_gpr_replica_segment_t *seg,
      * then remove the container
      * */
 
-    return ORTE_ERR_NOT_IMPLEMENTED;
+    return ORTE_SUCCESS;
 }
