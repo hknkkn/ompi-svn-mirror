@@ -1102,7 +1102,6 @@ AC_CONFIG_FILES([
 
     src/class/Makefile
     src/dps/Makefile
-    src/plsnds/Makefile
     src/runtime/Makefile
     src/threads/Makefile
     src/util/Makefile
@@ -1221,7 +1220,6 @@ AC_CONFIG_FILES([
     test/mca/gpr/Makefile
     test/mca/ns/Makefile
     test/mca/rds/Makefile
-    test/plsnds/Makefile
     test/runtime/Makefile
 ])
 AC_OUTPUT
