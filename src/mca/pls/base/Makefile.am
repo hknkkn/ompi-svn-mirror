@@ -29,7 +29,8 @@ libmca_pls_base_la_SOURCES = \
         $(headers) \
         pls_base_close.c \
         pls_base_open.c \
-        pls_base_select.c
+        pls_base_select.c \
+	pls_base_state.c
 
 # Conditionally install the header files
 

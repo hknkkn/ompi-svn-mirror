@@ -80,6 +80,14 @@ extern "C" {
      * Close the pls framework
      */
     OMPI_DECLSPEC int orte_pls_base_close(void);
+    /**
+     * Utility routine to set proces state/pid
+     */
+    OMPI_DECLSPEC int orte_pls_base_set_proc_pid(orte_process_name_t*, pid_t);
+    /**
+     * Utility routine to set daemon state/pid
+     */
+    OMPI_DECLSPEC int orte_pls_base_set_node_pid(char* node_name, orte_process_name_t*, pid_t);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
