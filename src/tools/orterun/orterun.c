@@ -50,7 +50,6 @@ extern char** environ;
 
 struct ompi_event term_handler;
 struct ompi_event int_handler;
-struct ompi_event exit_handler;
 orte_jobid_t jobid = ORTE_JOBID_MAX;
 
 
@@ -62,10 +61,11 @@ exit_callback(int fd, short event, void *arg)
 }
 
 static void
-signal_callback(int fd, short event, void *arg)
+signal_callback(int fd, short flags, void *arg)
 {
     int ret;
-    struct timeval tv;
+    struct timeval tv = { 5, 0 };
+    ompi_event_t* event;
 
     if (jobid != ORTE_JOBID_MAX) {
         ret = orte_rmgr.terminate_job(jobid);
@@ -74,10 +74,10 @@ signal_callback(int fd, short event, void *arg)
         }
     }
 
-    tv.tv_sec = 3;
-    tv.tv_usec = 0;
-    ompi_evtimer_set(&exit_handler, exit_callback, NULL);
-    ompi_evtimer_add(&exit_handler, &tv);
+    if(NULL != (event = (ompi_event_t*)malloc(sizeof(ompi_event_t)))) {
+        ompi_evtimer_set(event, exit_callback, NULL);
+        ompi_evtimer_add(event, &tv);
+    }
 }
 
 
@@ -209,6 +209,9 @@ main(int argc, char *argv[], char* env[])
     /* Get the numprocs */
 
     app.num_procs = orterun_globals.num_procs;
+    if(app.num_procs == 0) {
+        app.num_procs = 1; 
+    }
 
     /* Find the argv[0] in the path */
 
