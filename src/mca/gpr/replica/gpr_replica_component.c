@@ -459,7 +459,7 @@ orte_gpr_base_module_t *orte_gpr_replica_init(bool *allow_multi_user_threads, bo
 
  	/* issue the non-blocking receive */ 
 	rc = orte_rml.recv_buffer_nb(ORTE_RML_NAME_ANY, ORTE_RML_TAG_GPR, 0,
-                orte_gpr_replica_recv, NULL);
+                                 orte_gpr_replica_recv, NULL);
 	if(rc != ORTE_SUCCESS && rc != ORTE_ERR_NOT_IMPLEMENTED) { 
 	    return NULL;
 	}

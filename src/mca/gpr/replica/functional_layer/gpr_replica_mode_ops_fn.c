@@ -28,7 +28,7 @@
 #include "gpr_replica_fn.h"
 
 
-int orte_gpr_replica_notify_on_fg(orte_process_name_t *proc,
+int orte_gpr_replica_notify_on_fn(orte_process_name_t *proc,
 				  orte_gpr_notify_id_t sub_number)
 {
 #if 0

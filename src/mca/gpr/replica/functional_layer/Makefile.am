@@ -22,6 +22,7 @@ libmca_gpr_replica_fn_la_SOURCES = \
 	gpr_replica_dict_fn.c \
 	gpr_replica_dump_fn.c \
 	gpr_replica_messaging_fn.c \
+    gpr_replica_mode_ops_fn.c \
     gpr_replica_put_get_fn.c \
 	gpr_replica_segment_fn.c \
 	gpr_replica_subscribe_fn.c \
