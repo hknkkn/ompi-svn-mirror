@@ -47,11 +47,11 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     uint32_t * s32;
     uint8_t* bool_src;
     bool *bool_dst;
-    char *str;
     char **dstr;
     orte_data_type_t stored_type;
     orte_process_name_t* dn;
     orte_process_name_t* sn;
+    orte_byte_object_t* dbyteptr;
 
     /* check for errors - if buffer is NULL -or- dst is NOT NULL */
     if (!buffer || dst) { return (ORTE_ERR_BAD_PARAM); }
@@ -69,7 +69,7 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     stored_type = (orte_data_type_t)ntohl(*s32);
     s32 ++;
     src = (void *) s32;
-    mem_left-= sizeof(uint32_t);
+    mem_left -= sizeof(uint32_t);
 
     if(type == ORTE_INT || type == ORTE_UINT) {
         switch(sizeof(int)) {
@@ -111,7 +111,7 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
     }
     s32++;
     src = (void *)s32;
-    mem_left-= sizeof(uint32_t);
+    mem_left -= sizeof(uint32_t);
 
     /* will check to see if adequate storage in buffer prior
      * to unpacking the item
@@ -218,27 +218,53 @@ int orte_dps_unpack(orte_buffer_t *buffer, void *dst,
         
         case ORTE_STRING:
  
-            str = (char*)src;
             dstr = (char**)dst;
             for(i=0; i<num_vals; i++) {
                 uint32_t len;
                 if(mem_left < sizeof(uint32_t)) {
                     return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
                 }
-                d32 = (uint32_t*)str;
+                d32 = (uint32_t*)src;
                 len = ntohl(*d32);
-                str += sizeof(uint32_t);
+                d32++;
+                src = (void*)d32;
+                mem_left -= sizeof(uint32_t);
                 if(mem_left < len) {
                     return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
                 }
                 if(NULL == (*dstr = malloc(len+1)))
                     return ORTE_ERR_OUT_OF_RESOURCE;
-                strncpy(*dstr,str,len);
-                str += len;
+                strncpy(*dstr,src,len);
                 dstr++;
+                src = (void*)((char*)src + len);
+                mem_left -= len;
             }
-            src = (void*)str;
             dst = (void*)dstr;
+            break;
+
+        case ORTE_BYTE_OBJECT:
+ 
+            dbyteptr = (orte_byte_object_t*)dst;
+            for(i=0; i<num_vals; i++) {
+                if(mem_left < sizeof(uint32_t)) {
+                    return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
+                }
+                d32 = (uint32_t*)src;
+                dbyteptr->size = (size_t)ntohl(*d32);
+                d32++;
+                src = (void*)d32;
+                mem_left -= sizeof(uint32_t);
+                if(mem_left < dbyteptr->size) {
+                    return ORTE_UNPACK_READ_PAST_END_OF_BUFFER;
+                }
+                if(NULL == (dbyteptr->bytes = malloc(dbyteptr->size)))
+                    return ORTE_ERR_OUT_OF_RESOURCE;
+                memcpy(dbyteptr->bytes,src,dbyteptr->size);
+                src = (void*)((uint8_t*)src + dbyteptr->size);
+                mem_left -= dbyteptr->size;
+                dbyteptr++;
+            }
+            dst = (void*)dbyteptr;
             break;
 
         case ORTE_NULL:

@@ -51,7 +51,7 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
     char * str;
     char * dstr;
     orte_process_name_t *dn, *sn;
-    orte_byte_object_t *sbyteptr, *dbyteptr;
+    orte_byte_object_t *sbyteptr;
     
     /* check for error */
     if (!buffer || !src || 0 >= num_vals) { return (ORTE_ERROR); }
@@ -203,11 +203,15 @@ int orte_dps_pack(orte_buffer_t *buffer, void *src,
         case ORTE_BYTE_OBJECT:
             sbyteptr = (orte_byte_object_t *) src;
             for (i=0; i<num_vals; i++) {
-                dbyteptr = (orte_byte_object_t *) dst;
-                dbyteptr->size = sbyteptr->size;
-                memcpy(dbyteptr->bytes, sbyteptr->bytes, dbyteptr->size);
+                /* pack number of bytes */
+                d32 = (uint32_t*)dst;
+                *d32 = htonl(sbyteptr->size);
+                d32++;
+                dst = (void*)d32;
+                /* pack actual bytes */
+                memcpy(dst, sbyteptr->bytes, sbyteptr->size);
                 sbyteptr++;
-                dst = (void *)((char *)dst + sizeof(dbyteptr->size) + dbyteptr->size);
+                dst = (void *)((uint8_t*)dst + sbyteptr->size);
             }
             break;
             
