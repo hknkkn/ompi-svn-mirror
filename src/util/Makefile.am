@@ -43,6 +43,7 @@ headers = \
     session_dir.h \
     show_help.h \
     show_help_lex.h \
+    stacktrace.h \
     daemon_init.h \
     universe_setup_file_io.h \
     strncpy.h
@@ -67,6 +68,7 @@ libutil_la_SOURCES = \
     session_dir.c \
     show_help.c \
     show_help_lex.l \
+    stacktrace.c \
     daemon_init.c \
     universe_setup_file_io.c \
     strncpy.c
