@@ -16,6 +16,7 @@ include $(top_srcdir)/config/Makefile.options
 
 include_HEADERS = \
 	ompi_config.h \
+	orte_config.h \
 	ompi_config_bottom.h \
         ompi_stdint.h \
 	mpi.h \
