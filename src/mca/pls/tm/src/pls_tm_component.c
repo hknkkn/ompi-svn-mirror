@@ -22,6 +22,7 @@
 
 #include "include/orte_constants.h"
 #include "mca/pls/pls.h"
+#include "mca/pls/base/base.h"
 #include "pls_tm.h"
 #include "mca/pls/tm/pls-tm-version.h"
 #include "mca/base/mca_base_param.h"
@@ -37,7 +38,7 @@ const char *mca_pls_tm_component_version_string =
 /*
  * Local variable
  */
-int param_priority = -1;
+static int param_priority = -1;
 
 
 /*
@@ -93,7 +94,7 @@ orte_pls_base_component_1_0_0_t mca_pls_tm_component = {
 static int pls_tm_open(void)
 {
     param_priority = 
-        mca_base_param_register_int("pls", "tm", "priority", NULL, 50);
+        mca_base_param_register_int("pls", "tm", "priority", NULL, 75);
 
     return ORTE_SUCCESS;
 }
@@ -103,14 +104,18 @@ static struct orte_pls_base_module_1_0_0_t *pls_tm_init(int *priority)
 {
     /* Are we running under a TM job? */
 
-    if (NULL != getenv("TM_ENVIRONMENT") &&
-        NULL != getenv("TM_JOBID")) {
+    if (NULL != getenv("PBS_ENVIRONMENT") &&
+        NULL != getenv("PBS_JOBID")) {
         mca_base_param_lookup_int(param_priority, priority);
 
+        ompi_output(orte_pls_base.pls_output, 
+                    "pls:tm: available for selection, priority %d", *priority);
         return &orte_pls_tm_module;
     }
 
     /* Sadly, no */
 
+    ompi_output(orte_pls_base.pls_output, 
+                "pls:tm: NOT available for selection");
     return NULL;
 }

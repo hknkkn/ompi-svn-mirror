@@ -18,7 +18,7 @@
  * entire components just to query their version and parameters.
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -28,7 +28,10 @@
 #include "include/orte_types.h"
 #include "util/argv.h"
 #include "util/output.h"
+#include "mca/rmgr/base/base.h"
+#include "mca/rmaps/base/rmaps_base_map.h"
 #include "mca/pls/pls.h"
+#include "mca/pls/base/base.h"
 #include "pls_tm.h"
 #include "tm.h"
 
@@ -37,6 +40,8 @@
  * Local functions
  */
 static int pls_tm_launch(orte_jobid_t jobid);
+static int pls_tm_terminate_job(orte_jobid_t jobid);
+static int pls_tm_terminate_proc(const orte_process_name_t *name);
 static int pls_tm_finalize(void);
 
 static int do_tm_resolve(char **hostnames, size_t num_hostnames, 
@@ -49,6 +54,8 @@ static char* get_tm_hostname(tm_node_id node);
  */
 orte_pls_base_module_1_0_0_t orte_pls_tm_module = {
     pls_tm_launch,
+    pls_tm_terminate_job,
+    pls_tm_terminate_proc,
     pls_tm_finalize
 };
 
@@ -56,17 +63,20 @@ orte_pls_base_module_1_0_0_t orte_pls_tm_module = {
 static int pls_tm_launch(orte_jobid_t jobid)
 {
     int ret, local_errno;
-    orte_app_context_t *app;
+    orte_app_context_t **app = NULL;
     size_t i, j, app_size, count, total_count;
     struct tm_roots root;
-    tm_task_id tid;
-    tm_node_id *tm_node_ids;
     tm_event_t event;
     char *flat;
-    int *statuses;
+    int *statuses = NULL;
     char old_cwd[OMPI_PATH_MAX];
+    ompi_list_t mapping;
+    bool mapping_valid = false;
     char **hostnames = NULL;
     int num_hostnames = 0;
+    ompi_list_item_t *item, *item2;
+    tm_task_id tid;
+    tm_node_id *tm_node_ids = NULL;
 
     /* Open up our connection to tm */
 
@@ -81,8 +91,7 @@ static int pls_tm_launch(orte_jobid_t jobid)
     ret = orte_rmgr_base_get_app_context(jobid, &app, &app_size);
     if (ORTE_SUCCESS != ret) {
         /* JMS May change...? */
-        tm_finalize();
-        return ret;
+        goto cleanup;
     }
 
     /* Count up how many processes will be starting and create/zero
@@ -91,14 +100,16 @@ static int pls_tm_launch(orte_jobid_t jobid)
        simplicity here). */
 
     for (total_count = i = 0; i < app_size; ++i) {
-        total_count += app[i].num_procs;
+        total_count += app[i]->num_procs;
     }
+    ompi_output(orte_pls_base.pls_output,
+                "pls:tm:launch: starting %d processes in %d apps",
+                total_count, app_size);
     statuses = malloc(sizeof(int) * total_count);
     if (NULL == statuses) {
         /* JMS may change...? */
-        free(app);
-        tm_finalize();
-        return ORTE_ERR_OUT_OF_RESOURCE;
+        ret = ORTE_ERR_OUT_OF_RESOURCE;
+        goto cleanup;
     }
     for (i = 0; i < total_count; ++i) {
         statuses[i] = ORTE_PROC_STARTING;
@@ -106,66 +117,86 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
     /* Check to ensure that all the cwd's exist */
 
-    ompi_getcwd(old_cwd, OMPI_PATH_MAX);
+    getcwd(old_cwd, OMPI_PATH_MAX);
     for (count = i = 0; i < app_size; ++i) {
 
         /* Try changing to the cwd and then changing back */
 
-        if (0 != chdir(app[i].cwd) ||
+        if (0 != chdir(app[i]->cwd) ||
             0 != chdir(old_cwd)) {
             /* JMS May change...? */
-            free(statuses);
-            free(app);
-            tm_finalize();
-            return ORTE_ERR_NOT_FOUND;
+            ret = ORTE_ERR_NOT_FOUND;
+            goto cleanup;
         }
+        ompi_output(orte_pls_base.pls_output,
+                    "pls:tm:launch: app %d cwd (%s) exists",
+                    i, app[i]->cwd);
     }
 
-    /* Get the hostnames from the output of the mapping */
+    /* Get the hostnames from the output of the mapping.  Since we
+       have to cross reference against TM, it's much more efficient to
+       do all the nodes in the entire map all at once. */
 
-    /* JMS ....? */
+    OBJ_CONSTRUCT(&mapping, ompi_list_t);
+    if (ORTE_SUCCESS != (ret = orte_rmaps_base_get_map(jobid, &mapping))) {
+        goto cleanup;
+    }
+    mapping_valid = true;
+
+    /* JMS: Do we need to take into account that
+       orte_rmaps_base_get_map() may return an empty list? */
+
+    for (item =  ompi_list_get_first(&mapping);
+         item != ompi_list_get_end(&mapping);
+         item =  ompi_list_get_next(item)) {
+        orte_rmaps_base_map_t* map = (orte_rmaps_base_map_t*) item;
+
+        for (item2 =  ompi_list_get_first(&map->nodes);
+             item2 != ompi_list_get_end(&map->nodes);
+             item2 =  ompi_list_get_next(item2)) {
+            orte_rmaps_base_node_t *node = (orte_rmaps_base_node_t *) item2;
+            ompi_argv_append(&num_hostnames, &hostnames, node->node_name);
+            ompi_output(orte_pls_base.pls_output,
+                        "pls:tm:launch: found hostname %s in map", 
+                        node->node_name);
+        }
+    }
 
     /* Sanity check -- we should have exactly as many hosts as total
        number of processes to be launched */
 
-    if (num_hostnames != total_count) {
-        free(statuses);
-        free(app);
-        tm_finalize();
-        return ORTE_ERR_BAD_PARAM;
+    ompi_output(orte_pls_base.pls_output,
+                "pls:tm:launch: num_hostnames %d, total cound %d",
+                num_hostnames, total_count);
+    if (((size_t) num_hostnames) != total_count) {
+        ret = ORTE_ERR_BAD_PARAM;
+        goto cleanup;
     }
 
     /* Convert all the hostnames to TM node IDs */
 
     tm_node_ids = malloc(sizeof(tm_node_id) * num_hostnames);
     if (NULL == tm_node_ids) {
-        /* JMS May change...? */
-        free(statuses);
-        free(app);
-        tm_finalize();
-        return ORTE_ERR_OUT_OF_RESOURCE;
+        ret = ORTE_ERR_OUT_OF_RESOURCE;
+        goto cleanup;
     }
     ret = do_tm_resolve(hostnames, num_hostnames, tm_node_ids);
     if (ORTE_SUCCESS != ret) {
         /* JMS May change...? */
-        free(tm_node_ids);
-        free(statuses);
-        free(app);
-        tm_finalize();
-        return ret;
+        goto cleanup;
     }
 
     /* Launch them */
 
     for (count = i = 0; i < app_size; ++i) {
-        flat = ompi_argv_join(app[i].argv, ' ');
-        for (j = 0; j < app[i].num_procs; ++j, ++count) {
+        flat = ompi_argv_join(app[i]->argv, ' ');
+        for (j = 0; j < (size_t) app[i]->num_procs; ++j, ++count) {
             ompi_output_verbose(10, 0, "Launching app %d, process %d: %s",
                                 i, j, flat);
 
             /* Do the spawn */
 
-            ret = tm_spawn(app[i].argc, app[i].argv, app[i].env, 
+            ret = tm_spawn(app[i]->argc, app[i]->argv, app[i]->env, 
                            tm_node_ids[count], &tid, &event);
             if (TM_SUCCESS != ret) {
                 statuses[count] = ORTE_PROC_EXITED;
@@ -185,22 +216,49 @@ static int pls_tm_launch(orte_jobid_t jobid)
 
         loop_error:
             free(flat);
-            free(tm_node_ids);
-            free(statuses);
-            free(app);
-            tm_finalize();
-            return ret;
+            goto cleanup;
         }
         free(flat);
     }
 
     /* All done */
 
-    free(tm_node_ids);
-    free(statuses);
-    free(app);
+    ret = ORTE_SUCCESS;
+ cleanup:
+    if (mapping_valid) {
+        while (NULL != (item = ompi_list_remove_first(&mapping))) {
+            OBJ_RELEASE(item);
+        }
+        OBJ_DESTRUCT(&mapping);
+    }
+    if (NULL != hostnames) {
+        ompi_argv_free(hostnames);
+    }
+    if (NULL != tm_node_ids) {
+        free(tm_node_ids);
+    }
+    if (NULL != statuses) {
+        free(statuses);
+    }
+    if (NULL != app) {
+        free(app);
+    }
     tm_finalize();
-    return ORTE_SUCCESS;
+    return ret;
+}
+
+
+static int pls_tm_terminate_job(orte_jobid_t jobid)
+{
+    /* JMS */
+    return ORTE_ERR_NOT_IMPLEMENTED;
+}
+
+
+static int pls_tm_terminate_proc(const orte_process_name_t *name)
+{
+    /* JMS */
+    return ORTE_ERR_NOT_IMPLEMENTED;
 }
 
 
@@ -242,7 +300,7 @@ static int do_tm_resolve(char **hostnames, size_t num_hostnames,
        slightly inefficient, but no big deal); just mentioned for
        completeness... */
 
-    for (i = 0; i < num_node_ids; ++i) {
+    for (i = 0; i < (size_t) num_node_ids; ++i) {
         h = get_tm_hostname(tm_node_ids[i]);
         ompi_argv_append(&num_tm_hostnames, &tm_hostnames, h);
         free(h);
@@ -252,14 +310,17 @@ static int do_tm_resolve(char **hostnames, size_t num_hostnames,
        return a list of tm node ID's corresponding to them. */
 
     for (count = i = 0; i < num_hostnames; ++i) {
-        for (j = 0; j < num_tm_hostnames; ++j, ++count) {
+        for (j = 0; j < (size_t) num_tm_hostnames; ++j, ++count) {
             if (0 == strcmp(hostnames[i], tm_hostnames[j])) {
                 app_tm_node_ids[count] = tm_node_ids[j];
+                ompi_output(orte_pls_base.pls_output,
+                            "pls:tm:launch: resolved host %s to node ID %d",
+                            hostnames[i], tm_node_ids[j]);
                 break;
             }
         }
 
-        if (num_tm_hostnames + 1 == j) {
+        if ((size_t) (num_tm_hostnames + 1) == j) {
             /* JMS May change...? */
             ompi_argv_free(tm_hostnames);
             return ORTE_ERR_NOT_FOUND;
