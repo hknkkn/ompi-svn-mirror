@@ -12,7 +12,7 @@
  * $HEADER$
  */
 
-#include "ompi_config.h"
+#include "orte_config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@
 #include "include/constants.h"
 #include "util/proc_info.h"
 
-ompi_proc_info_t ompi_process_info = {
+orte_proc_info_t orte_process_info = {
     /*  .init =                 */   false,
     /*  .pid =                  */   0,
     /*  .seed =                 */   false,
@@ -44,22 +44,22 @@ ompi_proc_info_t ompi_process_info = {
     /*  .sock_stderr =          */   NULL};
 
 
-int ompi_proc_info(void)
+int orte_proc_info(void)
 {
 
     /* local variable */
     int return_code=OMPI_SUCCESS;
 
-    if (ompi_process_info.init) {  /* already done this - don't do it again */
+    if (orte_process_info.init) {  /* already done this - don't do it again */
         return(OMPI_SUCCESS);
     }
 
     /* get the process id */
-    ompi_process_info.pid = getpid();
+    orte_process_info.pid = getpid();
 
 
     /* set process to inited */
-    ompi_process_info.init = true;
+    orte_process_info.init = true;
 
     return return_code;
 }
