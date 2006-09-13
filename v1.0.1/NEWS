@@ -1,0 +1,67 @@
+Copyright (c) 2004-2005 The Trustees of Indiana University and Indiana
+                        University Research and Technology
+                        Corporation.  All rights reserved.
+Copyright (c) 2004-2005 The University of Tennessee and The University
+                        of Tennessee Research Foundation.  All rights
+                        reserved.
+Copyright (c) 2004-2005 High Performance Computing Center Stuttgart, 
+                        University of Stuttgart.  All rights reserved.
+Copyright (c) 2004-2005 The Regents of the University of California.
+                        All rights reserved.
+$COPYRIGHT$
+
+Additional copyrights may follow
+
+$HEADER$
+
+===========================================================================
+
+This file contains the main features as well as overviews of specific
+bug fixes (and other actions) for each version of Open MPI since
+version 1.0.
+
+1.0.1
+-----
+
+- Fixed assembly on Solaris AMD platforms.  Thanks to Pierre Valiron
+  for bringing this to our attention.
+- Fixed long messages in the send-to-self case.
+- Ensure that when the "leave_pinned" option is used, the memory hooks
+  are also enabled.  Thanks to Gleb Natapov for pointing this out.
+- Fixed compile errors for IRIX.
+- Allow hostfiles to have integer host names (for BProc clusters)
+- Fixed a problem with message matching of out-of-order fragments in
+  multiple network device scenarios.
+- Converted all the C++ MPI bindings to use proper const_cast<>'s
+  instead of old C-style casts to get rid of const-ness.  Thanks to
+  Martin Audet for raising the issue with us.
+- Converted MPI_Offset to be a typedef instead of a #define because it
+  causes problems for some C++ parsers.  Thanks to Martin Audet for
+  bringing this to our attention.
+- Improved latency of TCP BTL.
+- Fixed index value in MPI_TESTANY to be MPI_UNDEFINED if some
+  requests were not MPI_REQUEST_NULL, but no requests finished.
+- Fixed several Fortran MPI API implementations that incorrectly used
+  integers instead of logicals or address-sized integers.
+- Fix so that Open MPI correctly handles the Fortran value for .TRUE.,
+  regardless of what the Fortran compiler's value for .TRUE. is.
+- Improved scalability of MX startup.
+- Fix datatype offset handling in the coll basic component's
+  MPI_SCATTERV implementation.
+- Fix EOF handling on stdin.
+- Fix missing MPI_F_STATUS_IGNORE and MPI_F_STATUSES_IGNORE
+  instanatiations.  Thanks to Anthony Chan for pointing this out.
+- Add a missing value for MPI_WIN_NULL in mpif.h.
+- Bring over some fixes for the sm btl that somehow didn't make it
+  over from the trunk before v1.0.  Thanks to Beth Tibbitts and Bill
+  Chung for helping identify this issue.
+- Bring over some fixes for the iof that somehow didn't make it over
+  from the trunk before v1.0.
+- Fix for --with-wrapper-ldflags handling.  Thanks to Dries Kimpe for
+  pointing this out to us.
+
+
+1.0
+---
+
+Initial public release.
