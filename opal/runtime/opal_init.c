@@ -27,6 +27,7 @@
 #include "opal/memoryhooks/memory.h"
 #include "opal/mca/base/base.h"
 #include "opal/runtime/opal.h"
+#include "opal/mca/installdirs/base/base.h"
 #include "opal/mca/memory/base/base.h"
 #include "opal/mca/memcpy/base/base.h"
 #include "opal/mca/paffinity/base/base.h"
@@ -145,6 +146,13 @@ opal_init_util(void)
             OPAL_ERR_BASE, OPAL_ERR_MAX, opal_err2str))) {
         error = "opal_error_register";
         goto return_error;
+    }
+
+    /* initialize install dirs code */
+    if (OPAL_SUCCESS != (ret = opal_installdirs_base_open())) {
+        fprintf(stderr, "opal_installdirs_base_open() failed -- process will likely abort (%s:%d, returned %d instead of OPAL_INIT)\n",
+                __FILE__, __LINE__, ret);
+        return ret;
     }
 
     /* keyval lex-based parser */

@@ -44,7 +44,7 @@
 #endif
 
 #include "opal/event/event.h"
-#include "opal/install_dirs.h"
+#include "opal/mca/installdirs/installdirs.h"
 #include "opal/mca/base/base.h"
 #include "opal/threads/condition.h"
 #include "opal/util/argv.h"
@@ -1421,7 +1421,7 @@ static int create_app(int argc, char* argv[], orte_app_context_t **app_ptr,
         }
         /* --enable-orterun-prefix-default was given to orterun */
         else {
-            param = strdup(OPAL_PREFIX);
+            param = strdup(opal_install_dirs.prefix);
         }
 
         if (NULL != param) {

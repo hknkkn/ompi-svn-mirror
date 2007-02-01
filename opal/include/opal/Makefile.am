@@ -25,7 +25,6 @@ headers += \
 	opal/prefetch.h
 
 nodist_headers += \
-	opal/install_dirs.h \
 	opal/version.h
 
 include opal/sys/Makefile.am

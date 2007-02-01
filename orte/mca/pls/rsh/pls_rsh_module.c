@@ -56,7 +56,7 @@
 #include <pwd.h>
 #endif
 
-#include "opal/install_dirs.h"
+#include "opal/mca/installdirs/installdirs.h"
 #include "opal/mca/base/mca_base_param.h"
 #include "opal/util/if.h"
 #include "opal/util/os_path.h"
@@ -279,14 +279,14 @@ static int orte_pls_rsh_fill_exec_path ( char ** exec_path)
 {
     struct stat buf;
 
-    asprintf(exec_path, "%s/orted", OPAL_BINDIR);
+    asprintf(exec_path, "%s/orted", opal_install_dirs.bindir);
     if (0 != stat(*exec_path, &buf)) {
         char *path = getenv("PATH");
         if (NULL == path) {
             path = ("PATH is empty!");
         }
         opal_show_help("help-pls-rsh.txt", "no-local-orted",
-                        true, path, OPAL_BINDIR);
+                        true, path, opal_install_dirs.bindir);
         return ORTE_ERR_NOT_FOUND;
     }
    return ORTE_SUCCESS;
@@ -728,7 +728,7 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
     /* Figure out the basenames for the libdir and bindir.  This
        requires some explanation:
 
-       - Use OPAL_LIBDIR and OPAL_BINDIR instead of -D'ing some macros
+       - Use opal_install_dirs.libdir and opal_install_dirs.bindir instead of -D'ing some macros
          in this directory's Makefile.am because it makes all the
          dependencies work out correctly.  These are defined in
          opal/install_dirs.h.
@@ -755,8 +755,8 @@ int orte_pls_rsh_launch(orte_jobid_t jobid)
        and use that on the remote node.
     */
 
-    lib_base = opal_basename(OPAL_LIBDIR);
-    bin_base = opal_basename(OPAL_BINDIR);
+    lib_base = opal_basename(opal_install_dirs.libdir);
+    bin_base = opal_basename(opal_install_dirs.bindir);
 
     /*
      * Iterate through each of the nodes

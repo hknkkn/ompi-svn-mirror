@@ -9,7 +9,7 @@
  *                         University of Stuttgart.  All rights reserved.
  * Copyright (c) 2004-2005 The Regents of the University of California.
  *                         All rights reserved.
- * Copyright (c) 2006      Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2006-2007 Cisco Systems, Inc.  All rights reserved.
  * $COPYRIGHT$
  * 
  * Additional copyrights may follow
@@ -21,6 +21,7 @@
 
 #include <string.h>
 
+#include "opal/mca/installdirs/installdirs.h"
 #include "opal/util/output.h"
 #include "opal/mca/base/mca_base_param.h"
 #include "btl_openib.h"
@@ -116,7 +117,8 @@ int btl_openib_register_mca_params(void)
                   "Warn when there is more than one active ports and at least one of them connected to the network with only default GID prefix configured (0 = do not warn; any other value = warn)",
                   1, &ival, 0));
     mca_btl_openib_component.warn_default_gid_prefix = (0 != ival);
-    asprintf(&str, "%s/mca-btl-openib-hca-params.ini", PKGDATADIR);
+    asprintf(&str, "%s/mca-btl-openib-hca-params.ini", 
+             opal_install_dirs.pkgdatadir);
     if (NULL == str) {
         return OMPI_ERR_OUT_OF_RESOURCE;
     }
