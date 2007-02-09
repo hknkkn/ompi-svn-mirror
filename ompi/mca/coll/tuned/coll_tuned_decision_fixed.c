@@ -42,9 +42,33 @@ ompi_coll_tuned_allreduce_intra_dec_fixed (void *sbuf, void *rbuf, int count,
                                            struct ompi_op_t *op,
                                            struct ompi_communicator_t *comm)
 {
+    size_t dsize, block_dsize;
+    const size_t intermediate_message = 10000;
     OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_allreduce_intra_dec_fixed"));
 
-    return (ompi_coll_tuned_allreduce_intra_nonoverlapping (sbuf, rbuf, count, dtype, op, comm));
+    /**
+     * Decision function based on MX results from the Grig cluster at UTK.
+     * 
+     * Currently, linear, recursive doubling, and nonoverlapping algorithms 
+     * can handle both commutative and non-commutative operations.
+     * Ring algorithm does not support non-commutative operations.
+     */
+    ompi_ddt_type_size(dtype, &dsize);
+    block_dsize = dsize * count;
+
+    if (block_dsize < intermediate_message) {
+       return (ompi_coll_tuned_allreduce_intra_recursivedoubling (sbuf, rbuf, 
+                                                                  count, dtype,
+                                                                  op, comm));
+    } 
+
+    if( ompi_op_is_commute(op) ) {
+       return (ompi_coll_tuned_allreduce_intra_ring (sbuf, rbuf, count, dtype, 
+                                                     op, comm));
+    }
+
+    return (ompi_coll_tuned_allreduce_intra_nonoverlapping (sbuf, rbuf, count, 
+                                                            dtype, op, comm));
 }
 
 /*
@@ -61,27 +85,51 @@ int ompi_coll_tuned_alltoall_intra_dec_fixed(void *sbuf, int scount,
                                              struct ompi_datatype_t *rdtype, 
                                              struct ompi_communicator_t *comm)
 {
-    int communicator_size, rank, err;
-    size_t dsize, total_dsize;
-
-    OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_alltoall_intra_dec_fixed"));
+    int communicator_size, rank;
+    size_t dsize, block_dsize;
+#if 0
+    size_t total_dsize;
+#endif
 
     communicator_size = ompi_comm_size(comm);
     rank = ompi_comm_rank(comm);
 
     /* special case */
     if (communicator_size==2) {
-        return ompi_coll_tuned_alltoall_intra_two_procs (sbuf, scount, sdtype, rbuf, rcount, rdtype, comm);
+        return ompi_coll_tuned_alltoall_intra_two_procs(sbuf, scount, sdtype, 
+                                                         rbuf, rcount, rdtype, 
+                                                         comm);
     }
+
+    /* Decision function based on measurement on Grig cluster at 
+       the University of Tennessee (2GB MX) up to 64 nodes.
+       Has better performance for messages of intermediate sizes than the old one */
+    /* determine block size */
+    ompi_ddt_type_size(sdtype, &dsize);
+    block_dsize = dsize * scount;
+
+    if ((block_dsize < 200) && (communicator_size > 12)) {
+       return ompi_coll_tuned_alltoall_intra_bruck(sbuf, scount, sdtype, 
+                                                   rbuf, rcount, rdtype, comm);
+
+    } else if (block_dsize < 3000) {
+       return ompi_coll_tuned_alltoall_intra_basic_linear(sbuf, scount, sdtype, 
+                                                          rbuf, rcount, rdtype, 
+                                                          comm);
+    }
+
+    return ompi_coll_tuned_alltoall_intra_pairwise (sbuf, scount, sdtype, 
+                                                    rbuf, rcount, rdtype, comm);
+
+#if 0
+    /* previous decision */
 
     /* else we need data size for decision function */
-    err = ompi_ddt_type_size(sdtype, &dsize);
-    if (err != MPI_SUCCESS) { 
-        OPAL_OUTPUT((ompi_coll_tuned_stream,"%s:%4d\tError occurred %d, rank %2d", __FILE__,__LINE__,err,rank));
-        return (err);
-    }
-
+    ompi_ddt_type_size(sdtype, &dsize);
     total_dsize = dsize * scount * communicator_size;   /* needed for decision */
+
+    OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_alltoall_intra_dec_fixed rank %d com_size %d msg_length %ld",
+                 rank, communicator_size, total_dsize));
 
     if (communicator_size >= 12 && total_dsize <= 768) {
         return ompi_coll_tuned_alltoall_intra_bruck (sbuf, scount, sdtype, rbuf, rcount, rdtype, comm);
@@ -90,6 +138,7 @@ int ompi_coll_tuned_alltoall_intra_dec_fixed(void *sbuf, int scount,
         return ompi_coll_tuned_alltoall_intra_basic_linear (sbuf, scount, sdtype, rbuf, rcount, rdtype, comm);
     }
     return ompi_coll_tuned_alltoall_intra_pairwise (sbuf, scount, sdtype, rbuf, rcount, rdtype, comm);
+#endif
 }
 
 
@@ -102,11 +151,10 @@ int ompi_coll_tuned_alltoall_intra_dec_fixed(void *sbuf, int scount,
  */
 int ompi_coll_tuned_barrier_intra_dec_fixed(struct ompi_communicator_t *comm)
 {
-    int communicator_size;
+    int communicator_size = ompi_comm_size(comm);
 
-    OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_barrier_intra_dec_fixed"));
-
-    communicator_size = ompi_comm_size(comm);
+    OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_barrier_intra_dec_fixed com_size %d",
+                 communicator_size));
 
     if( 2 == communicator_size )
         return ompi_coll_tuned_barrier_intra_two_procs(comm);
@@ -142,67 +190,76 @@ int ompi_coll_tuned_bcast_intra_dec_fixed(void *buff, int count,
                                           struct ompi_datatype_t *datatype, int root,
                                           struct ompi_communicator_t *comm)
 {
-    const double a0 = -7.8710;
-    const double b0 = 41.1613;
-    const double a1 = 0.0150;
-    const double b1 = 11.2445;
-    const double a2 = 0.0023;
-    const double b2 = 3.8074;
-    int communicator_size, rank, err;
+    /* Decision function based on MX results for 
+    messages up to 36MB and communicator sizes up to 64 nodes */
+    const size_t small_message_size = 2048;
+    const size_t intermediate_message_size = 370728;
+    const double a_p16  = 3.2118e-6; /* [1 / byte] */
+    const double b_p16  = 8.7936;   
+    const double a_p64  = 2.3679e-6; /* [1 / byte] */
+    const double b_p64  = 1.1787;     
+    const double a_p128 = 1.6134e-6; /* [1 / byte] */
+    const double b_p128 = 2.1102;
+
+    int communicator_size, rank;
     int segsize = 0;
     size_t message_size, dsize;
-
-    OPAL_OUTPUT((ompi_coll_tuned_stream,"ompi_coll_tuned_bcast_intra_dec_fixed"));
 
     communicator_size = ompi_comm_size(comm);
     rank = ompi_comm_rank(comm);
 
     /* else we need data size for decision function */
-    err = ompi_ddt_type_size(datatype, &dsize);
-    if (err != MPI_SUCCESS) {
-        OPAL_OUTPUT((ompi_coll_tuned_stream,"%s:%4d\tError occurred %d, rank %2d", __FILE__,__LINE__,err,rank));
-        return (err);
-    }
-
+    ompi_ddt_type_size(datatype, &dsize);
     message_size = dsize * (unsigned long)count;   /* needed for decision */
 
-    if ((message_size <= 1024) && (communicator_size < 12)) {
-        /* Linear_0K */
-        return ompi_coll_tuned_bcast_intra_basic_linear (buff, count, datatype, root, comm);
-    } else if (message_size < 8192) {
-        if ((communicator_size < 12) || 
-            (communicator_size < (a0 * (message_size / 1024.0) + b0))) {
-            /* Binary_0K */
-            segsize = 0;
-        } else {
-            /* Binary_1K */
-            segsize = 1024;
-        }
-        return  ompi_coll_tuned_bcast_intra_bintree (buff, count, datatype, root, comm, segsize);
-    } else if (message_size <= 35000) {
-        if (communicator_size <= 12) {
-            /* Binary_8K */
-            segsize = 1024 << 3;
-            return  ompi_coll_tuned_bcast_intra_bintree (buff, count, datatype, root, comm, segsize);
-        } else {
-            /* SplittedBinary_1K */
-            segsize = 1024;
-            return ompi_coll_tuned_bcast_intra_split_bintree(buff, count, datatype, root, comm, segsize);
-        }
+    OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_bcast_intra_dec_fixed root %d rank %d com_size %d msg_length %ld",
+                 root, rank, communicator_size, message_size));
 
-    } else if (communicator_size > (a1 * (message_size / 1024.0) + b1)) {
-        /* SplittedBinary_8K */
-        segsize = 1024 << 3;
-        return ompi_coll_tuned_bcast_intra_split_bintree(buff, count, datatype, root, comm, segsize);
+    /* Handle messages of small and intermediate size */
+    if (message_size < small_message_size) {
+       /* Binomial without segmentation */
+       segsize = 0;
+       return  ompi_coll_tuned_bcast_intra_binomial (buff, count, datatype, 
+						     root, comm, segsize);
+
+    } else if (message_size < intermediate_message_size) {
+       /* SplittedBinary with 1KB segments */
+       segsize = 1024;
+       return ompi_coll_tuned_bcast_intra_split_bintree(buff, count, datatype, 
+							root, comm, segsize);
+
+    } 
+    /* Handle large message sizes */
+    else if (communicator_size < (a_p128 * message_size + b_p128)) {
+       /* Pipeline with 128KB segments */
+       segsize = 1024  << 7;
+       return ompi_coll_tuned_bcast_intra_pipeline (buff, count, datatype, 
+						    root, comm, segsize);
+
+    } else if (communicator_size < 13) {
+       /* Split Binary with 8KB segments */
+       segsize = 1024 << 3;
+       return ompi_coll_tuned_bcast_intra_split_bintree(buff, count, datatype, 
+							root, comm, segsize);
+       
+    } else if (communicator_size < (a_p64 * message_size + b_p64)) {
+       /* Pipeline with 64KB segments */
+       segsize = 1024 << 6;
+       return ompi_coll_tuned_bcast_intra_pipeline (buff, count, datatype, 
+						    root, comm, segsize);
+
+    } else if (communicator_size < (a_p16 * message_size + b_p16)) {
+       /* Pipeline with 16KB segments */
+       segsize = 1024 << 4;
+       return ompi_coll_tuned_bcast_intra_pipeline (buff, count, datatype, 
+						    root, comm, segsize);
+
     }
-    if (communicator_size > (a2 * (message_size / 1024.0) + b2)) {
-        /* Pipeline_8K */
-        segsize = 1024 << 3;
-    } else {
-        /* Pipeline_64K */
-        segsize = 1024 << 6;
-    }
-    return ompi_coll_tuned_bcast_intra_pipeline (buff, count, datatype, root, comm, segsize);
+
+    /* Pipeline with 8KB segments */
+    segsize = 1024 << 3;
+    return ompi_coll_tuned_bcast_intra_pipeline (buff, count, datatype, 
+						 root, comm, segsize);
 #if 0
     /* this is based on gige measurements */
 
@@ -245,7 +302,7 @@ int ompi_coll_tuned_reduce_intra_dec_fixed( void *sendbuf, void *recvbuf,
                                             struct ompi_op_t* op, int root,
                                             struct ompi_communicator_t* comm)
 {
-    int communicator_size, rank, err, segsize = 0;
+    int communicator_size, rank, segsize = 0;
     size_t message_size, dsize;
     const double a1 =  0.6016 / 1024.0; /* [1/B] */
     const double b1 =  1.3496;
@@ -255,8 +312,6 @@ int ompi_coll_tuned_reduce_intra_dec_fixed( void *sendbuf, void *recvbuf,
     const double b3 =  1.1614;
     const double a4 =  0.0033 / 1024.0; /* [1/B] */
     const double b4 =  1.6761;
-
-    OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_reduce_intra_dec_fixed"));
 
     /**
      * If the operation is non commutative we only have one reduce algorithm right now.
@@ -269,13 +324,12 @@ int ompi_coll_tuned_reduce_intra_dec_fixed( void *sendbuf, void *recvbuf,
     rank = ompi_comm_rank(comm);
 
     /* need data size for decision function */
-    err = ompi_ddt_type_size(datatype, &dsize);
-    if (err != MPI_SUCCESS) {
-        OPAL_OUTPUT((ompi_coll_tuned_stream,"%s:%4d\tError occurred %d, rank %2d", __FILE__,__LINE__,err,rank));
-        return (err);
-    }
-
+    ompi_ddt_type_size(datatype, &dsize);
     message_size = dsize * count;   /* needed for decision */
+
+    OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_reduce_intra_dec_fixed"
+                 "root %d rank %d com_size %d msg_length %ld",
+                 root, rank, communicator_size, message_size));
 
     if (((communicator_size < 20) && (message_size < 512)) ||
         ((communicator_size < 10) && (message_size <= 1024))){
@@ -310,6 +364,7 @@ int ompi_coll_tuned_reduce_intra_dec_fixed( void *sendbuf, void *recvbuf,
         segsize = 64*1024;
     }
     return ompi_coll_tuned_reduce_intra_pipeline (sendbuf, recvbuf, count, datatype, op, root, comm, segsize);
+
 #if 0
     /* for small messages use linear algorithm */
     if (message_size <= 4096) {
@@ -335,4 +390,98 @@ int ompi_coll_tuned_reduce_intra_dec_fixed( void *sendbuf, void *recvbuf,
     segsize = 1024;
     return ompi_coll_tuned_reduce_intra_pipeline (sendbuf, recvbuf, count, datatype, op, root, comm, segsize);
 #endif  /* 0 */
+}
+
+/*
+ *	allgather_intra_dec 
+ *
+ *	Function:	- seletects allgather algorithm to use
+ *	Accepts:	- same arguments as MPI_Allgather()
+ *	Returns:	- MPI_SUCCESS or error code, passed from corresponding
+ *                        internal allgather function.
+ */
+
+int ompi_coll_tuned_allgather_intra_dec_fixed(void *sbuf, int scount, 
+                                              struct ompi_datatype_t *sdtype,
+                                              void* rbuf, int rcount, 
+                                              struct ompi_datatype_t *rdtype, 
+                                              struct ompi_communicator_t *comm)
+{
+   int communicator_size, rank, pow2_size;
+   size_t dsize, total_dsize;
+
+   communicator_size = ompi_comm_size(comm);
+   rank = ompi_comm_rank(comm);
+
+   /* Special case for 2 processes */
+   if (communicator_size == 2) {
+      return ompi_coll_tuned_allgather_intra_two_procs (sbuf, scount, sdtype, 
+                                                        rbuf, rcount, rdtype, 
+                                                        comm);
+    }
+
+   /* Determine complete data size */
+   ompi_ddt_type_size(sdtype, &dsize);
+   total_dsize = dsize * scount * communicator_size;   
+   
+   OPAL_OUTPUT((ompi_coll_tuned_stream, "ompi_coll_tuned_allgather_intra_dec_fixed rank %d com_size %d msg_length %ld", rank, communicator_size, total_dsize));
+
+   for (pow2_size  = 1; pow2_size <= communicator_size; pow2_size <<=1); 
+   pow2_size >>=1;
+
+   /* Decision based on MX 2Gb results from Grig cluster at 
+      The University of Tennesse, Knoxville 
+      - if total message size is less than 50KB use either bruck or 
+        recursive doubling for non-power of two and power of two nodes, 
+        respectively.
+      - else use ring and neighbor exchange algorithms for odd and even 
+        number of nodes, respectively.
+   */
+   if (total_dsize < 50000) {
+      if (pow2_size == communicator_size) {
+         return ompi_coll_tuned_allgather_intra_recursivedoubling(sbuf, scount, 
+                                                                  sdtype, 
+                                                                  rbuf, rcount, 
+                                                                  rdtype, comm);
+      } else {
+         return ompi_coll_tuned_allgather_intra_bruck(sbuf, scount, sdtype, 
+                                                      rbuf, rcount, rdtype, 
+                                                      comm);
+      }
+   } else {
+      if (communicator_size % 2) {
+         return ompi_coll_tuned_allgather_intra_ring(sbuf, scount, sdtype, 
+                                                     rbuf, rcount, rdtype, 
+                                                     comm);
+      } else {
+         return  ompi_coll_tuned_allgather_intra_neighborexchange(sbuf, scount, 
+                                                                  sdtype,
+                                                                  rbuf, rcount,
+                                                                  rdtype, comm);
+      }
+   }
+   
+#if defined(USE_MPICH2_DECISION)
+   /* Decision as in MPICH-2 
+      presented in Thakur et.al. "Optimization of Collective Communication 
+      Operations in MPICH", International Journal of High Performance Computing 
+      Applications, Vol. 19, No. 1, 49-66 (2005)
+      - for power-of-two processes and small and medium size messages 
+        (up to 512KB) use recursive doubling
+      - for non-power-of-two processes and small messages (80KB) use bruck,
+      - for everything else use ring.
+    */
+   if ((pow2_size == communicator_size) && (total_dsize < 524288)) {
+      return ompi_coll_tuned_allgather_intra_recursivedoubling(sbuf, scount, 
+                                                               sdtype, 
+                                                               rbuf, rcount, 
+                                                               rdtype, 
+                                                               comm);
+   } else if (total_dsize <= 81920) { 
+      return ompi_coll_tuned_allgather_intra_bruck(sbuf, scount, sdtype, 
+                                                   rbuf, rcount, rdtype, comm);
+   } 
+   return ompi_coll_tuned_allgather_intra_ring(sbuf, scount, sdtype, 
+                                               rbuf, rcount, rdtype, comm);
+#endif  /* defined(USE_MPICH2_DECISION) */
 }

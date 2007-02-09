@@ -85,11 +85,11 @@ extern int ompi_coll_tuned_forced_max_algorithms[COLLCOUNT];
   /* API functions */
 
   int ompi_coll_tuned_init_query(bool enable_progress_threads,
-                                bool enable_mpi_threads);
+                                 bool enable_mpi_threads);
 
   const struct mca_coll_base_module_1_0_0_t *
     ompi_coll_tuned_comm_query(struct ompi_communicator_t *comm, int *priority,
-                              struct mca_coll_base_comm_t **data);
+                               struct mca_coll_base_comm_t **data);
 
   const struct mca_coll_base_module_1_0_0_t *
     ompi_coll_tuned_module_init(struct ompi_communicator_t *comm);
@@ -108,6 +108,15 @@ extern int ompi_coll_tuned_forced_max_algorithms[COLLCOUNT];
   /* All Gather */
   int ompi_coll_tuned_allgather_intra_dec_fixed(ALLGATHER_ARGS);
   int ompi_coll_tuned_allgather_intra_dec_dynamic(ALLGATHER_ARGS);
+  int ompi_coll_tuned_allgather_intra_do_forced(ALLGATHER_ARGS);
+  int ompi_coll_tuned_allgather_intra_do_this(ALLGATHER_ARGS, int algorithm, int faninout, int segsize);
+  int ompi_coll_tuned_allgather_intra_check_forced_init (coll_tuned_force_algorithm_mca_param_indices_t *mca_param_indices);
+  int ompi_coll_tuned_allgather_intra_bruck(ALLGATHER_ARGS);
+  int ompi_coll_tuned_allgather_intra_recursivedoubling(ALLGATHER_ARGS);
+  int ompi_coll_tuned_allgather_intra_ring(ALLGATHER_ARGS);
+  int ompi_coll_tuned_allgather_intra_neighborexchange(ALLGATHER_ARGS);
+  int ompi_coll_tuned_allgather_intra_basic_linear(ALLGATHER_ARGS);
+  int ompi_coll_tuned_allgather_intra_two_procs(ALLGATHER_ARGS);
   int ompi_coll_tuned_allgather_inter_dec_fixed(ALLGATHER_ARGS);
   int ompi_coll_tuned_allgather_inter_dec_dynamic(ALLGATHER_ARGS);
 
@@ -124,6 +133,8 @@ extern int ompi_coll_tuned_forced_max_algorithms[COLLCOUNT];
   int ompi_coll_tuned_allreduce_intra_do_this(ALLREDUCE_ARGS, int algorithm, int faninout, int segsize);
   int ompi_coll_tuned_allreduce_intra_check_forced_init (coll_tuned_force_algorithm_mca_param_indices_t *mca_param_indices);
   int ompi_coll_tuned_allreduce_intra_nonoverlapping(ALLREDUCE_ARGS);
+  int ompi_coll_tuned_allreduce_intra_recursivedoubling(ALLREDUCE_ARGS);
+  int ompi_coll_tuned_allreduce_intra_ring(ALLREDUCE_ARGS);
   int ompi_coll_tuned_allreduce_intra_basic_linear(ALLREDUCE_ARGS);
   int ompi_coll_tuned_allreduce_inter_dec_fixed(ALLREDUCE_ARGS);
   int ompi_coll_tuned_allreduce_inter_dec_dynamic(ALLREDUCE_ARGS);
@@ -168,6 +179,7 @@ extern int ompi_coll_tuned_forced_max_algorithms[COLLCOUNT];
   int ompi_coll_tuned_barrier_intra_linear(BARRIER_ARGS);
 
   /* Bcast */
+  int ompi_coll_tuned_bcast_intra_generic( BCAST_ARGS, uint32_t count_by_segment, ompi_coll_tree_t* tree );
   int ompi_coll_tuned_bcast_intra_dec_fixed(BCAST_ARGS);
   int ompi_coll_tuned_bcast_intra_dec_dynamic(BCAST_ARGS);
   int ompi_coll_tuned_bcast_intra_do_forced(BCAST_ARGS);
@@ -176,7 +188,7 @@ extern int ompi_coll_tuned_forced_max_algorithms[COLLCOUNT];
   int ompi_coll_tuned_bcast_intra_basic_linear(BCAST_ARGS);
   int ompi_coll_tuned_bcast_intra_chain(BCAST_ARGS, uint32_t segsize, int32_t chains);
   int ompi_coll_tuned_bcast_intra_pipeline(BCAST_ARGS, uint32_t segsize);
-  int ompi_coll_tuned_bcast_intra_bmtree(BCAST_ARGS, uint32_t segsize, int32_t chains);
+  int ompi_coll_tuned_bcast_intra_binomial(BCAST_ARGS, uint32_t segsize);
   int ompi_coll_tuned_bcast_intra_bintree(BCAST_ARGS, uint32_t segsize);
   int ompi_coll_tuned_bcast_intra_split_bintree(BCAST_ARGS, uint32_t segsize);
   int ompi_coll_tuned_bcast_inter_dec_fixed(BCAST_ARGS);
@@ -201,7 +213,7 @@ extern int ompi_coll_tuned_forced_max_algorithms[COLLCOUNT];
   int ompi_coll_tuned_gatherv_inter_dec_dynamic(GATHER_ARGS);
 
   /* Reduce */
-    int ompi_coll_tuned_reduce_generic( REDUCE_ARGS, ompi_coll_tree_t* tree, int count_by_segment );
+  int ompi_coll_tuned_reduce_generic( REDUCE_ARGS, ompi_coll_tree_t* tree, int count_by_segment );
   int ompi_coll_tuned_reduce_intra_dec_fixed(REDUCE_ARGS);
   int ompi_coll_tuned_reduce_intra_dec_dynamic(REDUCE_ARGS);
   int ompi_coll_tuned_reduce_intra_do_forced(REDUCE_ARGS);
@@ -395,5 +407,22 @@ do {                                                                            
         coll_comm->cached_chain_fanout = (FANOUT);                                               \
     }                                                                                            \
 } while (0)
+
+/**
+ * This macro give a generic way to compute the best count of
+ * the segment (i.e. the number of complete datatypes that
+ * can fit in the specified SEGSIZE). Beware, when this macro
+ * is called, the SEGCOUNT should be initialized to the count as
+ * expected by the collective call.
+ */
+#define COLL_TUNED_COMPUTED_SEGCOUNT(SEGSIZE, TYPELNG, SEGCOUNT)        \
+    if( ((SEGSIZE) >= (TYPELNG)) &&                                     \
+        ((SEGSIZE) < ((TYPELNG) * (SEGCOUNT))) ) {                      \
+        size_t residual;                                                \
+        (SEGCOUNT) = (int)((SEGSIZE) / (TYPELNG));                      \
+        residual = (SEGSIZE) - (SEGCOUNT) * (TYPELNG);                  \
+        if( residual > ((TYPELNG) >> 1) )                               \
+            (SEGCOUNT)++;                                               \
+    }                                                                   \
 
 #endif /* MCA_COLL_TUNED_EXPORT_H */

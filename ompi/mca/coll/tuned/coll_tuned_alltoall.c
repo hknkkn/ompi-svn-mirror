@@ -213,11 +213,6 @@ int ompi_coll_tuned_alltoall_intra_bruck(void *sbuf, int scount,
         }
     }
 
- 
-    if (err<0) {
-        line = __LINE__; err = -1; goto err_hndl;
-    }
-
     /* Step 4 - clean up */
     if (tmpbuf != NULL) free(tmpbuf);
     if (packbuf != NULL) free(packbuf);
@@ -225,7 +220,6 @@ int ompi_coll_tuned_alltoall_intra_bruck(void *sbuf, int scount,
         if (displs != NULL) free(displs);
         if (blen != NULL) free(blen);
     }
-
     return OMPI_SUCCESS;
 
  err_hndl:
@@ -237,7 +231,6 @@ int ompi_coll_tuned_alltoall_intra_bruck(void *sbuf, int scount,
         if (blen != NULL) free(blen);
     }
     return err;
-
 }
 
 
@@ -369,7 +362,6 @@ int ompi_coll_tuned_alltoall_intra_basic_linear(void *sbuf, int scount,
 
     /* Initiate all send/recv to/from others. */
 
-    nreqs = (size - 1) * 2;
     req = rreq = comm->c_coll_basic_data->mcct_reqs;
     sreq = rreq + size - 1;
 
@@ -378,7 +370,8 @@ int ompi_coll_tuned_alltoall_intra_basic_linear(void *sbuf, int scount,
 
     /* Post all receives first -- a simple optimization */
 
-    for (i = (rank + 1) % size; i != rank; i = (i + 1) % size, ++rreq) {
+    for (nreqs = 0, i = (rank + 1) % size; i != rank; 
+         i = (i + 1) % size, ++rreq, ++nreqs) {
         err =
             MCA_PML_CALL(irecv_init
                          (prcv + (i * rcvinc), rcount, rdtype, i,
@@ -389,9 +382,12 @@ int ompi_coll_tuned_alltoall_intra_basic_linear(void *sbuf, int scount,
         }
     }
 
-    /* Now post all sends */
-
-    for (i = (rank + 1) % size; i != rank; i = (i + 1) % size, ++sreq) {
+    /* Now post all sends in reverse order 
+       - We would like to minimize the search time through message queue
+         when messages actually arrive in the order in which they were posted.
+     */
+    for (nreqs = 0, i = (rank + size - 1) % size; i != rank; 
+         i = (i + size - 1) % size, ++sreq, ++nreqs) {
         err =
             MCA_PML_CALL(isend_init
                          (psnd + (i * sndinc), scount, sdtype, i,
@@ -403,6 +399,7 @@ int ompi_coll_tuned_alltoall_intra_basic_linear(void *sbuf, int scount,
         }
     }
 
+    nreqs = (size - 1) * 2;
     /* Start your engines.  This will never return an error. */
 
     MCA_PML_CALL(start(nreqs, req));
@@ -438,8 +435,7 @@ int ompi_coll_tuned_alltoall_intra_basic_linear(void *sbuf, int scount,
 
 int ompi_coll_tuned_alltoall_intra_check_forced_init (coll_tuned_force_algorithm_mca_param_indices_t *mca_param_indices)
 {
-    int rc;
-    int max_alg = 4;
+    int rc, max_alg = 4, requested_alg;
 
     ompi_coll_tuned_forced_max_algorithms[ALLTOALL] = max_alg;
 
@@ -448,30 +444,41 @@ int ompi_coll_tuned_alltoall_intra_check_forced_init (coll_tuned_force_algorithm
                                  "Number of alltoall algorithms available",
                                  false, true, max_alg, NULL);
 
+    mca_param_indices->algorithm_param_index
+        = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
+                                 "alltoall_algorithm",
+                                 "Which alltoall algorithm is used. Can be locked down to choice of: 0 ignore, 1 basic linear, 2 pairwise, 3: modified bruck, 4: two proc only.",
+                                 false, false, 0, NULL);
+    mca_base_param_lookup_int(mca_param_indices->algorithm_param_index, &(requested_alg));
+    if( requested_alg > max_alg ) {
+        if( 0 == ompi_comm_rank( MPI_COMM_WORLD ) ) {
+            opal_output( 0, "Alltoall algorithm #%d is not available (range [0..%d]). Switching back to ignore(0)\n",
+                         requested_alg, max_alg );
+        }
+        mca_base_param_set_int( mca_param_indices->algorithm_param_index, 0);
+    }
+    
+    mca_param_indices->segsize_param_index
+        = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
+                                 "alltoall_algorithm_segmentsize",
+                                 "Segment size in bytes used by default for alltoall algorithms. Only has meaning if algorithm is forced and supports segmenting. 0 bytes means no segmentation.",
+                                 false, false, 0, NULL);
+    
+    mca_param_indices->tree_fanout_param_index
+        = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
+                                 "alltoall_algorithm_tree_fanout",
+                                 "Fanout for n-tree used for alltoall algorithms. Only has meaning if algorithm is forced and supports n-tree topo based operation.",
+                                 false, false, 
+                                 ompi_coll_tuned_init_tree_fanout, /* get system wide default */
+                                 NULL);
 
-    mca_param_indices->algorithm_param_index = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
-                                                                      "alltoall_algorithm",
-                                                                      "Which alltoall algorithm is used. Can be locked down to choice of: 0 ignore, 1 basic linear, 2 pairwise, 3: modified bruck, 4: two proc only.",
-                                                                      false, false, 0, NULL);
-
-    mca_param_indices->segsize_param_index = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
-                                                                    "alltoall_algorithm_segmentsize",
-                                                                    "Segment size in bytes used by default for alltoall algorithms. Only has meaning if algorithm is forced and supports segmenting. 0 bytes means no segmentation.",
-                                                                    false, false, 0, NULL);
-
-    mca_param_indices->tree_fanout_param_index = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
-                                                                        "alltoall_algorithm_tree_fanout",
-                                                                        "Fanout for n-tree used for alltoall algorithms. Only has meaning if algorithm is forced and supports n-tree topo based operation.",
-                                                                        false, false, 
-                                                                        ompi_coll_tuned_init_tree_fanout, /* get system wide default */
-                                                                        NULL);
-
-    mca_param_indices->chain_fanout_param_index = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
-                                                                         "alltoall_algorithm_chain_fanout",
-                                                                         "Fanout for chains used for alltoall algorithms. Only has meaning if algorithm is forced and supports chain topo based operation.",
-                                                                         false, false, 
-                                                                         ompi_coll_tuned_init_chain_fanout, /* get system wide default */
-                                                                         NULL);
+    mca_param_indices->chain_fanout_param_index
+        = mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
+                                 "alltoall_algorithm_chain_fanout",
+                                 "Fanout for chains used for alltoall algorithms. Only has meaning if algorithm is forced and supports chain topo based operation.",
+                                 false, false, 
+                                 ompi_coll_tuned_init_chain_fanout, /* get system wide default */
+                                 NULL);
 
     return (MPI_SUCCESS);
 }

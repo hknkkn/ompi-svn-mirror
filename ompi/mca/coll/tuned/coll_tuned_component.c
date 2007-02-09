@@ -120,12 +120,22 @@ mca_coll_tuned_component_t mca_coll_tuned_component = {
 
 static int tuned_open(void)
 {
-    int param;
+#if OMPI_ENABLE_DEBUG
+    {
+        int param;
 
-    /*     ompi_coll_tuned_component_t *ct = &ompi_coll_tuned_component; */
+        param = mca_base_param_find("coll", NULL, "base_verbose");
+        if (param >= 0) {
+            int verbose;
+            mca_base_param_lookup_int(param, &verbose);
+            if (verbose > 0) {
+                ompi_coll_tuned_stream = opal_output_open(NULL);
+            }
+        }
+    }
+#endif  /* OMPI_ENABLE_DEBUG */
 
-    /* Use a low priority, but allow other components to be lower */
-    
+    /* Use a low priority, but allow other components to be lower */    
     mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
                            "priority",
                            "Priority of the tuned coll component",
@@ -139,25 +149,6 @@ static int tuned_open(void)
                            false, false, ompi_coll_tuned_preallocate_memory_comm_size_limit,
                            &ompi_coll_tuned_preallocate_memory_comm_size_limit);
     
-    /* by default DISABLE dynamic rules and instead use fixed [if based] rules */
-    mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
-                           "use_dynamic_rules",
-                           "Switch used to decide if we use static (compiled/if statements) or dynamic (built at runtime) decision function rules",
-                           false, false, ompi_coll_tuned_use_dynamic_rules,
-                           &ompi_coll_tuned_use_dynamic_rules);
-
-
-    /* if dynamic rules allowed then look up dynamic rules config filename, else we leave it an empty filename (NULL) */
-    if (ompi_coll_tuned_use_dynamic_rules) {
-        /*         char *default_name; */
-        /*         asprintf(&default_name, "~/.openmpi/openmpi-coll-tuned-params.conf"); */
-        mca_base_param_reg_string(&mca_coll_tuned_component.super.collm_version,
-                                  "dynamic_rules_filename",
-                                  "Filename of configuration file that contains the dynamic (@runtime) decision function rules",
-                                  false, false, ompi_coll_tuned_dynamic_rules_filename,
-                                  &ompi_coll_tuned_dynamic_rules_filename);
-    }
-
     /* some initial guesses at topology parameters */
     mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
                            "init_tree_fanout",
@@ -171,15 +162,6 @@ static int tuned_open(void)
                            false, false, ompi_coll_tuned_init_chain_fanout,
                            &ompi_coll_tuned_init_chain_fanout);
 
-    param = mca_base_param_find("coll", NULL, "base_verbose");
-    if (param >= 0) {
-        int verbose;
-        mca_base_param_lookup_int(param, &verbose);
-        if (verbose > 0) {
-            ompi_coll_tuned_stream = opal_output_open(NULL);
-        }
-    }
-
     /* now check that the user hasn't overrode any of the decision functions if dynamic rules are enabled */
     /* the user can redo this before every comm dup/create if they like */
     /* this is useful for benchmarking and user knows best tuning */
@@ -187,10 +169,24 @@ static int tuned_open(void)
     /* the actual values are looked up during comm create via module init */
    
     /* intra functions first */
+    /* if dynamic rules allowed then look up dynamic rules config filename, else we leave it an empty filename (NULL) */
+    /* by default DISABLE dynamic rules and instead use fixed [if based] rules */
+    mca_base_param_reg_int(&mca_coll_tuned_component.super.collm_version,
+                           "use_dynamic_rules",
+                           "Switch used to decide if we use static (compiled/if statements) or dynamic (built at runtime) decision function rules",
+                           false, false, ompi_coll_tuned_use_dynamic_rules,
+                           &ompi_coll_tuned_use_dynamic_rules);
+
     if (ompi_coll_tuned_use_dynamic_rules) {
+        mca_base_param_reg_string(&mca_coll_tuned_component.super.collm_version,
+                                  "dynamic_rules_filename",
+                                  "Filename of configuration file that contains the dynamic (@runtime) decision function rules",
+                                  false, false, ompi_coll_tuned_dynamic_rules_filename,
+                                  &ompi_coll_tuned_dynamic_rules_filename);
         ompi_coll_tuned_allreduce_intra_check_forced_init(&ompi_coll_tuned_forced_params[ALLREDUCE]);
         ompi_coll_tuned_alltoall_intra_check_forced_init(&ompi_coll_tuned_forced_params[ALLTOALL]);
-        /*         ompi_coll_tuned_alltoall_intra_check_forced_init(&ompi_coll_tuned_forced_params[ALLTOALLV]); */
+        ompi_coll_tuned_allgather_intra_check_forced_init(&ompi_coll_tuned_forced_params[ALLGATHER]);
+        /*ompi_coll_tuned_alltoallv_intra_check_forced_init(&ompi_coll_tuned_forced_params[ALLTOALLV]); */
         ompi_coll_tuned_barrier_intra_check_forced_init(&ompi_coll_tuned_forced_params[BARRIER]);
         ompi_coll_tuned_bcast_intra_check_forced_init(&ompi_coll_tuned_forced_params[BCAST]);
         ompi_coll_tuned_reduce_intra_check_forced_init(&ompi_coll_tuned_forced_params[REDUCE]);
