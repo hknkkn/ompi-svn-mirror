@@ -70,6 +70,17 @@
 # type: string (name of modules RPM)
 %{!?modules_rpm_name: %define modules_rpm_name modules}
 
+# Should we use the mpi-selector functionality?
+# type: bool (0/1)
+%{!?use_mpi_selector: %define use_mpi_selector 0}
+# The name of the mpi-selector RPM.  Can vary from system to system.
+# type: string (name of mpi-selector RPM)
+%{!?mpi_selector_rpm_name: %define mpi_selector_rpm_name mpi-selector}
+# The location of the mpi-selector executable (can be a relative path
+# name if "mpi-selector" can be found in the path)
+# type: string (path to mpi-selector exectuable)
+%{!?mpi_selector: %define mpi_selector mpi-selector}
+
 # Should we build a debuginfo RPM or not?
 # type: bool (0/1)
 %{!?build_debuginfo_rpm: %define build_debuginfo_rpm 0}
@@ -96,7 +107,6 @@
 # some assumptions in the OFED installer).  Ick!
 # type: bool (0/1)
 %{!?munge_build_into_install: %define munge_build_into_install 0}
-
 
 #############################################################################
 #
@@ -129,6 +139,7 @@
 %define install_shell_scripts 1
 %define shell_scripts_basename mpivars
 %define munge_build_into_install 1
+%define use_mpi_selector 1
 %endif
 
 
@@ -185,6 +196,9 @@ Provides: mpi
 BuildRoot: /var/tmp/%{name}-%{version}-%{release}-root
 %if %{install_modulefile}
 Requires: %{modules_rpm_name}
+%endif
+%if %{use_mpi_selector}
+Requires: %{mpi_selector_rpm_name}
 %endif
 
 %description
@@ -470,14 +484,31 @@ test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
 
 #############################################################################
 #
-# Post (Un)Install Section
+# Post Install Section
 #
 #############################################################################
+%if %{use_mpi_selector}
 %post
-# Stub
+echo %{mpi_selector} \
+	--register %{name}-%{version} \
+	--source-dir %{shell_scripts_path} \
+        --yes --silent
+%{mpi_selector} \
+	--register %{name}-%{version} \
+	--source-dir %{shell_scripts_path} \
+        --yes
+%endif
 
-%postun
-# Stub
+#############################################################################
+#
+# Pre Uninstall Section
+#
+#############################################################################
+%if %{use_mpi_selector}
+%preun
+%{mpi-selector} --unregister %{name}-%{version} --yes || \
+      /bin/true > /dev/null 2> /dev/null
+%endif
 
 #############################################################################
 #
