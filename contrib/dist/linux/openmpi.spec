@@ -381,13 +381,6 @@ module-whatis   "Sets up Open MPI v%{version}  in your enviornment"
 prepend-path PATH "%{_prefix}/bin/"
 prepend-path LD_LIBRARY_PATH %{_libdir}
 prepend-path MANPATH %{_mandir}
-%if %{lanl}
-setenv MPI_ROOT %{_prefix}
-setenv MPIHOME %{_prefix}
-# These flags are now obsolete -- use mpicc (etc.)
-setenv MPI_LD_FLAGS ""
-setenv MPI_COMPILE_FLAGS ""
-%endif
 EOF
 %endif
 # End of modulefile if
@@ -401,21 +394,22 @@ cat <<EOF > $RPM_BUILD_ROOT/%{shell_scripts_path}/%{shell_scripts_basename}.sh
 # Open MPI RPM).  Any changes made here will be lost if the RPM is
 # uninstalled or upgraded.
 
-CHANGED=0
+# PATH
 if test -z "\`echo \$PATH | grep %{_bindir}\`"; then
     PATH=%{_bindir}:\${PATH}
-    CHANGED=1
+    export PATH
 fi
+
+# LD_LIBRARY_PATH
 if test -z "\`echo \$LD_LIBRARY_PATH | grep %{_libdir}\`"; then
     LD_LIBRARY_PATH=%{_libdir}:\${LD_LIBRARY_PATH}
-    CHANGED=1
+    export LD_LIBRARY_PATH
 fi
+
+# MANPATH
 if test -z "\`echo \$MANPATH | grep %{_mandir}\`"; then
     MANPATH=%{_mandir}:\${MANPATH}
-    CHANGED=1
-fi
-if test "\$CHANGED" = "1"; then
-    export PATH LD_LIBRARY_PATH MANPATH
+    echo MANPATH
 fi
 EOF
 cat <<EOF > $RPM_BUILD_ROOT/%{shell_scripts_path}/%{shell_scripts_basename}.csh
@@ -423,18 +417,23 @@ cat <<EOF > $RPM_BUILD_ROOT/%{shell_scripts_path}/%{shell_scripts_basename}.csh
 # Open MPI RPM).  Any changes made here will be lost if the RPM is
 # uninstalled or upgraded.
 
-if ("\`echo \$PATH | grep %{_bindir}\`") then
+# path
+if ("" == "\`echo \$path | grep %{_bindir}\`") then
     set path=(%{_bindir} \$path)
 endif
-if ("\$?LD_LIBRARY_PATH") then
-    if ("\`echo \$LD_LIBRARY_PATH | grep %{_libdir}\`") then
+
+# LD_LIBRARY_PATH
+if ("1" == "\$?LD_LIBRARY_PATH") then
+    if ("" == "\`echo \$LD_LIBRARY_PATH | grep %{_libdir}\`") then
         setenv LD_LIBRARY_PATH %{_libdir}:\${LD_LIBRARY_PATH}
     endif
 else
     setenv LD_LIBRARY_PATH %{_libdir}
 endif
-if ("\$?MANPATH") then
-    if ("\`echo \$MANPATH | grep %{_mandir}\`") then
+
+# MANPATH
+if ("1" == "\$?MANPATH") then
+    if ("" == "\`echo \$MANPATH | grep %{_mandir}\`") then
         setenv MANPATH %{_mandir}:\${MANPATH}
     endif
 else
