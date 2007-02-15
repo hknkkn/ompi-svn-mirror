@@ -489,10 +489,6 @@ test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
 #############################################################################
 %if %{use_mpi_selector}
 %post
-echo %{mpi_selector} \
-	--register %{name}-%{version} \
-	--source-dir %{shell_scripts_path} \
-        --yes --silent
 %{mpi_selector} \
 	--register %{name}-%{version} \
 	--source-dir %{shell_scripts_path} \
