@@ -501,7 +501,7 @@ test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
 #############################################################################
 %if %{use_mpi_selector}
 %preun
-%{mpi-selector} --unregister %{name}-%{version} --yes || \
+%{mpi_selector} --unregister %{name}-%{version} --yes || \
       /bin/true > /dev/null 2> /dev/null
 %endif
 
