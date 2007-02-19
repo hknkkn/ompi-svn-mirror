@@ -26,6 +26,23 @@ This file contains the main features as well as overviews of specific
 bug fixes (and other actions) for each version of Open MPI since
 version 1.0.
 
+1.2ofed
+-------
+
+This release was created specifically for the OpenFabrics Enterprise
+Distribution (OFED).  It is the Open MPI v1.2 community release with
+two features that were required by OFED but were too late to make the
+community OMPI v1.2 release:
+
+- Ability to set the OPAL_DESTDIR or OPAL_PREFIX environment variables
+  to "re-root" an existing Open MPI installation.
+- Always include -I for Fortran compiles, even if the prefix is
+  /usr/local.
+
+This functionality will be merged into upstream community Open MPI
+releases.
+
+
 1.2
 ---
 
