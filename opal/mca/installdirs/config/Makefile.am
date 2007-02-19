@@ -1,6 +1,7 @@
 #
 # Copyright (c) 2006      Los Alamos National Security, LLC.  All rights
 #                         reserved. 
+# Copyright (c) 2007      Cisco, Inc.  All rights resereved.
 # $COPYRIGHT$
 # 
 # Additional copyrights may follow
@@ -11,5 +12,9 @@
 noinst_LTLIBRARIES = libmca_installdirs_config.la
 
 libmca_installdirs_config_la_SOURCES = \
-	install_dirs.h \
 	opal_installdirs_config.c
+
+# This file is generated; we do not want to include it in the tarball
+libmca_installdirs_config_la_nodist_SOURCES = \
+	install_dirs.h
+
