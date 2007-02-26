@@ -30,8 +30,8 @@ version 1.0.
 -------
 
 This release was created specifically for the OpenFabrics Enterprise
-Distribution (OFED).  It is the Open MPI v1.2 community release with
-two features that were required by OFED but were too late to make the
+Distribution (OFED).  It is the Open MPI v1.2 community release with a
+few features that were required by OFED but were too late to make the
 community OMPI v1.2 release:
 
 - Ability to set the OPAL_DESTDIR or OPAL_PREFIX environment variables
