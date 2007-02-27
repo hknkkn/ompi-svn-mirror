@@ -15,6 +15,6 @@ libmca_installdirs_config_la_SOURCES = \
 	opal_installdirs_config.c
 
 # This file is generated; we do not want to include it in the tarball
-libmca_installdirs_config_la_nodist_SOURCES = \
+nodist_libmca_installdirs_config_la_SOURCES = \
 	install_dirs.h
 
