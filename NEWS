@@ -38,8 +38,10 @@ community OMPI v1.2 release:
   to "re-root" an existing Open MPI installation.
 - Always include -I for Fortran compiles, even if the prefix is
   /usr/local.
+- Support for "fork()" in MPI applications that use the OpenFabrics
+  stack.
 
-This functionality will be merged into upstream community Open MPI
+This functionality will be merged into future community Open MPI
 releases.
 
 
