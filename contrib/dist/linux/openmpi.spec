@@ -314,17 +314,26 @@ rm -rf $RPM_BUILD_ROOT
 
 fortify_source=1
 if test "$CC" != ""; then
-    if test "`basename $CC`" != "gcc"; then
+    # Do horrible things to get the basename of just the compiler,
+    # particularly in the case of multword values for $CC
+    eval "set $CC"
+    if test "`basename $1`" != "gcc"; then
         fortify_source=0
     fi
 fi
 
 if test "$fortify_source" = "1"; then
-    compiler="`echo %{configure_options} | sed -e 's@.* CC=\([^ ]*\).*@\1@'`"
-    # If that didn't find it, try for CC at the beginning of the line
-    if test "$compiler" = "%{configure_options}"; then
-        compiler="`echo %{configure_options} | sed -e 's@^CC=\([^ ]*\).*@\1@'`"
-    fi
+    # Do wretched things to find a CC=* token
+    eval "set %{configure_options}"
+    compiler=
+    while test "$1" != "" -a "$compiler" = ""; do
+         case "$1" in
+         CC=*)
+                 compiler=`echo $1 | cut -d= -f2-`
+                 ;;
+         esac
+         shift
+    done
 
     # Now that we *might* have the compiler name, do a best-faith
     # effort to see if it's gcc.  Blah!
