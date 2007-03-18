@@ -306,23 +306,26 @@ rm -rf $RPM_BUILD_ROOT
 %build
 %endif
 
-# Non-gcc compilers cannot use FORTIFY_SOURCE (at least, not as of 6
-# Oct 2006).  So if we're not GCC, strip out any -DFORTIFY_SOURCE
-# arguments in the RPM_OPT_FLAGS before potentially propagating them
-# everywhere.  We can really only examine the basename of the
-# compiler, so search for it in a few places.
+# rpmbuild processes seem to be geared towards the GNU compilers --
+# they pass in some flags that will only work with gcc.  So if we're
+# trying to build with some other compiler, the process will choke.
+# This is *not* something the user can override with a well-placed
+# --define on the rpmbuild command line, unless they find and override
+# all "global" CFLAGS kinds of RPM macros (every distro names them
+# differently).  For example, non-gcc compilers cannot use
+# FORTIFY_SOURCE (at least, not as of 6 Oct 2006).
 
-fortify_source=1
+using_gcc=1
 if test "$CC" != ""; then
     # Do horrible things to get the basename of just the compiler,
     # particularly in the case of multword values for $CC
     eval "set $CC"
     if test "`basename $1`" != "gcc"; then
-        fortify_source=0
+        using_gcc=0
     fi
 fi
 
-if test "$fortify_source" = "1"; then
+if test "$using_gcc" = "1"; then
     # Do wretched things to find a CC=* token
     eval "set %{configure_options}"
     compiler=
@@ -339,13 +342,26 @@ if test "$fortify_source" = "1"; then
     # effort to see if it's gcc.  Blah!
     if test "$compiler" != ""; then
         if test "`basename $compiler`" != "gcc"; then
-            fortify_source=0
+            using_gcc=0
         fi
     fi
 fi
 
-if test "$fortify_source" = 0; then
+# If we're not GCC, strip out any GCC-specific arguments in the
+# RPM_OPT_FLAGS before potentially propagating them everywhere.  We
+# can really only examine the basename of the compiler, so search for
+# it in a few places.
+
+if test "$using_gcc" = 0; then
+
+    # Non-gcc compilers cannot handle FORTIFY_SOURCE (at least, not as
+    # of Oct 2006)
     RPM_OPT_FLAGS="`echo $RPM_OPT_FLAGS | sed -e 's@-D_FORTIFY_SOURCE[=0-9]*@@'`"
+
+    # Non-gcc compilers will generate warnings for several flags
+    # placed in RPM_OPT_FLAGS by RHEL5, but -mtune=generic will cause
+    # an error for icc 9.1.
+    RPM_OPT_FLAGS="`echo $RPM_OPT_FLAGS | sed -e 's@-mtune=generic@@'`"
 fi
 
 CFLAGS="%{?cflags:%{cflags}}%{!?cflags:$RPM_OPT_FLAGS}"
