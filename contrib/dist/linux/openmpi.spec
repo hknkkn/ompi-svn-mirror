@@ -434,7 +434,7 @@ fi
 # MANPATH
 if test -z "\`echo \$MANPATH | grep %{_mandir}\`"; then
     MANPATH=%{_mandir}:\${MANPATH}
-    echo MANPATH
+    export MANPATH
 fi
 EOF
 cat <<EOF > $RPM_BUILD_ROOT/%{shell_scripts_path}/%{shell_scripts_basename}.csh
