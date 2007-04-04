@@ -327,7 +327,7 @@ fi
 
 if test "$using_gcc" = "1"; then
     # Do wretched things to find a CC=* token
-    eval "set `echo %{configure_options} | sed 's/--*//'`"
+    eval "set -- %{configure_options}"
     compiler=
     while test "$1" != "" -a "$compiler" = ""; do
          case "$1" in
@@ -449,7 +449,7 @@ endif
 
 # LD_LIBRARY_PATH
 if ("1" == "\$?LD_LIBRARY_PATH") then
-    if ("\$LD_LIBRARY_PATH" !~ "%{_libdir}") then
+    if ("\$LD_LIBRARY_PATH" !~ *%{_libdir}*) then
         setenv LD_LIBRARY_PATH %{_libdir}:\${LD_LIBRARY_PATH}
     endif
 else
@@ -458,7 +458,7 @@ endif
 
 # MANPATH
 if ("1" == "\$?MANPATH") then
-    if ("\$MANPATH" !~ "%{_mandir}") then
+    if ("\$MANPATH" !~ *%{_mandir}*) then
         setenv MANPATH %{_mandir}:\${MANPATH}
     endif
 else
