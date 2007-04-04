@@ -327,7 +327,7 @@ fi
 
 if test "$using_gcc" = "1"; then
     # Do wretched things to find a CC=* token
-    eval "set %{configure_options}"
+    eval "set `echo %{configure_options} | sed 's/--*//'`"
     compiler=
     while test "$1" != "" -a "$compiler" = ""; do
          case "$1" in
@@ -449,7 +449,7 @@ endif
 
 # LD_LIBRARY_PATH
 if ("1" == "\$?LD_LIBRARY_PATH") then
-    if ("\$LD_LIBRARY_PATH" =~ "'*%{_libdir}*'") then
+    if ("\$LD_LIBRARY_PATH" !~ "%{_libdir}") then
         setenv LD_LIBRARY_PATH %{_libdir}:\${LD_LIBRARY_PATH}
     endif
 else
@@ -458,7 +458,7 @@ endif
 
 # MANPATH
 if ("1" == "\$?MANPATH") then
-    if ("\$MANPATH" =~ '*%{_mandir}*'") then
+    if ("\$MANPATH" !~ "%{_mandir}") then
         setenv MANPATH %{_mandir}:\${MANPATH}
     endif
 else
@@ -641,6 +641,11 @@ test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
 #
 #############################################################################
 %changelog
+* Wed Apr  4 2007 Jeff Squyres <jsquyres@cisco.com>
+- Fix several mistakes in the generated profile.d scripts
+- Fix several bugs with identifying non-GNU compilers, stripping of
+  FORTIFY_SOURCE, -mtune, etc.
+
 * Fri Feb  9 2007 Jeff Squyres <jsquyres@cisco.com>
 - Revamp to make profile.d scripts more general: default to making the
   shell script files be %{_bindir}/mpivars.{sh|csh}
