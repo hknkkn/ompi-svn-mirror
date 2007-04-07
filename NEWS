@@ -30,24 +30,26 @@ version 1.0.
 -------
 
 This release was created specifically for the OpenFabrics Enterprise
-Distribution (OFED).  It is the Open MPI v1.2 community release with a
-few features that were required by OFED but were too late to make the
-community OMPI v1.2 release:
+Distribution (OFED).  It is comprised of multiple things:
 
-- Ability to set the OPAL_DESTDIR or OPAL_PREFIX environment variables
-  to "re-root" an existing Open MPI installation.
-- Always include -I for Fortran compiles, even if the prefix is
-  /usr/local.
-- Support for "fork()" in MPI applications that use the OpenFabrics
-  stack.
-- Support for setting specific limits on registered memory.
+- The state of the Open MPI v1.2 release branch after the official
+  v1.2 release but before the v1.2.1 release.  It therefor contains
+  some -- but not all -- of the differences between v1.2 and v1.2.1.
+- Some OFED-specific changes:
+    - Ability to set the OPAL_DESTDIR or OPAL_PREFIX environment
+      variables to "re-root" an existing Open MPI installation.
+    - Always include -I for Fortran compiles, even if the prefix is
+      /usr/local.
+    - Support for "fork()" in MPI applications that use the
+      OpenFabrics stack.
+    - Support for setting specific limits on registered memory.
 
-This functionality will be merged into future community Open MPI
-releases.
+The OFED-specific functionality will be included in a future community
+Open MPI release.
 
 
-1.2.1
------
+After 1.2, but before 1.2.1
+---------------------------
 
 - Fixed various memory leaks in OPAL and ORTE.
 - Improved launch times when using TM (PBS Pro, Torque, Open PBS).
