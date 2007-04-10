@@ -422,7 +422,8 @@ int mca_btl_udapl_free(
     mca_btl_udapl_frag_t* frag = (mca_btl_udapl_frag_t*)des;
 
     if(frag->size == 0 && frag->registration != NULL) {
-        btl->btl_mpool->mpool_deregister(btl->btl_mpool, frag->registration);
+        btl->btl_mpool->mpool_deregister(btl->btl_mpool, 
+                                         &(frag->registration->base));
         MCA_BTL_UDAPL_FRAG_RETURN_USER(btl, frag); 
     } else if(frag->size == mca_btl_udapl_component.udapl_eager_frag_size) {
         MCA_BTL_UDAPL_FRAG_RETURN_EAGER(btl, frag); 
