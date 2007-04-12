@@ -168,6 +168,8 @@
 %global _sysconfdir %{_prefix}/etc
 %endif
 
+%{!?_pkgdatadir: %define _pkgdatadir %{_datadir}/%{name}}
+
 %if !%{use_check_files}
 %define __check_files %{nil}
 %endif
@@ -641,6 +643,9 @@ test "x$RPM_BUILD_ROOT" != "x" && rm -rf $RPM_BUILD_ROOT
 #
 #############################################################################
 %changelog
+* Thu Apr 12 2007 Jeff Squyres <jsquyres@cisco.com>
+- Ensure that _pkglibdir is always defined, suggested by Greg Kurtzer.
+
 * Wed Apr  4 2007 Jeff Squyres <jsquyres@cisco.com>
 - Fix several mistakes in the generated profile.d scripts
 - Fix several bugs with identifying non-GNU compilers, stripping of
